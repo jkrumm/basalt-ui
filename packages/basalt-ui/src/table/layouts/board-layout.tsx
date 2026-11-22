@@ -5,13 +5,13 @@
  *
  * Law:
  * - A move between columns shows at once and calls the select's `commit(row, option)`; a commit that
- *   rejects or throws puts the card back and says so. The card keeps the dropped place until the
- *   data agrees with the move.
+ *   rejects or throws puts the card back and says so, so `commit` returns its promise. The card keeps
+ *   the dropped place until the data agrees with the move or replaces the row.
  * - A move inside one column changes nothing: the order is the table's sort.
  * - The axis is the view's grouping when it names a select column (`boardAxis`); with two or more
  *   axes a Group by switch writes the grouping, so the table groups by the same column.
  */
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { MouseEvent, ReactElement } from 'react'
 import { Board } from '../../cards/board'
 import { KanbanCard } from '../../cards/kanban-card'
@@ -36,8 +36,12 @@ const named = <T,>(value: FaceValue<T> | undefined): string | undefined =>
     ? undefined
     : `${value.spec.unit === undefined ? value.label : value.label.replace(` (${value.spec.unit})`, '')} ${value.text}`
 
-/** A move in flight: `done` once its commit resolved, kept until the row's value agrees. */
-type Flight = Pending & { done: boolean }
+/**
+ * A move in flight. `token` names the move, so an older move of the same card settling never
+ * overwrites a newer one; `row` is the row object the drop saw, so a refresh that touched the row
+ * ends the override; `done` once its commit resolved.
+ */
+type Flight<T> = Pending & { token: number; row: T; done: boolean }
 
 async function settle(run: () => unknown): Promise<boolean> {
   try {
@@ -58,7 +62,10 @@ export function BoardLayout<T>({
   virtual: VirtualLike | undefined
 }): ReactElement | null {
   const t = useMessages(table)
-  const [flights, setFlights] = useState<ReadonlyMap<string, Flight>>(new Map())
+  const [flights, setFlights] = useState<ReadonlyMap<string, Flight<T>>>(new Map())
+  const tokens = useRef(0)
+  // The newest move per card: only its own settle may speak or move the card.
+  const newest = useRef(new Map<string, number>())
   const [said, setSaid] = useState('')
   const axis = boardAxis(model)
   const spec = model.specs.find((s) => s.id === axis)
@@ -67,10 +74,12 @@ export function BoardLayout<T>({
     return raw === null || raw === undefined ? '' : String(raw)
   }
   const byId = new Map(model.rows.map((row) => [row.id, row]))
-  // A landed move (committed, and the data says so) needs no override any more; the next move drops it.
-  const landed = (id: string, f: Flight): boolean => {
+  // A move ends once the data agrees with it, or once a committed move meets a row the data replaced
+  // (a refresh that refused it, another writer): from then the data, never the drop, places the card.
+  const landed = (id: string, f: Flight<T>): boolean => {
     const row = byId.get(id)
-    return f.done && (row === undefined || valueOf(row) === f.to)
+    if (row === undefined || valueOf(row) === f.to) return true
+    return f.done && row.original !== f.row
   }
   const pending = new Map([...flights].filter(([id, f]) => !landed(id, f)))
   if (axis === undefined || spec?.edit === undefined) return null
@@ -92,17 +101,22 @@ export function BoardLayout<T>({
     if (move.from === move.to) return
     const row = byId.get(move.id)
     if (row === undefined) return
-    const title = cardFace(model, row.original).title
-    setFlights(new Map(pending).set(move.id, { to: move.to, index: move.index, done: false }))
+    const title = cardFace(model, row.original, axis).title
+    const token = (tokens.current += 1)
+    newest.current.set(move.id, token)
+    const flight = { to: move.to, index: move.index, token, row: row.original }
+    setFlights(new Map(pending).set(move.id, { ...flight, done: false }))
     const land = async (): Promise<void> => {
       const ok = await settle(() => edit.commit(row.original, move.to))
       setFlights((prev) => {
+        // A newer move of this card owns the entry now: this one settles nothing.
+        if (prev.get(move.id)?.token !== token) return prev
         const next = new Map(prev)
-        if (ok) next.set(move.id, { to: move.to, index: move.index, done: true })
+        if (ok) next.set(move.id, { ...flight, done: true })
         else next.delete(move.id)
         return next
       })
-      if (!ok) setSaid(t('table.boardFailed', title))
+      if (!ok && newest.current.get(move.id) === token) setSaid(t('table.boardFailed', title))
     }
     void land()
   }
@@ -132,7 +146,7 @@ export function BoardLayout<T>({
           </span>
         )}
         {drag !== undefined && (
-          <span data-slot="table-board-hint" className="text-xs text-muted-foreground">
+          <span data-slot="table-board-hint" className="px-2.5 text-xs text-muted-foreground">
             {t('table.boardHint', spec.header)}
           </span>
         )}
@@ -151,13 +165,9 @@ export function BoardLayout<T>({
         virtual={virtual === undefined ? undefined : { list: virtual, cardHeight: BOARD_CARD_PX }}
         card={(item, move) => {
           const face = cardFace(model, item.row.original, axis)
-          const lines = [
-            face.subtitle?.text,
-            [named(face.value), ...face.meta.map((m) => m.text)]
-              .filter(Boolean)
-              .slice(0, 2)
-              .join(' · '),
-          ].filter((line): line is string => line !== undefined && line !== '')
+          const lines = [face.subtitle?.text, named(face.value)].filter(
+            (line): line is string => line !== undefined && line !== '',
+          )
           const chips = face.badges.map((b): CardChip => ({ label: b.text }))
           const ticked = selection?.isSelected(item.id) === true
           return (

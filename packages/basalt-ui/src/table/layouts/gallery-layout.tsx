@@ -39,7 +39,7 @@ function GalleryCard<T>({
     <div
       data-slot="table-gallery-card"
       data-selected={ticked ? '' : undefined}
-      className="group/gallery relative min-w-0 transition-transform duration-fast ease-standard hover:-translate-y-0.5 motion-reduce:transition-none"
+      className="group/gallery relative min-w-0 p-px transition-transform duration-fast ease-standard hover:-translate-y-0.5 motion-reduce:transition-none"
     >
       <Card flush className="h-full">
         <div className="flex min-w-0 flex-col gap-3 p-4">

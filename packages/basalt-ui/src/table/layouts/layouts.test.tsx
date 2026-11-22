@@ -74,6 +74,7 @@ function Subject({
   commit = () => undefined,
   bulk = [],
   drag,
+  data = DEALS,
 }: {
   /** `null` passes no `layouts`: the default. */
   layouts?: readonly TableLayout[] | null
@@ -81,6 +82,7 @@ function Subject({
   commit?: (row: Deal, value: string) => unknown
   bulk?: BulkAction<Deal>[]
   drag?: DragLike
+  data?: readonly Deal[]
 }): ReactElement {
   const c = col<Deal>()
   const t = useDataTable<Deal>({
@@ -96,7 +98,7 @@ function Subject({
       }),
       c.money('amount', { currency: 'EUR', footer: 'sum' }),
     ],
-    data: DEALS,
+    data,
     getRowId: (d) => d.id,
     mode: { kind: 'client' },
     ...(layouts !== null && { layouts }),
@@ -263,5 +265,35 @@ describe('the board', () => {
     await waitFor(() => expect(document.querySelector('[data-slot="board"]')).not.toBeNull())
     drag.move('a', 'new')
     expect(commit).not.toHaveBeenCalled()
+  })
+  test('an older move settling never undoes a newer move of the same card', async () => {
+    const drag = fakeDrag()
+    const pending: { resolve: () => void; reject: (e: Error) => void }[] = []
+    const commit = mock(
+      () => new Promise<void>((resolve, reject) => void pending.push({ resolve, reject })),
+    )
+    render(<Subject layout="board" commit={commit} drag={drag.engine} />)
+    await waitFor(() => expect(document.querySelector('[data-slot="board"]')).not.toBeNull())
+    drag.move('a', 'won')
+    drag.move('a', 'lost')
+    await act(async () => pending[0]!.reject(new Error('late')))
+    const lost = document.querySelector<HTMLElement>(
+      '[data-slot="board-column"][data-column="lost"]',
+    )!
+    expect(within(lost).queryByText('Acme')).not.toBeNull()
+    expect(screen.queryByText('Acme could not move. It is back where it was.')).toBeNull()
+  })
+
+  test('a committed move ends when the data replaces the row without taking it', async () => {
+    const drag = fakeDrag()
+    const { rerender } = render(<Subject layout="board" drag={drag.engine} />)
+    await waitFor(() => expect(document.querySelector('[data-slot="board"]')).not.toBeNull())
+    drag.move('a', 'won')
+    await act(async () => undefined)
+    const won = (): HTMLElement =>
+      document.querySelector<HTMLElement>('[data-slot="board-column"][data-column="won"]')!
+    expect(within(won()).queryByText('Acme')).not.toBeNull()
+    rerender(<Subject layout="board" drag={drag.engine} data={DEALS.map((d) => ({ ...d }))} />)
+    expect(within(won()).queryByText('Acme')).toBeNull()
   })
 })
