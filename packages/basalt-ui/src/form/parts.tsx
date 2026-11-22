@@ -68,6 +68,8 @@ export type FooterProps<A extends readonly FormAction[]> = {
   actions: A & ValidActions<A>
   /** Keeps the row in view at the bottom of the scrollport and reads `Unsaved changes` while dirty. */
   sticky?: boolean
+  /** The floating unsaved bar: shown only while the form is dirty or saving (`FormFooter floating`). */
+  floating?: boolean
   /** Layout only (`mt-4`, `w-full`). */
   className?: string
 }
@@ -81,6 +83,7 @@ export type FooterProps<A extends readonly FormAction[]> = {
 export function Footer<const A extends readonly FormAction[]>({
   actions,
   sticky = false,
+  floating = false,
   className,
 }: FooterProps<A>): ReactElement {
   const form = useFormContext()
@@ -89,6 +92,7 @@ export function Footer<const A extends readonly FormAction[]>({
       form={form}
       actions={actions}
       sticky={sticky}
+      floating={floating}
       {...(className !== undefined && { className })}
     />
   )
