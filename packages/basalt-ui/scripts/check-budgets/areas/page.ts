@@ -14,7 +14,7 @@ export const rows: readonly RowDef[] = [
     id: 'page-symbols',
     order: 440,
     label: 'public value symbols, ./page (exact, export-surface shard)',
-    ceiling: 24, // v3 dock: `Dock`; v3 peek: `Peek`
+    ceiling: 25, // Issue 2995 (settings grammar): `SettingsLayout`; v3 dock: `Dock`; v3 peek: `Peek`
     measure: () => readSurface()['./page']?.length ?? 0,
   },
   {
@@ -30,13 +30,21 @@ export const rows: readonly RowDef[] = [
     // 115800 -> 116500 (Issue 2853): PageBar's action groups are the public `ButtonGroup`, and
     // every control in the barrel reads the group scope (`core/control-scope`).
     // 116500 -> 117000 (Issue 2940): 116707 B measured; the Dialog sizes, header actions and wash backdrop.
-    ceiling: 117000,
+    // 117000 -> 117300 (Issue 2995): `SettingsLayout`, the pane frame that scrolls to a linked row and marks it.
+    ceiling: 117300,
     measure: () => measureSource(reExportAll({ page: 'page/index' })),
   },
 ]
 
 export const raises: Raises = {
   'page-subpath': [
+    {
+      from: 117000,
+      to: 117300,
+      consumer:
+        '`SettingsLayout` (plan row bench-form-rows, Issue 2995): the pane frame and its row scroll and mark join the barrel',
+      repo: 'basalt-ui',
+    },
     {
       from: 116500,
       to: 117000,
@@ -88,6 +96,13 @@ export const raises: Raises = {
     },
   ],
   'page-symbols': [
+    {
+      from: 24,
+      to: 25,
+      consumer:
+        '`SettingsLayout` from `./page` (plan row bench-form-rows, Issue 2995): the settings pane frame, a centred column that scrolls to a linked row and marks it once; the playground settings page is its consumer',
+      repo: 'basalt-ui',
+    },
     {
       from: 23,
       to: 24,
