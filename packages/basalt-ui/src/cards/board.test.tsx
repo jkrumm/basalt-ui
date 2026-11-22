@@ -142,6 +142,31 @@ describe('Board columns', () => {
     expect(shown.map((s) => s.getAttribute('data-column'))).toEqual(['doing'])
   })
 
+  test('below the regular tier a switch picks the shown column, and reports it', () => {
+    const picked: Col[] = []
+    const { container } = render(
+      <Board
+        label="Issues"
+        columns={COLUMNS}
+        items={base()}
+        onActiveChange={(c) => picked.push(c)}
+        onMove={() => undefined}
+        card={(item, move) => <KanbanCard id={item.id} title={item.title} move={move} />}
+      />,
+    )
+    const shown = (): (string | null)[] =>
+      [...container.querySelectorAll('[data-slot="board-column"][data-shown]')].map((s) =>
+        s.getAttribute('data-column'),
+      )
+    expect(shown()).toEqual(['todo'])
+    const doing = [...container.querySelectorAll<HTMLElement>('button')].find(
+      (b) => b.textContent === 'Doing',
+    )!
+    fireEvent.click(doing)
+    expect(shown()).toEqual(['doing'])
+    expect(picked).toEqual(['doing'])
+  })
+
   test('the board scrolls sideways through the scroll primitive, named by its label', () => {
     const { container } = render(<Harness initial={base()} />)
     const region = container.querySelector('[data-slot="scroll-area"]')
