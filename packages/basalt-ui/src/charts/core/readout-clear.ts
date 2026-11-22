@@ -53,6 +53,8 @@ const inCorner = (share: number | null, within: number): boolean =>
 
 /** Air kept round a readout, px: the reach of its 6 px halo (3) and a gap of 2. */
 const READOUT_AIR = 5
+/** Air a band name's chip keeps from the tick labels beside it, px: a chip bolder than its tick never touches the neighbour the thinning placed against the regular name. */
+const BAND_CHIP_GAP = 3
 /** The inset the engine keeps between a readout and the chart's edge, px (`clampLabel`). */
 const EDGE_INSET = 2
 /** The weight of the crosshair's chip, which the engine draws bolder than a tick label. */
@@ -149,7 +151,7 @@ export function xTickOpacity(opts: {
       width === undefined || band
         ? x
         : clamp(x, EDGE_INSET + half, Math.max(EDGE_INSET + half, width - EDGE_INSET - half))
-    const air = repeats ? 0 : READOUT_AIR
+    const air = repeats ? (band ? BAND_CHIP_GAP : 0) : READOUT_AIR
     // A band name is measured as the engine measures it, the chip bold and the tick regular: the engine placed
     // the names apart at rest by those widths, and `captionWidth` over-estimates them, so on a phone it blanked
     // neighbours the chip never touches. Dates stay on the estimate: their labels are packed to the engine's
@@ -164,6 +166,9 @@ export function xTickOpacity(opts: {
       tick.anchor(value) ?? 'middle',
     )
     if (meet(readout, label)) return 0
+    // The chip prints the name its own tick prints, though it stands where the pointer is (over the bar of a
+    // group, not its band's centre): that tick gives way, so the name is on screen once.
+    if (repeats && sameValue(value, xValue) && tick.text(value) === readoutText(xValue)) return 0
     const { yValue } = focus.primary
     return corner !== undefined &&
       typeof yValue === 'number' &&

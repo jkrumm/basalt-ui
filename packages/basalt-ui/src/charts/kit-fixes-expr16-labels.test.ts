@@ -257,4 +257,32 @@ describe('the x chip and the tick labels (n80, n67)', () => {
     expect(read('Form started', 150)).toBe(0)
     expect(read('Request sent', 242)).toBe(1)
   })
+
+  // Expression cycle 19 (`v3-expr-19-kit-fixes` 4): a chip bolder than its thinned tick never touches the next tick,
+  // and the chip of a bar in a group (off its band's centre) prints its name once, not beside its tick.
+  test('a focused band keeps air from the tick beside it, and its own tick gives way where the chip stands off it (n96, n98)', () => {
+    const names = ['35', '40', '50']
+    const band: XTickLabel[] = names.map((text) => ({
+      value: text,
+      text,
+      anchor: undefined,
+      dx: undefined,
+    }))
+    const make = (width: number) =>
+      xTickOpacity({
+        tick: { text: (v) => String(v), anchor: () => undefined, dx: () => undefined },
+        readoutText: (v) => String(v),
+        fontSize: 11,
+        width,
+        ticks: band,
+      })
+    const opacity = make(340)
+    const focus = { primary: { x: 100, y: 10, xValue: '40' } }
+    // The chip '40' stands 14 px from the next tick '50': their boxes touch without air, so the neighbour gives way.
+    expect(opacity({ value: '50', position: 114, focus })).toBe(0)
+    // A chip off its own tick's place (the bar of a group, 30 px from its band's centre) replaces that tick.
+    expect(opacity({ value: '40', position: 130, focus })).toBe(0)
+    // Far from the chip the neighbour stays.
+    expect(opacity({ value: '35', position: 10, focus })).toBe(1)
+  })
 })
