@@ -125,7 +125,6 @@ const COMPOSED: Record<string, readonly string[]> = {
     'table-row',
     'table-head',
     'table-cell',
-    'checkbox',
   ],
 }
 

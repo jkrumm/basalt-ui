@@ -20,8 +20,7 @@ export const radioGroupVariants = cva('', {
     variant: {
       list: 'flex flex-col gap-2 pointer-coarse:gap-7',
       card: 'flex flex-col gap-2',
-      // oxlint-disable-next-line basalt/tw-off-law -- tiles wrap by their own width (as many 9 rem columns as fit); the group has no container of its own to key a tier on
-      tile: 'grid grid-cols-[repeat(auto-fill,minmax(min(100%,9rem),1fr))] gap-2',
+      tile: 'grid grid-cols-1 gap-2 @narrow:grid-cols-2 @regular:grid-cols-3 @wide:grid-cols-4',
     },
   },
   defaultVariants: { variant: 'list' },
@@ -95,7 +94,7 @@ export function RadioGroup<Value = string>({
   children,
   ...props
 }: RadioGroupProps<Value>): ReactElement {
-  return (
+  const group = (
     <BaseRadioGroup
       {...props}
       data-slot="radio-group"
@@ -109,6 +108,8 @@ export function RadioGroup<Value = string>({
           ))}
     </BaseRadioGroup>
   )
+  // The tile grid keys its columns on the width its box is given, so it sits in a size container.
+  return variant === 'tile' ? <div className="@container min-w-0">{group}</div> : group
 }
 
 /**
