@@ -33,12 +33,14 @@ export function BoardDemo({
   engine?: DragLike
 }): ReactElement {
   const [cards, setCards] = useState(initial)
+  const [shown, setShown] = useState(active)
   return (
     <Board
       label="Issues"
       columns={COLUMNS}
       items={cards}
-      active={active}
+      active={shown}
+      onActiveChange={setShown}
       drag={engine}
       virtual={{ list: VirtualList, cardHeight: 116 }}
       onMove={(m) => {
