@@ -74,6 +74,9 @@ export type TableMessages = Record<
   | 'table.viewNew'
   | 'table.viewModified'
   | 'table.viewEdit'
+  | 'table.viewMenuEdit'
+  | 'table.viewMenuSave'
+  | 'table.viewMenuDiscard'
   | 'table.viewRename'
   | 'table.viewCopyLink'
   | 'table.viewDuplicate'
@@ -266,6 +269,9 @@ export const table = {
   'table.viewNew': 'New view',
   'table.viewModified': 'modified',
   'table.viewEdit': 'Edit view',
+  'table.viewMenuEdit': 'Edit view',
+  'table.viewMenuSave': 'Save changes',
+  'table.viewMenuDiscard': 'Discard changes',
   'table.viewRename': 'Rename',
   'table.viewCopyLink': 'Copy link',
   'table.viewDuplicate': 'Duplicate',

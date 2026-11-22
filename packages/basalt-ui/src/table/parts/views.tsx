@@ -21,12 +21,12 @@ import { table } from '../../core/messages/table'
 import type { ControlsSlot } from '../../core/ports'
 import type { PageSettings } from '../../page/contract'
 import { Button } from '../../ui/button'
-import { Menu, MenuContent, MenuItem, MenuSeparator } from '../../ui/menu'
 import { Tabs, TabsList, TabsTrigger } from '../../ui/tabs'
 import type { DataTableInstance, TableState, View, ViewStore } from '../contract'
 import { modelOf } from '../use-data-table'
 import type { TableModel } from '../use-data-table'
 import { setDoor, useDoor, useMountDoor } from './view-door'
+import type { TabMenuProps } from './view-tab-menu'
 import type { DoorState, PanelPage } from './view-door'
 import {
   BASE_VIEW,
@@ -415,6 +415,16 @@ const LazyPanel = lazy(
   }),
 )
 
+/** The active tab's menu, a chunk of its own as well: `ui/menu` waits for the first click on a tab. */
+const LazyTabMenu = lazy(async (): Promise<{ default: ComponentType<TabMenuProps> }> => ({
+  default: (await import('./view-tab-menu')).TabMenu,
+}))
+
+const preloadPanel = (): void => {
+  void import('./view-panel')
+  void import('./view-tab-menu')
+}
+
 /** The panel while it is open, nothing while it is closed. */
 function Panel<T>({ c }: { c: ViewsController<T> }): ReactElement | null {
   if (!c.door.open) return null
@@ -448,69 +458,6 @@ function ModifiedMark(): ReactElement {
   )
 }
 
-/** The active tab's own menu: what a view can do, each item gated by what the store can. */
-function TabMenu<T>({
-  c,
-  view,
-  anchor,
-  onClose,
-}: {
-  c: ViewsController<T>
-  view: View
-  anchor: HTMLElement
-  onClose: () => void
-}): ReactElement {
-  const t = useMessages(table)
-  const at = c.list.views.findIndex((v) => v.id === view.id)
-  const last = c.list.views.length - 1
-  return (
-    <Menu
-      open
-      onOpenChange={(next) => {
-        if (!next) onClose()
-      }}
-    >
-      <MenuContent anchor={anchor} align="start" aria-label={t('table.viewMenu', view.name)}>
-        {c.modified && (
-          <>
-            <MenuItem onClick={() => void c.save()}>{t('table.viewSave')}</MenuItem>
-            <MenuItem onClick={c.discard}>{t('table.viewDiscard')}</MenuItem>
-            <MenuSeparator />
-          </>
-        )}
-        <MenuItem onClick={() => c.show('root')}>{t('table.viewEdit')}</MenuItem>
-        <MenuItem onClick={() => c.show('name')}>{t('table.viewRename')}</MenuItem>
-        <MenuItem onClick={() => void navigator.clipboard?.writeText(c.link())}>
-          {t('table.viewCopyLink')}
-        </MenuItem>
-        <MenuItem onClick={() => void c.duplicate(view.id)}>{t('table.viewDuplicate')}</MenuItem>
-        <MenuItem onClick={() => void c.setDefault(view.default === true ? undefined : view.id)}>
-          {view.default === true ? t('table.viewUnsetDefault') : t('table.viewSetDefault')}
-        </MenuItem>
-        {c.list.canReorder && (
-          <>
-            <MenuSeparator />
-            <MenuItem disabled={at <= 0} onClick={() => void c.move(view.id, -1)}>
-              {t('table.viewMoveLeft')}
-            </MenuItem>
-            <MenuItem disabled={at >= last} onClick={() => void c.move(view.id, 1)}>
-              {t('table.viewMoveRight')}
-            </MenuItem>
-          </>
-        )}
-        {c.onExport !== undefined && (
-          <>
-            <MenuSeparator />
-            <MenuItem onClick={c.onExport}>{t('table.viewExport')}</MenuItem>
-          </>
-        )}
-        <MenuSeparator />
-        <MenuItem onClick={() => c.show('remove')}>{t('table.viewDelete')}</MenuItem>
-      </MenuContent>
-    </Menu>
-  )
-}
-
 /**
  * The strip: `All rows`, a pill tab per view with its count and a dot while modified, `+ View`, and
  * Save and Discard while the shown view differs. A click on the active tab opens its menu.
@@ -519,15 +466,17 @@ export function ViewStrip<T>({ c }: { c: ViewsController<T> }): ReactElement {
   const t = useMessages(table)
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
   const value = c.active?.id ?? BASE_VIEW
-  // Fetch the panel's chunk once the strip is up, so its first open draws at once.
-  useEffect(() => {
-    void import('./view-panel')
-  }, [])
   const menuFor = (id: string) => (event: MouseEvent<HTMLElement>) => {
     if (id === value) setAnchor(event.currentTarget)
   }
   return (
-    <span data-slot="table-view-strip" className="flex min-w-0 items-center gap-1">
+    // The panel's chunk is fetched on the first intent (a pointer or focus on the strip), so its open draws at once.
+    <span
+      data-slot="table-view-strip"
+      className="flex min-w-0 items-center gap-1"
+      onPointerEnter={preloadPanel}
+      onFocus={preloadPanel}
+    >
       <Tabs
         variant="pill"
         value={value}
@@ -598,7 +547,14 @@ export function ViewStrip<T>({ c }: { c: ViewsController<T> }): ReactElement {
         </span>
       )}
       {anchor !== null && c.active !== undefined && (
-        <TabMenu c={c} view={c.active} anchor={anchor} onClose={() => setAnchor(null)} />
+        <Suspense fallback={null}>
+          <LazyTabMenu
+            c={c as unknown as ViewsController<unknown>}
+            view={c.active}
+            anchor={anchor}
+            onClose={() => setAnchor(null)}
+          />
+        </Suspense>
       )}
     </span>
   )
