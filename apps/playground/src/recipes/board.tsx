@@ -28,7 +28,7 @@ import { optimistic } from 'basalt-ui/data'
 import { drag } from 'basalt-ui/ui/sortable-list'
 import { VirtualList } from 'basalt-ui/ui/virtual-list'
 
-export function IssueBoard({ cards, active }: { cards: Cards; active: Col }) {
+export function IssueBoard({ cards }: { cards: Cards }) {
   const move = useMutation({
     mutationFn: (m: Move<Col>) => issuesApi.move(m),
     ...optimistic<Move<Col>, Cards>({
@@ -41,7 +41,6 @@ export function IssueBoard({ cards, active }: { cards: Cards; active: Col }) {
       label="Issues"
       columns={COLUMNS}
       items={cards}
-      active={active}
       drag={drag}
       virtual={{ list: VirtualList, cardHeight: 116 }} // the tallest card in px: rows are never measured
       onMove={(m) => move.mutate(m)}
