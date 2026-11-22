@@ -69,6 +69,18 @@ export type Series<D> = SeriesBase<D> &
          */
         values?: boolean | ((v: number, d: D) => string)
         /**
+         * Where `values` writes. `'end'` (the default): at the bar's end, a stack once by its total.
+         * `'segment'` on a series of a stack: this series' own value inside its own segment, centred,
+         * in the ink read against the segment's fill (a clamped stack: inside the part that is drawn,
+         * with the true value); a segment too small for the text drops its label. A stack may carry
+         * both: `values` on one series for the total, `values` with `valuesAt: 'segment'` on another.
+         * An unstacked bar labels its end either way.
+         *
+         * @example
+         * { key: 'unrated', mark: 'bar', y: (p) => p.unrated, values: true, valuesAt: 'segment' }
+         */
+        valuesAt?: 'end' | 'segment'
+        /**
          * The bars that answer the chart's question: drawn in the brand accent instead of the series
          * colour, in the plot and the tooltip, and their value labels drop last. One series stays one
          * legend entry.
@@ -223,7 +235,7 @@ export type YConfig = {
   /**
    * A fixed `[min, max]`; or `{ floor, ceil, pad }` on the data's extent (the domain always reaches
    * `floor` down and `ceil` up, then `pad` adds that share of the span); or a function of that
-   * extent. A datum past the domain (a capped outlier) is drawn on the plot's edge with an
+   * extent. The extent is what the plot draws: on stacked bars, the stack totals'. A datum past the domain (a capped outlier) is drawn on the plot's edge with an
    * off-scale marker, and its tooltip reads the true value.
    */
   domain?:

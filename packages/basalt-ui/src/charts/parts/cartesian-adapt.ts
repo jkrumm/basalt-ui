@@ -63,6 +63,7 @@ export function toEngineSeries<D>(s: Series<D>): ChartSeries<D> {
     return {
       ...base,
       ...(s.values !== undefined && { values: s.values }),
+      ...(s.valuesAt !== undefined && { valuesAt: s.valuesAt }),
       ...(s.highlight !== undefined && { highlight: s.highlight }),
     }
   if (s.mark !== 'line') return base

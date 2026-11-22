@@ -11,7 +11,7 @@ import { BASALT } from '../../tokens'
 import type { ChartLabel, LabelBox, LabelSpot, PlacedLabel } from '../chart-labels'
 import { estimateWidth as measure, fitsWith, lineHeight, placeWith } from '../label-place'
 import { barOnCard, dimmedPaint, inkOn } from '../marks'
-import { DEFAULT_BAR_OPACITY } from '../parts/bars-marks'
+import { DEFAULT_BAR_OPACITY, MIN_SEGMENT_PX, fitSegments } from '../parts/bars-marks'
 import type { BarState } from '../marks'
 import type { PlotPx } from '../label-obstacles'
 import type { ChartMarks, ChartSeries, ChartX } from '../types'
@@ -261,7 +261,8 @@ function candidates<T, X extends ChartX>(input: BarValuesInput<T, X>): Candidate
       at.down += Math.min(v, 0)
       at.seen = true
       at.data.push(d)
-      if (at.first === undefined && labelled(s)) at.first = { s, d }
+      // A series that labels its own segment names no total.
+      if (at.first === undefined && labelled(s) && s.valuesAt !== 'segment') at.first = { s, d }
       totals.set(`${side}:${fx}`, at)
     }
   }
@@ -309,7 +310,7 @@ function slotPx<T, X extends ChartX>(input: BarValuesInput<T, X>): number {
  * later to keep clear of. Outside the bar's end first; a label that finds no room there stands
  * inside the bar's end, in the card's own colour, when it fits the bar; else it is dropped.
  */
-export function barValueLabels<T, X extends ChartX>(
+function endValueLabels<T, X extends ChartX>(
   given: BarValuesInput<T, X>,
 ): {
   marks: ChartMarks
@@ -775,4 +776,215 @@ export function barValueLabels<T, X extends ChartX>(
 /** The y of a clamped bar's value written over its bar, under (or over, at the bottom) its caret. */
 function overY(c: { caretSide: 'top' | 'bottom' | null }, frame: { height: number }): number {
   return c.caretSide === 'bottom' ? frame.height - 2 * CARET_SIZE : 2 * CARET_SIZE
+}
+
+type LabelSet = {
+  marks: ChartMarks
+  boxes: LabelBox[]
+  written: ReadonlySet<string>
+  /** A label sits on a backing: the chart's hidden `[0, 1]` x scale is then in use. */
+  backed: boolean
+}
+
+/**
+ * The value labels of the bar series that set `values`: the ends and the stack totals first, then the
+ * segments of a stack whose series set `valuesAt: 'segment'`, clear of them.
+ */
+export function barValueLabels<T, X extends ChartX>(given: BarValuesInput<T, X>): LabelSet {
+  const ends = endValueLabels(given)
+  const segments = segmentValueLabels(given, ends.boxes)
+  if (segments.boxes.length === 0) return ends
+  return {
+    ...ends,
+    marks: [...ends.marks, ...segments.marks] as unknown as ChartMarks,
+    boxes: [...ends.boxes, ...segments.boxes],
+  }
+}
+
+const segmentLabelled = <T>(s: ChartSeries<T>): boolean =>
+  s.values !== undefined && s.values !== false && s.valuesAt === 'segment'
+
+/** One segment of a stack to label: its own value, inside its own body. */
+type Segment<X extends ChartX> = {
+  x: X
+  side: Side
+  text: string
+  /** The value at the segment's middle, on the drawn scale: where the text mark's datum sits. */
+  at: number
+  /** The band's centre and the segment's middle, in plot px. */
+  centre: { x: number; y: number }
+  body: { width: number; height: number }
+  band: number
+  highlighted: boolean
+  ink: string
+  magnitude: number
+}
+
+/**
+ * The labels of the series of a stack that set `valuesAt: 'segment'`: each writes its own value inside
+ * its own segment, centred (else at the segment's top or bottom inside it, where a rule crosses the
+ * middle), in the ink read against the segment's fill, clear of the rules, the captions and the labels
+ * already placed (`taken`). A segment too small for its text drops its label. A clamped stack's
+ * segments are labelled where they are drawn (fitted to the edge as `clampStacks` fits them), each
+ * with its true value. Only a `stacked` layout has segments; elsewhere `'segment'` labels the end.
+ */
+function segmentValueLabels<T, X extends ChartX>(
+  given: BarValuesInput<T, X>,
+  taken: readonly LabelBox[],
+): { marks: ChartMarks; boxes: LabelBox[] } {
+  const none = { marks: [] as ChartMarks, boxes: [] as LabelBox[] }
+  const { frame, barHalf } = given
+  if (given.stack !== 'stacked' || frame.width <= 0 || frame.height <= 0) return none
+  if (!given.series.some(segmentLabelled)) return none
+  const slot = slotPx(given)
+  const lh = lineHeight(SIZE)
+  const found: Segment<X>[] = []
+  for (const side of ['left', 'right'] as const) {
+    const members = given.series.filter((s) => given.sideOf(s) === side)
+    if (!members.some(segmentLabelled)) continue
+    const domain = given.domainOf(side)
+    const [lo, hi] = [Math.min(...domain), Math.max(...domain)]
+    const span = hi - lo || 1
+    const yPx = (v: number): number => ((hi - clampToDomain(v, [lo, hi])) / span) * frame.height
+    const min = (MIN_SEGMENT_PX * (hi - lo)) / frame.height
+    for (const d of given.data) {
+      const x = given.x(d)
+      const fx = given.fraction(x)
+      if (fx === null) continue
+      const values = members.map((s) => {
+        const v = s.getValue(d)
+        return v === null || !Number.isFinite(v) ? null : v
+      })
+      const dimmed = given.focused !== null && given.focused !== d
+      const state: BarState = dimmed ? 'dimmed' : given.focused === d ? 'focused' : 'rest'
+      for (const up of [true, false]) {
+        const parts = values.flatMap((v, i) => (v !== null && (up ? v > 0 : v < 0) ? [i] : []))
+        const sizes = parts.map((i) => Math.abs(values[i] ?? 0))
+        const cap = Math.max(0, up ? hi : -lo)
+        const total = sizes.reduce((acc, v) => acc + v, 0)
+        const drawn = total > cap ? fitSegments(sizes, cap, min) : sizes
+        let from = 0
+        for (const [k, i] of parts.entries()) {
+          const to = from + (drawn[k] ?? 0)
+          const [a, b] = up ? [from, to] : [-from, -to]
+          from = to
+          const s = members[i] as ChartSeries<T>
+          const v = values[i] as number
+          if (!segmentLabelled(s)) continue
+          const text = textOf(s, v, d, given.formatOf(side))
+          // An empty text is the page's way to leave a segment unlabelled.
+          if (text === '') continue
+          const [top, bottom] = [Math.min(yPx(a), yPx(b)), Math.max(yPx(a), yPx(b))]
+          const lit = s.highlight?.(d) === true
+          found.push({
+            x,
+            side,
+            text,
+            at: hi - ((top + bottom) / 2 / frame.height) * span,
+            centre: { x: fx * frame.width, y: (top + bottom) / 2 },
+            body: { width: 2 * barHalf * frame.width, height: bottom - top },
+            band: fx * frame.width,
+            highlighted: lit,
+            ink: inkOn(
+              barOnCard(lit ? CV.brand : s.color, s.fillOpacity ?? DEFAULT_BAR_OPACITY, state),
+            ),
+            magnitude: Math.abs(v),
+          })
+        }
+      }
+    }
+  }
+  // Only a segment that holds its line, the text as wide as its bar (and the overhang a bar inside its
+  // slot allows), takes a label.
+  const fits = found.flatMap((c, i) =>
+    fitsWith(
+      measure,
+      c.text,
+      {
+        width: Math.min(slot + INSIDE_PAD, c.body.width + 2 * OVERHANG) + 2 * INSIDE_PAD,
+        height: c.body.height + 2 * INSIDE_PAD,
+      },
+      { size: SIZE, pad: INSIDE_PAD },
+    )
+      ? [i]
+      : [],
+  )
+  // Highlighted first, then the larger value, then the earlier x.
+  const rank = fits.toSorted(
+    (a, b) =>
+      Number(found[b]?.highlighted) - Number(found[a]?.highlighted) ||
+      (found[b]?.magnitude ?? 0) - (found[a]?.magnitude ?? 0) ||
+      a - b,
+  )
+  const priority = new Map(rank.map((i, r) => [i, rank.length - r]))
+  const rows = tickRows(given)
+  const placed: PlacedLabel<string>[] = []
+  // The middle first; where a rule or another label crosses it, the top of the segment, then its bottom.
+  for (const shift of [0, -1, 1]) {
+    const done = new Set(placed.map((p) => p.key))
+    const pending = fits.flatMap((i): ChartLabel<string>[] => {
+      const c = found[i] as Segment<X>
+      if (done.has(String(i))) return []
+      const reach = Math.max(0, (c.body.height - lh) / 2 - INSIDE_PAD)
+      if (shift !== 0 && reach < 1) return []
+      return [
+        {
+          key: String(i),
+          text: c.text,
+          x: c.centre.x,
+          y: c.centre.y + shift * reach - lh / 2,
+          size: SIZE,
+          priority: priority.get(i) ?? 0,
+          spots: ['below'],
+        },
+      ]
+    })
+    if (pending.length === 0) break
+    const got = placeWith(measure, pending, frame, {
+      gap: 0,
+      obstacles: [...given.clear, ...rows, ...aired([...taken, ...placed])],
+      air: LABEL_AIR,
+      size: SIZE,
+    })
+    placed.push(...got.placed)
+  }
+  if (placed.length === 0) return none
+  const marks = placed.map((p) => {
+    const c = found[Number(p.key)] as Segment<X>
+    return {
+      x: c.x,
+      // The datum sits at the segment's middle; the text's offset is from there.
+      y: c.at,
+      scale: given.scaleOf(c.side),
+      text: p.text,
+      anchor: p.textAnchor,
+      dx: p.textX - c.band,
+      dy: p.dy + (p.y - c.centre.y),
+      fill: c.ink,
+    }
+  })
+  type Mark = (typeof marks)[number]
+  const scales = [...new Set(marks.map((m) => m.scale))]
+  return {
+    marks: scales.map((scale) =>
+      decorative(
+        text(
+          marks.filter((m) => m.scale === scale),
+          {
+            id: `bar-segment-values-${scale}`,
+            x: (m: Mark) => m.x,
+            y: (m: Mark) => m.y,
+            yScale: scale,
+            text: (m: Mark) => m.text,
+            fill: (m: Mark) => m.fill,
+            fontSize: SIZE,
+            anchor: (m: Mark) => m.anchor,
+            dx: (m: Mark) => m.dx,
+            dy: (m: Mark) => m.dy,
+          },
+        ),
+      ),
+    ) as unknown as ChartMarks,
+    boxes: placed.map(({ left, top, width, height }) => ({ left, top, width, height })),
+  }
 }
