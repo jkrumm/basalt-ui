@@ -76,6 +76,8 @@ export type PanelHeaderProps = {
   menu?: ReactNode
   onClose?: (() => void) | undefined
   closeLabel: string
+  /** Marks the close button for a caller's selector (the aside's published `data-aside-close`). */
+  closeMark?: 'data-aside-close' | undefined
   /** The header is a window's drag handle. */
   onPointerDown?: ((event: PointerEvent<HTMLElement>) => void) | undefined
   className?: string | undefined
@@ -250,6 +252,7 @@ export function PanelHeader({
   menu,
   onClose,
   closeLabel,
+  closeMark,
   onPointerDown,
   className,
 }: PanelHeaderProps): ReactElement {
@@ -301,6 +304,7 @@ export function PanelHeader({
             shape="icon"
             aria-label={closeLabel}
             data-panel="close"
+            {...(closeMark !== undefined && { [closeMark]: '' })}
             onClick={onClose}
           >
             <Glyph d={CLOSE} />
