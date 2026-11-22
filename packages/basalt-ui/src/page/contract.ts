@@ -29,7 +29,10 @@ export type NavBadge = { count: number; attention?: boolean } | { dot: true; att
 export type PageProps = {
   /** Scopes commands. */
   area?: string
-  /** Definite height; `{ min }` keeps a floor in px. */
+  /**
+   * Fills the work surface: a definite height, no gutter and no gap, so the one main part (a table,
+   * a split page, a canvas) meets the surface's edges; `{ min }` keeps a floor in px.
+   */
   fill?: boolean | { min: number }
   /** Renders `<main>` with no `PageHost`. */
   landmark?: boolean
