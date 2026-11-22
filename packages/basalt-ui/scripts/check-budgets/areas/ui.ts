@@ -50,7 +50,7 @@ const PER_PRIMITIVE: Readonly<Record<string, number>> = {
   badge: 6000, // 5625 B
   button: 9500, // 8574 B
   card: 10100, // 10004 B
-  checkbox: 15000, // 14142 B
+  checkbox: 15500, // 15025 B, with the card and tile variants and `ChoiceCard`
   collapsible: 13000, // 11967 B
   combobox: 61500, // 58535 B
   'control-group': 6000, // 5672 B
@@ -142,6 +142,15 @@ export const raises: Raises = {
       to: 157700,
       consumer:
         'the benchmark against Accordee (owner direction 2026-11-21, docs/v3/issues/bench/README.md decision 6): one panel anatomy for Peek, Dock, PageAside and a right Sheet, each resizable with the width remembered, and a record that opens as a side panel, a window or the page, with previous and next (Issue 2939)',
+      repo: 'basalt-ui',
+    },
+  ],
+  'ui-prim-checkbox': [
+    {
+      from: 15000,
+      to: 15500,
+      consumer:
+        'choice cards (plan row bench-form-parts, Issue 2996): CheckboxGroup and RadioGroup draw their options as ChoiceCard with a trailing value and a preview, which the checkbox primitive bundles',
       repo: 'basalt-ui',
     },
   ],
