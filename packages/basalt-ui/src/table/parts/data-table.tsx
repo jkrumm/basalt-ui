@@ -145,8 +145,11 @@ function Columns<T>({
 
 function scrollportStyle(height: DataTableProps<unknown>['height']): CSSProperties | undefined {
   if (typeof height === 'object') {
-    // The head row plus `maxRows` body rows, in the table's own row height.
-    return { maxHeight: `calc(${height.maxRows + 1} * var(--table-row-h, var(--basalt-row-h)))` }
+    // The head row at the app's row height (`--table-app-row-h`, which a view's row height never moves)
+    // plus `maxRows` body rows at the scroller's, which a view's `data-density` sets.
+    return {
+      maxHeight: `calc(var(--table-app-row-h, var(--basalt-row-h)) + ${height.maxRows} * var(--table-row-h, var(--basalt-row-h)))`,
+    }
   }
   return undefined
 }
