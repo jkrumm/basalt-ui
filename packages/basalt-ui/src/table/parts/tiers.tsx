@@ -40,7 +40,9 @@ let sheetWarned = false
 export function warnWithoutTierSheet(scroller: HTMLElement | null): void {
   if (process.env.NODE_ENV === 'production' || sheetWarned || scroller === null) return
   requestAnimationFrame(() => {
-    if (sheetWarned || getComputedStyle(scroller).containerType !== 'normal') return
+    // The sheet names the scroller's container `table`; an engine without container queries reports no name.
+    const name = getComputedStyle(scroller).containerName
+    if (sheetWarned || !name || name.includes('table')) return
     sheetWarned = true
     // oxlint-disable-next-line no-console -- the dev-only warning is the whole point of this function
     console.warn(
@@ -73,6 +75,9 @@ export function scrollMinWidth<T>(model: TableModel<T>): CSSProperties {
     selectPx,
   )
   return {
+    // The column widths share the scroller's width (`100cqw`): the scroller is that container even
+    // where the tier sheet, which also names it `table`, is missing.
+    containerType: 'inline-size',
     ['--table-min-scroll' as string]: `${px}px`,
     // A start-pinned column rides beside the tick column when there is one.
     ['--table-pin-start' as string]: `${selectPx}px`,
