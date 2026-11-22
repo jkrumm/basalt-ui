@@ -199,8 +199,30 @@ function ActionBody({ action, box }: { action: GlobalAction; box: ShellBox }): R
   )
 }
 
+/**
+ * The row widths below which a tier yields (`core/header-tiers.ts`), as literal classes. Under
+ * `native-overlay` the title bar's row also holds the brand zone, as wide as the expanded rail, so
+ * each threshold takes that 240 px more.
+ */
+const YIELD = {
+  web: { 2: '@max-[859.98px]/header:hidden', 3: '@max-[1039.98px]/header:hidden' },
+  titlebar: { 2: '@max-[1099.98px]/header:hidden', 3: '@max-[1279.98px]/header:hidden' },
+} as const
+const KEBAB_SHOWN = {
+  web: { 2: '@max-[859.98px]/header:inline-flex', 3: '@max-[1039.98px]/header:inline-flex' },
+  titlebar: { 2: '@max-[1099.98px]/header:inline-flex', 3: '@max-[1279.98px]/header:inline-flex' },
+} as const
+
 /** One global action in the row: its tier decides from which width it yields to the kebab. */
-function GlobalActionView({ action, box }: { action: GlobalAction; box: ShellBox }): ReactElement {
+function GlobalActionView({
+  action,
+  box,
+  row,
+}: {
+  action: GlobalAction
+  box: ShellBox
+  row: keyof typeof YIELD
+}): ReactElement {
   const tier = headerPriority(action.priority)
   const phoneOff = action.mobile === 'more' || action.mobile === 'hidden'
   return (
@@ -211,8 +233,7 @@ function GlobalActionView({ action, box }: { action: GlobalAction; box: ShellBox
       data-phone-off={phoneOff ? '' : undefined}
       className={cn(
         'flex shrink-0 items-center',
-        tier === 2 && '@max-[859.98px]/header:hidden',
-        tier === 3 && '@max-[1039.98px]/header:hidden',
+        tier !== 1 && YIELD[row][tier],
         phoneOff && 'max-md:hidden',
       )}
     >
@@ -299,7 +320,12 @@ export function Header({
           {globalActions.length > 0 && (
             <div data-slot="shell-trail" className="flex shrink-0 items-center gap-1">
               {globalActions.map((action) => (
-                <GlobalActionView key={action.id} action={action} box={box} />
+                <GlobalActionView
+                  key={action.id}
+                  action={action}
+                  box={box}
+                  row={native ? 'titlebar' : 'web'}
+                />
               ))}
               {(tiers.p2 || tiers.p3) && (
                 <HeaderKebab
@@ -310,8 +336,8 @@ export function Header({
                   className={cn(
                     'hidden shrink-0',
                     !tiers.phone && 'max-md:hidden!',
-                    tiers.p3 && '@max-[1039.98px]/header:inline-flex',
-                    tiers.p2 && '@max-[859.98px]/header:inline-flex',
+                    tiers.p3 && KEBAB_SHOWN[native ? 'titlebar' : 'web'][3],
+                    tiers.p2 && KEBAB_SHOWN[native ? 'titlebar' : 'web'][2],
                   )}
                 />
               )}

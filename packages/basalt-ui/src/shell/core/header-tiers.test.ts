@@ -4,7 +4,12 @@
  */
 import { describe, expect, test } from 'bun:test'
 import type { SizeClass } from '../contract'
-import { HEADER_TIER_MIN_WIDTH, headerPriority, projectHeaderTiers } from './header-tiers'
+import {
+  HEADER_TIER_MIN_WIDTH,
+  HEADER_TITLEBAR_BRAND_PX,
+  headerPriority,
+  projectHeaderTiers,
+} from './header-tiers'
 import type { HeaderTierItem } from './header-tiers'
 
 /** The S6 cluster, declaration order. */
@@ -42,6 +47,16 @@ describe('S6 cluster', () => {
     expect(projectHeaderTiers(S6_CLUSTER, row(1051)).kebab).toEqual(['import', 'tag'])
     expect(projectHeaderTiers(S6_CLUSTER, row(1052)).kebab).toEqual([])
   })
+})
+
+test('the header classes hold these numbers, the title bar 240 px more', async () => {
+  const source = await Bun.file(new URL('../parts/header.tsx', import.meta.url)).text()
+  for (const tier of [2, 3] as const) {
+    const web = HEADER_TIER_MIN_WIDTH[tier]
+    const titlebar = web + HEADER_TITLEBAR_BRAND_PX
+    expect(source).toContain(`@max-[${web - 0.02}px]/header:hidden`)
+    expect(source).toContain(`@max-[${titlebar - 0.02}px]/header:hidden`)
+  }
 })
 
 describe('priority', () => {

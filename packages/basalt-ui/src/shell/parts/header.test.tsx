@@ -160,6 +160,12 @@ describe('global action tiers', () => {
   test('an action that yields is hidden by its tier class, and priority 1 never is', () => {
     renderHeader({ globalActions: CLUSTER })
     expect(document.querySelector('[data-item="status"]')?.className).not.toContain('max-[')
+    expect(document.querySelector('[data-item="progress"]')?.className).toContain('859.98px')
+    expect(document.querySelector('[data-item="import"]')?.className).toContain('1039.98px')
+  })
+
+  test('a native title bar holds the brand zone too, so its tiers yield 240 px of row later', () => {
+    renderHeader({ globalActions: CLUSTER, chrome: 'native-overlay' })
     expect(document.querySelector('[data-item="progress"]')?.className).toContain('1099.98px')
     expect(document.querySelector('[data-item="import"]')?.className).toContain('1279.98px')
   })
@@ -192,15 +198,15 @@ describe('the one kebab', () => {
     renderHeader({ globalActions: CLUSTER })
     const kebabs = document.querySelectorAll('[data-slot="shell-kebab"]')
     expect(kebabs).toHaveLength(1)
-    expect(kebabs[0]?.className).toContain('1279.98px')
-    expect(kebabs[0]?.className).toContain('1099.98px')
+    expect(kebabs[0]?.className).toContain('1039.98px')
+    expect(kebabs[0]?.className).toContain('859.98px')
   })
 
-  test('with only priority 3 items it appears below 1280 and never below 1100 on its own account', () => {
+  test('with only priority 3 items it appears below 1040 of row and never below 860 on its own account', () => {
     renderHeader({ globalActions: [CLUSTER[2]!] })
     const kebab = document.querySelector('[data-slot="shell-kebab"]')
-    expect(kebab?.className).toContain('1279.98px')
-    expect(kebab?.className).not.toContain('1099.98px')
+    expect(kebab?.className).toContain('1039.98px')
+    expect(kebab?.className).not.toContain('859.98px')
   })
 })
 
