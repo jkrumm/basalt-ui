@@ -162,9 +162,7 @@ layout('Selection', () => {
         const head = `${CARDS} thead th[data-identity]`
         // The head is visually hidden in the card tier; the menu is still in the tree.
         await page.raw.evaluate((sel) => {
-          document
-            .querySelector<HTMLElement>(`${sel} button[aria-label$="column actions"]`)
-            ?.click()
+          document.querySelector<HTMLElement>(`${sel} [data-column-menu]`)?.click()
         }, head)
         await page.raw.waitForSelector('[role="menu"]')
         const items = await page.raw.evaluate(() =>

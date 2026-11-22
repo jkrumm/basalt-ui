@@ -77,8 +77,9 @@ layout('an empty DataPanel table keeps its columns and its cause in view', () =>
       expect(m.head[0]).toBeCloseTo(m.panel[0], 0)
       expect(m.head[1]).toBeCloseTo(m.panel[1], 0)
       expect(m.cause[0]).toBeCloseTo((m.panel[0] + m.panel[1]) / 2, 0)
-      // The flexible name column takes the free width, so the columns are not packed to the start.
-      expect(Math.max(...m.columns)).toBeGreaterThan((m.panel[1] - m.panel[0]) / 2)
+      // The columns keep the widths the ready table draws (a text-like column grows to its cap); the
+      // filler carries the head to the panel's edge, so the cause centres in the panel, not the columns.
+      expect(m.columns.reduce((sum, width) => sum + width, 0)).toBeLessThan(m.panel[1] - m.panel[0])
     })
     test(`phone 390, ${name}: the cause is above the tab bar`, async () => {
       const m = await read(await open(PHONE, query))
