@@ -1,5 +1,6 @@
 import type { Extent, Series } from '../contract'
 import { reportOnce } from '../../common/validate'
+import { LOG_DOMAIN_WARNING } from '../core/scales'
 import { rewriting } from './define'
 import type { Seam, SeamProps } from './define'
 
@@ -89,11 +90,7 @@ const seam: Seam = (spec, props) => {
   const domain = typeof given === 'function' ? given(extent) : boundedDomain(extent, given, log)
   // A reversed, flat or non-finite answer falls back to the auto domain rather than drawing nothing.
   if (usable(domain, log)) return { ...spec, y: { ...spec.y, domain } }
-  if (log)
-    reportOnce(
-      'CartesianChart',
-      "[basalt] CartesianChart: a log y.domain needs positive bounds, min below max; using the data's extent",
-    )
+  if (log) reportOnce('CartesianChart', LOG_DOMAIN_WARNING)
   return spec
 }
 
