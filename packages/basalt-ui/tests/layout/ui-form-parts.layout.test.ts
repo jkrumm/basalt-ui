@@ -200,12 +200,15 @@ layout('form parts', () => {
             rowHeads: table.querySelectorAll('th[scope="row"]').length,
             boxes: table.querySelectorAll('[role="checkbox"]').length,
             frameFits: frame.getBoundingClientRect().right <= window.innerWidth + 0.5,
+            // Four roles and the toggles read whole at 390: no column hides behind a sideways scroll.
+            noScroll: frame.scrollWidth <= frame.clientWidth + 1,
           }
         })
         expect(shape.colHeads).toBe(6)
         expect(shape.rowHeads).toBe(3)
         expect(shape.boxes).toBe(3 * 4 + 3 + 4)
         expect(shape.frameFits).toBe(true)
+        expect(shape.noScroll).toBe(true)
       })
 
       test('the matrix moves cell by cell on the arrow keys and skips a disabled cell', async () => {

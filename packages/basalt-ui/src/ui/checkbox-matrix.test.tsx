@@ -72,7 +72,8 @@ describe('checkbox-matrix', () => {
       <Grid locked toggles initial={{ billing: ['owner'] }} onChange={(v) => (last = v)} />,
     )
     const all = getByRole('checkbox', { name: 'All for Billing' })
-    expect(all.getAttribute('aria-checked')).toBe('false')
+    // The locked Owner cell counts toward what the toggle shows, so one of three reads mixed.
+    expect(all.getAttribute('aria-checked')).toBe('mixed')
     fireEvent.click(all)
     expect(last['billing']).toEqual(['owner', 'admin', 'guest'])
     expect(getByRole('checkbox', { name: 'All for Billing' }).getAttribute('aria-checked')).toBe(

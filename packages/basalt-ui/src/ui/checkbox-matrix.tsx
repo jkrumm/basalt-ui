@@ -201,11 +201,13 @@ export function CheckboxMatrix({
     cells: readonly (readonly [MatrixRow, MatrixColumn])[],
   ): { cells: typeof cells; checked: boolean; indeterminate: boolean } => {
     const open = cells.filter(([row, column]) => stateOf(row, column) === undefined)
-    const on = open.filter(([row, column]) => isChecked(row, column)).length
+    // A locked cell counts toward what the toggle shows but never changes; a disabled one is left out.
+    const shown = cells.filter(([row, column]) => stateOf(row, column) !== 'disabled')
+    const on = shown.filter(([row, column]) => isChecked(row, column)).length
     return {
       cells: open,
-      checked: open.length > 0 && on === open.length,
-      indeterminate: on > 0 && on < open.length,
+      checked: shown.length > 0 && on === shown.length,
+      indeterminate: on > 0 && on < shown.length,
     }
   }
 
@@ -246,8 +248,8 @@ export function CheckboxMatrix({
             {columns.map((column) => {
               const toggle = group(rows.map((row) => [row, column] as const))
               return (
-                <TableHead key={column.id} scope="col" className="text-center">
-                  <span className="inline-flex items-center gap-2">
+                <TableHead key={column.id} scope="col" className="px-1.5 text-center">
+                  <span className="inline-flex flex-col items-center gap-1 py-1">
                     <span id={colHeadId(column)}>{column.label}</span>
                     {columnToggles && (
                       <CellBox
@@ -263,7 +265,7 @@ export function CheckboxMatrix({
               )
             })}
             {rowToggles && (
-              <TableHead scope="col" className="text-center">
+              <TableHead scope="col" className="px-1.5 text-center">
                 {t('base.matrix.all')}
               </TableHead>
             )}
@@ -274,7 +276,10 @@ export function CheckboxMatrix({
             const toggle = group(columns.map((column) => [row, column] as const))
             return (
               <TableRow key={row.id}>
-                <TableHead scope="row" className="py-2 text-left whitespace-normal">
+                <TableHead
+                  scope="row"
+                  className="max-w-40 min-w-24 py-2 text-left whitespace-normal"
+                >
                   <span id={rowHeadId(row)} className="block text-sm font-medium text-foreground">
                     {row.label}
                   </span>
@@ -287,7 +292,7 @@ export function CheckboxMatrix({
                 {columns.map((column, c) => {
                   const state = stateOf(row, column)
                   return (
-                    <TableCell key={column.id} className="text-center">
+                    <TableCell key={column.id} className="px-1.5 text-center">
                       <CellBox
                         data-matrix-row={r}
                         data-matrix-col={c}
@@ -307,7 +312,7 @@ export function CheckboxMatrix({
                   )
                 })}
                 {rowToggles && (
-                  <TableCell className="text-center">
+                  <TableCell className="px-1.5 text-center">
                     <CellBox
                       data-matrix-row={r}
                       data-matrix-col={columns.length}

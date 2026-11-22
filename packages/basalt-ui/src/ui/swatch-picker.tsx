@@ -46,7 +46,7 @@ const FILL: Record<SwatchToken, string> = {
  * @example
  * swatchPickerVariants() // class string for a hand-built grid
  */
-export const swatchPickerVariants = cva('grid grid-cols-4 gap-2 pointer-coarse:gap-4')
+export const swatchPickerVariants = cva('grid w-fit grid-cols-4 gap-2 pointer-coarse:gap-4')
 
 /**
  * The swatch table: a 28 px disc of one token. It stays 28 px on every pointer and grows only its
