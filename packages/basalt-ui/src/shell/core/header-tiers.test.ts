@@ -18,7 +18,12 @@ const S6_CLUSTER: HeaderTierItem[] = [
 /** The viewport size class: compact < 840 <= medium < 1200 <= expanded. */
 const sizeClassAt = (width: number): SizeClass =>
   width >= 1200 ? 'expanded' : width >= 840 ? 'medium' : 'compact'
-const at = (windowWidth: number) => ({ windowWidth, sizeClass: sizeClassAt(windowWidth) })
+/** The identity row at a window with the rail expanded: the window less the rail and the panel inset and edges. */
+const RAIL_AND_PANEL = 240 + 10
+const at = (windowWidth: number) => ({
+  rowWidth: windowWidth - RAIL_AND_PANEL,
+  sizeClass: sizeClassAt(windowWidth),
+})
 
 describe('S6 cluster', () => {
   test.each([
@@ -29,12 +34,13 @@ describe('S6 cluster', () => {
     expect(projectHeaderTiers(S6_CLUSTER, at(width))).toEqual({ shown, kebab, labels })
   })
 
-  test('the thresholds are the spike numbers, in header content width (window minus 12)', () => {
-    expect(HEADER_TIER_MIN_WIDTH).toEqual({ 1: 0, 2: 1100, 3: 1280 })
-    expect(projectHeaderTiers(S6_CLUSTER, at(1111)).shown).toEqual(['badges'])
-    expect(projectHeaderTiers(S6_CLUSTER, at(1112)).shown).toEqual(['badges', 'progress'])
-    expect(projectHeaderTiers(S6_CLUSTER, at(1291)).kebab).toEqual(['import', 'tag'])
-    expect(projectHeaderTiers(S6_CLUSTER, at(1292)).kebab).toEqual([])
+  test('the thresholds are the spike numbers less the expanded rail, in row content width (row minus 12)', () => {
+    expect(HEADER_TIER_MIN_WIDTH).toEqual({ 1: 0, 2: 860, 3: 1040 })
+    const row = (rowWidth: number) => ({ rowWidth, sizeClass: 'expanded' as const })
+    expect(projectHeaderTiers(S6_CLUSTER, row(871)).shown).toEqual(['badges'])
+    expect(projectHeaderTiers(S6_CLUSTER, row(872)).shown).toEqual(['badges', 'progress'])
+    expect(projectHeaderTiers(S6_CLUSTER, row(1051)).kebab).toEqual(['import', 'tag'])
+    expect(projectHeaderTiers(S6_CLUSTER, row(1052)).kebab).toEqual([])
   })
 })
 

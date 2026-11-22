@@ -35,16 +35,40 @@ const specOf = (rail: 'collapsed' | 'expanded'): ShellChromeSpec => ({
   rail,
 })
 
-/** What each window shows: the rows of the row, the rows of the kebab, the label length. */
+/**
+ * What each window shows per rail state: the rows of the row, the rows of the kebab, the label
+ * length. The tiers read the identity row's own width, so a collapsed rail gives the row room.
+ */
 const EXPECTED = [
-  { width: 1024, shown: ['status'], kebab: ['progress', 'import', 'tag'], labels: 'short' },
-  { width: 1200, shown: ['status', 'progress'], kebab: ['import', 'tag'], labels: 'long' },
-  { width: 1440, shown: [...ITEMS], kebab: [], labels: 'long' },
+  {
+    width: 1024,
+    rail: 'expanded',
+    shown: ['status'],
+    kebab: ['progress', 'import', 'tag'],
+    labels: 'short',
+  },
+  {
+    width: 1024,
+    rail: 'collapsed',
+    shown: ['status', 'progress'],
+    kebab: ['import', 'tag'],
+    labels: 'short',
+  },
+  {
+    width: 1200,
+    rail: 'expanded',
+    shown: ['status', 'progress'],
+    kebab: ['import', 'tag'],
+    labels: 'long',
+  },
+  { width: 1200, rail: 'collapsed', shown: [...ITEMS], kebab: [], labels: 'long' },
+  { width: 1440, rail: 'expanded', shown: [...ITEMS], kebab: [], labels: 'long' },
+  { width: 1440, rail: 'collapsed', shown: [...ITEMS], kebab: [], labels: 'long' },
 ] as const
 
 layout('header tiers — spike S6 cluster', () => {
-  for (const { width, shown, kebab, labels } of EXPECTED) {
-    for (const rail of ['expanded', 'collapsed'] as const) {
+  for (const { width, rail, shown, kebab, labels } of EXPECTED) {
+    {
       const viewport: Viewport = { name: `${width} ${rail}`, width, height: 720 }
       test(`${width}px, rail ${rail}: shown ${shown.join('+')}, kebab ${kebab.join('+') || 'none'}, ${labels} labels`, async () => {
         const p = await openFixture(specOf(rail), viewport, '/', 'reduce', 'fine')

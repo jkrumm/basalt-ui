@@ -56,6 +56,8 @@ export type ShellGeometry = {
   /** Resolved `--shell-header-h`, or NaN where the root does not carry it. */
   headerToken: number
   header: Box | null
+  /** Where the header's row starts: the work surface's inner top when the header is its first row, else 0. */
+  headerHome: number
   /** True when the rail is laid out (the phone hides it). */
   railVisible: boolean
   rail: Box | null
@@ -98,6 +100,11 @@ export function measureShell(): ShellGeometry {
   const rail = slotOf('shell-rail')
   const railVisible = rail !== null && shown(rail)
   const header = slotOf('shell-header')
+  const surface = slotOf('shell-surface')
+  const headerHome =
+    header !== null && surface !== null && surface.contains(header)
+      ? surface.getBoundingClientRect().top + surface.clientTop
+      : 0
   const tabBar = slotOf('shell-tab-bar')
   const footer = slotOf('shell-rail-footer')
   const viewport = { width: document.documentElement.clientWidth, height: window.innerHeight }
@@ -196,6 +203,7 @@ export function measureShell(): ShellGeometry {
     },
     headerToken,
     header: header === null ? null : box(header),
+    headerHome,
     railVisible,
     rail: rail === null || !railVisible ? null : box(rail),
     railState:
@@ -232,7 +240,11 @@ export function judgeShell(g: ShellGeometry, tolerance = 1): string[] {
         `header height ${round(height)} is not the --shell-header-h token ${g.headerToken}`,
       )
     }
-    if (g.header.top !== 0) broken.push(`header top ${round(g.header.top)} is not 0`)
+    if (!near(g.header.top, g.headerHome)) {
+      broken.push(
+        `header top ${round(g.header.top)} is not the top of its row ${round(g.headerHome)}`,
+      )
+    }
   }
 
   if (g.document.scrollHeight > g.document.clientHeight) {

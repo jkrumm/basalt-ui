@@ -83,7 +83,7 @@ export function SiteFeature({
     <article
       data-slot="site-feature"
       className={cn(
-        'flex min-w-0 flex-col gap-4 rounded-card border border-border bg-card p-4 shadow-card @[40rem]:p-5',
+        'flex min-w-0 flex-col gap-4 rounded-card bg-card p-4 shadow-card @[40rem]:p-5',
         span !== undefined && SPAN[span],
         className,
       )}

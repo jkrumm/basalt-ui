@@ -19,7 +19,7 @@ that keep it to one `PageBar` and one `PageAside`.
 ```ts
 Page({ area, fill, landmark, children }: PageProps): ReactElement
   area?: string  // Scopes commands
-  fill?: boolean | { min: number; }  // Definite height; `{ min }` keeps a floor in px
+  fill?: boolean | { min: number; }  // Fills the work surface: a definite height, no gutter and no gap, so the one main part (a table, a split page, a canvas) meets the surface's edges; `{ min }` keeps a floor in px
   landmark?: boolean  // Renders `<main>` with no `PageHost`
   children?: ReactNode
 ```

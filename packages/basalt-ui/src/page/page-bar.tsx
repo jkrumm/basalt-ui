@@ -372,7 +372,7 @@ export function PageBar<K extends string = string>({
         data-slot="page-bar"
         data-sticky={sticky ? '' : undefined}
         className={cn(
-          'flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border bg-background py-2',
+          'flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border bg-surface py-2',
           // Flush with the chrome above (the page's top gutter is pulled back) and full bleed; the
           // gutter below the rule is kept, so content starts one gutter under it as on a bandless page.
           '-mx-(--page-gutter) -mt-(--page-gutter) mb-[calc(var(--page-gutter,--spacing(4))_-_--spacing(4))] px-[max(var(--page-gutter,0px),--spacing(1))]',

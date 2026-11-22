@@ -304,8 +304,11 @@ export const TOKENS: readonly TokenDef[] = [
   {
     name: 'shadow-card',
     family: 'shadow',
-    role: 'Card drop; the ring is an overlay, so nothing here draws an edge',
-    value: () => ({ light: `0 1px 2px ${ink(5)}`, dark: 'none' }),
+    role: 'Card edge: a 1 px hairline ring and no drop, so a card reads on a ground of its own colour',
+    value: () => ({
+      light: '0 0 0 1px var(--basalt-hairline)',
+      dark: '0 0 0 1px var(--basalt-hairline)',
+    }),
     tw: ['--shadow-card'],
     from: ['shadow-card'],
   },
