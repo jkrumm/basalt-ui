@@ -2,7 +2,8 @@
  * The page side of the one panel anatomy `Peek`, `Dock` and `PageAside` share: the header (lead,
  * title, tag, previous and next, the record's typed actions with an overflow menu, the tools a panel
  * adds, the presentation menu and close), the scrolling body, the footer band, the Escape and step
- * keys and the focus rule. The classes are `common/panel-anatomy`'s, which a right `Sheet` reads too.
+ * keys and the focus rule. The classes and the width handle are `core/panel`'s, which a right `Sheet`
+ * reads too.
  * Internal: each panel owns its element, position and motion.
  */
 import type { KeyboardEvent, PointerEvent, ReactElement, ReactNode } from 'react'
@@ -28,16 +29,16 @@ import { Button, buttonVariants } from '../ui/button'
 import { Menu, MenuContent, MenuItem, MenuTrigger } from '../ui/menu'
 import { ScrollArea } from '../ui/scroll-area'
 
-/**
- * One of a panel's own actions: data, like a `PageBar` action. The first two draw in the header and
- * the rest fold into its More menu; a third alone draws inline rather than as a menu of one.
- */
 /** The labels every side panel shares, so each message has one home: its close button and its width handle. */
 export function usePanelLabels(): { close: string; resize: string } {
   const t = useMessages(page)
   return { close: t('page.closePeek'), resize: t('page.resizePeek') }
 }
 
+/**
+ * One of a panel's own actions: data, like a `PageBar` action. The first two draw in the header and
+ * the rest fold into its More menu; a third alone draws inline rather than as a menu of one.
+ */
 export type PanelAction = {
   id: string
   label: string
