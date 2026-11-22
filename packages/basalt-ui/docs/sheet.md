@@ -58,7 +58,7 @@ edge a handle on its start edge resizes it (pointer, or ArrowLeft and ArrowRight
 handle, Enter or a double click to reset), and the device remembers the width.
 
 ```ts
-SheetContent({ title, tag, actions, footer, className, style, children, ...props }: SheetContentProps): ReactElement
+SheetContent({ title, tag, actions, footer, className, style, ref, children, ...props }: SheetContentProps): ReactElement
   className?: string  // Layout only (`w-120`, `mt-2`)
   title: ReactNode  // The accessible name and the visible heading
   tag?: string  // A short mono tag before the title (`#12`)
