@@ -103,14 +103,19 @@ function modeOf(m: ModeResult & { further: number }): ModeVerdict {
 
 const kb = (n: number): string => (n === 0 ? '0' : `${(n / 1024).toFixed(1)} kB`)
 
+/** The view that differs most and its verdict. */
+function worstOf(views: Record<View, ViewVerdict>): [string, ViewVerdict] {
+  return Object.entries(views).toSorted((a, b) => b[1].changed - a[1].changed)[0]!
+}
+
 /** The view that differs most, named without its counts: what the record says, so a rerun does not rewrite it. */
 function worstView(views: Record<View, ViewVerdict>): string {
-  const [view, p] = Object.entries(views).toSorted((a, b) => b[1].changed - a[1].changed)[0]!
+  const [view, p] = worstOf(views)
   return p.sameSize ? `most at ${view}` : `its size at ${view}`
 }
 
 function worst(views: Record<View, ViewVerdict>): string {
-  const [view, p] = Object.entries(views).toSorted((a, b) => b[1].changed - a[1].changed)[0]!
+  const [view, p] = worstOf(views)
   return p.sameSize
     ? `${p.changed} px (${(p.ratio * 100).toFixed(1)}%) at ${view}`
     : `size ${p.static.join('x')} vs ${p.only.join('x')} at ${view}`
