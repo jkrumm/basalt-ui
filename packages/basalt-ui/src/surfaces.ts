@@ -307,7 +307,7 @@ export const SURFACES = {
     kind: 'tooling',
     layer: 'headless',
     description:
-      'v3 card composites — StatCard, StatGroup, BarList, EventList, RowList, StepRail, ChainView',
+      'v3 card composites — StatCard, StatGroup, BarList, EventList, RowList, StepRail, ChainView, Board',
     globs: { shipped: [], repo: ['packages/basalt-ui/src/cards/**'] },
     forbiddenImports: [],
   },

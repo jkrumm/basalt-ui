@@ -111,7 +111,7 @@ for (const { rel, onlyBare } of subpaths) {
 }
 
 // An optional peer owned by one entry (`react-day-picker` by `ui/date-picker`, docs/v3/ARCHITECTURE.md
-// section 3; `react-resizable-panels` by `ui/resizable`; `@tanstack/react-form` by `./form`;
+// section 3; `react-resizable-panels` by `ui/resizable`; `@atlaskit/pragmatic-drag-and-drop` by `ui/sortable-list`; `@tanstack/react-form` by `./form`;
 // `@tanstack/react-hotkeys` by `./shell`, docs/v3/verdicts/tanstack-map.md). No other published entry may load it up front: every export of
 // package.json except the owner's own export key is walked over its static imports (a dynamic
 // `import()` is the lazy edge `./controls` may use), and the owner's dist file must still reach it,
@@ -119,6 +119,7 @@ for (const { rel, onlyBare } of subpaths) {
 for (const { PEER, OWNER, EXPORT } of [
   { PEER: 'react-day-picker', OWNER: 'ui/date-picker.js', EXPORT: './ui/*' },
   { PEER: 'react-resizable-panels', OWNER: 'ui/resizable.js', EXPORT: './ui/*' },
+  { PEER: '@atlaskit/pragmatic-drag-and-drop', OWNER: 'ui/sortable-list.js', EXPORT: './ui/*' },
   { PEER: '@tanstack/react-form', OWNER: 'form/index.js', EXPORT: './form' },
   { PEER: '@tanstack/react-hotkeys', OWNER: 'shell/index.js', EXPORT: './shell' },
 ]) {
@@ -152,7 +153,10 @@ for (const { PEER, OWNER, EXPORT } of [
   const owner = resolve(DIST, OWNER)
   if (!existsSync(owner)) {
     fail(`missing dist entry: ${OWNER}`)
-  } else if (![...walkGraph(owner, { staticOnly: true }).bare].includes(PEER)) {
+  } else if (
+    // The owner may load its peer lazily (`ui/sortable-list` imports the drag engine on first use).
+    ![...walkGraph(owner).bare].some((spec) => spec === PEER || spec.startsWith(`${PEER}/`))
+  ) {
     fail(`${OWNER} no longer reaches ${PEER}: the eager check above proves nothing`)
     eagerFailed = true
   }

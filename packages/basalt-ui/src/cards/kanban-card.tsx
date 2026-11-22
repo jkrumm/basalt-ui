@@ -160,8 +160,9 @@ function Glyph({ kind }: { kind: 'dots' | 'arrow' }): ReactElement {
  *
  * `move` is required, so no card exists without the non-drag path (WCAG 2.5.7): the menu offers
  * Move up and Move down where `index` allows and one move per other column, and calls `onMove`
- * with the `Move` a drop produces. `'static'` is a read-only board. There is no drag engine: an
- * app's drag library attaches to a wrapper around the card. The menu loads on first intent.
+ * with the `Move` a drop produces. `'static'` is a read-only board. `Board` draws the columns and
+ * owns the drag (through the `DragLike` port); `dragging` dims the source card. The menu loads on
+ * first intent.
  *
  * @useWhen a board column lists work items that move between states
  * @neverWhen the items are rows to compare (use a table) or a headline figure (use a stat card)
@@ -195,7 +196,7 @@ export function KanbanCard<C extends string>(props: KanbanCardProps<C>): ReactEl
       data-slot="kanban-card"
       data-card-id={id}
       data-dragging={move !== 'static' && move.dragging === true ? '' : undefined}
-      className="group/kanban @container min-w-0 data-dragging:opacity-60"
+      className="group/kanban @container min-w-0 data-dragging:opacity-40"
     >
       <Card flush className="relative">
         {href !== undefined && (

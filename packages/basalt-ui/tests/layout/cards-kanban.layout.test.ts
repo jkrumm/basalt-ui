@@ -3,8 +3,8 @@
  * v3-cards-3-kanban.json). Geometry happy-dom cannot hold: the age and the menu never overlap
  * (they swap on a fine pointer, sit side by side on a coarse one), the menu is visible on coarse
  * without hover, a card is two tab stops, its focus ring paints, one board column below
- * `@regular`, a virtualised Done column, a menu that opens and returns focus, no sideways scroll,
- * and axe.
+ * `@regular`, a virtualised Done column, a menu that opens and returns focus, a native drag between
+ * columns on the shipped engine, no sideways scroll, and axe.
  *
  * Self-contained like `cards-group`: `fixture/cards-kanban.css` is compiled with the Tailwind CLI
  * into a temp directory and `fixture/cards-kanban-fixture.tsx` is bundled in memory.
@@ -137,7 +137,7 @@ async function visibleBoxes(
 const intersects = (a: DOMRect, b: DOMRect): boolean =>
   a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom
 
-layout('KanbanCard and the board recipe', () => {
+layout('KanbanCard and Board', () => {
   for (const scheme of ['light', 'dark'] as const) {
     for (const viewport of [DESKTOP, PHONE]) {
       const coarse = viewport === PHONE
@@ -223,6 +223,30 @@ layout('KanbanCard and the board recipe', () => {
           )
           expect(rendered).toBeGreaterThan(0)
           expect(rendered).toBeLessThan(40)
+        })
+
+        test('a native drag moves a card between columns, says so, and gives the card focus', async () => {
+          if (coarse) return // the phone shows one column; its move path is the menu
+          const page = await open(viewport, scheme)
+          const item = (id: string): string =>
+            `[data-testid="kb-board"] [data-slot="board-item"]:has([data-card-id="${id}"])`
+          const target = await page.box('target', item('doing-4'))
+          await page.raw.dragAndDrop(item('todo-1'), item('doing-4'), {
+            targetPosition: { x: target.box.width / 2, y: target.box.height - 6 },
+          })
+          await page.settle()
+          const doing = await page.raw.$$eval(
+            '[data-testid="kb-board"] [data-column="doing"] [data-card-id]',
+            (els) => els.map((el) => el.getAttribute('data-card-id')),
+          )
+          expect(doing).toEqual(['doing-1', 'doing-2', 'doing-3', 'doing-4', 'todo-1'])
+          expect(
+            await page.raw.textContent('[data-testid="kb-board"] [data-slot="board"] output'),
+          ).toBe('Fix the cache key (todo 1) moved to Doing, position 5 of 5')
+          const focused = await page.raw.evaluate(() =>
+            document.activeElement?.closest('[data-card-id]')?.getAttribute('data-card-id'),
+          )
+          expect(focused).toBe('todo-1')
         })
 
         test('the page does not scroll sideways', async () => {

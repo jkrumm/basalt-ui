@@ -114,10 +114,12 @@ export const ALLOTMENT: Allotment = {
     'date-picker',
     'resizable',
     'virtual-list',
+    'sortable-list',
   ],
   primitivePeers: {
     'date-picker': ['react-day-picker'],
     resizable: ['react-resizable-panels'],
     'virtual-list': ['@tanstack/react-virtual'],
+    'sortable-list': ['@atlaskit/pragmatic-drag-and-drop'],
   },
 }

@@ -3,7 +3,7 @@
  * the owned entries. 2.x had these as one hand-copied ban that an `extends` silently replaced; here
  * each route is a form with its own fix token and fixture.
  *
- * Fifteen forms: nine package bans (`scheme-library` reads next-themes, whose `.dark` class no
+ * Sixteen forms: ten package bans (`scheme-library` reads next-themes, whose `.dark` class no
  * basalt token reads; BasaltProvider owns the scheme), the engine allowlist, direct `useReactTable` (an import, or a
  * re-export of it from a module; `export *` is not read, it names no hook) or a table engine
  * (`@tanstack/table-core`, AG Grid, react-data-grid, MUI X Data Grid, Material React Table), the
@@ -378,6 +378,7 @@ export const SHIPPED_PRIMITIVES: ReadonlySet<string> = new Set([
   'sheet',
   'skeleton',
   'slider',
+  'sortable-list',
   'status',
   'switch',
   'table',
@@ -582,6 +583,23 @@ const PACKAGE_BANS: readonly PackageBan[] = [
       '@ant-design/charts',
       '@ant-design/plots',
     ],
+  },
+  {
+    id: 'drag',
+    packages: [
+      '@atlaskit/pragmatic-drag-and-drop*',
+      '@dnd-kit/*',
+      'react-dnd',
+      'react-dnd-*',
+      'react-beautiful-dnd',
+      '@hello-pangea/dnd',
+      'sortablejs',
+      'react-sortablejs',
+      '@formkit/drag-and-drop',
+    ],
+    fix: 'Use Board from basalt-ui/cards (drag from basalt-ui/ui/sortable-list) or SortableList from basalt-ui/ui/sortable-list',
+    next: 'Eject the primitive with basalt-ui eject, then edit the copy',
+    allowInEjected: true,
   },
   {
     id: 'cmdk',

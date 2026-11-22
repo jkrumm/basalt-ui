@@ -43,7 +43,7 @@ import { MapContainer, Tooltip, Popup } from 'react-leaflet'
 // @valid
 import { Button, Section, Text } from '@react-email/components'
 // @valid
-import { DndContext } from '@dnd-kit/core'
+import { DndContext } from '@dnd-kit-lite/core'
 // @valid
 import { Menu, Calendar, Table } from 'lucide-react'
 // @valid

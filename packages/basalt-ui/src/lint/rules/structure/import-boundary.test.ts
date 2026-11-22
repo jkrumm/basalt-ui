@@ -78,10 +78,11 @@ describe('oxlint plugins-dev RuleTester', () => {
 })
 
 describe('import-boundary forms', () => {
-  it('has the fifteen forms the contract row names, all live', () => {
+  it('has the sixteen forms the contract row names, all live', () => {
     expect(IMPORT_BOUNDARY.forms.map((form) => form.id)).toEqual([
       'base-ui',
       'radix',
+      'drag',
       'cmdk',
       'sonner',
       'streamdown',

@@ -1,6 +1,6 @@
 /**
  * The `ui` migration rows (docs/v3/concepts/primitives-distribution.md section 9): every 2.x
- * symbol the census names has a row, no row points at a primitive outside the 40 modules, and each
+ * symbol the census names has a row, no row points at a primitive outside the 41 modules, and each
  * `valueShifts` target is the value `src/tokens/table.ts` ships.
  */
 import { readFileSync } from 'node:fs'
@@ -59,6 +59,7 @@ const MODULES = [
   'num',
   'date-picker',
   'virtual-list',
+  'sortable-list',
   'avatar',
   'control-group',
   'copy-button',
@@ -103,9 +104,9 @@ describe('migrations/areas/ui.json', () => {
     }
   })
 
-  test('no row points at a primitive outside the 40 modules', () => {
-    expect(MODULES.length).toBe(40)
-    expect(new Set(MODULES).size).toBe(40)
+  test('no row points at a primitive outside the 41 modules', () => {
+    expect(MODULES.length).toBe(41)
+    expect(new Set(MODULES).size).toBe(41)
     const referenced = area.rows.flatMap((row) =>
       [...(row.to ?? '').matchAll(/basalt-ui\/ui\/([a-z-]+)/g)].map((m) => m[1] as string),
     )

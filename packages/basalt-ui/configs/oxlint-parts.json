@@ -108,6 +108,7 @@
         "SheetTrigger": "div",
         "Skeleton": "div",
         "Slider": "div",
+        "SortableList": "div",
         "Spinner": "div",
         "Status": "div",
         "Swatch": "div",
@@ -609,6 +610,12 @@
             "allow": ["layout"],
             "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
             "message": "Slider owns its height and display: eject it (basalt-ui eject slider) to change them."
+          },
+          {
+            "pattern": "^SortableList$",
+            "allow": ["layout"],
+            "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+            "message": "SortableList owns its height and display: eject it (basalt-ui eject sortable-list) to change them."
           },
           {
             "pattern": "^Status$",

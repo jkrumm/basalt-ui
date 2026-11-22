@@ -40,6 +40,8 @@ import { page } from './page'
 import type { PageMessages } from './page'
 import { select } from './select'
 import type { SelectMessages } from './select'
+import { sortable } from './sortable'
+import type { SortableMessages } from './sortable'
 import { table } from './table'
 import type { TableMessages } from './table'
 
@@ -51,6 +53,7 @@ export type BasaltMessages = SelectMessages &
   ListsMessages &
   ChainMessages &
   KanbanMessages &
+  SortableMessages &
   ControlsMessages &
   HomeMessages &
   FiltersMessages &
@@ -70,6 +73,7 @@ export const en: BasaltMessages = {
   ...lists,
   ...chain,
   ...kanban,
+  ...sortable,
   ...controls,
   ...home,
   ...filters,

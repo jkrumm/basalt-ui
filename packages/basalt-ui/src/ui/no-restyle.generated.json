@@ -473,6 +473,14 @@
       "message": "Slider owns its height and display: eject it (basalt-ui eject slider) to change them."
     },
     {
+      "module": "sortable-list",
+      "part": "sortable-list",
+      "pattern": "^SortableList$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "SortableList owns its height and display: eject it (basalt-ui eject sortable-list) to change them."
+    },
+    {
       "module": "status",
       "part": "status",
       "pattern": "^Status$",
