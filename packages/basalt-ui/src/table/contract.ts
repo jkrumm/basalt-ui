@@ -178,12 +178,32 @@ export type Selection =
   | { kind: 'ids'; ids: readonly string[] }
   | { kind: 'all-matching'; request: TableRequest; excluded: readonly string[]; count: number }
 
-export type View = { id: string; name: string; state: TableState }
+/** A saved view: a name over the table state it restores, a tab in the view row. */
+export type View = {
+  id: string
+  name: string
+  state: TableState
+  /** The view a bare address opens; at most one per table. */
+  default?: boolean
+  /** Who sees it. Written only through a store with `share`; absent reads as private. */
+  sharing?: 'private' | 'shared'
+}
 
+/**
+ * Where a table's views live when not on the device. `list` returns them in the reader's order (the
+ * tabs' order). The optional members are capabilities: without `reorder` the tabs do not move,
+ * without `share` the panel has no sharing row, without `count` a tab shows no count.
+ */
 export type ViewStore = {
   list(table: string): Promise<View[]>
   save(table: string, v: View): Promise<void>
   remove(table: string, id: string): Promise<void>
+  /** Writes the order of every view, by id. */
+  reorder?(table: string, ids: readonly string[]): Promise<void>
+  /** The store can show a view to others: the panel offers private and shared. */
+  share?: boolean
+  /** How many rows the view matches, for its tab; `undefined` when unknown. */
+  count?(table: string, view: View): Promise<number | undefined>
 }
 
 export type RowAction<T> = {

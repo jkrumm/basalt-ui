@@ -6,5 +6,6 @@
   "TableToolbar",
   "col",
   "tableCodec",
-  "useDataTable"
+  "useDataTable",
+  "useTableViews"
 ]
