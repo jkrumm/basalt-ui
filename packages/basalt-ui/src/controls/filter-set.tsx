@@ -14,7 +14,10 @@ export type { FilterSetProps }
  * (`Region: All`), opens as a row form, and the tail that does not fit folds into `+N`. Below the
  * `@regular` container the row becomes one `Filters (n)` button that opens a sheet. `n` counts the filters off their default (a multi that
  * holds every option counts as none). The row ends with `Reset all` while any spec differs from its
- * default, and the sheet has its own; either unsets them all. Inside a `ControlHome` the home's
+ * default, and the sheet has its own; either unsets them all. In the page bar three specs or more
+ * are one `Filter` trigger with the active count instead, keeping the view row one line: its
+ * popover groups an enum as chips and a multi as checkboxes, and its footer says `Showing N of M`
+ * from `match` beside `Reset all`. Inside a `ControlHome` the home's
  * presentation applies: a `row` home draws the row forms stacked.
  *
  * @useWhen a page has two or more filters for the same data and they must fit a phone without scrolling or wrapping
@@ -29,5 +32,5 @@ export type { FilterSetProps }
  * />
  */
 export function FilterSet(props: FilterSetProps): ReactElement | ReactNode {
-  return <SpecFilterSet specs={props.specs} />
+  return <SpecFilterSet specs={props.specs} match={props.match} />
 }

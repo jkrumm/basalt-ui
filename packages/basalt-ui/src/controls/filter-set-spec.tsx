@@ -26,6 +26,8 @@ import { ControlPresentationContext, ControlView } from './control-view'
 import { isActive, isUnrestricted, useCensus, withCurrentValue } from './filter-set-census'
 import type { AnySpec } from './filter-set-census'
 import { useFold } from './filter-set-fold'
+import { FilterMenu, MENU_FROM } from './filter-set-menu'
+import type { Match } from './filter-set-menu'
 import { describeValue } from './renderers'
 
 type T = Translate<typeof filters>
@@ -233,7 +235,7 @@ function PillSet({
           <div
             ref={rowRef}
             data-slot="filter-pills"
-            className="-mx-1 -my-1 hidden min-w-0 flex-1 flex-nowrap items-center gap-2 overflow-clip p-1 @regular:flex"
+            className="-mx-1 -my-1 hidden min-w-0 flex-1 flex-nowrap items-center gap-2 overflow-clip p-1 [contain:inline-size] @regular:flex"
           >
             {specs.map((spec, index) => (
               <div
@@ -274,21 +276,41 @@ function RowSet({ specs, census }: { specs: readonly AnySpec[]; census: Census }
   )
 }
 
-function Body({ specs }: { specs: readonly AnySpec[] }): ReactElement {
+function Body({
+  specs,
+  match,
+}: {
+  specs: readonly AnySpec[]
+  match: Match | undefined
+}): ReactElement {
+  const t = useMessages(filters)
   const presentation = use(ControlPresentationContext)
+  const home = use(SlotHomeContext)
   const census = useCensus(specs)
-  return presentation === 'row' ? (
-    <RowSet specs={specs} census={census} />
-  ) : (
-    <PillSet specs={specs} census={census} presentation={presentation} />
-  )
+  if (presentation === 'row') return <RowSet specs={specs} census={census} />
+  // The page bar's view row stays one line: three filters or more are one trigger, not pills.
+  if (home === 'page-bar' && specs.length >= MENU_FROM) {
+    const labels = {
+      title: t('filters.title'),
+      name: t('filters.count', census.count),
+      reset: t('filters.resetAll'),
+    }
+    return <FilterMenu specs={specs} census={census} match={match} labels={labels} />
+  }
+  return <PillSet specs={specs} census={census} presentation={presentation} />
 }
 
 /**
  * Draws `specs` in the presentation of the home around it. An empty list draws nothing. The body is
  * keyed by the handles it holds, so a changed set remounts it and the census keeps one hook per spec.
  */
-export function SpecFilterSet({ specs }: { specs: readonly AnySpec[] }): ReactElement | null {
+export function SpecFilterSet({
+  specs,
+  match,
+}: {
+  specs: readonly AnySpec[]
+  match?: Match | undefined
+}): ReactElement | null {
   if (specs.length === 0) return null
-  return <Body key={specs.map((s) => s.handle.key).join('\u0000')} specs={specs} />
+  return <Body key={specs.map((s) => s.handle.key).join('\u0000')} specs={specs} match={match} />
 }
