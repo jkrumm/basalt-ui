@@ -75,7 +75,7 @@ Placed by `basalt-ui init`, refreshed by `basalt-ui sync` (`--check` gates drift
 | Many records with columns   | `DataTable`                           |
 | One record's detail         | `PageAside`, `SplitPage`              |
 | Narrow the data             | `FilterSet`, `ViewTabs`               |
-| Stages of work              | `KanbanCard`                          |
+| Stages of work              | `Board` of `KanbanCard`s              |
 | Prose, markdown, code       | `Markdown`, `CodeBlock`               |
 
 **Skills and subagent** (installed in `.claude/`; invoke by name):
