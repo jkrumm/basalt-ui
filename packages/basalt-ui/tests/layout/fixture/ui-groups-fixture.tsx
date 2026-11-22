@@ -92,7 +92,7 @@ function Three({ last }: { last?: string }): ReactElement {
 
 function Labelled({ id, children }: { id: string; children: ReactNode }): ReactElement {
   return (
-    <section data-testid={id} className="flex flex-col gap-2">
+    <section data-testid={id} className="flex flex-col items-start gap-2">
       {children}
     </section>
   )

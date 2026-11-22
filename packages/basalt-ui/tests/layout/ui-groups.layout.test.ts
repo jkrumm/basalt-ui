@@ -250,6 +250,7 @@ layout('control vocabulary and groups', () => {
             })
           const h = await childrenOf(page, 'bg-h', 'button-group')
           expect(h.kids).toHaveLength(3)
+          near(h.kids[0]!.width, h.kids[0]!.height, 'an icon button stays square')
           for (let i = 1; i < 3; i++) {
             near(h.kids[i]!.left, h.kids[i - 1]!.right - 1, `h overlap ${i}`)
             near(h.kids[i]!.top, h.kids[0]!.top, `h top ${i}`)

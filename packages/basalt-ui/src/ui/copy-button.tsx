@@ -3,7 +3,7 @@ import type { VariantProps } from 'class-variance-authority'
 import { useState } from 'react'
 import type { ReactElement } from 'react'
 import { cn } from '../core/cn'
-import { scopeClass, useControlScope } from '../core/control-scope'
+import { buttonScopeClass, useControlScope } from '../core/control-scope'
 import { base as baseMessages } from '../core/messages/base'
 import { useMessages } from '../core/messages/use-messages'
 import { buttonVariants } from './button'
@@ -116,7 +116,7 @@ export function CopyButton({
       data-copied={done ? '' : undefined}
       className={cn(
         buttonVariants({ variant: variant ?? scope?.variant ?? 'ghost', size: resolved, shape }),
-        scopeClass(scope),
+        buttonScopeClass(scope),
         scope !== null && resolved === 'sm' && GROUPED_SM,
         className,
       )}
