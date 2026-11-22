@@ -33,9 +33,12 @@ describe('sheet module', () => {
       document.querySelector('[data-slot="sheet-title"]')?.id ?? 'missing',
     )
     expect(panel?.className).toContain('w-90')
-    for (const el of document.querySelectorAll('[data-slot]')) {
+    // The body is the scroll primitive, whose slot is its own.
+    for (const el of document.querySelectorAll('[data-slot]:not([data-slot="scroll-area"])')) {
       expect(sheetParts as readonly string[]).toContain(el.getAttribute('data-slot') ?? '')
     }
+    expect(panel?.querySelector('[data-slot="scroll-area"]')).not.toBeNull()
+    expect(screen.getByRole('separator', { name: 'Resize panel' })).toBeTruthy()
   })
 
   test('placement picks the table: bottom caps the height, auto follows the width', () => {

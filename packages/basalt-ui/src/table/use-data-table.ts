@@ -15,7 +15,7 @@ import { useMessages } from '../core/messages/use-messages'
 import { table } from '../core/messages/table'
 import { resolvePhase } from '../core/phase'
 import type { Empty, ResolvedPhase } from '../core/phase'
-import type { Box, DetailHost } from '../core/ports'
+import type { Box, DetailHost, RecordSequence } from '../core/ports'
 import { clearTogether } from '../core/write-batch'
 import { isActive } from '../controls/filter-set-census'
 import type { AnySpec } from '../controls/filter-set-census'
@@ -605,20 +605,28 @@ export function useDataTable<
           ? { kind: 'row', run: options.onRowActivate }
           : { kind: 'auto' }
 
+  // The rows in the order the table draws them: a detail host steps through them in place.
+  const rowOrder = items.flatMap((item) => (item.type === 'row' ? [item.row.id] : []))
+  const recordsAt = (id: string, step: (next: string) => void): RecordSequence | undefined =>
+    rowOrder.includes(id) ? { ids: rowOrder, id, onStep: step } : undefined
   const showAuto = (id: string): void => {
     const row = byId.get(id)
     if (row === undefined) return
+    const records = recordsAt(id, showAuto)
     host.current?.show({
       title: detailTitle(model, row),
       body: (box) => createElement(AutoDetail<T>, { model, row, box }),
+      ...(records !== undefined && { records }),
     })
   }
   const showDetail = (row: T): void => {
     if (activation.kind !== 'detail') return
     const { render } = activation
+    const records = recordsAt(getRowId(row), (next) => activate(next))
     host.current?.show({
       title: options.detailTitle?.(row) ?? options.label,
       body: (box) => render(row, box),
+      ...(records !== undefined && { records }),
     })
   }
   // The `detailState` field: the id of the open row. `NO_DETAIL_STATE` keeps the hook order fixed.
@@ -702,7 +710,7 @@ export function useDataTable<
     showField(openId)
   })
   const keyboard = useRowKeyboard({
-    rowIds: items.flatMap((item) => (item.type === 'row' ? [item.row.id] : [])),
+    rowIds: rowOrder,
     tree: nestedRows
       ? {
           open: (id) => setOpen(id, true),

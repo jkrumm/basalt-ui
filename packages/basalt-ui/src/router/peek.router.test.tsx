@@ -219,6 +219,24 @@ describe('usePeek: history', () => {
     expect(peek?.open).toBeNull()
   })
 
+  test('go swaps the record of the same kind in place, and Back still closes the peek', async () => {
+    const router = await mount('/')
+    const before = router.history.length
+    await click('issue 12')
+    await act(async () => {
+      peek?.go('13')
+      await Promise.resolve()
+    })
+    expect(peekParam(router)).toBe('issue/13')
+    expect(peek?.open).toEqual({ kind: 'issue', id: '13' })
+    expect(router.history.length).toBe(before + 1)
+    await act(async () => {
+      router.history.back()
+      await Promise.resolve()
+    })
+    expect(peekParam(router)).toBeUndefined()
+  })
+
   test('close steps back one entry when this hook pushed it', async () => {
     const router = await mount('/')
     await click('issue 12')

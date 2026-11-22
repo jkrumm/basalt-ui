@@ -55,6 +55,11 @@ export type PeekState<K extends string = string> = {
   fullPage: string | null
   /** Moves the open peek's record into the dock and closes the peek, in one replace. Nothing while no peek is open or there is no `dockField`. */
   pin: () => void
+  /**
+   * Swaps the open peek to another record of its kind, in place: one replace, so Back still closes
+   * the peek. `Peek records`' `onStep`. Nothing while no peek is open.
+   */
+  go: (id: string) => void
   /** The docked record, when `dockField` is given. */
   dock: DockedState<K>
 }
@@ -328,12 +333,18 @@ export function usePeek<const K extends PeekKinds>({
     return () => window.removeEventListener('keydown', onKey)
   }, [live])
 
+  const go = (id: string): void => {
+    if (target === null || !live || id === target.id) return
+    write(format({ kind: target.kind, id }), true)
+  }
+
   const open = live ? target : null
   return {
     open: open as PeekTarget<keyof K & string> | null,
     close,
     fullPage: pageOf(kinds, open),
     pin,
+    go,
     dock: {
       open: dockTarget as PeekTarget<keyof K & string> | null,
       close: () => writeDock(null),

@@ -2,12 +2,22 @@ import { useContext, useId, useRef } from 'react'
 import type { CSSProperties, KeyboardEvent, ReactElement, ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
+import { PANEL_MAX } from '../common/panel-anatomy'
+import { PanelHandle, usePanelWidth } from '../common/panel-handle'
 import { cn } from '../core/cn'
-import type { NavTarget } from '../core/ports'
+import { page } from '../core/messages/page'
+import { useMessages } from '../core/messages/use-messages'
+import type { IconComponent, NavTarget, RecordSequence } from '../core/ports'
+import type { AvatarEntry } from '../ui/avatar'
 import { DOCK_WIDTH } from './core/docking'
+import { widthStore } from './core/panel-store'
 import { PageHostContext, ShellDockContext } from './page'
-import { RecordPanelBody, RecordPanelHeader, useFocusIn } from './record-panel'
+import { PanelBody, PanelFooter, PanelHeader, panelKeys, useFocusIn } from './record-panel'
+import type { PanelActions } from './record-panel'
 import { useSizeClass } from './use-size-class'
+
+/** The narrowest a dock goes. */
+export const DOCK_MIN = 320
 
 export type DockProps = {
   /** The accessible name and the visible heading: what is shown (`Issue 12`). Required. */
@@ -18,6 +28,16 @@ export type DockProps = {
   fullPage?: string | NavTarget
   /** The close button and Escape inside the panel: the caller decides how the address changes (`usePeek().dock.close`). */
   onClose: () => void
+  /** A glyph before the title, for what kind of record it is. */
+  icon?: IconComponent
+  /** A face before the title, for a person or an object; wins over `icon`. */
+  avatar?: AvatarEntry
+  /** The record's own actions, data like `PageBar` actions: the first two in the header, the rest in its More menu. */
+  actions?: PanelActions
+  /** The opener's records: previous and next in the header, ArrowUp and ArrowDown on the panel. */
+  records?: RecordSequence
+  /** A band under the body for a form's actions. */
+  footer?: ReactNode
   children?: ReactNode
 }
 
@@ -31,7 +51,9 @@ type DockStyle = CSSProperties & { '--dock-w': string }
  * global. Mount one at a time: two would stack. An overlaid one covers a docked `PageAside`, as a
  * `Peek` does. Not modal: nothing is inert and
  * Escape inside the panel closes it. Focus moves in when it mounts and back to the opener when it
- * unmounts. Without a shell it is a block in flow. `usePeek({ dockField })` from `basalt-ui/router`
+ * unmounts. A handle on its start edge resizes it (pointer, ArrowLeft and ArrowRight, Enter or a
+ * double click to reset), the device remembers the width, and a docked one pushes main by that
+ * width. It draws the one panel anatomy `Peek` and `PageAside` share. Without a shell it is a block in flow. `usePeek({ dockField })` from `basalt-ui/router`
  * owns the `?dock=` address, the click that swaps its record and the pin from a `Peek`.
  *
  * @useWhen a record chosen from a list should stay open beside the screen while the reader keeps working in it, on any page
@@ -45,35 +67,45 @@ type DockStyle = CSSProperties & { '--dock-w': string }
  *   </Dock>
  * )}
  */
-export function Dock({ title, tag, fullPage, onClose, children }: DockProps): ReactElement | null {
+export function Dock({
+  title,
+  tag,
+  fullPage,
+  onClose,
+  icon,
+  avatar,
+  actions,
+  records,
+  footer,
+  children,
+}: DockProps): ReactElement | null {
+  const t = useMessages(page)
   const host = useContext(PageHostContext)
   const dock = useContext(ShellDockContext)
   const sizeClass = useSizeClass()
   const panel = useRef<HTMLElement>(null)
   const id = useId()
+  const width = usePanelWidth({ store: widthStore('dock'), name: 'dock', min: DOCK_MIN })
   const shelled = host !== null
   // Under a shell the panel waits for the region to mount: a frame later than the first commit.
   const slot = dock?.slot ?? null
   const ready = !shelled || slot !== null
   const claim = dock?.claim
+  const setWidth = dock?.setWidth
+  const px = width.width ?? DOCK_WIDTH
   useIsomorphicLayoutEffect(() => claim?.(id), [claim, id])
+  useIsomorphicLayoutEffect(() => setWidth?.(px), [setWidth, px])
   useFocusIn(panel, ready)
   if (!ready) return null
   const docked = dock?.docked === true
+  const compact = sizeClass === 'compact'
   const style: DockStyle = {
     '--dock-w':
-      sizeClass === 'compact' && shelled
-        ? 'calc(100vw - var(--shell-rail-w, 0px))'
-        : shelled
-          ? `${DOCK_WIDTH}px`
-          : '100%',
+      compact && shelled ? 'calc(100vw - var(--shell-rail-w, 0px))' : shelled ? `${px}px` : '100%',
+    ...(shelled && !compact && { maxWidth: PANEL_MAX }),
   }
   // Escape inside the panel closes it; a control that used the key itself has already prevented it.
-  const escape = (event: KeyboardEvent<HTMLElement>): void => {
-    if (event.key !== 'Escape' || event.defaultPrevented) return
-    event.preventDefault()
-    onClose()
-  }
+  const keys = (event: KeyboardEvent<HTMLElement>): void => panelKeys(event, { onClose, records })
   const node = (
     // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Escape bubbles from the controls inside; the landmark itself takes no input
     <aside
@@ -82,22 +114,39 @@ export function Dock({ title, tag, fullPage, onClose, children }: DockProps): Re
       tabIndex={-1}
       data-slot="dock"
       data-state={docked ? 'docked' : 'overlay'}
-      onKeyDown={escape}
+      onKeyDown={keys}
       style={style}
       className={cn(
         'flex h-full min-w-0 flex-col bg-background text-foreground outline-none',
         'transition-[translate,opacity] duration-slow ease-standard starting:translate-x-8 starting:opacity-0 motion-reduce:transition-none',
         // The panel is pinned to the end edge in both states: while the region grows, the panel is
         // revealed from the edge rather than squeezed. Its header meets the page-bar band's bottom edge.
-        shelled
-          ? 'absolute inset-y-0 end-0 z-30 w-(--dock-w) [&>header]:min-h-[var(--page-bar-h,0px)]'
-          : 'w-full',
-        docked ? 'border-s border-border' : 'shadow-overlay',
-        !docked && sizeClass !== 'compact' && 'rounded-s-card',
+        shelled ? 'absolute inset-y-0 end-0 z-30 w-(--dock-w)' : 'w-full',
+        docked ? 'border-s border-border' : 'border-s border-border shadow-overlay',
       )}
     >
-      <RecordPanelHeader title={title} tag={tag} fullPage={fullPage} onClose={onClose} />
-      <RecordPanelBody>{children}</RecordPanelBody>
+      {shelled && !compact && (
+        <PanelHandle
+          panel={panel}
+          min={DOCK_MIN}
+          label={t('page.resizePeek')}
+          onResize={width.resize}
+          onCommit={width.commit}
+        />
+      )}
+      <PanelHeader
+        title={title}
+        tag={tag}
+        icon={icon}
+        avatar={avatar}
+        records={records}
+        actions={actions}
+        fullPage={fullPage}
+        onClose={onClose}
+        closeLabel={t('page.closePeek')}
+      />
+      <PanelBody>{children}</PanelBody>
+      <PanelFooter>{footer}</PanelFooter>
     </aside>
   )
   return shelled && slot !== null ? createPortal(node, slot) : node

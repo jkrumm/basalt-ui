@@ -4,6 +4,7 @@ import type { ReactElement, ReactNode } from 'react'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { ShellDockContext, ShellOverlayContext } from '../page/page'
 import type { ShellDock } from '../page/page'
+import { DOCK_WIDTH } from '../page/core/docking'
 import { useSizeClass } from '../page/use-size-class'
 import { registerNav } from '../router/nav/registry'
 import { flattenNavEntries, resolveActive } from '../router/nav/resolve-active'
@@ -169,6 +170,7 @@ export function AppShell<Id extends string = string>({
   const [shellHost] = useState(createShellHost)
   const [overlaySlot, setOverlaySlot] = useState<HTMLElement | null>(null)
   const [dockSlot, setDockSlot] = useState<HTMLElement | null>(null)
+  const [dockWidth, setDockWidth] = useState(DOCK_WIDTH)
   const attachRoot = useChromeRoot(shellHost.attachRoot, chrome)
   const breadcrumb = useClaim(shellHost.regions.breadcrumb)
   const actions = useClaim(shellHost.regions.actions)
@@ -199,11 +201,12 @@ export function AppShell<Id extends string = string>({
     () => shellHost.regions.dock.getSnapshot().count > 0,
     () => false,
   )
-  const dockModel = useDockModel(dockOpen, sizeClass, rail.state, model.width)
+  const dockModel = useDockModel(dockOpen, sizeClass, rail.state, model.width, dockWidth)
   const dock: ShellDock = {
     slot: dockSlot,
     docked: dockModel.docks,
     claim: shellHost.claimDock,
+    setWidth: setDockWidth,
   }
   useDocumentFrame()
   usePrintScheme()

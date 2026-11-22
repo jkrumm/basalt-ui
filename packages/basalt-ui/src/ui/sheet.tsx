@@ -1,13 +1,24 @@
 import { Drawer as BaseDrawer } from '@base-ui/react/drawer'
 import { cva } from 'class-variance-authority'
-import { createContext, useContext, useSyncExternalStore } from 'react'
-import type { ReactElement, ReactNode } from 'react'
+import { createContext, useContext, useRef, useSyncExternalStore } from 'react'
+import type { CSSProperties, ReactElement, ReactNode } from 'react'
+import {
+  PANEL_BODY,
+  PANEL_DIVIDER,
+  PANEL_FOOTER,
+  PANEL_HEADER,
+  PANEL_TAG,
+  PANEL_TITLE,
+} from '../common/panel-anatomy'
+import { PanelHandle, usePanelWidth } from '../common/panel-handle'
 import { cn } from '../core/cn'
 import { ControlScopeProvider } from '../core/control-scope'
 import { dialogs } from '../core/messages/dialogs'
 import { useMessages } from '../core/messages/use-messages'
+import { persisted } from '../core/persisted'
 import type { ControlHandle } from '../core/ports'
 import { buttonVariants } from './button'
+import { ScrollArea } from './scroll-area'
 
 type Placement = 'bottom' | 'right' | 'auto'
 type Swipe = 'down' | 'right'
@@ -17,11 +28,32 @@ const WIDE = '(min-width: 840px)'
 
 const PlacementContext = createContext<Placement>('auto')
 
+/** The narrowest a right sheet goes: a form's label and field side by side. */
+const SHEET_MIN = 320
+/** The widest: never closer than 3rem to the viewport's start edge. */
+const SHEET_MAX = 'calc(100vw - 3rem)'
+
+/** The width a right sheet was dragged to, on the device; `null` is the class's width. */
+const sheetWidth = (): ReturnType<typeof persisted<number | null>> =>
+  persisted<number | null>('panel:sheet:width', {
+    version: 1,
+    initial: null,
+    schema: {
+      '~standard': {
+        validate: (value) =>
+          value === null || (typeof value === 'number' && Number.isFinite(value) && value > 0)
+            ? { value: value as number | null }
+            : { issues: [{ message: 'rejected' }] },
+      },
+    },
+  })
+
 const BOTTOM =
   'mt-auto max-h-[min(72dvh,560px)] w-full rounded-t-card translate-y-[var(--drawer-swipe-movement-y,0px)] data-starting-style:translate-y-full data-ending-style:translate-y-full'
 
 /**
- * The `SheetContent` cva table: a panel that slides in from an edge. `bottom` caps its height at
+ * The `SheetContent` cva table: a panel that slides in from an edge, its header, body and footer
+ * drawn inside it (no padding of its own). `bottom` caps its height at
  * `min(72dvh,560px)`, `right` is a full-height column 360 px wide (a `w-80`, `w-90`, `w-120` or
  * `w-160` class in `className` picks 320, 360, 480 or 640), and `auto` is the `bottom` table: `Sheet`
  * resolves `auto` to `bottom` below the `md` breakpoint and `right` from it, and hands `SheetContent`
@@ -31,7 +63,7 @@ const BOTTOM =
  * sheetContentVariants({ placement: 'right' }) // class string for a hand-built popup
  */
 export const sheetContentVariants = cva(
-  'relative flex flex-col gap-4 overflow-y-auto bg-popover p-4 text-foreground shadow-overlay outline-none transition-transform duration-slow ease-standard data-swiping:transition-none motion-reduce:transition-none',
+  'relative flex flex-col overflow-hidden bg-popover text-foreground shadow-overlay outline-none transition-transform duration-slow ease-standard data-swiping:transition-none motion-reduce:transition-none',
   {
     variants: {
       placement: {
@@ -74,6 +106,12 @@ export type SheetTriggerProps = Layout<BaseDrawer.Trigger.Props>
 export type SheetContentProps = Layout<Omit<BaseDrawer.Popup.Props, 'title'>> & {
   /** The accessible name and the visible heading. Required. */
   title: ReactNode
+  /** A short mono tag before the title (`#12`). */
+  tag?: string | undefined
+  /** Controls drawn in the header before the close button: a record's previous and next, a link. */
+  actions?: ReactNode
+  /** A band under the scrolling body for a form's actions. */
+  footer?: ReactNode
 }
 export type SheetTitleProps = Layout<BaseDrawer.Title.Props>
 export type SheetCloseProps = Layout<BaseDrawer.Close.Props>
@@ -168,19 +206,34 @@ export function SheetTrigger({ className, ...props }: SheetTriggerProps): ReactE
 }
 
 /**
- * The sheet panel with its backdrop. `title` is required and names the sheet; the corner close
- * button is named by the `sheet.close` message.
+ * The sheet panel with its backdrop, drawn in the one panel anatomy `Peek`, `Dock` and
+ * `PageAside` share: a header at the bar height (`tag`, `title`, `actions`, the close button), a
+ * body that scrolls and an optional `footer` band for a form's actions. `title` is required and
+ * names the sheet; the corner close button is named by the `sheet.close` message. On the right
+ * edge a handle on its start edge resizes it (pointer, or ArrowLeft and ArrowRight on the focused
+ * handle, Enter or a double click to reset), and the device remembers the width.
  *
  * @example
- * <SheetContent title="Edit record">Form</SheetContent>
+ * <SheetContent title="Edit record" footer={<Button type="submit">Save</Button>}>Form</SheetContent>
  */
 export function SheetContent({
   title,
+  tag,
+  actions,
+  footer,
   className,
+  style,
   children,
   ...props
 }: SheetContentProps): ReactElement {
   const placement = useContext(PlacementContext)
+  const t = useMessages(dialogs)
+  const popup = useRef<HTMLDivElement | null>(null)
+  const width = usePanelWidth({ store: sheetWidth(), name: 'sheet', min: SHEET_MIN })
+  const right = placement === 'right'
+  const sized: CSSProperties | undefined = right
+    ? { maxWidth: SHEET_MAX, ...(width.width !== null && { width: `${width.width}px` }) }
+    : undefined
   return (
     <ControlScopeProvider value={null}>
       <BaseDrawer.Portal>
@@ -191,15 +244,40 @@ export function SheetContent({
         <BaseDrawer.Viewport className="fixed inset-0 z-50 flex overflow-hidden data-ending-style:pointer-events-none">
           <BaseDrawer.Popup
             {...props}
+            ref={popup}
             data-slot="sheet-content"
+            style={typeof style === 'function' ? style : { ...style, ...sized }}
             className={cn(sheetContentVariants({ placement }), className)}
           >
-            <BaseDrawer.Content className="flex min-h-0 flex-1 flex-col gap-4">
-              <header className="flex items-start gap-3">
-                <SheetTitle className="min-w-0 flex-1">{title}</SheetTitle>
-                <SheetClose />
+            {right && (
+              <PanelHandle
+                panel={popup}
+                min={SHEET_MIN}
+                label={t('sheet.resize')}
+                onResize={width.resize}
+                onCommit={width.commit}
+              />
+            )}
+            <BaseDrawer.Content className="flex min-h-0 flex-1 flex-col">
+              <header data-panel="header" className={PANEL_HEADER}>
+                {tag !== undefined && <span className={PANEL_TAG}>{tag}</span>}
+                <SheetTitle className={PANEL_TITLE}>{title}</SheetTitle>
+                <div className="flex shrink-0 items-center gap-1">
+                  {actions}
+                  {actions !== undefined && actions !== null && (
+                    <span aria-hidden="true" className={PANEL_DIVIDER} />
+                  )}
+                  <SheetClose data-panel="close" />
+                </div>
               </header>
-              {children}
+              <ScrollArea className={PANEL_BODY}>
+                <div className="flex flex-col gap-4">{children}</div>
+              </ScrollArea>
+              {footer !== undefined && footer !== null && (
+                <div data-panel="footer" className={PANEL_FOOTER}>
+                  {footer}
+                </div>
+              )}
             </BaseDrawer.Content>
           </BaseDrawer.Popup>
         </BaseDrawer.Viewport>

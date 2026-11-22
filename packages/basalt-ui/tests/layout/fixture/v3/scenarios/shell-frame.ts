@@ -28,6 +28,10 @@ export type ShellFrameSpec = FixtureSpec & {
         }
     /** Mounts an open `Peek` beside the page (a long body, so its own scroll shows); closing it sets `data-peek-closed` on the document. */
     peek?: boolean
+    /** The presentation the peek's kind starts in, as the device would remember it (default `peek`). */
+    present?: 'peek' | 'window' | 'page'
+    /** Mounts an open `Sheet` (`placement="auto"`: the right edge from 840 px). */
+    sheet?: boolean
     /**
      * Mounts a `Dock` (a long body). `true` starts it open; `'toggle'` starts it closed and draws a
      * `[data-testid="dock-toggle"]` button in the page that opens and closes it, for the reflow's motion.
