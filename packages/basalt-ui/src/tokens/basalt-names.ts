@@ -108,6 +108,7 @@ export const BASALT_NAMES: readonly string[] = [
   '--basalt-route-shift',
   '--basalt-row-h',
   '--basalt-scrim',
+  '--basalt-scrim-wash',
   '--basalt-scrollbar-thumb',
   '--basalt-scrollbar-thumb-hover',
   '--basalt-selected',

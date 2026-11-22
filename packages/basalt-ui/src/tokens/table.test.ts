@@ -89,6 +89,9 @@ const MOTION_ADDED = [
   'stagger',
 ].map((name) => `--basalt-${name}`)
 
+/** The Dialog backdrop beside `scrim`. */
+const WASH_ADDED = ['scrim-wash'].map((name) => `--basalt-${name}`)
+
 describe('public names', () => {
   test('the 3.2 list is 74 names', () => {
     expect(BOOKED_74).toHaveLength(74)
@@ -98,8 +101,10 @@ describe('public names', () => {
   test('the emitted --basalt-* name set equals the 74 names of 3.2, --basalt-input and the motion scale, and is at most 90', () => {
     const css = emitTokensCss({ version: '3.0.0' })
     const emitted = new Set([...css.matchAll(/(--basalt-[a-z0-9-]+)\s*:/g)].map((m) => m[1]!))
-    expect([...emitted].sort()).toEqual([...BOOKED_74, '--basalt-input', ...MOTION_ADDED].sort())
-    expect(emitted.size).toBe(81)
+    expect([...emitted].sort()).toEqual(
+      [...BOOKED_74, '--basalt-input', ...MOTION_ADDED, ...WASH_ADDED].sort(),
+    )
+    expect(emitted.size).toBe(82)
     expect(emitted.size).toBeLessThanOrEqual(90)
     expect([...tokenNames()].sort()).toEqual([...emitted].sort())
   })

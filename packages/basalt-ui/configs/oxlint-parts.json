@@ -180,6 +180,7 @@
           "*-accent",
           "*-selected",
           "*-scrim",
+          "*-scrim-wash",
           "*-border"
         ],
         "message": "\"{{className}}\" is no colour the theme declares. Token names are not classes: canvas is bg-background, raised is bg-popover, hover is bg-accent, hairline is border-border, ink is text-foreground, ink-muted is text-muted-foreground, ink-faint is text-faint. Otherwise app colour comes from Status, Lozenge, DeltaBadge or a Num tone; the palette is derived, so no colour is declared per app. A shadow or a type step is not a colour: check its spelling."
