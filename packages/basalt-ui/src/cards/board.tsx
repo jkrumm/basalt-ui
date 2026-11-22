@@ -34,8 +34,8 @@ export type BoardProps<C extends string, T extends { id: string; title: string }
   drag?: DragLike | undefined
   /**
    * The one column shown below the regular container tier, where a switch above the board picks
-   * it. Pass it with `onActiveChange` to hold it in a URL field; without it the board keeps its own,
-   * the first column at first.
+   * it. Pass it with `onActiveChange` to hold it in a URL field: a controlled `active` without it
+   * holds the switch still. Without `active` the board keeps its own, the first column at first.
    */
   active?: C | undefined
   onActiveChange?: ((column: C) => void) | undefined
