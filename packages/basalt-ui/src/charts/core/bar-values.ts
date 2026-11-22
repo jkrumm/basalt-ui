@@ -746,29 +746,7 @@ function endValueLabels<T, X extends ChartX>(
   return {
     written,
     backed: backed.size > 0 || leaders.length > 0,
-    marks: [
-      ...backings,
-      ...ties,
-      ...scales.map((scale) =>
-        decorative(
-          text(
-            marks.filter((m) => m.scale === scale),
-            {
-              id: `bar-values-${scale}`,
-              x: (m: (typeof marks)[number]) => m.x,
-              y: (m: (typeof marks)[number]) => m.y,
-              yScale: scale,
-              text: (m: (typeof marks)[number]) => m.text,
-              fill: (m: (typeof marks)[number]) => m.fill,
-              fontSize: SIZE,
-              anchor: (m: (typeof marks)[number]) => m.anchor,
-              dx: (m: (typeof marks)[number]) => m.dx,
-              dy: (m: (typeof marks)[number]) => m.dy,
-            },
-          ),
-        ),
-      ),
-    ] as unknown as ChartMarks,
+    marks: [...backings, ...ties, ...valueTextMarks(marks, 'bar-values')] as unknown as ChartMarks,
     boxes: placedAll.map(({ left, top, width, height }) => ({ left, top, width, height })),
   }
 }
@@ -776,6 +754,45 @@ function endValueLabels<T, X extends ChartX>(
 /** The y of a clamped bar's value written over its bar, under (or over, at the bottom) its caret. */
 function overY(c: { caretSide: 'top' | 'bottom' | null }, frame: { height: number }): number {
   return c.caretSide === 'bottom' ? frame.height - 2 * CARET_SIZE : 2 * CARET_SIZE
+}
+
+/** A placed value label: its datum on the x and y scales, its text, anchor, offset in px and ink. */
+type ValueMark<X extends ChartX> = {
+  x: X
+  y: number
+  scale: 'y' | 'y2'
+  text: string
+  anchor: 'start' | 'middle' | 'end'
+  dx: number
+  dy: number
+  fill: string
+}
+
+/** The placed value labels as one decorative text mark per y scale, each id `<prefix>-<scale>`. */
+function valueTextMarks<X extends ChartX>(
+  marks: readonly ValueMark<X>[],
+  prefix: string,
+): ChartMarks {
+  type M = ValueMark<X>
+  return [...new Set(marks.map((m) => m.scale))].map((scale) =>
+    decorative(
+      text(
+        marks.filter((m) => m.scale === scale),
+        {
+          id: `${prefix}-${scale}`,
+          x: (m: M) => m.x,
+          y: (m: M) => m.y,
+          yScale: scale,
+          text: (m: M) => m.text,
+          fill: (m: M) => m.fill,
+          fontSize: SIZE,
+          anchor: (m: M) => m.anchor,
+          dx: (m: M) => m.dx,
+          dy: (m: M) => m.dy,
+        },
+      ),
+    ),
+  ) as unknown as ChartMarks
 }
 
 type LabelSet = {
@@ -963,28 +980,8 @@ function segmentValueLabels<T, X extends ChartX>(
       fill: c.ink,
     }
   })
-  type Mark = (typeof marks)[number]
-  const scales = [...new Set(marks.map((m) => m.scale))]
   return {
-    marks: scales.map((scale) =>
-      decorative(
-        text(
-          marks.filter((m) => m.scale === scale),
-          {
-            id: `bar-segment-values-${scale}`,
-            x: (m: Mark) => m.x,
-            y: (m: Mark) => m.y,
-            yScale: scale,
-            text: (m: Mark) => m.text,
-            fill: (m: Mark) => m.fill,
-            fontSize: SIZE,
-            anchor: (m: Mark) => m.anchor,
-            dx: (m: Mark) => m.dx,
-            dy: (m: Mark) => m.dy,
-          },
-        ),
-      ),
-    ) as unknown as ChartMarks,
+    marks: valueTextMarks(marks, 'bar-segment-values'),
     boxes: placed.map(({ left, top, width, height }) => ({ left, top, width, height })),
   }
 }
