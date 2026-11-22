@@ -72,7 +72,8 @@ export const rows: readonly RowDef[] = [
     label: 'shell, whole barrel (gzip B minus base0, src/shell, peers bundled)',
     // 129009 B measured; 142851 B with `@tanstack/react-hotkeys` bundled (Issue 2570); 143529 B with the work surface (Issue 2851);
     // 143778 B with the group scope every shell control reads and the popups reset (Issue 2853).
-    ceiling: 143900,
+    // 143900 -> 144400 (Issue 2940): 144069 B measured; the Dialog sizes, header actions and wash backdrop.
+    ceiling: 144400,
     measure: () => measureSource(reExportAll({ shell: 'shell/index' })),
   },
   {
@@ -101,6 +102,13 @@ export const rows: readonly RowDef[] = [
 
 export const raises: Raises = {
   'shell-subpath': [
+    {
+      from: 143900,
+      to: 144400,
+      consumer:
+        'the wizard dialog (Issue 2940): `Dialog` gains the `wide` and `split` sizes, a header meta line and typed actions, and the overlay host forwards the sizes',
+      repo: 'basalt-ui',
+    },
     {
       from: 143600,
       to: 143900,

@@ -29,13 +29,21 @@ export const rows: readonly RowDef[] = [
     // 115700 -> 115800 (Issue 2851): 115757 B measured; `Page fill` drops the gutter and `SplitPage` insets its panes in a fill page.
     // 115800 -> 116500 (Issue 2853): PageBar's action groups are the public `ButtonGroup`, and
     // every control in the barrel reads the group scope (`core/control-scope`).
-    ceiling: 116500,
+    // 116500 -> 117000 (Issue 2940): 116707 B measured; the Dialog sizes, header actions and wash backdrop.
+    ceiling: 117000,
     measure: () => measureSource(reExportAll({ page: 'page/index' })),
   },
 ]
 
 export const raises: Raises = {
   'page-subpath': [
+    {
+      from: 116500,
+      to: 117000,
+      consumer:
+        'the wizard dialog (Issue 2940): `Dialog` gains the `wide` and `split` sizes, a header meta line and typed actions, and the overlay host forwards the sizes',
+      repo: 'basalt-ui',
+    },
     {
       from: 115800,
       to: 116500,
