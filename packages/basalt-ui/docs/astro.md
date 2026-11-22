@@ -167,19 +167,19 @@ const components = { ...siteMdxComponents(labels), Chart, DataTable }
 
 <!-- mdx-island-cost:begin -->
 
-| Tag | Picture | Island | Directive | Matrix part | Further cost, gzip |
+| Tag | Picture | Island | Directive | Matrix part | Further cost, gzip, at most |
 |-|-|-|-|-|-|
 | `Tabs`, `Tab` | ARIA tab list and panels | none | none | none | 0.4 kB inline, in the head script |
 | `Form`, `Field`, `SubmitButton` | a native form | none | none | none | 0 |
 | `DataTable` | a static table | none | none | none | 0 |
-| `DataTable interactive` | the same table | sortable, pageable `DataTable` | `client:visible` (`load="idle"` above the fold) | `data-table` | 222.9 kB |
-| `Chart` | a fallback box of the card's height | `ChartCard` over `Lines` or `Bars` | `client:only="react"` (`load="visible"` or `"idle"` once its server picture is right) | `chart-card` | 132.5 kB |
+| `DataTable interactive` | the same table | sortable, pageable `DataTable` | `client:visible` (`load="idle"` above the fold) | `data-table` | 223.9 kB |
+| `Chart` | a fallback box of the card's height | `ChartCard` over `Lines` or `Bars` | `client:only="react"` (`load="visible"` or `"idle"` once its server picture is right) | `chart-card` | 133.5 kB |
 
 <!-- mdx-island-cost:end -->
 
 The first island on a page also brings React, react-dom and Astro's island runtime (71.5 kB), once, however
-many islands follow. The island cost column comes from `docs/v3/verdicts/astro-matrix.md`, and a test
-holds the two together.
+many islands follow. The cost column is the part's further-island budget in `docs/v3/verdicts/astro-matrix.md`, a
+ceiling every CI build is held to, and a test holds the two together.
 
 - **Names are data.** A `Tab` is told apart from its siblings by its `label`, which names one entry of the
   `tabs` list, because an MDX compiler hands a part its children as finished HTML. Without the head
