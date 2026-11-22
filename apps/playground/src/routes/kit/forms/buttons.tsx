@@ -139,7 +139,7 @@ function ButtonsRoute(): ReactElement {
         summary="Actions on one thing, drawn as one control; the group sets size and variant."
       >
         <Stack>
-          <Row caption="Medium, then small and ghost">
+          <Row caption="Secondary, then ghost">
             <ButtonGroup aria-label="Period">
               <Button>Previous</Button>
               <Button>Today</Button>
@@ -148,7 +148,7 @@ function ButtonsRoute(): ReactElement {
                 <Arrow />
               </Button>
             </ButtonGroup>
-            <ButtonGroup aria-label="Zoom" size="sm" variant="ghost">
+            <ButtonGroup aria-label="Zoom" variant="ghost">
               <Button shape="icon" aria-label="Zoom in">
                 <Plus />
               </Button>
