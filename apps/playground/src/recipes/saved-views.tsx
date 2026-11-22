@@ -1,7 +1,8 @@
 // A recipe file the playground typecheck compiles; gen-recipes copies the region into the doc.
 // #region recipe:saved-views
+import { Page, PageBar } from 'basalt-ui/page'
 import { defineControls, field } from 'basalt-ui/router'
-import { col, DataTable, TableToolbar, tableCodec, useDataTable } from 'basalt-ui/table'
+import { col, DataTable, tableCodec, useDataTable, useTableViews } from 'basalt-ui/table'
 
 type Run = { id: string; name: string; km: number }
 const c = col<Run>()
@@ -15,6 +16,7 @@ const runs = defineControls({
   },
 })
 
+/** A list page: the view row holds the saved views, the panel edits the applied one. */
 export function Runs({ data }: { data: readonly Run[] }) {
   const [applied, setApplied] = runs.field.view.use()
   const t = useDataTable({
@@ -26,15 +28,18 @@ export function Runs({ data }: { data: readonly Run[] }) {
     mode: { kind: 'client' },
     state: runs.field.table,
   })
-  const view = {
-    id: applied === '' ? undefined : applied,
-    set: (id: string | undefined) => (id === undefined ? runs.field.view.clear() : setApplied(id)),
-  }
+  const views = useTableViews(t, {
+    view: {
+      id: applied === '' ? undefined : applied,
+      set: (id) => (id === undefined ? runs.field.view.clear() : setApplied(id)),
+    },
+  })
   return (
-    <>
-      <TableToolbar table={t} view={view} />
+    <Page area="runs" fill>
+      <PageBar tabs={views.tabs} settings={views.settings} />
       <DataTable table={t} />
-    </>
+      {views.panel}
+    </Page>
   )
 }
 // #endregion
