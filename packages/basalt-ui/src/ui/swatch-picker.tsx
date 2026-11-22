@@ -4,7 +4,7 @@ import { cva } from 'class-variance-authority'
 import { useState } from 'react'
 import type { FocusEvent, ReactElement } from 'react'
 import { cn } from '../core/cn'
-import { Button } from './button'
+import { buttonVariants } from './button'
 import { Popover, PopoverContent, PopoverTrigger } from './popover'
 
 /** The named colour tokens a swatch can carry. A free colour value is not a choice: the palette decides. */
@@ -186,8 +186,7 @@ export function SwatchPicker({
       }}
     >
       <PopoverTrigger
-        // oxlint-disable-next-line jsx-a11y/control-has-associated-label -- the trigger's children are its text; the Button only supplies the look
-        render={<Button variant="secondary" className={cn('justify-start', className)} />}
+        className={cn(buttonVariants({ variant: 'secondary' }), 'justify-start', className)}
         disabled={disabled}
         aria-invalid={invalid || undefined}
         aria-describedby={ariaDescribedBy}

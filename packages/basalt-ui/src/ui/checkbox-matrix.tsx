@@ -1,10 +1,11 @@
+import { Checkbox as BaseCheckbox } from '@base-ui/react/checkbox'
 import { cva } from 'class-variance-authority'
 import { useId, useRef, useState } from 'react'
 import type { FocusEvent, KeyboardEvent, ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
 import { base as baseMessages } from '../core/messages/base'
 import { useMessages } from '../core/messages/use-messages'
-import { Checkbox } from './checkbox'
+import { checkboxVariants } from './checkbox'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './table'
 
 /**
@@ -75,6 +76,34 @@ export type CheckboxMatrixProps = {
 }
 
 const text = (node: ReactNode): string => (typeof node === 'string' ? node : '')
+
+type CellBoxProps = Omit<BaseCheckbox.Root.Props, 'className' | 'children'> & { className?: string }
+
+/**
+ * One cell's box: `Checkbox`'s own table and check on the Base UI root. It is not the `Checkbox`
+ * part because the matrix is the control and the cells have no home of their own.
+ */
+function CellBox({ className, ...props }: CellBoxProps): ReactElement {
+  return (
+    <BaseCheckbox.Root {...props} className={cn(checkboxVariants(), className)}>
+      <BaseCheckbox.Indicator className="flex">
+        <svg
+          viewBox="0 0 12 12"
+          className="size-3"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M2.5 6.5l2.5 2.5 4.5-5.5" className="group-data-indeterminate:hidden" />
+          <path d="M2.5 6h7" className="hidden group-data-indeterminate:block" />
+        </svg>
+      </BaseCheckbox.Indicator>
+    </BaseCheckbox.Root>
+  )
+}
 
 const ARROW: Record<string, readonly [number, number]> = {
   ArrowUp: [-1, 0],
@@ -221,8 +250,7 @@ export function CheckboxMatrix({
                   <span className="inline-flex items-center gap-2">
                     <span id={colHeadId(column)}>{column.label}</span>
                     {columnToggles && (
-                      // oxlint-disable-next-line basalt/control-home -- the matrix is the control: a FormField around it is its home
-                      <Checkbox
+                      <CellBox
                         aria-label={t('base.matrix.allForColumn', text(column.label))}
                         checked={toggle.checked}
                         indeterminate={toggle.indeterminate}
@@ -260,8 +288,7 @@ export function CheckboxMatrix({
                   const state = stateOf(row, column)
                   return (
                     <TableCell key={column.id} className="text-center">
-                      {/* oxlint-disable-next-line basalt/control-home -- the matrix is the control: a FormField around it is its home */}
-                      <Checkbox
+                      <CellBox
                         data-matrix-row={r}
                         data-matrix-col={c}
                         aria-labelledby={`${rowHeadId(row)} ${colHeadId(column)}`}
@@ -281,8 +308,7 @@ export function CheckboxMatrix({
                 })}
                 {rowToggles && (
                   <TableCell className="text-center">
-                    {/* oxlint-disable-next-line basalt/control-home -- the matrix is the control: a FormField around it is its home */}
-                    <Checkbox
+                    <CellBox
                       data-matrix-row={r}
                       data-matrix-col={columns.length}
                       aria-label={t('base.matrix.allForRow', text(row.label))}
