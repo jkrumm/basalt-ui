@@ -73,6 +73,17 @@ function publicEntries(): Map<string, Set<string>> {
   }
   const entries = new Map<string, Set<string>>()
   for (const [sub, target] of Object.entries(pkg.exports)) {
+    // A wildcard subpath (`./ui/*`) is one entry per module in its source directory.
+    if (sub.includes('*') && target.import) {
+      const dir = join(PKG, target.import.replace(/^\.\/dist\//, 'src/').replace(/\/\*\.js$/, ''))
+      for (const name of readdirSync(dir)) {
+        const mod = name.replace(/\.tsx?$/, '')
+        if (mod === name || /\.(test|guard|type-guard)$/.test(mod)) continue
+        const file = sourceOf(target.import.replace('*', mod))
+        if (file) entries.set(`basalt-ui/${sub.slice(2).replace('*', mod)}`, namesIn(file))
+      }
+      continue
+    }
     const file = target.import ? sourceOf(target.import) : undefined
     if (file) entries.set(sub === '.' ? 'basalt-ui' : `basalt-ui/${sub.slice(2)}`, namesIn(file))
   }
