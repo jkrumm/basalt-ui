@@ -40,10 +40,11 @@ const stepperVariants = cva(
 const EDGE_START = 'rounded-l-[calc(var(--radius-ctrl)-1px)]'
 const EDGE_END = 'rounded-r-[calc(var(--radius-ctrl)-1px)]'
 
-// Under a coarse pointer the row is `min-h-11` including its 1 px borders, so the stretched input
-// would be 42 px; the negative margin lets it span border to border and reach the 44 px floor.
+// The row's height includes its 1 px borders, so the stretched input would be 2 px short of it (22 px
+// at `sm`, under the 24 px target floor; 42 px under a coarse pointer); the negative margin lets it
+// span border to border, as the combobox input does.
 const entryVariants = cva(
-  'min-w-0 flex-1 scroll-my-1.5 bg-transparent text-center tabular-nums outline-none placeholder:text-faint pointer-coarse:-my-px pointer-coarse:text-base',
+  '-my-px min-w-0 flex-1 scroll-my-1.5 bg-transparent text-center tabular-nums outline-none placeholder:text-faint pointer-coarse:text-base',
   {
     variants: { size: { md: 'px-3 text-sm', sm: 'px-2 text-xs' } },
     defaultVariants: { size: 'md' },
