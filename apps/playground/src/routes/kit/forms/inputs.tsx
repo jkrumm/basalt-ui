@@ -4,7 +4,13 @@ import { Page, Section } from 'basalt-ui/page'
 import { Checkbox } from 'basalt-ui/ui/checkbox'
 import { Combobox, ComboboxContent, ComboboxInput, ComboboxItem } from 'basalt-ui/ui/combobox'
 import { FileUpload } from 'basalt-ui/ui/file-upload'
+import { Button } from 'basalt-ui/ui/button'
+import { CopyButton } from 'basalt-ui/ui/copy-button'
+import { ControlGroup, InputAddon, InputGroup } from 'basalt-ui/ui/control-group'
+import { DatePicker } from 'basalt-ui/ui/date-picker'
 import { Input } from 'basalt-ui/ui/input'
+import { PasswordInput } from 'basalt-ui/ui/password-input'
+import { Segmented } from 'basalt-ui/ui/segmented'
 import { NumberField } from 'basalt-ui/ui/number-field'
 import { NativeSelect, Select } from 'basalt-ui/ui/select'
 import { Switch } from 'basalt-ui/ui/switch'
@@ -227,6 +233,125 @@ function Affixes(): ReactElement {
   )
 }
 
+const API_KEY = 'sk_live_4f9a2c81e07b'
+
+/** A password with its reveal button, and a read-only key with its copy button. */
+function OwnButtons(): ReactElement {
+  const password = useSpecimen('')
+  const key = useSpecimen(API_KEY)
+  return (
+    <div className="grid max-w-5xl gap-6 @regular:grid-cols-2">
+      <FormField
+        label="Password"
+        description="The button in the field reveals this field only."
+        field={password}
+      >
+        <PasswordInput autoComplete="new-password" />
+      </FormField>
+      <FormField label="API key" description="Copied with the button at its end." field={key}>
+        <Input
+          readOnly
+          autoComplete="off"
+          end={<CopyButton value={API_KEY} label="API key" size="sm" />}
+        />
+      </FormField>
+    </div>
+  )
+}
+
+const FIELDS = [
+  { value: 'service', label: 'Service' },
+  { value: 'message', label: 'Message' },
+]
+
+/** Controls that make one request, and a field with addons outside its edge. */
+function Groups(): ReactElement {
+  return (
+    <div className="flex max-w-2xl flex-col gap-4">
+      <ControlGroup fill aria-label="Find in the logs">
+        {/* oxlint-disable-next-line basalt/control-home -- FormField binds one control and cannot reach into a group; this specimen shows the group's geometry, with no value to bind */}
+        <NativeSelect aria-label="Field to search" options={FIELDS} className="grow-0" />
+        <Input aria-label="Search text" autoComplete="off" placeholder="Find in the logs" />
+        <Button variant="primary">Search</Button>
+      </ControlGroup>
+      <InputGroup aria-label="Website">
+        <InputAddon>https://</InputAddon>
+        <Input
+          aria-label="Website, without https://"
+          autoComplete="url"
+          placeholder="example.com"
+        />
+      </InputGroup>
+      <InputGroup aria-label="Budget">
+        <InputAddon>EUR</InputAddon>
+        <Input
+          aria-label="Budget in EUR"
+          inputMode="decimal"
+          autoComplete="off"
+          placeholder="1200"
+        />
+        {/* oxlint-disable-next-line basalt/control-home -- FormField binds one control and cannot reach into a group; this specimen shows the group's geometry, with no value to bind */}
+        <NativeSelect
+          aria-label="Budget period"
+          options={[
+            { value: 'month', label: 'per month' },
+            { value: 'year', label: 'per year' },
+          ]}
+        />
+      </InputGroup>
+    </div>
+  )
+}
+
+/** One size, every control: each in its field, one height whichever control draws it. */
+function SizeRow({ size }: { size: 'md' | 'sm' }): ReactElement {
+  const name = useSpecimen('')
+  const region = useSpecimen('eu-central')
+  const environment = useSpecimen<string | null>('staging')
+  const replicas = useSpecimen<number | null>(3)
+  const due = useSpecimen<string | null>(null)
+  const range = useSpecimen('7d')
+  return (
+    <div className="flex flex-wrap items-end gap-3">
+      <Button size={size}>{size === 'md' ? 'Medium' : 'Small'}</Button>
+      <FormField label="Name" field={name}>
+        <Input size={size} autoComplete="off" placeholder="Name" className="w-40" />
+      </FormField>
+      <FormField label="Region" field={region}>
+        <NativeSelect size={size} options={REGIONS} className="w-44" />
+      </FormField>
+      <FormField label="Environment" field={environment}>
+        <Select size={size} aria-label="Environment" options={ENVIRONMENTS} className="w-44" />
+      </FormField>
+      <FormField label="Replicas" field={replicas}>
+        <NumberField size={size} className="w-32" />
+      </FormField>
+      <FormField label="Due" field={due}>
+        <DatePicker size={size} aria-label="Due" className="w-40" />
+      </FormField>
+      <FormField label="Range" field={range}>
+        <Segmented
+          size={size}
+          options={[
+            { value: '7d', label: '7 days' },
+            { value: '30d', label: '30 days' },
+          ]}
+        />
+      </FormField>
+    </div>
+  )
+}
+
+/** Every control at medium, then small. */
+function Heights(): ReactElement {
+  return (
+    <div className="flex flex-col gap-6">
+      <SizeRow size="md" />
+      <SizeRow size="sm" />
+    </div>
+  )
+}
+
 /** The cells of one control, one column on a phone and a row of five wide. */
 function Cells({ children }: { children: ReactElement[] }): ReactElement {
   return <div className="grid gap-4 @regular:grid-cols-3 @wide:grid-cols-5">{children}</div>
@@ -302,6 +427,18 @@ function InputsRoute(): ReactElement {
       </Section>
       <Section title="Affixes" summary="An icon before the value, a unit after it.">
         <Affixes />
+      </Section>
+      <Section
+        title="Buttons in a field"
+        summary="A button inside a field acts on that field only."
+      >
+        <OwnButtons />
+      </Section>
+      <Section title="Groups" summary="Controls that make one request, and addons outside a field.">
+        <Groups />
+      </Section>
+      <Section title="One height" summary="Every control at medium, then small, on one line.">
+        <Heights />
       </Section>
       <Section title="File upload" summary="Files from disk; the limits are in the hint.">
         <Cells>
