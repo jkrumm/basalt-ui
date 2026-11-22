@@ -130,8 +130,9 @@ export type BarListProps<I = unknown> = FrameHead &
     mono?: boolean
   }
 
-/** A row of body height, in `h-10` (40 px): the label line, a gap and the 4 px track. */
-const ROW = 'flex h-10 w-full min-w-0 flex-col justify-center gap-1.5 rounded-ctrl px-2 -mx-2'
+/** A row of body height, at least `h-10` (40 px): the label line, a gap and the 4 px track. In a card a grid row stretched, the rows share the extra height. */
+const ROW =
+  'flex min-h-10 w-full min-w-0 flex-1 flex-col justify-center gap-1.5 rounded-ctrl px-2 -mx-2'
 
 const TARGET =
   'cursor-pointer border-0 bg-transparent text-left text-foreground no-underline hover:bg-accent focus-ring focus-visible:-outline-offset-2'
@@ -259,7 +260,7 @@ export function BarList<I = unknown>(props: BarListProps<I>): ReactElement {
                     role="list"
                     aria-label={title}
                     data-whole={whole ? '' : undefined}
-                    className="m-0 list-none p-0"
+                    className="m-0 flex flex-1 list-none flex-col p-0"
                     // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- with a shared focus the list is the one tab stop that steps it
                     {...(link !== undefined
                       ? linkedList(link, at, setAt)
@@ -272,11 +273,11 @@ export function BarList<I = unknown>(props: BarListProps<I>): ReactElement {
                         {...(link !== undefined
                           ? linkedRow(link, i, enter)
                           : focus !== undefined && rowFocus(focus, i))}
-                        className={
-                          focus === undefined && link === undefined
-                            ? undefined
-                            : '[&[data-focused]>*]:bg-accent'
-                        }
+                        className={cn(
+                          'flex flex-1 flex-col',
+                          (focus !== undefined || link !== undefined) &&
+                            '[&[data-focused]>*]:bg-accent',
+                        )}
                       >
                         <Row item={item} mono={mono} {...(drawn[i] as RowView)} />
                       </li>
