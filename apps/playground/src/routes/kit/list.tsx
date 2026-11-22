@@ -74,7 +74,17 @@ function ListRoute(): ReactElement {
   const picked = countOf('picked')
   const unrated = countOf('unrated')
   const views = rows.reduce((sum, photo) => sum + photo.views, 0)
-  const pickedShare = narrowed.length === 0 ? 0 : Math.round((picked / narrowed.length) * 100)
+  const pickedShare =
+    narrowed.length === 0
+      ? 0
+      : Math.round((rows.filter((p) => p.verdict === 'picked').length / rows.length) * 100)
+  const sortedViews = rows.map((photo) => photo.views).toSorted((a, b) => a - b)
+  const medianViews =
+    sortedViews.length === 0 ? null : sortedViews[Math.floor(sortedViews.length / 2)]!
+  const newest = rows.reduce<string | null>(
+    (day, photo) => (day === null || photo.taken > day ? photo.taken : day),
+    null,
+  )
 
   const t = useDataTable({
     id: 'kit-list-photos',
@@ -93,7 +103,7 @@ function ListRoute(): ReactElement {
       }),
       c.text('camera', { header: 'Camera' }),
       c.date('taken', { header: 'Taken', mono: true }),
-      c.number('views', { header: 'Views' }),
+      c.number('views', { header: 'Views, 14 days' }),
     ],
     data: rows,
     getRowId: (photo) => photo.id,
@@ -149,21 +159,11 @@ function ListRoute(): ReactElement {
         ]}
       />
       <StatGroup variant="flush" label="Shown photos">
-        <StatCell label="Shown" value={rows.length} sub={`of ${PHOTOS.length} in the library`} />
         <StatCell
           label="Picked"
-          value={pickedShare}
+          value={rows.length === 0 ? null : pickedShare}
           unit="%"
-          sub={`${picked} of ${narrowed.length} after the filters`}
-        />
-        <StatCell
-          label="Unrated"
-          value={unrated}
-          status={
-            unrated > 0
-              ? { tone: 'warn', label: 'Needs a verdict' }
-              : { tone: 'good', label: 'All rated' }
-          }
+          sub="Of the photos the filters keep"
         />
         <StatCell
           label="Views, 14 days"
@@ -172,6 +172,13 @@ function ListRoute(): ReactElement {
           chart={(box) => (
             <Sparkline series={viewsPerDay(rows)} height={box.height} label="Views per day" />
           )}
+        />
+        <StatCell label="Views per photo" value={medianViews} sub="Median over 14 days" />
+        <StatCell
+          label="Newest"
+          value={newest}
+          sub="Day the newest shown photo was taken"
+          subMono
         />
       </StatGroup>
       <DataTable table={t} />
