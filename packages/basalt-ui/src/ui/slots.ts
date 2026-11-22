@@ -5,6 +5,7 @@
 export const SLOTS = {
   accordion: ['accordion', 'accordion-item', 'accordion-trigger', 'accordion-content'],
   alert: ['alert'],
+  avatar: ['avatar', 'avatar-stack'],
   badge: ['lozenge', 'count-badge', 'delta-badge'],
   button: ['button', 'pressable'],
   card: ['card', 'card-band', 'card-info', 'icon-tile', 'inset', 'card-phase'],
@@ -32,6 +33,7 @@ export const SLOTS = {
     'alert-dialog-trigger',
     'alert-dialog-content',
   ],
+  entity: ['entity-title', 'entity-chip'],
   field: [
     'field',
     'field-label',

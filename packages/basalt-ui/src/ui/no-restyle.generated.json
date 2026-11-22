@@ -9,6 +9,22 @@
       "message": "Alert owns its height and display: eject it (basalt-ui eject alert) to change them."
     },
     {
+      "module": "avatar",
+      "part": "avatar",
+      "pattern": "^Avatar$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Avatar owns its height and display: use size (xs, sm, md, lg) and shape (person, object), or eject it (basalt-ui eject avatar)."
+    },
+    {
+      "module": "avatar",
+      "part": "avatar-stack",
+      "pattern": "^AvatarStack$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "AvatarStack owns its height and display: use size (xs, sm, md, lg), or eject it (basalt-ui eject avatar)."
+    },
+    {
       "module": "badge",
       "part": "lozenge",
       "pattern": "^Lozenge$",
@@ -175,6 +191,22 @@
       "allow": ["layout"],
       "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
       "message": "AlertDialogContent owns its height and display: eject it (basalt-ui eject dialog) to change them."
+    },
+    {
+      "module": "entity",
+      "part": "entity-title",
+      "pattern": "^EntityTitle$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "EntityTitle owns its height and display: use size (sm, md, lg), or eject it (basalt-ui eject entity)."
+    },
+    {
+      "module": "entity",
+      "part": "entity-chip",
+      "pattern": "^EntityChip$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "EntityChip owns its height and display: eject it (basalt-ui eject entity) to change them."
     },
     {
       "module": "field",

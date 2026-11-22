@@ -23,7 +23,7 @@ no indicator script, so it is safe on a static page.
 
 ```ts
 Tabs({ size, variant, className, ...props }: TabsProps): ReactElement
-  size?: "md" | "sm" | null
+  size?: "sm" | "md" | null
   className?: string  // Layout only (`w-full`, `mt-2`, `max-w-md`)
   variant?: Look  // `line` (default) is triggers on a hairline with a brand underline: tabs that sit over their panels
 ```

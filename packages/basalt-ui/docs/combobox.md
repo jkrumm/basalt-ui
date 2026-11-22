@@ -34,7 +34,7 @@ The input box of a single-value `Combobox`. It must be named with `aria-label`.
 ComboboxInput({ size, className, ...props }: ComboboxInputProps): ReactElement
   aria-label: string
   className?: string  // Layout only (`w-full`, `w-64`, `flex-1`)
-  size?: "md" | "sm" | null
+  size?: "sm" | "md" | null
 ```
 
 ### `ComboboxContent`
@@ -68,7 +68,7 @@ The remove buttons are named from the message key `combobox.remove`.
 ComboboxChips({ size, className, itemToLabel, placeholder, "aria-label": label, ...props }: ComboboxChipsProps): ReactElement
   aria-label: string
   className?: string  // Layout only (`w-full`, `w-64`, `flex-1`)
-  size?: "md" | "sm" | null
+  size?: "sm" | "md" | null
   placeholder?: string
   itemToLabel?: (value: never) => string  // The text of a selected value, for the chip and its remove name
 ```
@@ -104,7 +104,7 @@ The input box of an `Autocomplete`. It must be named with `aria-label`.
 AutocompleteInput({ size, className, ...props }: AutocompleteInputProps): ReactElement
   aria-label: string
   className?: string  // Layout only (`w-full`, `w-64`, `flex-1`)
-  size?: "md" | "sm" | null
+  size?: "sm" | "md" | null
 ```
 
 ### `AutocompleteContent`

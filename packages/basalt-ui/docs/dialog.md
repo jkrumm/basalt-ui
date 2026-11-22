@@ -44,7 +44,7 @@ DialogContent({ title, description, size, className, children, ...props }: Dialo
   className?: string  // Layout only (`w-full`, `mt-2`)
   title: ReactNode  // The accessible name and the visible heading
   description?: ReactNode  // One sentence under the title; it also describes the dialog to assistive tech
-  size?: "md" | "sm" | "lg" | null
+  size?: "sm" | "md" | "lg" | null
 ```
 
 ### `DialogTitle`

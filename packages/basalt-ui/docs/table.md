@@ -24,7 +24,7 @@ head sticks inside that container (or to the page when there is none).
 ```ts
 Table({ size, look, className, ...props }: TableProps): ReactElement
   className?: string  // Layout only (`w-1/3`, `text-right`, `whitespace-nowrap`)
-  size?: "md" | "sm" | null
+  size?: "sm" | "md" | null
   look?: "grid" | "reading" | null
 ```
 

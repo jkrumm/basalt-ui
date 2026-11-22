@@ -25,7 +25,7 @@ row-level or an OS picker on phones, `NativeSelect`; search, async, multi or 50+
 Select<Value = string>(props: SelectProps<Value>): ReactElement
   // either aria-label + options, aria-labelledby + options or children
   className?: string  // Layout only (`w-full`, `w-40`, `flex-1`)
-  size?: "md" | "sm" | null
+  size?: "sm" | "md" | null
   aria-label: string
   options?: readonly SelectOption<Value>[]  [with aria-label | aria-labelledby]
   placeholder?: string  [with aria-label | aria-labelledby]  // Shown in the trigger while no value is selected
@@ -44,7 +44,7 @@ SelectTrigger({ size, className, children, ...props }: SelectTriggerProps): Reac
   // either aria-label or aria-labelledby
   aria-label: string
   className?: string  // Layout only (`w-full`, `w-40`, `flex-1`)
-  size?: "md" | "sm" | null
+  size?: "sm" | "md" | null
   children?: ReactNode
   aria-labelledby: string
 ```
@@ -96,7 +96,7 @@ picker is the better phone UI. Name it with a wrapping `<label>` or `aria-label`
 ```ts
 NativeSelect({ size, className, options, onValueChange, onChange, children, ...props }: NativeSelectProps): ReactElement
   className?: string  // Layout only (`w-full`, `w-40`, `flex-1`)
-  size?: "md" | "sm" | null
+  size?: "sm" | "md" | null
   options?: readonly SelectOption<string>[]  // The choices; omit it to write `<option>` children
   onValueChange?: (value: string) => void  // Fires with the picked value, so a form field's value writer takes it
 ```

@@ -24,7 +24,7 @@ no provider and joins a Base UI `Field` when wrapped in one.
 ```ts
 NumberField({ size, locale, className, "aria-label": ariaLabel, "aria-labelledby": ariaLabelledBy, "aria-describedby": ariaDescribedBy, placeholder, ...props }: NumberFieldProps): ReactElement
   format?: Intl.NumberFormatOptions  // Options to format the input value
-  size?: "md" | "sm" | null
+  size?: "sm" | "md" | null
   locale?: string  // BCP 47 tag for the digits and separators, default `en`
   aria-label?: string
   aria-labelledby?: string

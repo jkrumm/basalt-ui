@@ -21,8 +21,8 @@ A button on Base UI. Works with no provider; polymorphism only through `render`.
 Button({ variant, size, shape, loading, disabled, focusableWhenDisabled, className, children, ...props }: ButtonProps): ReactElement
   // either aria-label + shape or neither
   className?: string  // Layout only (`w-full`, `flex-1`, `mt-2`)
+  size?: "sm" | "md" | null
   variant?: "primary" | "secondary" | "ghost" | "danger" | null
-  size?: "md" | "sm" | null
   loading?: boolean  // Disables interaction, sets `aria-busy` and draws a spinner over the label; the label keeps its place (transparent, still the accessible name), so the button never changes width
   shape?: "default" | "icon"
   aria-label: string  [with shape="icon"]

@@ -48,8 +48,8 @@ look: `render={<SelectTrigger aria-label="Zoom" />}`.
 ```ts
 ToolbarButton({ variant, size, shape, className, render, ...props }: ToolbarButtonProps): ReactElement
   // either aria-label + shape or neither
+  size?: "sm" | "md" | null
   variant?: "primary" | "secondary" | "ghost" | "danger" | null
-  size?: "md" | "sm" | null
   className?: string  // Layout only (`ml-auto`)
   shape?: "default" | "icon"
   aria-label: string  [with shape="icon"]
