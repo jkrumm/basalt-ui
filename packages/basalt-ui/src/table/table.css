@@ -1417,6 +1417,7 @@
       flex: 1 1 100%;
     }
   }
+  /* the card's 1 px inset keeps its outer ring inside the paint containment */
   [data-slot='table-gallery-card'] {
     content-visibility: auto;
     contain-intrinsic-size: auto 9.5rem;
