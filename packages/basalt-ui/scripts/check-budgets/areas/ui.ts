@@ -151,8 +151,8 @@ export const raises: Raises = {
       consumer:
         "`ButtonGroup`, `ControlGroup`, `InputGroup`, `InputAddon` (with their four tables and `controlGroupParts`) from `basalt-ui/ui/control-group`, `CopyButton` and `copyButtonParts` from `basalt-ui/ui/copy-button`, `PasswordInput` and `passwordInputParts` from `basalt-ui/ui/password-input`: the owner's 2026-11-21 benchmark asked for Blueprint's joined controls (plan row bench-control-groups, Issue 2853); `PageBar` draws its action groups with `ButtonGroup` and the playground's forms pages show the rest",
       repo: 'basalt-ui',
-      },
-      {
+    },
+    {
       from: 252,
       to: 256,
       consumer:
