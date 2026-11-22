@@ -6,10 +6,13 @@
  */
 import type { CartesianChartProps, YConfig } from '../contract'
 import type { EngineSpec } from '../parts/cartesian-adapt'
+import type { BarLayout } from '../parts/bars-marks'
 
 /** The v3 props a seam may read. */
 export type SeamProps<D> = Pick<CartesianChartProps<D>, 'data' | 'series' | 'x'> & {
   y?: YConfig | undefined
+  /** How the chart lays out its bars (a kind's switch): every bar of a stacked layout is one stack. Default `'stacked'`. */
+  layout?: BarLayout | undefined
 }
 
 /** One seam: the engine spec in, the engine spec out, with the v3 props it came from. */
