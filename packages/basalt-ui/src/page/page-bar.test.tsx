@@ -931,6 +931,30 @@ describe('PageBar view row', () => {
     expect(band()!.nextElementSibling).toBe(line)
   })
 
+  test('the primary moves last with its segment, so two groups it parted never fuse', () => {
+    const q = memoryHandle<string>('q', '', { kind: 'string' })
+    render(
+      <Page>
+        <PageBar
+          search={{ state: q, label: 'Search' }}
+          actions={[
+            { id: 'a', label: 'A', group: 'g', onClick: () => {} },
+            { id: 'new', label: 'New', primary: true, onClick: () => {} },
+            { id: 'b', label: 'B', group: 'g', onClick: () => {} },
+          ]}
+        />
+      </Page>,
+    )
+    const ids = [...band()!.querySelectorAll('[data-action-id]')].map((el) =>
+      el.getAttribute('data-action-id'),
+    )
+    expect(ids).toEqual(['a', 'b', 'new'])
+    for (const id of ['a', 'b']) {
+      const action = band()!.querySelector(`[data-action-id="${id}"]`)!
+      expect(action.parentElement!.getAttribute('data-slot')).toBe('page-actions')
+    }
+  })
+
   test('the end holds search, controls, layout, settings, then the actions with the primary last', () => {
     const layout = memoryHandle<string>('layout', 'table', { kind: 'enum' })
     const opened: string[] = []

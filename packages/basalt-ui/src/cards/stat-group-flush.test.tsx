@@ -73,6 +73,18 @@ describe('StatGroup flush', () => {
     warn.mockRestore()
   })
 
+  test('a flush strip whose every cell is bare draws nothing', () => {
+    const warn = spyOn(console, 'warn').mockImplementation(() => {})
+    const { container } = render(
+      <StatGroup variant="flush" label="Invoices">
+        <StatCell label="Open" value={42} />
+        <StatCell label="Paid" value={7} />
+      </StatGroup>,
+    )
+    expect(container.innerHTML).toBe('')
+    warn.mockRestore()
+  })
+
   test('a strip keeps a bare cell; only flush drops it', () => {
     const warn = spyOn(console, 'warn').mockImplementation(() => {})
     render(
