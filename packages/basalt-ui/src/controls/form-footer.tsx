@@ -137,7 +137,7 @@ export function FormFooter<const A extends readonly FormAction[]>({
         'flex flex-col gap-2',
         sticky && !floating && 'sticky bottom-0 z-10 border-t border-border bg-surface py-3',
         floating &&
-          'sticky bottom-4 z-10 mx-auto w-full max-w-xl rounded-card border border-border bg-card px-4 py-3 shadow-raised animate-enter-item',
+          'sticky bottom-4 z-10 mx-auto w-full max-w-xl rounded-inset border border-border bg-card px-4 py-3 shadow-raised animate-enter-item',
         !open && 'hidden',
         className,
       )}
