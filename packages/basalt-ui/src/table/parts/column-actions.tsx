@@ -10,16 +10,7 @@ import type { ReactElement, Ref } from 'react'
 import { useMessages } from '../../core/messages/use-messages'
 import { table } from '../../core/messages/table'
 import { Button } from '../../ui/button'
-import {
-  Menu,
-  MenuContent,
-  MenuItem,
-  MenuRadioGroup,
-  MenuRadioItem,
-  MenuSeparator,
-  MenuSub,
-  MenuTrigger,
-} from '../../ui/menu'
+import { Menu, MenuContent, MenuGroup, MenuItem, MenuSeparator, MenuTrigger } from '../../ui/menu'
 import type { Aggregate, DataTableInstance } from '../contract'
 import { modelOf } from '../use-data-table'
 import type { TableModel } from '../use-data-table'
@@ -194,18 +185,18 @@ export function ColumnActionsMenu<T>({
               </MenuItem>
             )}
             {aggregates.length > 0 && (
-              <MenuSub label={t('table.summaryMenu')}>
-                <MenuRadioGroup
-                  value={model.aggregateOf(column) ?? 'none'}
-                  onValueChange={(value: Aggregate | 'none') => model.setAggregate(column, value)}
-                >
-                  {[...aggregates, 'none' as const].map((fn) => (
-                    <MenuRadioItem key={fn} value={fn}>
-                      {aggregateLabel(fn)}
-                    </MenuRadioItem>
-                  ))}
-                </MenuRadioGroup>
-              </MenuSub>
+              // The column's summary: the one it prints is disabled, as the sort it has is.
+              <MenuGroup label={t('table.summaryMenu')}>
+                {[...aggregates, 'none' as const].map((fn: Aggregate | 'none') => (
+                  <MenuItem
+                    key={fn}
+                    disabled={(model.aggregateOf(column) ?? 'none') === fn}
+                    onClick={() => model.setAggregate(column, fn)}
+                  >
+                    {aggregateLabel(fn)}
+                  </MenuItem>
+                ))}
+              </MenuGroup>
             )}
             <MenuSeparator />
           </>
