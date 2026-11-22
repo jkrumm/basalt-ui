@@ -437,7 +437,10 @@ function InputsRoute(): ReactElement {
       <Section title="Groups" summary="Controls that make one request, and addons outside a field.">
         <Groups />
       </Section>
-      <Section title="One height" summary="Every control at medium, then small, on one line.">
+      <Section
+        title="One height"
+        summary="Every control at medium, then small. Under touch a lone small button keeps 24 px drawn with a 44 px hit area; in a group it lifts to 44."
+      >
         <Heights />
       </Section>
       <Section title="File upload" summary="Files from disk; the limits are in the hint.">
