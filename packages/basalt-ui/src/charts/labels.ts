@@ -9,10 +9,12 @@ import { BASALT } from '../tokens'
 import { warpFor } from './core/scales'
 import { CV } from './core/theme'
 import { lineHeight } from './label-place'
+import { measure } from './label-widths'
 import { yRangeWithin } from './ref-label'
 import type { LabelBox, RefLabelPoint } from './ref-label'
 import { rowX } from './types'
 import type { ChartMarks, ChartSeries, ChartX, PlotContext, PlotRow } from './types'
+import type { ContainerClass } from '../tokens/size-classes'
 
 const MAX_END_LABELS = 3
 /** Two end labels closer than this (px, vertically) are pushed apart to it: one label line (11px at 1.35) plus two pixels of air. */
@@ -48,6 +50,35 @@ const MAX_SIDE_SEARCH = 5
 const DOT_REACH = BASALT.dotR + 1
 /** A label this far off its natural spot, px, is joined to its line's end by a leader: nearer, it reads as the line's own. */
 const LEADER_AFTER_PX = lineHeight(BASALT.text.micro)
+
+/** Air kept between a gutter's widest label and the plot's right edge, px: the table measures the shipped face, a fallback face draws wider. */
+const GUTTER_AIR = 8
+/** The widest share of the plot a gutter may take: past it the labels flip into the plot as before. */
+const MAX_GUTTER_SHARE = 0.45
+
+/**
+ * The room (px) the x scale keeps right of the last point so every end label sits beside its line's end,
+ * where no line runs through it; 0 when the labels already fit there or the gutter would take more than
+ * {@link MAX_GUTTER_SHARE} of the plot. `labels` are the lines that carry one, each with its last point's
+ * x as a share of the plot; the gutter holds the widest label as the face draws it. Same naming rules as
+ * {@link endLabelPlan}: `legend` has none, `auto` only on the wide class and with ≤ {@link MAX_END_LABELS} lines.
+ */
+export function endLabelGutter(opts: {
+  naming: LinesNaming
+  containerClass: ContainerClass
+  plotWidth: number
+  labels: readonly { label: string; fraction: number }[]
+}): number {
+  const { naming, containerClass, plotWidth, labels } = opts
+  if (naming === 'legend' || labels.length === 0 || plotWidth <= 0) return 0
+  if (naming === 'auto' && (containerClass !== 'wide' || labels.length > MAX_END_LABELS)) return 0
+  const boxes = labels.map(
+    (l) => END_LABEL_DX + measure(l.label, BASALT.text.micro, 400) + GUTTER_AIR,
+  )
+  if (!labels.some((l, i) => (1 - l.fraction) * plotWidth < (boxes[i] as number))) return 0
+  const gutter = Math.ceil(Math.max(...boxes))
+  return gutter <= plotWidth * MAX_GUTTER_SHARE ? gutter : 0
+}
 
 export type EndLabelAnchor = 'start' | 'end'
 /** Which side of its line a flipped label sits: away from the line's last segment. */
@@ -270,7 +301,7 @@ function planEndLabels<T, X extends ChartX>(
   // No `y2` here (returned above), so every label reads the left domain.
   const [lo, hi] = plot.yDomain
   const anchors = last.map(({ series, fraction }): EndLabelAnchor =>
-    startAt.has(series.key)
+    startAt.has(series.key) || plot.endRoom === true
       ? 'start'
       : endLabelAnchor({
           fraction,

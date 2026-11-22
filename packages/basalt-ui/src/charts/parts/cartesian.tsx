@@ -26,6 +26,7 @@ import {
   refLegendSeries,
   zoneLegendSeries,
 } from '../core/compile'
+import { labelTieMarks } from '../core/label-ties'
 import { samePlots } from '../core/plot-context'
 import type { PlotSizes } from '../core/plot-context'
 import { ChartEngine, idPrefixOf } from '../host'
@@ -36,6 +37,7 @@ import { rowX } from '../types'
 import type { ChartMarks, ChartSeries, ChartX, PlotContext } from '../types'
 import type { CartesianChartProps, ChartZone, CustomMarks, Series } from '../contract'
 import { chartName } from '../chart-name'
+import { takeLabelTies } from '../label-obstacles'
 import { PaneGutterContext } from '../pane-gutter'
 import { applySeams } from '../seams'
 import { asMarks, customPlot, toChartState, toEngineSpec } from './cartesian-adapt'
@@ -417,7 +419,17 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
       }
       if (stable.custom !== undefined) {
         const byKey = new Map(stable.series.map((s) => [s.key, s]))
-        out.push(...asMarks(stable.custom.build(customPlot(ctx, byKey))))
+        const built = asMarks(stable.custom.build(customPlot(ctx, byKey)))
+        // The hairlines and plates its label pass asked for go under its text, over the series' marks.
+        out.push(
+          ...labelTieMarks({
+            ties: takeLabelTies(),
+            plot: { width: ctx.plotWidth, height: ctx.plotHeight },
+            domain: ctx.yDomain,
+            yScale: 'y',
+          }),
+          ...built,
+        )
       }
       if (controller !== undefined) {
         const rows = ctx.visible.flatMap((s) => ctx.rows(s.key)).filter((row) => row.y !== null)
@@ -476,6 +488,7 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
       width,
       plot,
       focused,
+      ...(effective !== 'legend' && { endLabels: effective }),
       // With `focus` the wrapper is the one tab stop and steps `focus.items` itself.
       ...(ownsKeys && { keyboard: false }),
       ...(hasBars && {
@@ -502,6 +515,7 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
     width,
     plot,
     focused,
+    effective,
     ownsKeys,
     hasBars,
     stable.layout,

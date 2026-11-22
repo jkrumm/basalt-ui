@@ -24,13 +24,20 @@ const PIECE_PX = 6
 /** Half the height of a rule's box, px: its half stroke and the air a label keeps. */
 const RULE_REACH = 2
 
+/** A hairline from a label's anchor to its box, in the plot's px. */
+export type LabelLeader = { from: { x: number; y: number }; to: { x: number; y: number } }
+
+/** What a page's label pass asks the host to draw under its text: hairlines to labels set farther off, and surface plates under labels that had to lie over dots. */
+export type LabelTies = { leaders: LabelLeader[]; plates: LabelBox[] }
+
 let current: (() => readonly LabelBox[]) | undefined
 let sink: LabelBox[] | undefined
+let ties: LabelTies | undefined
 
 /**
  * Runs `run` with `boxes` as the host's obstacles; read lazily, once, on the first `place`. The
  * labels a page's own `chartLabels.place` lands while it runs are pushed to `placed`, so the host
- * can have its captions give way to them.
+ * can have its captions give way to them. Its ties (`takeLabelTies`) are the host's to draw.
  */
 export function withHostObstacles<T>(
   boxes: () => readonly LabelBox[],
@@ -39,20 +46,36 @@ export function withHostObstacles<T>(
 ): T {
   const before = current
   const beforeSink = sink
+  const beforeTies = ties
   let memo: readonly LabelBox[] | undefined
   current = () => (memo ??= boxes())
   sink = placed
+  ties = { leaders: [], plates: [] }
   try {
     return run()
   } finally {
     current = before
     sink = beforeSink
+    ties = beforeTies
   }
 }
 
 /** Tells the host which boxes a page's own label pass landed; nothing outside a host. */
 export function recordPlacedLabels(boxes: readonly LabelBox[]): void {
   sink?.push(...boxes)
+}
+
+/** Tells the host which hairlines and plates a page's own label pass needs; nothing outside a host. */
+export function recordLabelTies(found: LabelTies): void {
+  ties?.leaders.push(...found.leaders)
+  ties?.plates.push(...found.plates)
+}
+
+/** The ties recorded since the last call, cleared; empty outside a host. */
+export function takeLabelTies(): LabelTies {
+  const taken = { leaders: [...(ties?.leaders ?? [])], plates: [...(ties?.plates ?? [])] }
+  if (ties !== undefined) ties = { leaders: [], plates: [] }
+  return taken
 }
 
 /** The boxes the host published for the marks being built; none outside a host. */

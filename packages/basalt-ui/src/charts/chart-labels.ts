@@ -71,6 +71,13 @@ export type PlacedLabel<K extends string = string> = ChartLabel<K> & {
    */
   dx: number
   dy: number
+  /**
+   * Present when the label could not sit beside its anchor without lying over a dot: it sits farther
+   * off, in the clear, and this is the hairline from the anchor to the nearest point of its box, in
+   * the frame's px. A `CartesianChart.custom` build gets the hairline drawn by the host; a hand-built
+   * SVG draws its own.
+   */
+  leader?: { from: { x: number; y: number }; to: { x: number; y: number } }
 }
 
 /** A numeric domain makes a numeric axis and a `Date` domain a time axis, never a literal type. */
@@ -153,6 +160,10 @@ export const chartLabels = {
    * An obstacle no taller or wider than a label line is a point mark (a dot): in a crowded cloud a
    * label lands on the spot that meets the fewest of them, beside its anchor, instead of dropping;
    * a label no spot can hold is `dropped`, and a dev build warns once, naming its key and the frame.
+   * When every spot beside the anchor meets a dot, the label goes to the nearest clear box a ring away
+   * (up to about 80 px), and `PlacedLabel.leader` is the hairline back to its anchor; where no clear box
+   * lies in reach it keeps the fewest-dots spot. Called from `CartesianChart.custom`'s `build`, the host
+   * draws the leader, and a surface plate under a label that had to lie over dots.
    *
    * Called from `CartesianChart.custom`'s `build`, it also keeps clear of what the host drew under
    * the marks, with no option to pass: the end labels, the line paths, the rules and the bodies of
