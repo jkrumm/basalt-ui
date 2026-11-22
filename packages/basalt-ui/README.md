@@ -304,7 +304,7 @@ waives nothing. The 2.x `theme-allow` and `theme-allow-file` annotations are ine
 
 ### Consumer-series extensibility
 
-App-specific series colours live in the consumer, authored once in `src/basalt.tokens.ts`. `init` seeds it at `bridge` and above (`--extra <file>` at `tokens` and `site`), emits `src/basalt.tokens.css` from it with `tokens:css --extra`, and imports that sheet in the stylesheet entry. The file is import-free, the one place raw colour is written, and a pair is `{ light, dark }`:
+App-specific series colours live in the consumer, authored once in the app's `basalt.tokens.ts`. `init` seeds it at `bridge` and above (`--extra <file>` at `tokens` and `site`), emits `basalt.tokens.css` from it with `tokens:css --extra`, and imports that sheet in the stylesheet entry. The file is import-free, the one place raw colour is written, and a pair is `{ light, dark }`:
 
 ```ts
 // src/basalt.tokens.ts
@@ -340,7 +340,7 @@ export const colors = groupTokens('app', tokens.series.app)
 // colors.sessions → 'var(--basalt-app-sessions)'
 ```
 
-After an edit, regenerate the sheet: `basalt-ui tokens:css --extra src/basalt.tokens.ts --out src/basalt.tokens.css` (`doctor` re-runs it with `--check` for every row of the manifest). The sheet also writes `src/basalt.tokens.css.d.ts`, which registers the keys on `BasaltRegister`, so write no `declare module` of your own. `vars: { <name>: '<css value>' }` beside `series` emits `--basalt-<name>` once on `:root`. A ramp entry (`{ hue: 'blue', light: 3, dark: 4 }`) gives the variable only; a chart needs a literal pair.
+After an edit, regenerate the sheet: `basalt-ui tokens:css --extra src/basalt.tokens.ts --out src/basalt.tokens.css` (`doctor` re-runs it with `--check` for every row of the manifest). The sheet also writes `basalt.tokens.css.d.ts`, which registers the keys on `BasaltRegister`, so write no `declare module` of your own. `vars: { <name>: '<css value>' }` beside `series` emits `--basalt-<name>` once on `:root`. A ramp entry (`{ hue: 'blue', light: 3, dark: 4 }`) gives the variable only; a chart needs a literal pair.
 
 `tokens:css --extra` is the one route. `defineSeries` and `buildPaletteCss({ groups })` are internal: the first types a pair map the CLI does not read, the second emits the same variables at runtime for a build with no CLI, and neither is documented for an app. A hand-written `BasaltRegister` series augmentation is removed from the docs: it conflicts with the generated one.
 
