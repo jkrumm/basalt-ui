@@ -36,12 +36,12 @@ import { changedSince, selectUnit } from './unit-select'
 const HEAVY_MIB: Record<string, number> = {
   'packages/basalt-ui/scripts/check-agent-doc-drift.test.ts': 1100,
   'packages/basalt-ui/scripts/gen-docs.test.ts': 900,
-  'packages/basalt-ui/scripts/gen-llms-assert.test.ts': 1600,
-  'packages/basalt-ui/scripts/gen-llms.test.ts': 1700,
+  'packages/basalt-ui/scripts/gen-llms-assert.test.ts': 1050,
+  'packages/basalt-ui/scripts/gen-llms.test.ts': 1400,
   'packages/basalt-ui/scripts/gen-ui.test.ts': 1450,
   'packages/basalt-ui/scripts/migrating-imports.test.ts': 750,
   'packages/basalt-ui/src/page/define-overlays.test.tsx': 900,
-  'tests/agent-doc-drift.test.ts': 1600,
+  'tests/agent-doc-drift.test.ts': 1100,
 }
 const HEAVY = Object.keys(HEAVY_MIB)
 
