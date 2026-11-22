@@ -24,7 +24,7 @@ export const tagInputVariants = cva(
  * pasted list shows which entries failed.
  */
 const tagChipVariants = cva(
-  'inline-flex h-5 max-w-full items-center gap-1 rounded-chip bg-accent pr-0.5 pl-2 text-xs text-foreground data-invalid:bg-bad-tint data-invalid:ring-1 data-invalid:ring-bad',
+  'inline-flex h-5 max-w-full items-center gap-1 rounded-chip bg-accent pr-0.5 pl-2 text-xs text-foreground data-invalid:bg-bad-tint data-invalid:pl-1.5 data-invalid:ring-1 data-invalid:ring-bad',
 )
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
@@ -185,6 +185,17 @@ export function TagInput({
             {...(problem !== undefined && { 'data-invalid': '' })}
             className={tagChipVariants()}
           >
+            {problem !== undefined && (
+              <svg viewBox="0 0 16 16" className="size-3 shrink-0" fill="none" aria-hidden="true">
+                <circle cx="8" cy="8" r="6.25" stroke="currentColor" strokeWidth="1.5" />
+                <path
+                  d="M8 4.75v3.75M8 11v.01"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+              </svg>
+            )}
             <span className="truncate">{tag}</span>
             {problem !== undefined && <span className="sr-only">{problem}</span>}
             {!readOnly && (
