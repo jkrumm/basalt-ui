@@ -15,6 +15,7 @@ import type {
   NavTarget,
   Phase,
   QueryStateLike,
+  Tone,
 } from '../core/ports'
 
 // ---- Targets and badges shared with the shell (`shell -> page` is the declared edge) -------
@@ -63,29 +64,71 @@ export type PageTextAction = {
 export type PageAction = PageButtonAction | PageTextAction
 
 /**
+ * What a tab carries beside its label: a count in muted tabular figures (`attention` draws it in
+ * the bad tone, for the tab that needs the reader) and a dot in a tone before the label.
+ */
+export type PageTabBadge = { count?: number; attention?: boolean; tone?: Tone }
+
+/**
  * A page's or section's view switch: a tab strip drawn from an enum field (`label` is its
  * accessible name), or a `ControlsSlot` for custom content (a `ViewTabs`, for its phone forms).
+ * `badges` gives a tab of the strip its count and tone, keyed by the field's value.
  */
 export type PageTabs<K extends string = string> =
   | ControlsSlot
-  | { state: ControlHandle<K>; label: string; handle?: undefined }
+  | {
+      state: ControlHandle<K>
+      label: string
+      badges?: Partial<Record<K, PageTabBadge>>
+      handle?: undefined
+    }
   | {
       /** @deprecated Use `state`; removed in the next minor. */
       handle: ControlHandle<K>
       label: string
+      badges?: Partial<Record<K, PageTabBadge>>
       state?: undefined
     }
 
-export type PageBarProps<K extends string = string> = {
+/** The view row's search: a string field, written as the reader types. `label` names the box. */
+export type PageSearch = { state: ControlHandle<string>; label: string; placeholder?: string }
+
+/** One layout of the view row's toggle: drawn as its icon, named by `label`. */
+export type PageLayoutOption<L extends string = string> = {
+  value: L
+  label: string
+  icon: IconComponent
+}
+
+/** The view row's layout toggle (table, cards): an enum field and an icon per value. */
+export type PageLayout<L extends string = string> = {
+  state: ControlHandle<L>
+  label: string
+  options: readonly PageLayoutOption<L>[]
+}
+
+/** The view row's view-settings button, drawn as an icon before the actions. */
+export type PageSettings = { label: string; icon?: IconComponent; onClick: () => void }
+
+export type PageBarProps<K extends string = string, L extends string = string> = {
   /** Breadcrumb leaf and `h1` in a shell; the visible `h1` without one. */
   title?: string
   parent?: { label: string; href: string | NavTarget }
   controls?: ControlsSlot
   tabs?: PageTabs<K>
+  /** Before `controls`; below `@regular` it takes a line of its own. */
+  search?: PageSearch
+  /** After `refresh`, before `settings`. */
+  layout?: PageLayout<L>
+  /** After `layout`, before `actions`. */
+  settings?: PageSettings
   /** `useConnection()`: draws `ConnectionIndicator` in the end slot, before `refresh`. */
   connection?: ConnectionView
   refresh?: { scope: 'page' | 'global' } & FreshnessView['button']
-  /** At most 5, at most one `primary`, none required. */
+  /**
+   * At most 5, at most one `primary`, none required. In a shell they claim the header's end unless
+   * the band holds a control; then they end the band, the primary last.
+   */
   actions?: readonly [PageAction?, PageAction?, PageAction?, PageAction?, PageAction?]
 }
 
