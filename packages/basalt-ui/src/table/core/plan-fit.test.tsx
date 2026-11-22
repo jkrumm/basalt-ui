@@ -80,8 +80,8 @@ describe('text width: short values size the column', () => {
       ...quiet,
       ...(ch !== undefined && { contentCh: { ref: ch } }),
     }).columns[0]
-  // the header's chrome: the sort mark and the menu (5 ch), and the text kind's icon (3 ch)
-  const headerFloor = widthPx({ ch: 'Issue'.length + 8, flex: false })
+  // the header's chrome: one state mark (2 ch) and the text kind's icon (3 ch)
+  const headerFloor = widthPx({ ch: 'Issue'.length + 5, flex: false })
 
   test('without loaded values the column keeps its kind width and stays flexible', () => {
     expect(widthAt(undefined)?.widthPx).toBe(widthPx({ ch: 16, flex: true }))
