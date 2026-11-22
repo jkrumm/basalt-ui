@@ -50,15 +50,31 @@ const engineChunk = (): Promise<Engine> =>
   (loading ??= Promise.all([
     import('@atlaskit/pragmatic-drag-and-drop/adapter/element-adapter'),
     import('@atlaskit/pragmatic-drag-and-drop/utils/set-custom-native-drag-preview'),
-  ]).then(([adapter, preview]) => ({ adapter, preview })))
+  ]).then(
+    ([adapter, preview]) => ({ adapter, preview }),
+    (error: unknown) => {
+      loading = undefined // the next registration tries again
+      throw error
+    },
+  ))
+
+let reported = false
 
 /** Registers once the library has loaded; the cleanup holds before and after it. */
 function register(make: (engine: Engine) => () => void): () => void {
   let off: (() => void) | undefined
   let live = true
-  void engineChunk().then((engine) => {
-    if (live) off = make(engine)
-  })
+  engineChunk().then(
+    (engine) => {
+      if (live) off = make(engine)
+    },
+    (error: unknown) => {
+      // The menu and keyboard paths still move everything; say once why drag is off.
+      if (reported) return
+      reported = true
+      console.error('basalt-ui: the drag engine did not load, so drag is off.', error)
+    },
+  )
   return () => {
     live = false
     off?.()
