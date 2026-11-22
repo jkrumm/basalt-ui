@@ -36,9 +36,10 @@ afterEach(() => {
   localStorage.clear()
   window.history.replaceState(null, '', '/')
 })
-// The panel is a lazy chunk; load it once so the first open does not race the assertions.
+// The panel and the tab menu are lazy chunks; load them once so the first open does not race the assertions.
 beforeAll(async () => {
   await import('./view-panel')
+  await import('./view-tab-menu')
 })
 beforeEach(() => {
   localStorage.clear()
