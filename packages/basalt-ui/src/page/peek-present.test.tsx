@@ -154,6 +154,29 @@ describe('Peek presentations', () => {
     expect(peek()?.dataset['present']).toBe('window')
   })
 
+  test('a window dragged by its header comes back to the same place after a minimise', async () => {
+    presentationStore('issue').set('window')
+    const { region } = shell()
+    render(<Shelled region={region} onClose={() => {}} />)
+    const header = document.querySelector(
+      '[data-present="window"] [data-panel="header"]',
+    ) as HTMLElement
+    const x0 = parseFloat(peek()?.style.getPropertyValue('--win-x') ?? '0')
+    act(() => {
+      header.dispatchEvent(
+        new PointerEvent('pointerdown', { button: 0, clientX: 300, clientY: 300, bubbles: true }),
+      )
+      window.dispatchEvent(new PointerEvent('pointermove', { clientX: 260, clientY: 320 }))
+      window.dispatchEvent(new PointerEvent('pointerup', { clientX: 260, clientY: 320 }))
+    })
+    const moved = parseFloat(peek()?.style.getPropertyValue('--win-x') ?? '0')
+    expect(moved).toBe(x0 - 40)
+    fireEvent.click(screen.getByRole('button', { name: 'Open as' }))
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Minimise' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Restore' }))
+    expect(parseFloat(peek()?.style.getPropertyValue('--win-x') ?? '0')).toBe(moved)
+  })
+
   test('a window resized from a corner keeps its size for the kind', () => {
     presentationStore('issue').set('window')
     const { region } = shell()

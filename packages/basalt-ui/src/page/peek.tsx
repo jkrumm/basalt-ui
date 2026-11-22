@@ -24,6 +24,7 @@ import { PRESENTATIONS, presentationStore, widthStore } from './core/panel-store
 import type { Presentation } from './core/panel-store'
 import { PageHostContext, ShellOverlayContext } from './page'
 import { PeekChip, PeekWindow } from './peek-window'
+import type { WindowRect } from './peek-window'
 import {
   PanelBody,
   PanelFooter,
@@ -267,6 +268,8 @@ function PeekPanel({
   const node = useRef<HTMLElement | null>(null)
   const [stored, setPresent] = presentationStore(kind).use()
   const [minimised, setMinimised] = useState(false)
+  // Where the window was dragged to, so a restore from the chip brings it back there.
+  const [placedAt, setPlacedAt] = useState<WindowRect | null>(null)
   const width = usePanelWidth({
     store: widthStore(`peek:${kind}`),
     name: `peek:${kind}`,
@@ -345,6 +348,8 @@ function PeekPanel({
         panelRef={attach}
         onKeyDown={keys}
         header={(drag) => header({ onPointerDown: drag })}
+        from={placedAt}
+        onPlaced={setPlacedAt}
       >
         {body}
       </PeekWindow>,

@@ -29,7 +29,10 @@ const ROOM = 64
 /** How much of a dragged window stays on screen, so its header can always be grabbed again. */
 const KEEP = 120
 
-type Rect = { x: number; y: number; w: number; h: number }
+/** A window's place and size in px. */
+export type WindowRect = { x: number; y: number; w: number; h: number }
+
+type Rect = WindowRect
 
 type Edge = 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw'
 
@@ -131,6 +134,10 @@ export type PeekWindowProps = {
   onKeyDown: (event: KeyboardEvent<HTMLElement>) => void
   /** Draws the header; the window hands it the drag. */
   header: (drag: (event: PointerEvent<HTMLElement>) => void) => ReactNode
+  /** Where the window was before it minimised: it restores there. */
+  from?: WindowRect | null | undefined
+  /** The rect once a drag or a resize ended, so a restore after a minimise comes back to it. */
+  onPlaced?: ((rect: WindowRect) => void) | undefined
   children: ReactNode
 }
 
@@ -145,10 +152,12 @@ export function PeekWindow({
   panelRef,
   onKeyDown,
   header,
+  from,
+  onPlaced,
   children,
 }: PeekWindowProps): ReactElement {
   const store = windowStore(kind)
-  const [rect, setRect] = useState<Rect>(() => opening(store.get()))
+  const [rect, setRect] = useState<Rect>(() => (from ? placed(from) : opening(store.get())))
   const style: WindowStyle = {
     '--win-x': `${rect.x}px`,
     '--win-y': `${rect.y}px`,
@@ -158,7 +167,13 @@ export function PeekWindow({
   const drag = (event: PointerEvent<HTMLElement>): void => {
     if (event.button !== 0) return
     if (event.target instanceof Element && event.target.closest(CONTROL) !== null) return
-    track(event, rect, (dx, dy) => placed({ ...rect, x: rect.x + dx, y: rect.y + dy }), setRect)
+    track(
+      event,
+      rect,
+      (dx, dy) => placed({ ...rect, x: rect.x + dx, y: rect.y + dy }),
+      setRect,
+      (last) => onPlaced?.(last),
+    )
   }
   const resize = (edge: Edge) => (event: PointerEvent<HTMLElement>) => {
     if (event.button !== 0) return
@@ -170,6 +185,7 @@ export function PeekWindow({
       (last) => {
         // A press that never moved the edge chose no size.
         if (last.w !== rect.w || last.h !== rect.h) store.set({ w: last.w, h: last.h })
+        onPlaced?.(last)
       },
     )
   }
