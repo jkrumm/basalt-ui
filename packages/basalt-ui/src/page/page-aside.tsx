@@ -3,7 +3,7 @@ import type { CSSProperties, KeyboardEvent, ReactElement, ReactNode } from 'reac
 import { createPortal } from 'react-dom'
 import { focusLost, focusMain } from '../common/focus'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
-import { PanelHandle, usePanelWidth } from '../common/panel-handle'
+import { PanelHandle, usePanelWidth } from '../core/panel'
 import { page } from '../core/messages/page'
 import { useMessages } from '../core/messages/use-messages'
 import type { RecordSequence } from '../core/ports'
@@ -14,7 +14,7 @@ import type { ClaimHandle } from './core/claims'
 import type { AsideSheetState } from './core/docking'
 import { widthStore } from './core/panel-store'
 import { PageContext, PageHostContext } from './page'
-import { PanelBody, PanelHeader, PanelSteps, panelKeys } from './record-panel'
+import { PanelBody, PanelHeader, PanelSteps, panelKeys, usePanelLabels } from './record-panel'
 
 /** The default aside width in px; 320, 360, 480 and 640 are the sanctioned widths. */
 export const DEFAULT_ASIDE_WIDTH = 360
@@ -60,6 +60,7 @@ export function PageAsidePanel({
   children,
 }: PanelProps): ReactElement {
   const t = useMessages(page)
+  const labels = usePanelLabels()
   const panel = useRef<HTMLElement>(null)
   const style: PanelStyle = { '--page-aside-w': `${width}px` }
   // Escape inside the panel closes it. A control that used the key itself (a menu, a combobox
@@ -80,7 +81,7 @@ export function PageAsidePanel({
         <PanelHandle
           panel={panel}
           min={ASIDE_MIN}
-          label={t('page.resizePeek')}
+          label={labels.resize}
           onResize={onResize}
           onCommit={onCommit}
         />

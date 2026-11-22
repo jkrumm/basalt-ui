@@ -9,8 +9,9 @@ import {
   PANEL_HEADER,
   PANEL_TAG,
   PANEL_TITLE,
-} from '../common/panel-anatomy'
-import { PanelHandle, usePanelWidth } from '../common/panel-handle'
+  PanelHandle,
+  usePanelWidth,
+} from '../core/panel'
 import { cn } from '../core/cn'
 import { ControlScopeProvider } from '../core/control-scope'
 import { dialogs } from '../core/messages/dialogs'
@@ -18,7 +19,6 @@ import { useMessages } from '../core/messages/use-messages'
 import { persisted } from '../core/persisted'
 import type { ControlHandle } from '../core/ports'
 import { buttonVariants } from './button'
-import { ScrollArea } from './scroll-area'
 
 type Placement = 'bottom' | 'right' | 'auto'
 type Swipe = 'down' | 'right'
@@ -275,9 +275,13 @@ export function SheetContent({
                   <SheetClose data-panel="close" />
                 </div>
               </header>
-              <ScrollArea className={PANEL_BODY}>
-                <div className="flex flex-col gap-4">{children}</div>
-              </ScrollArea>
+              {/* A native scroll, so the sheet renders only its own slots. */}
+              <div
+                data-panel="body"
+                className={cn(PANEL_BODY, 'flex flex-col gap-4 overflow-y-auto')}
+              >
+                {children}
+              </div>
               {footer !== undefined && footer !== null && footer !== false && (
                 <div data-panel="footer" className={PANEL_FOOTER}>
                   {footer}

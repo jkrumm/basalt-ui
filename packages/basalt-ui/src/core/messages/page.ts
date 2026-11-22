@@ -5,7 +5,7 @@ import type { BasaltMessages } from './index'
  * The strings `./page` prints itself. `page.toc` titles the table of contents, `page.tocTrigger` is
  * the button that opens it below 1200px, and
  * `page.kind*` name a title-less callout's kind for assistive tech, and `page.moreActions`
- * `page.closeAside` and `page.backToList` name the page bar's overflow button, the aside's close button, `page.closePeek` a `Peek`'s or `Dock`'s, `page.pinPanel` a `Peek`'s dock button, `page.resizePeek` the label of its width handle, and a split page's way back to its list, `page.openFullPage` names a `Peek`'s link to the record's own page, `page.previousRecord` and `page.nextRecord` a panel's steps through its opener's records, `page.openAs` and `page.present*` the presentation menu, `page.minimise` and `page.restore` a window's, and `page.itemAttention` and `page.itemActions` name an `InnerNav` item's dot
+ * `page.closeAside` and `page.backToList` name the page bar's overflow button, `page.recordActions` a panel header's, the aside's close button, `page.closePeek` a `Peek`'s or `Dock`'s, `page.pinPanel` a `Peek`'s dock button, `page.resizePeek` the label of its width handle, and a split page's way back to its list, `page.openFullPage` names a `Peek`'s link to the record's own page, `page.previousRecord` and `page.nextRecord` a panel's steps through its opener's records, `page.openAs` and `page.present*` the presentation menu, `page.minimise` and `page.restore` a window's, and `page.itemAttention` and `page.itemActions` name an `InnerNav` item's dot
  * and its actions menu.
  */
 export type PageMessages = Record<
@@ -18,6 +18,7 @@ export type PageMessages = Record<
   | 'page.kindWarn'
   | 'page.kindBad'
   | 'page.moreActions'
+  | 'page.recordActions'
   | 'page.closeAside'
   | 'page.closePeek'
   | 'page.pinPanel'
@@ -48,6 +49,7 @@ export const page = {
   'page.kindWarn': 'Warning',
   'page.kindBad': 'Error',
   'page.moreActions': 'More actions',
+  'page.recordActions': 'More actions',
   'page.closeAside': 'Close panel',
   'page.closePeek': 'Close panel',
   'page.pinPanel': 'Dock panel',
