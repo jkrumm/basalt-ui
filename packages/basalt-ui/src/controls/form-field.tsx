@@ -23,7 +23,7 @@ import {
 } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
-import type { ControlHandle, FieldLike, IconComponent } from '../core/ports'
+import type { FieldLike, IconComponent } from '../core/ports'
 import { IconTile } from '../ui/card'
 import { Field, FieldDescription, FieldError } from '../ui/field'
 
@@ -37,7 +37,10 @@ export const formFieldParts = [
 ] as const
 
 /** What a `control` row reads and writes: a `ControlHandle`, or the `use()` of a synced field. */
-export type ControlSource<T> = Pick<ControlHandle<T>, 'use'> & { readonly isDefault?: boolean }
+export type ControlSource<T> = {
+  use(): readonly [T, (next: T) => void]
+  readonly isDefault?: boolean
+}
 
 type Source<T> =
   | {
