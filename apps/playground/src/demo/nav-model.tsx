@@ -96,6 +96,13 @@ export const NAV = defineNav({
           link: linkOptions({ to: '/kit/peek' }),
         },
         {
+          id: 'kit-list',
+          label: 'List (fill)',
+          icon: Layout,
+          mobile: 'more',
+          link: linkOptions({ to: '/kit/list' }),
+        },
+        {
           id: 'kit-split',
           label: 'Split page',
           icon: Layout,

@@ -33,7 +33,7 @@ function SplitRoute(): ReactElement {
   const selected = store.field.photo.useIsSet()
   const photo = PHOTOS.find((p) => p.id === id)
   return (
-    <Page area="kit-split">
+    <Page area="kit-split" fill>
       <PageBar
         title={photo?.title ?? 'Split page'}
         {...(photo !== undefined && {
