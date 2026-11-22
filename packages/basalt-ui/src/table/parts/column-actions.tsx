@@ -3,7 +3,7 @@
  * reset for one column, all written through the table's one state (`setRequest` for the sort and
  * filters, `setDisplay` for visibility), so the chips, the Display popover and the URL stay in
  * step. The identity column never offers Hide, and `actions` has no menu. A filterable column adds
- * `Filter...` and a ranked status column `Order categories...`; each opens its panel where the
+ * `Filter column...` and a ranked status column `Order categories...`; each opens its panel where the
  * caller anchors it (`DataTableHead` anchors both to the header cell).
  */
 import type { ReactElement, ReactNode, Ref } from 'react'
@@ -89,7 +89,7 @@ export function ColumnActionsMenu<T>({
   children?: ReactNode
   /** The trigger's accessible name when `children` is given; default the column's header. */
   label?: string
-  /** Adds `Filter...`, which calls it: the caller opens the column's filter editor. */
+  /** Adds `Filter column...`, which calls it: the caller opens the column's filter editor. */
   onFilter?: () => void
   /** Adds `Order categories...`, which calls it: the caller opens the column's order list. */
   onOrder?: () => void
