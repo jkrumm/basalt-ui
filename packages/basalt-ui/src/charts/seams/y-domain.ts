@@ -7,12 +7,14 @@ import type { Seam, SeamProps } from './define'
 const finite = (v: number | null): v is number => v !== null && Number.isFinite(v)
 
 /**
- * The extent of the left axis' data: lines, dots and unstacked bars one by one, a bar stack by its
- * per-datum positive and negative totals (a stack spans from 0). Failed series draw nothing and a
- * right-axis series has its own scale. `null` when there is no finite value.
+ * The extent of the left axis' data as the plot draws it: lines, dots and grouped bars one by one,
+ * the bars of a stacked layout (the default) as one stack by its per-datum positive and negative
+ * totals (a stack spans from 0). The layout decides what stacks, as it does for drawing; a series'
+ * `stack` key is not read. Failed series draw nothing and a right-axis series has its own scale.
+ * `null` when there is no finite value.
  */
 export function leftExtent<D>(
-  { data, series }: Pick<SeamProps<D>, 'data' | 'series'>,
+  { data, series, layout = 'stacked' }: Pick<SeamProps<D>, 'data' | 'series' | 'layout'>,
   /** A log y reads only the values above zero. */
   positive = false,
 ): Extent | null {
@@ -23,16 +25,16 @@ export function leftExtent<D>(
     if (v < lo) lo = v
     if (v > hi) hi = v
   }
-  const stacks = new Map<string, Series<D>[]>()
+  const members: Series<D>[] = []
   for (const s of series) {
     if (s.failed === true || s.axis === 'right') continue
-    if (s.mark === 'bar' && s.stack !== undefined) {
-      stacks.set(s.stack, [...(stacks.get(s.stack) ?? []), s])
+    if (s.mark === 'bar' && layout !== 'grouped') {
+      members.push(s)
       continue
     }
     for (const d of data) take(s.y(d))
   }
-  for (const members of stacks.values()) {
+  if (members.length > 0) {
     for (const d of data) {
       let up = 0
       let down = 0
