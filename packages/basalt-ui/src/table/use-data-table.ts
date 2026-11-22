@@ -454,6 +454,7 @@ export function useDataTable<
     display.visibility,
     contentCh,
     widths,
+    preview !== null,
   )
   const look = options.look ?? 'reading'
   const tick = options.selection !== undefined
@@ -1015,7 +1016,10 @@ function usePlan<T>(
   visibility: Record<string, boolean>,
   contentCh: Record<string, number>,
   widths: Readonly<Record<string, number>>,
+  previewing: boolean,
 ): TablePlan {
+  // A drag re-plans on every pointer move: its dev warnings wait for the width it writes on release.
+  const quiet = previewing ? { warn: () => {} } : {}
   // oxlint-disable-next-line react/exhaustive-deps -- `key` IS the shape of `columns`, `visibility`, `contentCh` and `widths`
-  return useMemo(() => planTable(columns, { visibility, contentCh, widths }), [key])
+  return useMemo(() => planTable(columns, { visibility, contentCh, widths, ...quiet }), [key])
 }
