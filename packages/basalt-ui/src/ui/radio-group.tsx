@@ -4,15 +4,28 @@ import { cva } from 'class-variance-authority'
 import { useId } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
+import { ChoiceCard } from './choice-card'
 
 /**
- * The `RadioGroup` cva table: the options stacked with one gap, wide enough on a coarse pointer that no two 44 px hit areas overlap. No axes; display belongs to the
- * table, so a caller never re-lays the group out.
+ * The `RadioGroup` cva table. `list` stacks the options with one gap, wide enough on a coarse pointer
+ * that no two 44 px hit areas overlap; `card` stacks choice cards; `tile` lays them in a wrapping
+ * grid for options with a preview. Display belongs to the table, so a caller never re-lays the
+ * group out.
  *
  * @example
- * radioGroupVariants() // class string for a hand-built wrapper
+ * radioGroupVariants({ variant: 'card' }) // class string for a hand-built wrapper
  */
-export const radioGroupVariants = cva('flex flex-col gap-2 pointer-coarse:gap-7')
+export const radioGroupVariants = cva('', {
+  variants: {
+    variant: {
+      list: 'flex flex-col gap-2 pointer-coarse:gap-7',
+      card: 'flex flex-col gap-2',
+      // oxlint-disable-next-line basalt/tw-off-law -- tiles wrap by their own width (as many 9 rem columns as fit); the group has no container of its own to key a tier on
+      tile: 'grid grid-cols-[repeat(auto-fill,minmax(min(100%,9rem),1fr))] gap-2',
+    },
+  },
+  defaultVariants: { variant: 'list' },
+})
 
 /**
  * The `Radio` cva table: a 16 px ring with a dot when selected. It stays 16 px on every pointer and
@@ -40,24 +53,36 @@ export type ChoiceOption<Value = string> = {
   label: ReactNode
   description?: ReactNode
   disabled?: boolean
+  /** A value at the end of the title row (a price). Drawn by the `card` and `tile` variants only. */
+  trailing?: ReactNode
+  /** A picture above the title row. Drawn by the `card` and `tile` variants only. */
+  preview?: ReactNode
 }
+
+/** How a group draws its `options`: plain rows, stacked cards, or cards in a wrapping grid. */
+export type ChoiceVariant = 'list' | 'card' | 'tile'
 
 export type RadioGroupProps<Value = string> = Layout<BaseRadioGroup.Props<Value>> & {
   /** The choices, each a row with its label and description. When given, it replaces `children`. */
   options?: readonly ChoiceOption<Value>[]
+  /** `list` (default) is plain rows; `card` and `tile` draw each option as a `ChoiceCard`. Needs `options`. */
+  variant?: ChoiceVariant
 }
 export type RadioProps<Value = string> = Layout<Omit<BaseRadio.Root.Props<Value>, 'children'>>
 
 /**
  * A group of radios on Base UI: one selected value, arrow keys move it in DOM order. Works with no
  * provider and joins a Base UI `Field` when wrapped in one. Name each radio with a wrapping
- * `<label>`, or give `options` and each row is labelled and described for you.
+ * `<label>`, or give `options` and each row is labelled and described for you. `variant="card"` or
+ * `"tile"` draws the options as selectable cards with a trailing value and a preview.
  *
  * @useWhen one value of a few (up to about five) that the user should see all at once
  * @neverWhen more than about five options (use Select), several values at once (use Checkbox), or a view switch (use Segmented)
  * @example
  * <RadioGroup value={plan} onValueChange={setPlan} aria-label="Plan"
  *   options={[{ value: 'pro', label: 'Pro', description: 'Team seats and audit log' }]} />
+ * <RadioGroup variant="card" value={plan} onValueChange={setPlan} aria-label="Plan"
+ *   options={[{ value: 'pro', label: 'Pro', description: 'Team seats', trailing: '€12 / seat' }]} />
  * <RadioGroup value={plan} onValueChange={setPlan} aria-label="Plan">
  *   <label className="flex items-center gap-2 text-sm"><Radio value="free" />Free</label>
  *   <label className="flex items-center gap-2 text-sm"><Radio value="pro" />Pro</label>
@@ -65,6 +90,7 @@ export type RadioProps<Value = string> = Layout<Omit<BaseRadio.Root.Props<Value>
  */
 export function RadioGroup<Value = string>({
   className,
+  variant = 'list',
   options,
   children,
   ...props
@@ -73,11 +99,14 @@ export function RadioGroup<Value = string>({
     <BaseRadioGroup
       {...props}
       data-slot="radio-group"
-      className={cn(radioGroupVariants(), className)}
+      data-variant={variant}
+      className={cn(radioGroupVariants({ variant }), className)}
     >
       {options === undefined
         ? children
-        : options.map((option) => <RadioOption key={String(option.value)} option={option} />)}
+        : options.map((option) => (
+            <RadioOption key={String(option.value)} option={option} variant={variant} />
+          ))}
     </BaseRadioGroup>
   )
 }
@@ -101,10 +130,27 @@ export function Radio<Value = string>({ className, ...props }: RadioProps<Value>
  * label names the control; the description describes it. The row is a `<label>`, so a click on
  * either text selects the option.
  */
-function RadioOption<Value>({ option }: { option: ChoiceOption<Value> }): ReactElement {
+function RadioOption<Value>({
+  option,
+  variant,
+}: {
+  option: ChoiceOption<Value>
+  variant: ChoiceVariant
+}): ReactElement {
   const labelId = useId()
   const descriptionId = useId()
   const hasDescription = option.description !== undefined
+  if (variant !== 'list') {
+    return (
+      <ChoiceCard
+        control={<Radio value={option.value} disabled={option.disabled ?? false} />}
+        label={option.label}
+        {...(option.description !== undefined && { description: option.description })}
+        {...(option.trailing !== undefined && { trailing: option.trailing })}
+        {...(option.preview !== undefined && { preview: option.preview })}
+      />
+    )
+  }
   return (
     <label className="flex items-start gap-2">
       <Radio

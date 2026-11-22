@@ -1,0 +1,19 @@
+/*
+ * The `ui-form-parts` fixture's Tailwind v4 entry, compiled WITH preflight like `ui-groups.css`, because
+ * the parts are measured the way a Tailwind consumer renders them. `ui-form-parts.layout.test.ts`
+ * compiles it into a temp directory; nothing generated lands in the repo.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './ui-form-parts-fixture.tsx';
+@source '../../../src/ui/button.tsx';
+@source '../../../src/ui/checkbox.tsx';
+@source '../../../src/ui/checkbox-matrix.tsx';
+@source '../../../src/ui/choice-card.tsx';
+@source '../../../src/ui/field.tsx';
+@source '../../../src/ui/one-time-code.tsx';
+@source '../../../src/ui/popover.tsx';
+@source '../../../src/ui/quick-picks.tsx';
+@source '../../../src/ui/radio-group.tsx';
+@source '../../../src/ui/swatch-picker.tsx';
+@source '../../../src/ui/table.tsx';
+@source '../../../src/ui/tag-input.tsx';

@@ -83,6 +83,10 @@ const PART_PROPS: Record<string, Record<string, unknown>> = {
   'menu-sub': { label: 'x' },
   'menu-radio-item': { value: 'a' },
   // an empty list: the first window is drawn on the server, and `x` is no row function
+  'choice-card': { control: <span />, label: 'x' },
+  'checkbox-matrix': { rows: [], columns: [], 'aria-label': 'x' },
+  'swatch-picker': { options: [], 'aria-label': 'x' },
+  'quick-picks': { options: [], 'aria-label': 'x' },
   'virtual-list': { count: 0, estimateSize: () => 20, getItemKey: (index: number) => index },
   'sortable-list': {
     label: 'x',
@@ -107,6 +111,22 @@ function renderPart(Part: Part, name: string): RenderResult {
     cleanup()
     return render(wrap(<Rendered {...props} />))
   }
+}
+
+/**
+ * A module built on another module's parts renders their `data-slot`s too: the matrix is a `Table`.
+ * Only the module's own parts must match its list.
+ */
+const COMPOSED: Record<string, readonly string[]> = {
+  'checkbox-matrix': [
+    'table',
+    'table-header',
+    'table-body',
+    'table-row',
+    'table-head',
+    'table-cell',
+    'checkbox',
+  ],
 }
 
 describe('SLOTS', () => {
@@ -138,7 +158,8 @@ describe('SLOTS', () => {
         }
         unmount()
       }
-      expect([...seen].toSorted()).toEqual([...parts].toSorted())
+      const own = [...seen].filter((slot) => !(COMPOSED[module] ?? []).includes(slot))
+      expect(own.toSorted()).toEqual([...parts].toSorted())
     })
   }
 })

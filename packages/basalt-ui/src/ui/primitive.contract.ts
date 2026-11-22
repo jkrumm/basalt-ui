@@ -290,6 +290,10 @@ const PART_PROPS: Record<string, Record<string, unknown>> = {
   'menu-sub': { label: 'x' },
   'menu-radio-item': { value: 'a' },
   num: { value: 1 },
+  'choice-card': { control: createElement('span'), label: 'x' },
+  'checkbox-matrix': { rows: [], columns: [], 'aria-label': 'x' },
+  'swatch-picker': { options: [], 'aria-label': 'x' },
+  'quick-picks': { options: [], 'aria-label': 'x' },
   'virtual-list': { count: 0, estimateSize: () => 32, getItemKey: (i: number) => i },
   'sortable-list': {
     label: 'x',

@@ -19,12 +19,14 @@ drawn by the part; children are not accepted.
 
 A group of checkboxes on Base UI: the value is the list of checked options' `value`s. Works with
 no provider and joins a Base UI `Field` when wrapped in one. Name each checkbox with a wrapping
-`<label>`, or give `options` and each row is labelled and described for you.
+`<label>`, or give `options` and each row is labelled and described for you. `variant="card"` or
+`"tile"` draws the options as selectable cards.
 
 ```ts
-CheckboxGroup({ className, options, children, ...props }: CheckboxGroupProps): ReactElement
+CheckboxGroup({ className, variant, options, children, ...props }: CheckboxGroupProps): ReactElement
   className?: string  // Layout only (`w-full`, `max-w-sm`, `mt-2`)
   options?: readonly ChoiceOption[]  // The choices, each a row with its label and description
+  variant?: ChoiceVariant  // `list` (default) is plain rows; `card` and `tile` draw each option as a `ChoiceCard`
 ```
 
 ### `Checkbox`
@@ -42,7 +44,7 @@ Checkbox({ className, ...props }: CheckboxProps): ReactElement
 
 Part `checkbox-group`.
 
-No variant axes.
+- `variant`: `list`, `card`, `tile` (default `list`)
 
 ## `checkboxVariants`
 
