@@ -116,7 +116,7 @@ export type PageBarProps<K extends string = string, L extends string = string> =
   parent?: { label: string; href: string | NavTarget }
   controls?: ControlsSlot
   tabs?: PageTabs<K>
-  /** Before `controls`; below `@regular` it takes a line of its own. */
+  /** Before `controls`; below `@wide` it takes a line of its own. */
   search?: PageSearch
   /** After `refresh`, before `settings`. */
   layout?: PageLayout<L>
