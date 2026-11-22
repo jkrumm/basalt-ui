@@ -123,7 +123,7 @@ layout('table kinds at 1800', () => {
       const root = document.querySelector<HTMLElement>(sel)!
       return [...root.querySelectorAll<HTMLElement>('[data-slot="table-tags"]')].map((box) => {
         const edge = box.getBoundingClientRect().right
-        const chips = [...box.querySelectorAll<HTMLElement>('[data-slot="lozenge"]')]
+        const chips = [...box.querySelectorAll<HTMLElement>('[data-slot="table-tag"]')]
         const shown = chips.filter((chip) => getComputedStyle(chip).visibility !== 'hidden')
         return {
           more: box.querySelector('[data-slot="table-tags-more"]')?.textContent ?? null,
@@ -134,7 +134,7 @@ layout('table kinds at 1800', () => {
     }, ROOT)
     expect(tags[0]?.more).toMatch(/^\+\d+$/)
     expect(tags[1]?.more).toBeNull()
-    expect(tags.every((t) => t.spill === 0 && t.lines === 1)).toBe(true)
+    expect(tags.filter((t) => t.spill !== 0 || t.lines !== 1)).toEqual([])
   })
 
   test('the countdown follows the clock and sorts by its date', async () => {

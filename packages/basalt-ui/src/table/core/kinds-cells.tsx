@@ -15,7 +15,7 @@ import type { Delta, IconComponent, NavTarget, Tone } from '../../core/ports'
 import { TRUE_MINUS } from '../../format/shared'
 import { Avatar, AvatarStack } from '../../ui/avatar'
 import type { AvatarEntry } from '../../ui/avatar'
-import { DeltaBadge, Lozenge } from '../../ui/badge'
+import { DeltaBadge } from '../../ui/badge'
 import { Meter } from '../../ui/meter'
 import { Status } from '../../ui/status'
 import { dayOf } from './filters'
@@ -435,6 +435,36 @@ export function PeopleCell({
   )
 }
 
+/**
+ * The chip's ink and ground per tone. Neutral and accent are a hairline with no ground, so a chip in
+ * the active or selected row never sits on its own tint (a `Lozenge` there fails contrast); the
+ * verdict tones are the tinted lozenge.
+ */
+const TAG_TONE: Readonly<Record<Tone, string>> = {
+  neutral: 'border border-border text-muted-foreground',
+  accent: 'border border-border text-brand',
+  good: 'bg-good-tint text-good',
+  warn: 'bg-warn-tint text-warn',
+  bad: 'bg-bad-tint text-bad',
+  info: 'bg-info-tint text-info',
+}
+
+function TagChip({ tone, hidden, text }: { tone: Tone; hidden: boolean; text: string }): ReactNode {
+  return (
+    <span
+      data-slot="table-tag"
+      aria-hidden={hidden ? 'true' : undefined}
+      className={cn(
+        'inline-flex h-5 shrink-0 items-center rounded-chip px-1.5 text-xs font-medium whitespace-nowrap',
+        TAG_TONE[tone],
+        hidden && 'invisible',
+      )}
+    >
+      {text}
+    </span>
+  )
+}
+
 /** Width of the `+N` chip and its gap, kept free once the chips overflow. */
 const MORE_CHIP_PX = 32
 
@@ -488,23 +518,21 @@ export function TagsCell({
     >
       <span ref={row} className="flex min-w-0 items-center gap-1 overflow-hidden">
         {tags.map((tag, i) => (
-          <Lozenge
+          <TagChip
             key={tag}
             tone={tone?.(tag) ?? 'neutral'}
-            aria-hidden={i >= fit ? 'true' : undefined}
-            className={cn(i >= fit && 'invisible')}
-          >
-            {labels?.[tag] ?? tag}
-          </Lozenge>
+            hidden={i >= fit}
+            text={labels?.[tag] ?? tag}
+          />
         ))}
       </span>
       {hidden.length > 0 && (
         <span
           data-slot="table-tags-more"
           title={hidden.map((tag) => labels?.[tag] ?? tag).join(', ')}
-          className="shrink-0"
+          className="inline-flex shrink-0"
         >
-          <Lozenge>{`+${hidden.length}`}</Lozenge>
+          <TagChip tone="neutral" hidden={false} text={`+${hidden.length}`} />
         </span>
       )}
     </span>
@@ -635,7 +663,7 @@ export function LinkCell({
 }): ReactNode {
   const own = href === undefined ? linkTarget(text) : null
   const className =
-    '-my-1 min-w-0 truncate py-1 text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:text-foreground'
+    '-my-1 min-w-0 truncate py-1 text-muted-foreground underline-offset-2 pointer-coarse:-my-3 pointer-coarse:py-3 hover:text-foreground hover:underline focus-visible:text-foreground'
   const label = named ?? (own === null ? text : linkLabel(text))
   let body: ReactNode = <span className="min-w-0 truncate text-muted-foreground">{label}</span>
   if (href !== undefined) {
