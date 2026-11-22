@@ -45,7 +45,7 @@ Date 2026-11-09. Domain row "Tokens, static" of `ARCHITECTURE.md` section 8, rea
 Layer 0, `src/tokens` and `src/css`, peers none, subpath only CSS entries; four value symbols in `.`: `BASALT`, `alpha`, `setScheme`, `cn`. `defineSeries` sits in `./charts` (charts concept). Budget: `tokens.css` is seed + 5%, full-scan CSS 12 KB gz fixture ceiling, public names 90. Line target tokens + css 1,900. Hand-rolled copies today: 6 (rollhook x2 bridges, console bridge, epos value set, jkrumm.com, shutterflow hex).
 Pipeline: `table.ts` + `ramps.ts` + `derive.ts` + `status-text.ts` (authored, pure) -> `gates.ts` (contract section 5; a failure names gate, surface, ratio) -> `emit.ts` -> `tokens.css`, `tailwind.css`, `BASALT` types, `check-tokens` names, the zone A denial list, `docs/tokens.md`, migration rows. Emitted output is deterministic and carries the two-line provenance header that `raw-hex` keys on (self-tokens-theme d30).
 
-### 3.2 Public names (75 of 90)
+### 3.2 Public names (76 of 90)
 
 | Family                         | `--basalt-*`                                                                                                                                         | n   | Tailwind projection                                                                                                     |
 | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ----------------------------------------------------------------------------------------------------------------------- |
@@ -62,7 +62,7 @@ Pipeline: `table.ts` + `ramps.ts` + `derive.ts` + `status-text.ts` (authored, pu
 | Fonts 4, weights 3, type 14    | `font-sans font-head font-mono font-head-stretch`; `weight-body weight-medium weight-strong`; `text-{micro,xs,sm,md,base,lg,display}` and `-lh` each | 21  | `font-*`; `--text-*` + `--line-height`; weights serve static sites, which have no utilities                             |
 | Motion 3, rhythm 4, contract 1 | `dur-fast dur-base ease`; `measure rhythm-1..3`; `contract` (value `3`)                                                                              | 8   | `duration-*`, `ease-*`; rhythm for `.basalt-prose` and static sites                                                     |
 
-Tailwind-only aliases: `primary`/`primary-foreground` = ink/canvas; `secondary` = raised + `shadow-raised`, no ring (S2); `muted`/`muted-foreground` = card/ink-muted; `transparent`, `current`. Not names: axis is `ink-faint`, dot stroke is `surface`, tooltip is `raised` + `ink` + `ink-muted` + `hairline` + `shadow-overlay`; `BASALT` constants `dash` (`6 4`), `lineWidth`, `text.*` are not CSS vars. Alpha: `hairline`, `hover`, `selected`, `-tint` and `scrim` are pre-mixed `color-mix` values, so `/NN` on them compounds and is denied by `tw-off-law` (self-tokens-theme, Opacity).
+Tailwind-only aliases: `primary`/`primary-foreground` = ink/canvas; `secondary` = raised + `shadow-raised`, no ring (S2); `muted`/`muted-foreground` = card/ink-muted; `transparent`, `current`. Not names: axis is `ink-faint`, dot stroke is `surface`, tooltip is `raised` + `ink` + `ink-muted` + `hairline` + `shadow-overlay`; `BASALT` constants `dash` (`6 4`), `lineWidth`, `text.*` are not CSS vars. Alpha: `hairline`, `hover`, `selected`, `-tint`, `scrim` and `scrim-wash` are pre-mixed `color-mix` values, so `/NN` on them compounds and is denied by `tw-off-law` (self-tokens-theme, Opacity).
 
 ### 3.3 Surfaces and nesting
 
