@@ -83,7 +83,7 @@ export const rows: readonly RowDef[] = [
     // point scale keeps right of the last points (scale room, planner anchor, measured width), the ring and leader
     // of a page label in a crowded cloud with the plate under a label that lies over dots, and the Retry word read
     // from `home.retry` (the message table joins the chart closure).
-    // 139400 -> 140400 (Issue 2883): +~1.0 KB gz over master for the segment value label (`valuesAt: 'segment'`)
+    // 139400 -> 140400 (Issue 2883): 140242 B measured, +~1.0 KB gz over master (139280) for the segment value label (`valuesAt: 'segment'`)
     // placed inside its own segment of a stack, fitted like a clamped stack, and the stack-aware `y.domain` extent
     // (expression cycle 19 contract).
     ceiling: 140400,
