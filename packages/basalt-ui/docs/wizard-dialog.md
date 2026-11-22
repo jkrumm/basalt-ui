@@ -20,9 +20,9 @@ says yes. With `draft` the answers survive a reload.
 WizardDialog<F extends WizardForm>({ form, steps, preview, submitLabel, draft, className, }: WizardDialogProps<F>): ReactElement
   form: F  // The form every step reads and writes; its `onSubmit` runs from the review step's primary
   steps: readonly [WizardStep<F>, ...WizardStep<F>[]]  // The steps before the review, in order; at least one
-  preview: (values: ValuesOf<F>) => ReactNode  // The record as it stands, drawn from the form's current values, so it mirrors every input
+  preview: (values: WizardValues<F>) => ReactNode  // The record as it stands, drawn from the form's current values, so it mirrors every input
   submitLabel: string  // The label of the primary on the review step: `Create contract`
-  draft?: UseFormDraftOptions<ValuesOf<F>>  // Keeps the answers across a reload; a restored draft opens on the first step that is not valid
+  draft?: UseFormDraftOptions<WizardValues<F>>  // Keeps the answers across a reload; a restored draft opens on the first step that is not valid
   className?: string  // Layout only
 ```
 
