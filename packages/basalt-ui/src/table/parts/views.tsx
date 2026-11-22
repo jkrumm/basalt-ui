@@ -572,6 +572,7 @@ export function ViewStrip<T>({ c }: { c: ViewsController<T> }): ReactElement {
         size="sm"
         data-slot="table-view-add"
         aria-label={t('table.viewAdd')}
+        className="pointer-coarse:min-w-11"
         onClick={() => void c.create()}
       >
         <PlusGlyph />
