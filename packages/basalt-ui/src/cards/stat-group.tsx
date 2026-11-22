@@ -25,7 +25,8 @@ export type StatGroupProps = {
    * `strip` is one dense surface whose cells share their tracks; `cards` is one card per cell with
    * the bands aligned across them, two to a line when the container is narrow. `flush` is the strip
    * with no card: cells split by hairlines and a rule below, edge to edge under the view row of a
-   * fill page. A flush cell with no sub-line, delta, status, meter, chart or rows does not render.
+   * fill page. A ready flush cell with no sub-line, delta, status, meter, chart or rows does not
+   * render; a loading, empty, failed or offline cell keeps its slot.
    */
   variant: 'strip' | 'cards' | 'flush'
   /** Names the group for assistive tech (`Recovery`). */
@@ -76,7 +77,7 @@ const CARDS = cn(
  * `flush` is the summary strip of a list page: it sits under the `PageBar` of a fill page, with no
  * card, and every cell carries the line that gives its figure a base. A bare number does not
  * render there (the owner rejected the bare stat strip): a ready cell with none of `sub`, `delta`,
- * `status`, `meter`, `chart` or `rows` is dropped, with a development warning; a loading or failed cell keeps its slot.
+ * `status`, `meter`, `chart` or `rows` is dropped, with a development warning; a loading, empty, failed or offline cell keeps its slot.
  *
  * @useWhen a page shows several headline figures side by side, a status bar or a row of KPIs
  * @neverWhen there is one figure (use a stat card), the figures are bare counts (put them in the footer of the card they belong to) or need a chart each (use chart cards)
@@ -126,12 +127,16 @@ export function StatGroup({ variant, label, children }: StatGroupProps): ReactEl
   )
 }
 
+/** Phases in which a cell draws its own state (a skeleton, an empty cause, an error, offline) in its slot. */
+const DRAWS_ITS_STATE: ReadonlySet<string> = new Set(['loading', 'empty', 'error', 'offline'])
+
 /**
  * True when a cell says what its figure is against (a sub-line, a delta, a verdict, a meter, a trend
- * or rows), or is not ready yet: a loading, empty or failed cell draws its own state in its slot.
+ * or rows), or draws its state instead of a figure: a loading, empty, failed or offline cell keeps
+ * its slot. A ready or stale cell shows a figure, so it needs the context.
  */
 function hasContext(cell: StatCellProps): boolean {
-  if (cell.empty !== undefined || resolvePhase(cell).tag !== 'ready') return true
+  if (DRAWS_ITS_STATE.has(resolvePhase(cell).tag)) return true
   return (
     (cell.sub !== undefined && cell.sub !== '') ||
     cell.delta !== undefined ||

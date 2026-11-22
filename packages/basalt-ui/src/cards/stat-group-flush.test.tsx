@@ -59,6 +59,20 @@ describe('StatGroup flush', () => {
     warn.mockRestore()
   })
 
+  test('a ready cell with a null empty is still bare and dropped; an empty cause keeps its slot', () => {
+    const warn = spyOn(console, 'warn').mockImplementation(() => {})
+    render(
+      <StatGroup variant="flush" label="Invoices">
+        <StatCell label="Outstanding" value={186250} sub="33 invoices waiting" />
+        <StatCell label="Open" value={42} empty={null} />
+        <StatCell label="Paid" value={undefined} empty={{ cause: 'No invoices paid yet' }} />
+      </StatGroup>,
+    )
+    expect(screen.queryByText('Open')).toBeNull()
+    expect(screen.getByText('Paid')).toBeDefined()
+    warn.mockRestore()
+  })
+
   test('a strip keeps a bare cell; only flush drops it', () => {
     const warn = spyOn(console, 'warn').mockImplementation(() => {})
     render(
