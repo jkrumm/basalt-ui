@@ -138,6 +138,13 @@ export const NAV = defineNav({
           link: linkOptions({ to: '/kit/board' }),
         },
         {
+          id: 'kit-layouts',
+          label: 'Layouts',
+          icon: Table,
+          mobile: 'more',
+          link: linkOptions({ to: '/kit/layouts' }),
+        },
+        {
           id: 'kit-chain',
           label: 'Dependency chain',
           icon: Table,
