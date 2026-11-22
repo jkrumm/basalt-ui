@@ -78,7 +78,8 @@ export const rows: readonly RowDef[] = [
     // 135100 -> 135300 (Issue 2784): 135262 B measured, +~160 B gz over the cap for the band label measured as the engine measures it (chip bold, tick regular) in place of a shrunk estimate that Linux Chrome's wider glyphs defeated.
     // 135300 -> 135400 (Issue 2889): 135349 B measured, +~90 B gz over master (135262) for the zone caption that slides along a zone full of bars (n96's aperture, ISO and shutter cards lost the caption their focal card kept).
     // 135400 -> 136800 (Issue 2828): 136702 B measured, +~1.25 KB gz over master (135349) for `y.scale: 'log'`: the log scale and decade ticks, the dev errors and the production skip, the decade-space label placement and the pixel maps in values.
-    ceiling: 136800,
+    // 136800 -> 137600 (Issue 2882): 137464 B measured, +~760 B gz over master (136702) for the bar values raised over their bar with a leader or put beside an edge bar, the minimum height of a thin bar, the ink-step dim in the bar's own paint, the line value that names its series and the band chip's air, the kit fixes of expression cycle 19.
+    ceiling: 137600,
     measure: () => measureSource(THREE_KIND),
   },
 ]
@@ -101,6 +102,13 @@ export const raises: Raises = {
     },
   ],
   'charts-three-kind': [
+    {
+      from: 136800,
+      to: 137600,
+      consumer:
+        "n94's '+10 pts' inside its bar and its floating '+17 pts', n98's '+18%' struck at 390 and its dropped '+101%', and n96's 1-photo bucket drawn sub-pixel (Issue 2882): a bar value rises over its own bar with a leader or stands beside a bar that ends at the plot's edge, and a thin bar keeps a visible minimum",
+      repo: 'basalt-ui',
+    },
     {
       from: 135400,
       to: 136800,
