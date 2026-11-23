@@ -19,13 +19,14 @@ describe('docs/static-site.md (static recipe, drift)', () => {
     expect(doc).toContain('--check')
   })
 
-  test('the script literal equals themeScript(), byte for byte', () => {
+  // A static page has no appearance setter: the recipe and the fixture carry the scheme half only.
+  test('the script literal equals themeScript({ appearance: false }), byte for byte', () => {
     const block = doc.match(/<script>\n([\s\S]*?)\n<\/script>/)
-    expect(block?.[1]).toBe(themeScript())
+    expect(block?.[1]).toBe(themeScript({ appearance: false }))
   })
 
   test('the fixture page embeds the same script', () => {
     const html = readFileSync(resolve(pkg, 'test/fixtures/tokens/index.html'), 'utf8')
-    expect(html).toContain(themeScript())
+    expect(html).toContain(themeScript({ appearance: false }))
   })
 })
