@@ -4,10 +4,11 @@ import {
   SettingsPage,
   settingsControls,
 } from '../../../../../packages/basalt-ui/blocks/settings-page/SettingsPage'
+import { ACCENTS } from '../../lib/accents'
 
 function RefSettingsRoute(): ReactElement {
   const hash = useRouterState({ select: (state) => state.location.hash })
-  return <SettingsPage hash={hash} />
+  return <SettingsPage hash={hash} accents={ACCENTS} />
 }
 
 export const Route = createFileRoute('/ref/settings')({
