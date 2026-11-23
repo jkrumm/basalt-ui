@@ -98,6 +98,9 @@ export type PropertyListProps = {
 
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/
 
+/** On touch every row is one 44 px line, so a read-only row keeps the pitch of the editable ones around it. */
+const TOUCH_ROW = 'pointer-coarse:flex pointer-coarse:min-h-11 pointer-coarse:items-center'
+
 function focusOnMount(node: HTMLElement | null): void {
   node?.focus()
 }
@@ -444,17 +447,8 @@ function Row({ row }: { row: PropertyRow }): ReactElement {
       data-editing={editing ? '' : undefined}
       className="contents"
     >
-      <dt
-        className={cn(
-          FACTS_TERM,
-          // An editable value is a 44 px target on touch, so its label centres on it.
-          row.kind !== undefined &&
-            'pointer-coarse:flex pointer-coarse:min-h-11 pointer-coarse:items-center',
-        )}
-      >
-        {row.label}
-      </dt>
-      <dd className={FACTS_VALUE}>{value}</dd>
+      <dt className={cn(FACTS_TERM, TOUCH_ROW)}>{row.label}</dt>
+      <dd className={cn(FACTS_VALUE, row.kind === undefined && TOUCH_ROW)}>{value}</dd>
     </div>
   )
 }
