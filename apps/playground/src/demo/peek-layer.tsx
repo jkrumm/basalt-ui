@@ -1,14 +1,20 @@
 import { Dock, Facts, Peek } from 'basalt-ui/page'
 import { usePeek } from 'basalt-ui/router'
-import { FileText, Image, Link } from 'lucide-react'
+import { FileText, Image, Link, Package } from 'lucide-react'
 import type { ReactElement } from 'react'
 import { globals } from './globals'
 import { PhotoDetail } from './kit-photo-detail'
+import { partFacts } from './part-facts'
 import { PHOTOS, photoOf } from './kit-photos'
 import { PEEK_RECORDS, recordOf } from './peek-records'
+import { PARTS, partOf } from './ref-inventory'
 
 /** The record kinds a plain click opens in the peek, by their page: the Home records and the Kit's photos. */
-const KINDS = { record: '/peek/$id', photo: '/kit/photos/$id' } as const
+const KINDS = {
+  record: '/peek/$id',
+  photo: '/kit/photos/$id',
+  part: '/ref/part/$id',
+} as const
 
 type Kind = keyof typeof KINDS
 
@@ -16,9 +22,10 @@ type Kind = keyof typeof KINDS
 const IDS: Record<Kind, readonly string[]> = {
   record: PEEK_RECORDS.map((record) => record.id),
   photo: PHOTOS.map((photo) => photo.id),
+  part: PARTS.map((part) => part.id),
 }
 
-const ICONS = { record: FileText, photo: Image } as const
+const ICONS = { record: FileText, photo: Image, part: Package } as const
 
 /** Copies the record's own page address. */
 function copyLink(path: string | null): void {
@@ -30,11 +37,20 @@ type PeekTarget<K extends string> = { kind: K; id: string }
 
 function titleOf({ kind, id }: PeekTarget<Kind>): string {
   if (kind === 'photo') return photoOf(id)?.title ?? `Photo ${id}`
+  if (kind === 'part') return partOf(id)?.name ?? `Part ${id}`
   return recordOf(id)?.title ?? `Record ${id}`
 }
 
 function Body({ kind, id }: PeekTarget<Kind>): ReactElement {
   if (kind === 'record') return <RecordFacts id={id} />
+  if (kind === 'part') {
+    const part = partOf(id)
+    return part === undefined ? (
+      <p className="m-0 text-sm text-muted-foreground">No such part.</p>
+    ) : (
+      <Facts rows={partFacts(part)} />
+    )
+  }
   const photo = photoOf(id)
   return photo === undefined ? (
     <p className="m-0 text-sm text-muted-foreground">No such photo.</p>
@@ -59,7 +75,7 @@ function RecordFacts({ id }: { id: string }): ReactElement {
 }
 
 /**
- * Mounted once inside the shell: a plain click on any link to `/peek/<id>` or `/kit/photos/<id>` opens that record beside
+ * Mounted once inside the shell: a plain click on any link to `/peek/<id>`, `/kit/photos/<id>` or `/ref/part/<id>` opens that record beside
  * the page it was clicked on, and the peek's pin button docks it, so it stays while the reader
  * moves on and the page makes room for it. No screen wires either.
  */
