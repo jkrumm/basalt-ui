@@ -10,7 +10,8 @@
  * Under `chrome="native-overlay"` the header is the window's title bar and stays on the frame, a full
  * row above the rail and the surface. `frame="panel"` insets the surface from `md` up (`--shell-inset`,
  * none on the rail side), rounds it and draws its hairline; `flush` and every compact screen draw it
- * edge to edge with one hairline on the rail side.
+ * edge to edge with one hairline on the rail side. The prop is the app's default: `data-frame` on
+ * `<html>` (the reader's choice, `setAppearance`) wins, in CSS, so server HTML paints it before hydration.
  *
  * The root is `h-dvh` and the document never scrolls: `Main` is the one scrollport and carries the
  * `<main>` landmark. These custom properties are the frame's whole public geometry, set on the root
@@ -288,7 +289,8 @@ export function ShellGrid({
           ? '[grid-template-areas:"header_header"_"rail_surface"_"footer_footer"] [--shell-top-h:var(--shell-header-h)]'
           : '[grid-template-areas:"brand_surface"_"rail_surface"_"footer_footer"] [--shell-top-h:0px] md:[--shell-top-h:calc(var(--shell-header-h)_+_var(--shell-inset))]',
         '[--shell-header-h:--spacing(12)] [--shell-rail-open-w:--spacing(60)] [--shell-rail-w:0px] [--shell-gutter:--spacing(2)] [--shell-inset:0px]',
-        'data-[frame=panel]:md:[--shell-inset:--spacing(2)]',
+        // The frame: `data-frame` on <html> (`setAppearance`, the boot script) wins over the prop on this root.
+        '[:root:not([data-frame])_&[data-frame=panel]]:md:[--shell-inset:--spacing(2)] [:root[data-frame=panel]_&]:md:[--shell-inset:--spacing(2)]',
         'md:[--shell-rail-w:--spacing(16)] md:[--shell-gutter:--spacing(4)]',
         'xl:[--shell-rail-w:var(--shell-rail-open-w)] xl:[--shell-gutter:--spacing(6)]',
         'data-[rail=expanded]:md:[--shell-rail-w:var(--shell-rail-open-w)] data-[rail=collapsed]:md:[--shell-rail-w:--spacing(16)] data-[rail=collapsed]:xl:[--shell-rail-w:--spacing(16)]',
@@ -331,10 +333,12 @@ export function ShellSurface({
         // where the frame's colour meets the surface's.
         'border-border ring-border md:mt-(--shell-inset) md:me-(--shell-inset) md:mb-(--shell-inset)',
         // Only a rounded panel clips: its corners cut what runs to them (a fill table, an aside, a dock).
-        'group-data-[frame=panel]/shell:md:overflow-clip group-data-[frame=panel]/shell:md:rounded-card group-data-[frame=panel]/shell:md:ring-1',
-        'group-data-[frame=flush]/shell:md:border-s',
+        '[:root:not([data-frame])_[data-frame=panel]_&]:md:overflow-clip [:root:not([data-frame])_[data-frame=panel]_&]:md:rounded-card [:root:not([data-frame])_[data-frame=panel]_&]:md:ring-1',
+        '[:root[data-frame=panel]_&]:md:overflow-clip [:root[data-frame=panel]_&]:md:rounded-card [:root[data-frame=panel]_&]:md:ring-1',
+        '[:root:not([data-frame])_[data-frame=flush]_&]:md:border-s [:root[data-frame=flush]_&]:md:border-s',
         // A title bar above: a flush surface draws its top edge under it.
-        titlebar && 'max-md:border-t group-data-[frame=flush]/shell:border-t',
+        titlebar &&
+          'max-md:border-t [:root:not([data-frame])_[data-frame=flush]_&]:border-t [:root[data-frame=flush]_&]:border-t',
         PRINT_SURFACE,
       )}
     >

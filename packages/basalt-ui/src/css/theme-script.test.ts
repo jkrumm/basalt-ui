@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
+import { APPEARANCE_KEY, readAppearance, setAppearance } from '../core/appearance'
 import { readScheme, SCHEME_KEY, setScheme } from '../core/scheme'
 import type { Scheme } from '../core/scheme'
 import { themeScript } from './theme-script'
@@ -12,7 +13,8 @@ const root = (): HTMLElement => document.documentElement
 
 function reset(): void {
   localStorage.clear()
-  root().removeAttribute('data-theme')
+  for (const a of ['data-theme', 'data-density', 'data-frame', 'data-accent'])
+    root().removeAttribute(a)
   document.cookie = 'sf=; path=/; max-age=0'
 }
 
@@ -168,5 +170,69 @@ describe('themeScript and readScheme agree on edge rows', () => {
     } finally {
       setScheme(undefined, { key: SCHEME_KEY })
     }
+  })
+})
+
+describe('themeScript stamps the stored appearance before paint', () => {
+  const attrs = (): (string | null)[] =>
+    ['data-density', 'data-frame', 'data-accent'].map((a) => root().getAttribute(a))
+
+  test('what setAppearance stored is on <html> after a reload, with the scheme', () => {
+    setScheme('dark')
+    setAppearance({ density: 'comfortable', frame: 'flush', accent: 'violet' })
+    for (const a of ['data-theme', 'data-density', 'data-frame', 'data-accent'])
+      root().removeAttribute(a)
+    expect(run()).toBe('dark')
+    expect(attrs()).toEqual(['comfortable', 'flush', 'violet'])
+  })
+
+  test('an invalid value is dropped, the valid ones kept: the script and readAppearance agree', () => {
+    const raw = { density: 'huge', frame: 'panel', accent: 'red' }
+    localStorage.setItem(APPEARANCE_KEY, JSON.stringify(raw))
+    run()
+    expect(attrs()).toEqual([null, 'panel', null])
+    expect(readAppearance()).toEqual({ frame: 'panel' })
+  })
+
+  test('an attribute the page already has is kept', () => {
+    localStorage.setItem(APPEARANCE_KEY, JSON.stringify({ density: 'normal', accent: 'teal' }))
+    root().setAttribute('data-density', 'comfortable')
+    run()
+    expect(attrs()).toEqual(['comfortable', null, 'teal'])
+  })
+
+  test('a data-theme already on the page does not stop the appearance being stamped', () => {
+    localStorage.setItem(SCHEME_KEY, 'light')
+    localStorage.setItem(APPEARANCE_KEY, JSON.stringify({ accent: 'rose' }))
+    root().setAttribute('data-theme', 'dark')
+    run()
+    expect(root().getAttribute('data-theme')).toBe('dark')
+    expect(root().getAttribute('data-accent')).toBe('rose')
+  })
+
+  test('malformed JSON, a non-object and throwing storage stamp nothing and never throw', () => {
+    for (const value of ['{nope', '"violet"', '42', 'null']) {
+      localStorage.setItem(APPEARANCE_KEY, value)
+      expect(() => run()).not.toThrow()
+      expect(attrs()).toEqual([null, null, null])
+    }
+    const original = Storage.prototype.getItem
+    Storage.prototype.getItem = () => {
+      throw new Error('denied')
+    }
+    try {
+      expect(() => run()).not.toThrow()
+    } finally {
+      Storage.prototype.getItem = original
+    }
+  })
+
+  test('appearance: false leaves the attributes alone; a custom key is read', () => {
+    localStorage.setItem(APPEARANCE_KEY, JSON.stringify({ frame: 'flush' }))
+    run({ appearance: false })
+    expect(attrs()).toEqual([null, null, null])
+    localStorage.setItem('app:look', JSON.stringify({ frame: 'flush' }))
+    run({ appearance: { key: 'app:look' } })
+    expect(attrs()).toEqual([null, 'flush', null])
   })
 })
