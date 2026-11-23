@@ -4,11 +4,14 @@
   "ChainView",
   "DataPanel",
   "EventList",
+  "FlowCanvas",
+  "FlowChecklist",
   "KanbanCard",
   "RowList",
   "StatCard",
   "StatCell",
   "StatGroup",
   "StepRail",
-  "applyMove"
+  "applyMove",
+  "useFlow"
 ]
