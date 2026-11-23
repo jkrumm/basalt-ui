@@ -148,16 +148,22 @@ export const KNOWN: readonly KnownFinding[] = [
   },
   {
     route: '/ref/parts',
+    assertion: 'focusNotObscured',
+    item: /span\[table-view-strip\]>div\[tabs\]>div\[tabs-list\]>button\[tabs-trigger\] ".*covered at/,
+    owner: 'page: at 390 the PageBar view row lays a button over the first saved-view tab',
+  },
+  {
+    route: '/ref/settings',
     assertion: 'ringWalk',
-    item: /td\[table-cell\] "": outline is clipped by main/,
-    owner:
-      "table: a grid-look row's focusable cell sits flush in main at 390, which clips its ring",
+    item: /main\[shell-main\] ".*": no focus outline/,
+    owner: 'page: SplitPage at 390 hands focus to the shell main, which draws no ring',
   },
   {
     route: '/ref/suppliers/12',
     assertion: 'hitFloor',
     item: /a\[page-breadcrumb-parent\] "Parts" \d+x20/,
-    owner: 'page: the PageBar breadcrumb parent link is 20 px tall, under the 24 px hit floor',
+    owner:
+      'page: the breadcrumb parent link stays 20 px tall: py-0.5 on an inline link does not grow its box',
   },
   {
     route: '/charts',
