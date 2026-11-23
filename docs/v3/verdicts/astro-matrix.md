@@ -86,7 +86,7 @@ Columns: `No directive` is the static HTML: `clean`, `differs` from the client:o
 | toast-host | ToastHost | clean | client:visible | 108.9 kB | 37.7 kB | 31.8 kB | Static picture first, the island adds behaviour: it drains notify() calls made after mount; the viewport is empty at rest. client:visible, up to 37.7 kB further (client:idle above the fold). |
 | app-shell | AppShell | fails | none works | 235.8 kB | 164.7 kB | 31.8 kB | fails on the server (Invalid value used as weak map key) and in the browser (Invalid value used as weak map key) |
 | command-palette | CommandPalette | clean | client:visible | 168.5 kB | 97.2 kB | 31.3 kB | Needs the island to work: the palette opens on a key or the search row; rendered closed, the trigger is the picture. client:idle above the fold, client:visible below, up to 97.2 kB further. |
-| controls | FilterSet, ViewTabs | fails | none works | 236.8 kB | 165.6 kB | 31.3 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
+| controls | FilterSet, ViewTabs | fails | none works | 237.9 kB | 166.8 kB | 31.3 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
 | control-home | ControlHome, ControlView | fails | none works | 202.8 kB | 131.7 kB | 31.3 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
 | basalt-provider | BasaltProvider | clean | no directive | 83.4 kB | 12.2 kB | 31.3 kB | The static HTML is the whole part, 0 bytes of JavaScript: the provider only sets locale and scheme; a Button inside it is the whole picture. |
 | input | Input | clean | no directive | 84.4 kB | 13.2 kB | 31.3 kB | The static HTML is the whole part, 0 bytes of JavaScript: native typing; the field needs no script. |
@@ -208,7 +208,7 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 - toast-host: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - app-shell: Issue 3106 (shell nav): the page barrel gains the favourite star, its context and default store; every part that bundles the page barrel or the shell grows by the same few KB gzip
 - command-palette: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
-- controls: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
+- controls: counted tabs (Issue 3109, plan row bench-record-parts): TabsTrigger draws a count, an attention tone and a tone dot, which the controls part bundles through its tab strip
 - control-home: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - basalt-provider: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - input: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
