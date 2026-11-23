@@ -161,6 +161,12 @@ export const KNOWN: readonly KnownFinding[] = [
       "table: a grid-look row's focusable cell sits flush in main at 390, which clips its ring",
   },
   {
+    route: '/ref/suppliers/12',
+    assertion: 'hitFloor',
+    item: /a\[page-breadcrumb-parent\] "Parts" \d+x20/,
+    owner: 'page: the PageBar breadcrumb parent link is 20 px tall, under the 24 px hit floor',
+  },
+  {
     route: '/charts',
     assertion: 'ringWalk',
     item: /svg ".*outline contrast 1\.74:1/,
