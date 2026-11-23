@@ -38,8 +38,8 @@ Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>): ReactElement
   tickCols?: readonly string[]  // Column keys whose x tick must survive the kit's thinning (an onset hour)
   legend?: false | { label?: string | undefined; }  // `false` hides the gradient legend; `label` titles it
   tooltip?: false | { rows?: ((d: T) => readonly ChartTooltipRow[]) | undefined; valueLabel?: string | undefined; }  // Rows after the value row, per cell (a sample count, a failure reason)
-  height?: number | ResponsiveChartHeight  // A fixed height, or one per container class
-  matchHeight?: boolean  // Fill the parent's height instead
+  height?: number | "fill" | ResponsiveChartHeight  // A fixed height, one per container class, or `'fill'` (the card's `box.height`) to take the parent's, as `matchHeight` does
+  matchHeight?: boolean  // Fill the parent's height instead (the same as `height="fill"`)
   phase?: Phase | QueryStateLike  // The load state, as on every data part: a `Phase` or a query result
   empty?: Empty | null  // The measured-empty state once the query settled; `cause` is the line the tile prints
   focus?: ChartFocus<T>  // `useChartFocus(data, …)`: pointing at a cell or stepping with the arrow keys focuses its datum, every other cell dims, and `focus.readout` drives a card fact

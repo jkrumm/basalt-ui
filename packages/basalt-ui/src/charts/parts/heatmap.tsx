@@ -127,9 +127,9 @@ type HeatmapBase<T, K extends string> = BasaltProps & {
           }
       )
     | undefined
-  /** A fixed height, or one per container class. Default: by row count (160–420px). */
-  height?: number | ResponsiveChartHeight | undefined
-  /** Fill the parent's height instead. Overrides `height`. CSS-owned like every other kind's box
+  /** A fixed height, one per container class, or `'fill'` (the card's `box.height`) to take the parent's, as `matchHeight` does. Default: by row count (160–420px). */
+  height?: number | ResponsiveChartHeight | 'fill' | undefined
+  /** Fill the parent's height instead (the same as `height="fill"`). Overrides `height`. CSS-owned like every other kind's box
    * (`ChartBox`, no measuring, SSR-stable), so the parent needs a definite CSS height — a grid or
    * flex stretch, `h-full`, an explicit height — which no kind can read off an auto-height parent. */
   matchHeight?: boolean | undefined
@@ -248,9 +248,10 @@ export function cellHeader(
  * placeholder, inside a `ChartCard`, reserves. `undefined` when the rows are not known up front.
  */
 export function heatmapHeight(props: {
-  height?: number | ResponsiveChartHeight | undefined
+  height?: number | ResponsiveChartHeight | 'fill' | undefined
   rows?: readonly string[] | undefined
 }): number | ResponsiveChartHeight | undefined {
+  if (props.height === 'fill') return undefined
   if (props.height !== undefined) return props.height
   return props.rows === undefined ? undefined : heightOfRows(props.rows.length)
 }
@@ -358,7 +359,7 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
     legend,
     tooltip,
     height,
-    matchHeight = false,
+    matchHeight: matchHeightProp = false,
     phase,
     empty,
     state: legacyState,
@@ -383,9 +384,10 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
   const valueLabel = tooltipConfig?.valueLabel ?? 'Value'
   const rows = useBands(props.rows, data, getRow)
   const cols = useBands(props.cols, data, getCol)
-  const statedHeight = height ?? heightOfRows(rows.length)
+  const matchHeight = matchHeightProp || height === 'fill'
   const coarse = useCoarsePointer()
-  const boxHeight = matchHeight ? 'fill' : statedHeight
+  const boxHeight =
+    matchHeightProp || height === 'fill' ? 'fill' : (height ?? heightOfRows(rows.length))
 
   // Resolved per datum below; a key naming nothing throws in dev, paints the ramp in production.
   const stateKeys = useMemo(() => states.map((s) => s.key), [states])
