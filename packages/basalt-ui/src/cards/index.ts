@@ -37,14 +37,6 @@ export type { RowListProps } from './row-list'
 export type { StepRailProps, StepRailRow } from './step-rail'
 export type { ChainViewProps, ChainFace } from './chain-view'
 export type { FlowCanvasProps } from './flow-canvas'
+// The column, group, row, edge and issue shapes stay inline: `FlowCanvasProps['columns'][number]`.
 export type { FlowChecklistProps } from './flow-checklist'
-export type {
-  FlowColumn,
-  FlowEdge,
-  FlowGroup,
-  FlowHandle,
-  FlowIssue,
-  FlowRow,
-  FlowTool,
-} from './flow'
 export type { BoardProps } from './board'
