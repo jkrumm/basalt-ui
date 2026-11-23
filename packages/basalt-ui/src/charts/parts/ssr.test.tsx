@@ -102,6 +102,10 @@ const loadFactor = (): number =>
     }) / 5,
   )
 
+const SAMPLES = 3
+const median = (xs: number[]): number =>
+  xs.toSorted((p, q) => p - q)[Math.floor(xs.length / 2)] ?? Number.NaN
+
 describe(`server render at ${LARGE} points`, () => {
   for (const [name, node] of [
     ['Lines', lines],
@@ -109,13 +113,15 @@ describe(`server render at ${LARGE} points`, () => {
   ] as const) {
     test(`${name}: growth under ${MAX_GROWTH}x from ${SMALL} to ${LARGE}, and under ${CAP_MS[name]} ms`, () => {
       const factor = loadFactor()
-      const large = timeRender(() => node(LARGE))
-      const small = Math.max(
-        timeRender(() => node(SMALL)),
-        NOISE_FLOOR_MS,
-      )
-      expect(large / small).toBeLessThan(MAX_GROWTH)
-      expect(large).toBeLessThan(CAP_MS[name] * factor)
-    }, 30_000)
+      const samples = Array.from({ length: SAMPLES }, () => ({
+        large: timeRender(() => node(LARGE)),
+        small: Math.max(
+          timeRender(() => node(SMALL)),
+          NOISE_FLOOR_MS,
+        ),
+      }))
+      expect(median(samples.map((s) => s.large / s.small))).toBeLessThan(MAX_GROWTH)
+      expect(median(samples.map((s) => s.large))).toBeLessThan(CAP_MS[name] * factor)
+    }, 60_000)
   }
 })
