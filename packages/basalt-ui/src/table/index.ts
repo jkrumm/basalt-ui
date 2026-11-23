@@ -20,6 +20,7 @@ export type { TableViewsOptions, TableViewsResult, ViewParam } from './parts/vie
 export { DataTableBody } from './parts/body'
 export { TablePager } from './parts/pager'
 export { BulkBar } from './parts/bulk-bar'
+export type { BulkBarAction, BulkBarProps } from './parts/bulk-bar'
 
 // The URL bridge: `field.composite(tableCodec(c.codec({ ... })))` carries a table as one field.
 export { tableCodec } from './core/codec'

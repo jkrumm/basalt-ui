@@ -1,26 +1,33 @@
 ---
 name: BulkBar
-use when: 'a bespoke layout places the bulk bar itself, above or beside the table'
+use when: 'a bespoke layout places a table''s bulk bar itself, or a list that is not a table (a mailbox, a card grid) acts on a selection'
 never when: 'the full `DataTable` fits (it already renders the bar)'
 subpath: basalt-ui/table
 peers: ['@base-ui/react', '@tanstack/react-table']
-slots: [table-bulk]
+slots: []
 ---
 
 # BulkBar
 
-The bulk bar of a table. Renders nothing while no row is ticked or the table has no `selection`.
-`DataTable` composes it above the scroller.
+The bulk bar of a table, or of any list that keeps its own selection. Renders nothing while
+nothing is selected. `DataTable` composes the table form above the scroller. The list form is a
+floating bar for the list to place at its foot: it wraps its actions rather than clip them, so
+it fits the narrowest list it sits in.
 
 ## Signature
 
 ```ts
-BulkBar<T>({ table: instance, }: { table: DataTableInstance<T>; }): ReactElement | null
-  table: DataTableInstance<T>
+BulkBar<T>(props: BulkBarProps<T>): ReactElement | null
+  // either count + actions + onClear or table
+  count?: number  // How many items are selected; the bar renders nothing at 0
+  actions?: readonly BulkBarAction[]  // What the selection can do, in the bar's order
+  onClear?: () => void  // Empties the selection
+  table?: DataTableInstance<T>
 ```
 
 ## Example
 
 ```tsx
 <BulkBar table={t} />
+<BulkBar count={ids.length} onClear={clear} actions={[{ id: 'archive', label: 'Archive', icon: Archive, onClick: archive }]} />
 ```

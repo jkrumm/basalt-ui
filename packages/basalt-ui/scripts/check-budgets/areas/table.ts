@@ -115,13 +115,21 @@ export const rows: readonly RowDef[] = [
     // lanes and cards, the arm's message with no table head above it), eager so a first load is never blank.
     // 208500 -> 212700 (Issue 3106): 212200 B measured; the table reads the page barrel's parts, which gained the favourite star.
     // 212700 -> 222400 (Issue 3102): 221902 B measured; the table's selects draw the shared list engine.
-    ceiling: 222400,
+    // 222400 -> 222600 (Issue 3141, bench-inbox-mail): 222412 B measured; `BulkBar` gains its list form (a count and typed actions, no table).
+    ceiling: 222600,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
 
 export const raises: Raises = {
   'table-own': [
+    {
+      from: 222400,
+      to: 222600,
+      consumer:
+        "a bulk bar over a list that is not a table (plan row bench-inbox-mail, Issue 3141): the mailbox block's selection floats a list-form `BulkBar` (a count and typed actions) at the list's foot",
+      repo: 'basalt-ui',
+    },
     {
       from: 212700,
       to: 222400,
