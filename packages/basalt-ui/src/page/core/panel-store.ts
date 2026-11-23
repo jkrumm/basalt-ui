@@ -44,13 +44,10 @@ export function widthStore(kind: string): Persisted<number | null> {
 }
 
 /** The presentation a record kind opens in; `initial` (`peek`) until the reader picks another. */
-export function presentationStore(
-  kind: string,
-  initial: Presentation = 'peek',
-): Persisted<Presentation> {
+export function presentationStore(kind: string, initial?: Presentation): Persisted<Presentation> {
   return persisted(`panel:${kind}:present`, {
     version: 1,
-    initial,
+    initial: initial ?? 'peek',
     schema: schema(isPresentation),
   })
 }
