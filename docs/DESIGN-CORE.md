@@ -169,7 +169,7 @@ Four attributes on `<html>` carry the reader's choice, each written by one sette
   a table view's row height sits nearer the rows, so it wins inside the table.
 - `data-frame`: `panel` or `flush`. It overrides `AppShell frame`, the app's default, from `md` up; compact
   is always flush.
-- `data-accent`: one of six names (`ACCENTS`, basalt-ui/tokens): `blue` (the `#0077bd` default), `violet`,
+- `data-accent`: one of six names (`ACCENT_NAMES`, basalt-ui/core/appearance; the type `AccentName` on basalt-ui/tokens): `blue` (the `#0077bd` default), `violet`,
   `rose`, `orange`, `green`, `teal`. Each is a seed derived at build time through the same gates. An app
   ships the ones it offers with `tokens:css --accents` (a `tokens` output of `.basalt/manifest.json`), one
   `:root[data-accent]` block each, so an app that offers none pays no byte. It sits on `<html>` only, because the Tailwind bridge resolves at `:root`.
