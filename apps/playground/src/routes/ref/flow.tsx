@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { FlowCanvas, FlowChecklist, useFlow } from 'basalt-ui/cards'
-import type { FlowColumn, FlowEdge, FlowIssue } from 'basalt-ui/cards'
+import type { FlowCanvasProps } from 'basalt-ui/cards'
 import { Facts, Page, PageAside, PageBar, Section, useSizeClass } from 'basalt-ui/page'
 import { defineControls, field } from 'basalt-ui/router'
 import {
@@ -34,6 +34,10 @@ const store = defineControls({
   scope: 'page',
   fields: { details: field.boolean(true), sheet: field.boolean(false) },
 })
+
+type FlowColumn = FlowCanvasProps['columns'][number]
+type FlowEdge = NonNullable<FlowCanvasProps['edges']>[number]
+type FlowIssue = NonNullable<FlowCanvasProps['issues']>[number]
 
 const groupMenu = (name: string) =>
   [
