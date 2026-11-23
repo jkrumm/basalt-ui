@@ -161,8 +161,7 @@ export function ExprN54Scenario({ shotState, fixture }: ScenarioProps) {
             <Heatmap
               label="Messages received per source and day over the last 14 days"
               data={s.cells}
-              height={typeof box.height === 'number' ? box.height : undefined}
-              matchHeight={box.height === 'fill'}
+              height={box.height}
               focus={focus}
               tooltip={false}
               getRow={(c) => c.name}

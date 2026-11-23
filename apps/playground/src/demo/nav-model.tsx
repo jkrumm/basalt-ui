@@ -201,6 +201,13 @@ export const NAV = defineNav({
           link: linkOptions({ to: '/kit/bar-list-series' }),
         },
         {
+          id: 'kit-stat-states',
+          label: 'Stat states',
+          icon: Layout,
+          mobile: 'more',
+          link: linkOptions({ to: '/kit/stat-states' }),
+        },
+        {
           id: 'kit-board',
           label: 'Board',
           icon: Layout,
