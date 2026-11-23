@@ -1,7 +1,7 @@
 {
   "alpha": "argo:apps/dashboard/src/features/strength-tracker/components/recent-records.tsx",
   "applyMove": "software-factory:apps/console/src/components/flow/board.tsx (the pure move applied to the column cache under an optimistic update)",
-  "AppearanceSwitcher": "basalt-ui:apps/playground/src/routes/ref/settings.tsx (the Appearance pane; the header popover in routes/__root.tsx)",
+  "AppearanceSwitcher": "basalt-ui:packages/basalt-ui/blocks/settings-page/SettingsPage.tsx (the Appearance pane of the settings block; the playground header popover in apps/playground/src/routes/__root.tsx)",
   "ArticleLayout": "basalt-ui-obsidian:packages/basalt-ui-obsidian/src/render/note-view.tsx",
   "BandStrip": "linewatch:web/src/charts/availability-strip.tsx",
   "BarList": "argo:apps/dashboard/src/features/usage-tracking/charts/top-projects.tsx",
@@ -143,7 +143,7 @@
   "Stepper": "basalt-ui:apps/playground/src/routes/kit/forms/-steps-form.tsx",
   "WizardDialog": "basalt-ui:apps/playground/src/routes/kit/forms/-contract-wizard.tsx",
   "useAppForm": "basalt-ui:apps/playground/src/routes/kit/forms/-create-service.tsx",
-  "useAppearance": "basalt-ui:apps/playground/src/routes/ref/settings.tsx (the Appearance row's summary)",
+  "useAppearance": "basalt-ui:packages/basalt-ui/blocks/settings-page/SettingsPage.tsx (the Appearance row's summary)",
   "withForm": "basalt-ui:apps/playground/src/routes/kit/forms/-steps-form.tsx",
   "basaltAstro": "basalt-ui:apps/marketing/astro.config.mjs",
   "SiteArticle": "basalt-ui:apps/marketing/src/pages/typography.astro",

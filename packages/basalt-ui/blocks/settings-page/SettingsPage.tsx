@@ -1,4 +1,11 @@
-import { FormActionRow, FormConfirmRow, FormSection } from 'basalt-ui/controls'
+import {
+  AppearanceSwitcher,
+  FormActionRow,
+  FormConfirmRow,
+  FormGroupRow,
+  FormSection,
+  useAppearance,
+} from 'basalt-ui/controls'
 import { useAppForm } from 'basalt-ui/form'
 import { InnerNav, Page, PageBar, SettingsLayout, SplitPage } from 'basalt-ui/page'
 import { defineControls, field } from 'basalt-ui/router'
@@ -9,7 +16,8 @@ import { NumberField } from 'basalt-ui/ui/number-field'
 import { RadioGroup } from 'basalt-ui/ui/radio-group'
 import { Select } from 'basalt-ui/ui/select'
 import { TagInput } from 'basalt-ui/ui/tag-input'
-import { Bell, Boxes, Building2 } from 'lucide-react'
+import type { AccentName } from 'basalt-ui/tokens'
+import { Bell, Boxes, Building2, Palette } from 'lucide-react'
 import type { ReactElement } from 'react'
 import { z } from 'zod'
 import { CHANNELS, COPY, EVENTS, POLICIES, SECTIONS, WAREHOUSES } from './model'
@@ -194,6 +202,37 @@ function NotificationsPane(): ReactElement {
   )
 }
 
+const SCHEME_WORD = { light: 'Light', dark: 'Dark', auto: 'System' } as const
+const DENSITY_WORD = { dense: 'compact', normal: 'regular', comfortable: 'comfortable' } as const
+const FRAME_WORD = { panel: 'inset', flush: 'edge to edge' } as const
+
+function AppearancePane({ accents }: { accents: readonly AccentName[] }): ReactElement {
+  const { scheme, accent, density, frame } = useAppearance()
+  const summary = [
+    SCHEME_WORD[scheme],
+    accent ?? accents[0],
+    DENSITY_WORD[density ?? 'dense'],
+    FRAME_WORD[frame ?? 'panel'],
+  ]
+    .filter((word) => word !== undefined)
+    .join(', ')
+  return (
+    <div data-shot="appearance" className="flex flex-col gap-10">
+      <FormSection title="Display" description="Kept in this browser, separate from the account.">
+        <FormGroupRow
+          id="row-appearance"
+          label="Theme and layout"
+          description="Theme, accent colour, density and how the page meets the window."
+          summary={summary}
+          defaultOpen
+        >
+          <AppearanceSwitcher accents={accents} />
+        </FormGroupRow>
+      </FormSection>
+    </div>
+  )
+}
+
 function WorkspacePane(): ReactElement {
   return (
     <div data-shot="workspace" className="flex flex-col gap-10">
@@ -243,16 +282,28 @@ const GROUPS = [
   {
     id: 'account',
     label: 'Account',
-    items: [{ id: 'workspace', label: 'Workspace', icon: Building2 }],
+    items: [
+      { id: 'appearance', label: 'Appearance', icon: Palette },
+      { id: 'workspace', label: 'Workspace', icon: Building2 },
+    ],
   },
 ]
 
-function SettingsPane({ id, hash }: { id: SectionId; hash: string }): ReactElement {
+function SettingsPane({
+  id,
+  hash,
+  accents,
+}: {
+  id: SectionId
+  hash: string
+  accents: readonly AccentName[]
+}): ReactElement {
   const { title, body } = COPY[id]
   return (
     <SettingsLayout title={title} description={body} {...(hash !== '' && { row: hash })}>
       {id === 'reordering' && <ReorderingPane />}
       {id === 'notifications' && <NotificationsPane />}
+      {id === 'appearance' && <AppearancePane accents={accents} />}
       {id === 'workspace' && <WorkspacePane />}
     </SettingsLayout>
   )
@@ -261,10 +312,12 @@ function SettingsPane({ id, hash }: { id: SectionId; hash: string }): ReactEleme
 export type SettingsPageProps = {
   /** The URL hash: the row of the pane to open at, or the empty string. The route reads it from the router. */
   hash: string
+  /** The accents the app ships (`tokens:css --accents`), its base first; fewer than two hide the accent row. */
+  accents?: readonly AccentName[]
 }
 
 /** The reference settings page: an inner nav of panes, each a column of bordered sections of rows. */
-export function SettingsPage({ hash }: SettingsPageProps): ReactElement {
+export function SettingsPage({ hash, accents = [] }: SettingsPageProps): ReactElement {
   const [current] = section.use()
   const selected = section.useIsSet()
   return (
@@ -275,7 +328,7 @@ export function SettingsPage({ hash }: SettingsPageProps): ReactElement {
         onBack={section.clear}
         backLabel="Inventory settings"
         list={() => <InnerNav label="Inventory settings" state={section} groups={GROUPS} />}
-        detail={() => <SettingsPane id={current} hash={hash} />}
+        detail={() => <SettingsPane id={current} hash={hash} accents={accents} />}
       />
     </Page>
   )
