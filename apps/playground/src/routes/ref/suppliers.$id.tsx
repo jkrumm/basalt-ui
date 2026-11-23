@@ -335,9 +335,9 @@ function Overview({
 function SupplierRoute(): ReactElement {
   const { id } = Route.useParams()
   const base = supplierOf(id)
-  // The demo has no server: an edit lives in the page, over the supplier the inventory holds.
-  const [edits, setEdits] = useState<Partial<Supplier>>({})
-  const supplier = base === undefined ? undefined : { ...base, ...edits }
+  // The demo has no server: an edit lives in the page, per supplier, over the one the inventory holds.
+  const [edits, setEdits] = useState<Readonly<Record<string, Partial<Supplier>>>>({})
+  const supplier = base === undefined ? undefined : { ...base, ...edits[id] }
   const [tab] = store.field.tab.use()
   const [ordering, setOrdering] = store.field.order.use()
   const records = shotState(useQuery(supplierRecordsQuery(id)), {
@@ -396,7 +396,7 @@ function SupplierRoute(): ReactElement {
           supplier={supplier}
           records={records}
           edit={(change) => {
-            setEdits((previous) => ({ ...previous, ...change }))
+            setEdits((previous) => ({ ...previous, [id]: { ...previous[id], ...change } }))
           }}
         />
       )}
