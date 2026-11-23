@@ -76,7 +76,7 @@ Columns: `No directive` is the static HTML: `clean`, `differs` from the client:o
 | facts | Facts | clean | no directive | 73.1 kB | 1.9 kB | 32.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: a definition list is drawn at rest. |
 | inner-nav | InnerNav | fails | none works | 162.4 kB | 91.2 kB | 32.8 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
 | page-aside | PageAside | clean | client:visible | 180.7 kB | 109.5 kB | 32.8 kB | Static picture first, the island adds behaviour: the docked panel is the picture; its open, close and sheet states need JS. client:visible, up to 109.5 kB further (client:idle above the fold). |
-| split-page | SplitPage | fails | none works | 173.4 kB | 102.3 kB | 32.8 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
+| split-page | SplitPage | fails | none works | 175.8 kB | 104.7 kB | 32.8 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
 | dock | Dock | clean | client:visible | 163.9 kB | 92.7 kB | 32.8 kB | Static picture first, the island adds behaviour: the open record panel is the picture; close and focus hand-off need JS. client:visible, up to 92.7 kB further (client:idle above the fold). |
 | peek | Peek | clean | client:visible | 182.4 kB | 111.2 kB | 32.8 kB | Static picture first, the island adds behaviour: the open panel is the picture; Escape, close and the width drag need JS. client:visible, up to 111.2 kB further (client:idle above the fold). |
 | query-state | QueryState | clean | no directive | 89.9 kB | 18.7 kB | 32.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: the ready branch is drawn at rest; loading and error arms are not shown. |
@@ -198,7 +198,7 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 - facts: the shared sheet gains the Schedule and Calendar classes (Issue 3103): +39 B gzip on every part
 - inner-nav: the shared sheet gains the Schedule and Calendar classes (Issue 3103): +39 B gzip on every part
 - page-aside: the shared sheet gains the Schedule and Calendar classes (Issue 3103): +39 B gzip on every part
-- split-page: the shared sheet gains the Schedule and Calendar classes (Issue 3103): +39 B gzip on every part
+- split-page: SplitPage resize: the list separator (PanelHandle) and the remembered width (persisted), Issue 3141
 - dock: the shared sheet gains the Schedule and Calendar classes (Issue 3103): +39 B gzip on every part
 - peek: the shared sheet gains the Schedule and Calendar classes (Issue 3103): +39 B gzip on every part
 - query-state: the shared sheet gains the Schedule and Calendar classes (Issue 3103): +39 B gzip on every part
