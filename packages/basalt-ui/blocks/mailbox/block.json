@@ -17,6 +17,7 @@
     "basalt-ui/ui/entity",
     "basalt-ui/ui/input",
     "basalt-ui/ui/scroll-area",
+    "basalt-ui/ui/card",
     "basalt-ui/ui/virtual-list",
     "lucide-react",
     "react",
