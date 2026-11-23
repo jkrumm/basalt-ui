@@ -61,7 +61,7 @@ Columns: `No directive` is the static HTML: `clean`, `differs` from the client:o
 | interval-track | IntervalTrack | differs | client:visible | 190.5 kB | 119.3 kB | 33.3 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 119.3 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-dark). |
 | sparkline | Sparkline | clean | client:visible | 89.6 kB | 18.4 kB | 33.3 kB | Static picture first, the island adds behaviour: the keyboard and pointer readout of a labelled sparkline. client:visible, up to 18.4 kB further (client:idle above the fold). |
 | band-strip | BandStrip | differs | client:visible | 184.8 kB | 113.6 kB | 33.3 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 113.6 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-light). |
-| data-table | DataTable | clean | client:visible | 318.3 kB | 247.1 kB | 31.3 kB | Static picture first, the island adds behaviour: sorting, paging and selection. client:visible, up to 247.1 kB further (client:idle above the fold). |
+| data-table | DataTable | clean | client:visible | 320.1 kB | 248.9 kB | 31.3 kB | Static picture first, the island adds behaviour: sorting, paging and selection. client:visible, up to 248.9 kB further (client:idle above the fold). |
 | static-table | Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableCaption | clean | no directive | 84.7 kB | 13.5 kB | 31.3 kB | The static HTML is the whole part, 0 bytes of JavaScript: a static table; the picture is the whole part. |
 | table-toolbar | TableToolbar, BulkBar, TablePager | clean | client:visible | 274.4 kB | 203.2 kB | 31.3 kB | Static picture first, the island adds behaviour: search, filters, sorting, paging and bulk selection need JS. client:visible, up to 203.2 kB further (client:idle above the fold). |
 | data-table-body | DataTableBody | clean | client:visible | 309.4 kB | 238.2 kB | 31.3 kB | Static picture first, the island adds behaviour: sorting, selection and row activation need JS over the body. client:visible, up to 238.2 kB further (client:idle above the fold). |
@@ -117,7 +117,7 @@ Every part of a family on one page, each its own island, in one mode: the JavaSc
 | ui | 27 | 0 | 131.4 kB | 244.2 kB | 244.1 kB | 244.1 kB |
 | cards | 9 | 0 | 129.2 kB | 139.5 kB | 139.4 kB | 139.4 kB |
 | charts | 8 | 0 | 205.7 kB | 223.6 kB | 223.5 kB | 223.5 kB |
-| table | 4 | 0 | 318.6 kB | 332.0 kB | 332.0 kB | 332.0 kB |
+| table | 4 | 0 | 320.4 kB | 333.8 kB | 333.7 kB | 333.7 kB |
 | content | 5 | 0 | 271.7 kB | 272.9 kB | 272.9 kB | 272.9 kB |
 | page | 19 | 0 | 188.6 kB | 265.9 kB | 265.8 kB | 348.9 kB |
 | forms | 18 | 0 | 163.5 kB | 239.3 kB | 239.2 kB | 239.2 kB |
@@ -183,7 +183,7 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 - interval-track: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - sparkline: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - band-strip: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
-- data-table: the view layouts (Issue 3065): the layout toggle, the layout model on the table and the lazy board and gallery loaders
+- data-table: the board and gallery draw their own loading, empty and error frames (LayoutPhase) instead of the table head over skeleton rows: +0.8 KB gzip in the data-table chunk (Issue 3088)
 - static-table: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - table-toolbar: the view layouts (Issue 3065): the layout toggle, the layout model on the table and the lazy board and gallery loaders
 - data-table-body: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
@@ -230,7 +230,7 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 - form-layout: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - stepper: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - family ui: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
-- family table: the view layouts (Issue 3065): the layout toggle, the layout model on the table and the lazy board and gallery loaders
+- family table: the board and gallery draw their own loading, empty and error frames (LayoutPhase) instead of the table head over skeleton rows: +0.8 KB gzip in the data-table chunk (Issue 3088)
 - family page: choice cards and the form parts (plan row bench-form-parts, Issue 2996): the checkbox and radio modules gain the card variant and the tile grid keys on size containers, a few dozen bytes of CSS in every part and a few hundred of JavaScript in the table and forms
 - family forms: choice cards and the form parts (plan row bench-form-parts, Issue 2996): the checkbox and radio modules gain the card variant and the tile grid keys on size containers, a few dozen bytes of CSS in every part and a few hundred of JavaScript in the table and forms
 
