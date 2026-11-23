@@ -78,6 +78,8 @@ export type Measurement = {
   hiddenColumns?: string[]
   /** Table columns no phone card shows: they sit in the detail without asking for `card: 'detail'`. */
   cardLeftColumns?: string[]
+  /** Frames the rest shot draws in their empty phase (`data-phase="empty"`), as `<slot> <label>`: a stat cell showing its empty text over loaded data reads here. */
+  emptyAtRest?: string[]
 }
 
 export type AnchorMetrics = Measurement & {

@@ -15,6 +15,7 @@
  * | craft-3/empty-region            | layout  | P1                                          |
  * | craft-6/overlap, -hit-floor, -document-overflow | layout | P1                      |
  * | craft-6/hidden-column           | layout  | P1                                          |
+ * | craft-7/empty-at-rest           | content | P2                                          |
  * | craft-1/off-scale-radius        | style   | P1; P3 within 1 px (never a nested one)     |
  * | craft-1/nested-radius-step      | style   | P1                                          |
  * | craft-2/font-sizes              | style   | P1                                          |
@@ -214,6 +215,15 @@ function anchorFindings(
       'layout',
       'cardLeftColumns',
       `Table columns in no phone card slot (left in the detail: their kind's default or a full slot; set \`card\`): ${listed(cardLeft)}.`,
+    )
+  const resting = a.emptyAtRest ?? []
+  if (resting.length > 0)
+    add(
+      'craft-7/empty-at-rest',
+      'P2',
+      'content',
+      'emptyAtRest',
+      `The rest frame draws its empty phase: ${listed(resting)}. If data is loaded, \`empty\` was passed without the query (a Phase applies it always) or the query's data is no array (give \`empty.when\`).`,
     )
   if (small.length > 0)
     add(

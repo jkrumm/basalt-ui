@@ -238,6 +238,16 @@ export function measureAnchor(root: Element): Reading {
     }
   }
 
+  // Frames that draw their empty phase in the rest shot. The DOM cannot tell an honest empty from one drawn over
+  // loaded data, so the reading names the frame and the finding says both causes.
+  const emptyAtRest: string[] = []
+  for (const el of [root, ...Array.from(root.querySelectorAll('[data-phase]'))]) {
+    if (el.getAttribute('data-phase') !== 'empty') continue
+    const named =
+      `${el.getAttribute('data-slot') ?? el.tagName.toLowerCase()} ${el.getAttribute('aria-label') ?? ''}`.trim()
+    if (!emptyAtRest.includes(named)) emptyAtRest.push(named)
+  }
+
   // emptyRatio: the largest vertical run (edges included) with nothing painted in it.
   const { top, bottom } = rect
   let cursor = top
@@ -263,5 +273,6 @@ export function measureAnchor(root: Element): Reading {
     overlaps,
     hiddenColumns,
     cardLeftColumns,
+    emptyAtRest,
   }
 }

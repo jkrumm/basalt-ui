@@ -246,6 +246,16 @@ describe('detectFindings', () => {
     expect(f[0]?.defect).toContain('div.a × span.b; p × em')
   })
 
+  test('craft-7/empty-at-rest: a frame drawing its empty phase in the rest shot is P2 and named', () => {
+    const f = detectFindings(
+      metrics({ anchors: [anchor({ emptyAtRest: ['stat-cell Win rate', 'chart-box'] })] }),
+    )
+    expect(f).toHaveLength(1)
+    expect(f[0]).toMatchObject({ rule: 'craft-7/empty-at-rest', severity: 'P2', layer: 'content' })
+    expect(f[0]?.defect).toContain('stat-cell Win rate; chart-box')
+    expect(rules(metrics({ anchors: [anchor({ emptyAtRest: [] })] }))).toEqual([])
+  })
+
   test('craft-6/hidden-column: a column hidden at the widest viewport is P1 and named, not at a phone', () => {
     const hidden = ['Cycle summary: peak', 'Cycle summary: id']
     const wide = detectFindings(metrics({ anchors: [anchor({ hiddenColumns: hidden })] }))
