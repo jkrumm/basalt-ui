@@ -5,12 +5,11 @@ import { useQuery } from '@tanstack/react-query'
 import { EventList } from 'basalt-ui/cards'
 import type { QueryStateLike } from 'basalt-ui/cards'
 import { shotState } from 'basalt-ui/data'
-import { EmptyState, Facts, Page, PageBar, Section } from 'basalt-ui/page'
+import { EmptyState, Page, PageBar, PropertyList, Section } from 'basalt-ui/page'
 import { defineControls, field, navTarget } from 'basalt-ui/router'
 import { col, DataTable, useDataTable } from 'basalt-ui/table'
 import { Lozenge } from 'basalt-ui/ui/badge'
 import { Card } from 'basalt-ui/ui/card'
-import { EntityTitle } from 'basalt-ui/ui/entity'
 import {
   Factory,
   Mail,
@@ -22,6 +21,7 @@ import {
   Truck,
   Users,
 } from 'lucide-react'
+import { useState } from 'react'
 import type { ReactElement } from 'react'
 import {
   NOTE_TYPE_LABELS,
@@ -202,12 +202,20 @@ function activityOf(f: Format, orders: readonly Order[], notes: readonly Note[])
     .toSorted((a, b) => b.at - a.at)
 }
 
+/** The terms a supplier is paid on: the values the demo data holds. */
+const TERMS = ['Net 30', 'Net 45', 'Net 60', 'Letter of credit'].map((value) => ({
+  value,
+  label: value,
+}))
+
 function Overview({
   supplier,
   records,
+  edit,
 }: {
   supplier: Supplier
   records: QueryStateLike & { data?: SupplierRecords | undefined }
+  edit: (change: Partial<Supplier>) => void
 }): ReactElement {
   const f = useFormat()
   const open = records.data?.orders.filter(isOpen)
@@ -215,31 +223,80 @@ function Overview({
     <div className="grid gap-4 @wide:grid-cols-3">
       <div className="flex min-w-0 flex-col gap-4 @wide:col-span-2">
         <Card>
-          <div className="flex flex-col gap-4">
-            <EntityTitle
-              size="lg"
-              title={supplier.name}
-              subtitle={`${supplier.city}, ${supplier.country} · ${supplier.domain}`}
-              avatar={{ shape: 'object', icon: Factory }}
-              tags={
-                <Lozenge tone={RATING_TONE[supplier.rating]}>
-                  {RATING_LABELS[supplier.rating]}
-                </Lozenge>
-              }
-            />
-            <Facts
-              rows={[
-                { label: 'Contact', value: `${supplier.contact}, ${supplier.contactRole}` },
-                { label: 'Email', value: supplier.email },
-                { label: 'Phone', value: supplier.phone },
-                { label: 'Quoted lead time', value: `${supplier.leadDays} days` },
-                { label: 'On time, 12 months', value: percent(supplier.onTime) },
-                { label: 'Payment terms', value: supplier.terms },
-                { label: 'Supplier since', value: f.date(Date.parse(supplier.since)) },
-                { label: 'Quoted currency', value: 'EUR' },
-              ]}
-            />
-          </div>
+          <PropertyList
+            rows={[
+              {
+                id: 'contact',
+                kind: 'text',
+                label: 'Contact',
+                value: supplier.contact,
+                autoComplete: 'name',
+                onCommit: (contact) => {
+                  edit({ contact })
+                },
+              },
+              {
+                id: 'role',
+                kind: 'text',
+                label: 'Role',
+                value: supplier.contactRole,
+                autoComplete: 'organization-title',
+                onCommit: (contactRole) => {
+                  edit({ contactRole })
+                },
+              },
+              {
+                id: 'email',
+                kind: 'text',
+                label: 'Email',
+                value: supplier.email,
+                type: 'email',
+                inputMode: 'email',
+                autoComplete: 'email',
+                validate: (next) => (next.includes('@') ? undefined : 'Error: an email has an @.'),
+                onCommit: (email) => {
+                  edit({ email })
+                },
+              },
+              {
+                id: 'phone',
+                kind: 'text',
+                label: 'Phone',
+                value: supplier.phone,
+                type: 'tel',
+                inputMode: 'tel',
+                autoComplete: 'tel',
+                onCommit: (phone) => {
+                  edit({ phone })
+                },
+              },
+              {
+                id: 'lead',
+                kind: 'number',
+                label: 'Quoted lead time',
+                value: supplier.leadDays,
+                unit: 'days',
+                min: 0,
+                max: 365,
+                onCommit: (leadDays) => {
+                  edit({ leadDays })
+                },
+              },
+              { id: 'on-time', label: 'On time, 12 months', value: percent(supplier.onTime) },
+              {
+                id: 'terms',
+                kind: 'select',
+                label: 'Payment terms',
+                value: supplier.terms,
+                options: TERMS,
+                onCommit: (terms) => {
+                  edit({ terms })
+                },
+              },
+              { id: 'since', label: 'Supplier since', value: f.date(Date.parse(supplier.since)) },
+              { id: 'currency', label: 'Quoted currency', value: 'EUR' },
+            ]}
+          />
         </Card>
         <Section title="Open orders" summary="Placed and not yet received in full">
           <OrdersTable rows={open} phase={records} id="ref-supplier-open" compact />
@@ -265,7 +322,10 @@ function Overview({
  */
 function SupplierRoute(): ReactElement {
   const { id } = Route.useParams()
-  const supplier = supplierOf(id)
+  const base = supplierOf(id)
+  // The demo has no server: an edit lives in the page, over the supplier the inventory holds.
+  const [edits, setEdits] = useState<Partial<Supplier>>({})
+  const supplier = base === undefined ? undefined : { ...base, ...edits }
   const [tab] = store.field.tab.use()
   const [ordering, setOrdering] = store.field.order.use()
   const records = shotState(useQuery(supplierRecordsQuery(id)), {
@@ -285,6 +345,13 @@ function SupplierRoute(): ReactElement {
     <Page area="ref-supplier">
       <PageBar
         title={supplier.name}
+        identity={{
+          avatar: { shape: 'object', icon: Factory },
+          subtitle: `${supplier.city}, ${supplier.country} · ${supplier.domain}`,
+          tags: (
+            <Lozenge tone={RATING_TONE[supplier.rating]}>{RATING_LABELS[supplier.rating]}</Lozenge>
+          ),
+        }}
         parent={parent}
         tabs={{
           state: store.field.tab,
@@ -313,7 +380,15 @@ function SupplierRoute(): ReactElement {
           },
         ]}
       />
-      {tab === 'overview' && <Overview supplier={supplier} records={records} />}
+      {tab === 'overview' && (
+        <Overview
+          supplier={supplier}
+          records={records}
+          edit={(change) => {
+            setEdits((previous) => ({ ...previous, ...change }))
+          }}
+        />
+      )}
       {tab === 'orders' && (
         <OrdersTable rows={related?.orders} phase={records} id="ref-supplier-orders" />
       )}
