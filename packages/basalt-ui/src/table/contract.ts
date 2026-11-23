@@ -402,9 +402,11 @@ export type UseDataTable<
    */
   look?: 'reading' | 'grid'
   /**
-   * `false` draws no column icon in any header: each kind's default and every `headerIcon` a column names.
+   * Whether a header draws its column icon (each kind's default or the `headerIcon` a column names). The
+   * reading look keeps a header to its label, so a right-aligned label ends where its figures end; the
+   * grid look names each column by kind.
    *
-   * @default true
+   * @default false in the reading look, true in the grid look
    */
   headerIcons?: boolean
   /**
