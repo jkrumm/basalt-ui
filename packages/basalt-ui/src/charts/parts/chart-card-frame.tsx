@@ -189,7 +189,7 @@ export function Footer({
 const ERROR_TEXT = {
   forbidden: 'You do not have access to this.',
   'not-found': 'This no longer exists.',
-  default: 'Could not load this.',
+  default: 'Could not load this. The request failed.',
 } as const
 
 function ErrorArm({

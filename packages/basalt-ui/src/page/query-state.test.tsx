@@ -44,7 +44,7 @@ describe('the branch a 500 must not take', () => {
       empty: { cause: 'No images match' },
     })
     expect(screen.getByRole('alert')).toBeDefined()
-    expect(screen.getByText('Could not load this.')).toBeDefined()
+    expect(screen.getByText('Could not load this. The request failed.')).toBeDefined()
     expect(screen.queryByText('No images match')).toBeNull()
     expect(body()).toBeNull()
   })
@@ -320,7 +320,7 @@ describe('server render', () => {
 
   test('an error renders its line and no body', () => {
     const html = renderToString(<QueryState phase={{ tag: 'error' }}>{BODY}</QueryState>)
-    expect(html).toContain('Could not load this.')
+    expect(html).toContain('Could not load this. The request failed.')
     expect(html).not.toContain('data-testid="body"')
   })
 })

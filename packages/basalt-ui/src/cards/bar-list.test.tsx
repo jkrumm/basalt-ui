@@ -249,7 +249,7 @@ describe('BarList error title', () => {
 
   test('a blank title keeps the bare sentence', () => {
     const { container } = draw({ title: ' ', phase: failed })
-    expect(alert(container)).toBe('Could not load this.')
+    expect(alert(container)).toBe('Could not load this. The request failed.')
   })
 })
 

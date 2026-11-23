@@ -34,7 +34,7 @@ export type HomeMessages = Record<
 
 export const home = {
   'home.retry': 'Retry',
-  'home.error.default': 'Could not load this.',
+  'home.error.default': 'Could not load this. The request failed.',
   'home.error.forbidden': 'You do not have access to this.',
   'home.error.not-found': 'This no longer exists.',
   'home.offline': 'You are offline. This loads when the connection is back.',
