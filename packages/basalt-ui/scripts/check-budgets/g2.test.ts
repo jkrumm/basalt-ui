@@ -22,7 +22,7 @@ describe('G2 area files', () => {
   )
 
   test('the value-symbol rows are exact', async () => {
-    const exact = { 'page-symbols': 27, 'shell-symbols': 5, 'content-symbols': 2 }
+    const exact = { 'page-symbols': 28, 'shell-symbols': 5, 'content-symbols': 2 }
     for (const name of ['page', 'shell', 'content'] as const) {
       const area = (await import(`./areas/${name}`)) as AreaModule
       for (const row of area.rows) {
