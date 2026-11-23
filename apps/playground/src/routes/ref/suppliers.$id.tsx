@@ -246,6 +246,18 @@ function Overview({
                 },
               },
               {
+                id: 'domain',
+                kind: 'text',
+                label: 'Website',
+                value: supplier.domain,
+                type: 'url',
+                inputMode: 'url',
+                autoComplete: 'url',
+                onCommit: (domain) => {
+                  edit({ domain })
+                },
+              },
+              {
                 id: 'email',
                 kind: 'text',
                 label: 'Email',
@@ -347,7 +359,7 @@ function SupplierRoute(): ReactElement {
         title={supplier.name}
         identity={{
           avatar: { shape: 'object', icon: Factory },
-          subtitle: `${supplier.city}, ${supplier.country} · ${supplier.domain}`,
+          subtitle: `${supplier.city}, ${supplier.country}`,
           tags: (
             <Lozenge tone={RATING_TONE[supplier.rating]}>{RATING_LABELS[supplier.rating]}</Lozenge>
           ),
@@ -363,7 +375,6 @@ function SupplierRoute(): ReactElement {
                   orders: { count: related.orders.length },
                   parts: {
                     count: related.parts.length,
-                    attention: related.parts.some((p) => p.stock === 'out'),
                   },
                   notes: { count: related.notes.length },
                 },
