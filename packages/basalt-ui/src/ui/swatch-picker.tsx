@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from './popover'
 
 /**
  * The named colour tokens a swatch can carry. A free colour value is not a choice: the palette decides.
- * `accent-<name>` is one of the package's accents (`ACCENTS`, basalt-ui/tokens), painted in that
+ * `accent-<name>` is one of the package's accents (`ACCENT_NAMES`, basalt-ui/core/appearance), painted in that
  * accent's own fill whatever accent the page wears: the swatches of an accent picker.
  */
 export const SWATCH_TOKENS = [
