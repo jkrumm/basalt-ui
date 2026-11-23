@@ -51,7 +51,7 @@ function OrderPreview({ v }: { v: Values }): ReactElement {
   const total = part === undefined || v.quantity === null ? null : part.unitCost * v.quantity
   const warehouse = WAREHOUSES.find((w) => w.value === v.warehouse)
   return (
-    <div data-shot="order-preview" className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <EntityTitle
         size="lg"
         title={supplier?.name ?? 'No supplier yet'}
@@ -121,7 +121,7 @@ export function NewOrderDialog({
         { label: 'Reference', value: v.reference === '' ? 'No reference' : v.reference },
       ],
       render: () => (
-        <>
+        <div data-shot="order-step" className="flex flex-col gap-4">
           <form.AppField name="supplierId" validators={{ onBlur: Values.shape.supplierId }}>
             {(f) => (
               <f.FormField label="Supplier" required>
@@ -139,7 +139,7 @@ export function NewOrderDialog({
               </f.FormField>
             )}
           </form.AppField>
-        </>
+        </div>
       ),
     },
     {
