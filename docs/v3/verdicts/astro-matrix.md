@@ -61,10 +61,10 @@ Columns: `No directive` is the static HTML: `clean`, `differs` from the client:o
 | interval-track | IntervalTrack | differs | client:visible | 190.5 kB | 119.3 kB | 33.3 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 119.3 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-dark). |
 | sparkline | Sparkline | clean | client:visible | 89.6 kB | 18.4 kB | 33.3 kB | Static picture first, the island adds behaviour: the keyboard and pointer readout of a labelled sparkline. client:visible, up to 18.4 kB further (client:idle above the fold). |
 | band-strip | BandStrip | differs | client:visible | 184.8 kB | 113.6 kB | 33.3 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 113.6 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-light). |
-| data-table | DataTable | clean | client:visible | 326.5 kB | 255.2 kB | 31.3 kB | Static picture first, the island adds behaviour: sorting, paging and selection. client:visible, up to 255.2 kB further (client:idle above the fold). |
+| data-table | DataTable | clean | client:visible | 334.6 kB | 263.4 kB | 31.3 kB | Static picture first, the island adds behaviour: sorting, paging and selection. client:visible, up to 263.4 kB further (client:idle above the fold). |
 | static-table | Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableCaption | clean | no directive | 84.7 kB | 13.5 kB | 31.3 kB | The static HTML is the whole part, 0 bytes of JavaScript: a static table; the picture is the whole part. |
-| table-toolbar | TableToolbar, BulkBar, TablePager | clean | client:visible | 274.4 kB | 203.2 kB | 31.3 kB | Static picture first, the island adds behaviour: search, filters, sorting, paging and bulk selection need JS. client:visible, up to 203.2 kB further (client:idle above the fold). |
-| data-table-body | DataTableBody | clean | client:visible | 316.2 kB | 244.9 kB | 31.3 kB | Static picture first, the island adds behaviour: sorting, selection and row activation need JS over the body. client:visible, up to 244.9 kB further (client:idle above the fold). |
+| table-toolbar | TableToolbar, BulkBar, TablePager | clean | client:visible | 290.8 kB | 219.6 kB | 31.3 kB | Static picture first, the island adds behaviour: search, filters, sorting, paging and bulk selection need JS. client:visible, up to 219.6 kB further (client:idle above the fold). |
+| data-table-body | DataTableBody | clean | client:visible | 324.2 kB | 253.0 kB | 31.3 kB | Static picture first, the island adds behaviour: sorting, selection and row activation need JS over the body. client:visible, up to 253.0 kB further (client:idle above the fold). |
 | markdown | Markdown | clean | client:visible | 215.4 kB | 144.2 kB | 31.3 kB | Static picture first, the island adds behaviour: the code is coloured in the static HTML; mermaid fences need JS. client:visible, up to 144.2 kB further (client:idle above the fold). |
 | code-block | CodeBlock | clean | client:visible | 171.6 kB | 100.3 kB | 31.3 kB | Static picture first, the island adds behaviour: the code is coloured in the static HTML; the copy button needs JS. client:visible, up to 100.3 kB further (client:idle above the fold). |
 | article-layout | ArticleLayout, Prose | clean | client:visible | 133.8 kB | 62.6 kB | 31.8 kB | Static picture first, the island adds behaviour: the scroll-spy TOC and reading progress need JS. client:visible, up to 62.6 kB further (client:idle above the fold). |
@@ -85,24 +85,24 @@ Columns: `No directive` is the static HTML: `clean`, `differs` from the client:o
 | overlay-host | OverlayHost | clean | client:visible | 133.5 kB | 62.3 kB | 31.8 kB | Needs the island to work: overlays open by key from JS; nothing is open at rest, so the host draws nothing. client:idle above the fold, client:visible below, up to 62.3 kB further. |
 | toast-host | ToastHost | clean | client:visible | 108.9 kB | 37.7 kB | 31.8 kB | Static picture first, the island adds behaviour: it drains notify() calls made after mount; the viewport is empty at rest. client:visible, up to 37.7 kB further (client:idle above the fold). |
 | app-shell | AppShell | fails | none works | 235.8 kB | 164.7 kB | 31.8 kB | fails on the server (Invalid value used as weak map key) and in the browser (Invalid value used as weak map key) |
-| command-palette | CommandPalette | clean | client:visible | 168.5 kB | 97.2 kB | 31.3 kB | Needs the island to work: the palette opens on a key or the search row; rendered closed, the trigger is the picture. client:idle above the fold, client:visible below, up to 97.2 kB further. |
-| controls | FilterSet, ViewTabs | fails | none works | 237.9 kB | 166.8 kB | 31.3 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
-| control-home | ControlHome, ControlView | fails | none works | 202.8 kB | 131.7 kB | 31.3 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
+| command-palette | CommandPalette | clean | client:visible | 179.0 kB | 107.7 kB | 31.3 kB | Needs the island to work: the palette opens on a key or the search row; rendered closed, the trigger is the picture. client:idle above the fold, client:visible below, up to 107.7 kB further. |
+| controls | FilterSet, ViewTabs | fails | none works | 247.5 kB | 176.4 kB | 31.3 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
+| control-home | ControlHome, ControlView | fails | none works | 212.4 kB | 141.3 kB | 31.3 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
 | basalt-provider | BasaltProvider | clean | no directive | 83.4 kB | 12.2 kB | 31.3 kB | The static HTML is the whole part, 0 bytes of JavaScript: the provider only sets locale and scheme; a Button inside it is the whole picture. |
 | input | Input | clean | no directive | 84.4 kB | 13.2 kB | 31.3 kB | The static HTML is the whole part, 0 bytes of JavaScript: native typing; the field needs no script. |
 | textarea | Textarea | clean | no directive | 84.0 kB | 12.8 kB | 31.3 kB | The static HTML is the whole part, 0 bytes of JavaScript: native typing; the field grows with its content in CSS. |
 | checkbox | Checkbox, CheckboxGroup | clean | client:visible | 92.4 kB | 21.2 kB | 31.3 kB | Static picture first, the island adds behaviour: toggling and the indeterminate dash need JS; the checked state is the picture. client:visible, up to 21.2 kB further (client:idle above the fold). |
 | radio-group | RadioGroup, Radio | clean | client:visible | 101.0 kB | 29.8 kB | 31.3 kB | Static picture first, the island adds behaviour: arrow keys move the selection; the static picture shows the chosen value. client:visible, up to 29.8 kB further (client:idle above the fold). |
 | switch | Switch | clean | client:visible | 86.2 kB | 15.0 kB | 31.3 kB | Static picture first, the island adds behaviour: the toggle needs JS; the static on or off state is the picture. client:visible, up to 15.0 kB further (client:idle above the fold). |
-| select | Select, SelectTrigger, SelectValue, SelectContent, SelectGroup, SelectItem | clean | client:visible | 136.3 kB | 65.1 kB | 31.3 kB | Needs the island to work: the popup opens on JS; the closed trigger shows the label. client:idle above the fold, client:visible below, up to 65.1 kB further. |
-| native-select | NativeSelect | clean | no directive | 136.2 kB | 65.0 kB | 31.3 kB | The static HTML is the whole part, 0 bytes of JavaScript: the platform select works without JS. |
+| select | Select, SelectTrigger, SelectValue, SelectContent, SelectGroup, SelectItem | clean | client:visible | 157.0 kB | 85.7 kB | 31.3 kB | Needs the island to work: the popup opens on JS; the closed trigger shows the label. client:idle above the fold, client:visible below, up to 85.7 kB further. |
+| native-select | NativeSelect | clean | no directive | 156.9 kB | 85.7 kB | 31.3 kB | The static HTML is the whole part, 0 bytes of JavaScript: the platform select works without JS. |
 | number-field | NumberField | clean | client:visible | 93.6 kB | 22.4 kB | 31.3 kB | Static picture first, the island adds behaviour: steppers and arrow keys need JS; the formatted value is static. client:visible, up to 22.4 kB further (client:idle above the fold). |
 | slider | Slider | clean | client:visible | 100.3 kB | 29.1 kB | 31.3 kB | Static picture first, the island adds behaviour: dragging and the keyboard need JS; the value is static. client:visible, up to 29.1 kB further (client:idle above the fold). |
 | segmented | Segmented, SegmentedItem | clean | client:visible | 93.6 kB | 22.4 kB | 31.3 kB | Static picture first, the island adds behaviour: switching the option needs JS; the static row shows the selection. client:visible, up to 22.4 kB further (client:idle above the fold). |
 | date-picker | DatePicker | clean | client:visible | 150.1 kB | 78.9 kB | 31.3 kB | Needs the island to work: the calendar popup is JS; the trigger shows the day. client:idle above the fold, client:visible below, up to 78.9 kB further. |
 | date-range-picker | DateRangePicker | clean | client:visible | 150.1 kB | 78.9 kB | 31.3 kB | Needs the island to work: the calendar popup is JS; the trigger shows both ends. client:idle above the fold, client:visible below, up to 78.9 kB further. |
-| combobox | Combobox, ComboboxInput, ComboboxContent, ComboboxItem, ComboboxChips | clean | client:visible | 141.9 kB | 70.7 kB | 31.3 kB | Needs the island to work: search, the popup and chip removal need JS; the closed input is the picture. client:idle above the fold, client:visible below, up to 70.7 kB further. |
-| autocomplete | Autocomplete, AutocompleteInput, AutocompleteContent, AutocompleteItem | clean | client:visible | 141.8 kB | 70.6 kB | 31.3 kB | Needs the island to work: suggestions need JS; the typed text is the static picture. client:idle above the fold, client:visible below, up to 70.6 kB further. |
+| combobox | Combobox, ComboboxInput, ComboboxContent, ComboboxItem, ComboboxChips | clean | client:visible | 152.1 kB | 80.9 kB | 31.3 kB | Needs the island to work: search, the popup and chip removal need JS; the closed input is the picture. client:idle above the fold, client:visible below, up to 80.9 kB further. |
+| autocomplete | Autocomplete, AutocompleteInput, AutocompleteContent, AutocompleteItem | clean | client:visible | 152.0 kB | 80.8 kB | 31.3 kB | Needs the island to work: suggestions need JS; the typed text is the static picture. client:idle above the fold, client:visible below, up to 80.8 kB further. |
 | file-upload | FileUpload | clean | client:visible | 85.2 kB | 14.0 kB | 31.3 kB | Needs the island to work: the picker and drop zone need JS. client:idle above the fold, client:visible below, up to 14.0 kB further. |
 | field | Form, Field, FieldLabel, FieldDescription, FieldError, Fieldset, FieldsetLegend | clean | client:visible | 92.7 kB | 21.5 kB | 31.3 kB | Static picture first, the island adds behaviour: Base UI validates on blur and submit with JS; labels are static (FieldLabel, FieldDescription and FieldError render through Field). client:visible, up to 21.5 kB further (client:idle above the fold). |
 | form-layout | FormSection, FormRow, FormField, FormFooter | clean | client:visible | 112.7 kB | 41.5 kB | 31.3 kB | Static picture first, the island adds behaviour: the footer tracks dirty and submitting state with JS; the fields are static. client:visible, up to 41.5 kB further (client:idle above the fold). |
@@ -117,10 +117,10 @@ Every part of a family on one page, each its own island, in one mode: the JavaSc
 | ui | 27 | 0 | 131.4 kB | 244.2 kB | 244.1 kB | 244.1 kB |
 | cards | 9 | 0 | 129.2 kB | 142.7 kB | 142.6 kB | 142.6 kB |
 | charts | 8 | 0 | 205.7 kB | 223.6 kB | 223.5 kB | 223.5 kB |
-| table | 4 | 0 | 326.8 kB | 340.2 kB | 340.2 kB | 340.2 kB |
+| table | 4 | 0 | 334.9 kB | 348.5 kB | 348.5 kB | 348.5 kB |
 | content | 5 | 0 | 271.7 kB | 272.9 kB | 272.9 kB | 272.9 kB |
-| page | 19 | 0 | 199.1 kB | 273.1 kB | 273.1 kB | 356.5 kB |
-| forms | 18 | 0 | 163.5 kB | 239.3 kB | 239.2 kB | 239.2 kB |
+| page | 19 | 0 | 199.1 kB | 280.6 kB | 280.5 kB | 364.5 kB |
+| forms | 18 | 0 | 184.2 kB | 248.6 kB | 248.6 kB | 248.6 kB |
 
 ## Charts: is the static picture correct?
 
@@ -183,10 +183,10 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 - interval-track: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - sparkline: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - band-strip: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
-- data-table: Issue 3106 (shell nav): the page barrel gains the favourite star, its context and default store; every part that bundles the page barrel or the shell grows by the same few KB gzip
+- data-table: one list engine behind Select, Combobox and the command palette (Issue 3102): shared option row and group header, loader states, create row, and a searchable Select on Base UI Combobox
 - static-table: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
-- table-toolbar: the view layouts (Issue 3065): the layout toggle, the layout model on the table and the lazy board and gallery loaders
-- data-table-body: Issue 3106 (shell nav): the page barrel gains the favourite star, its context and default store; every part that bundles the page barrel or the shell grows by the same few KB gzip
+- table-toolbar: one list engine behind Select, Combobox and the command palette (Issue 3102): shared option row and group header, loader states, create row, and a searchable Select on Base UI Combobox
+- data-table-body: one list engine behind Select, Combobox and the command palette (Issue 3102): shared option row and group header, loader states, create row, and a searchable Select on Base UI Combobox
 - markdown: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - code-block: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - article-layout: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
@@ -207,33 +207,33 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 - overlay-host: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - toast-host: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - app-shell: Issue 3106 (shell nav): the page barrel gains the favourite star, its context and default store; every part that bundles the page barrel or the shell grows by the same few KB gzip
-- command-palette: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
-- controls: counted tabs (Issue 3109, plan row bench-record-parts): TabsTrigger draws a count, an attention tone and a tone dot, which the controls part bundles through its tab strip
-- control-home: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
+- command-palette: one list engine behind Select, Combobox and the command palette (Issue 3102): shared option row and group header, loader states, create row, and a searchable Select on Base UI Combobox
+- controls: one list engine behind Select, Combobox and the command palette (Issue 3102): shared option row and group header, loader states, create row, and a searchable Select on Base UI Combobox
+- control-home: one list engine behind Select, Combobox and the command palette (Issue 3102): shared option row and group header, loader states, create row, and a searchable Select on Base UI Combobox
 - basalt-provider: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - input: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - textarea: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - checkbox: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - radio-group: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - switch: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
-- select: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
-- native-select: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
+- select: one list engine behind Select, Combobox and the command palette (Issue 3102): shared option row and group header, loader states, create row, and a searchable Select on Base UI Combobox
+- native-select: one list engine behind Select, Combobox and the command palette (Issue 3102): shared option row and group header, loader states, create row, and a searchable Select on Base UI Combobox
 - number-field: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - slider: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - segmented: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - date-picker: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - date-range-picker: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
-- combobox: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
-- autocomplete: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
+- combobox: one list engine behind Select, Combobox and the command palette (Issue 3102): shared option row and group header, loader states, create row, and a searchable Select on Base UI Combobox
+- autocomplete: one list engine behind Select, Combobox and the command palette (Issue 3102): shared option row and group header, loader states, create row, and a searchable Select on Base UI Combobox
 - file-upload: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - field: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - form-layout: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - stepper: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - family ui: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
 - family cards: event list period headings, avatar actors, connector rail and folded bodies (Issue 3109, plan row bench-record-parts): the Avatar primitive joins the part
-- family table: Issue 3106 (shell nav): the page barrel gains the favourite star, its context and default store; every part that bundles the page barrel or the shell grows by the same few KB gzip
-- family page: Issue 3106 (shell nav): the page barrel gains the favourite star, its context and default store; every part that bundles the page barrel or the shell grows by the same few KB gzip
-- family forms: choice cards and the form parts (plan row bench-form-parts, Issue 2996): the checkbox and radio modules gain the card variant and the tile grid keys on size containers, a few dozen bytes of CSS in every part and a few hundred of JavaScript in the table and forms
+- family table: one list engine behind Select, Combobox and the command palette (Issue 3102): shared option row and group header, loader states, create row, and a searchable Select on Base UI Combobox
+- family page: one list engine behind Select, Combobox and the command palette (Issue 3102): shared option row and group header, loader states, create row, and a searchable Select on Base UI Combobox
+- family forms: one list engine behind Select, Combobox and the command palette (Issue 3102): shared option row and group header, loader states, create row, and a searchable Select on Base UI Combobox
 
 ## Findings
 
