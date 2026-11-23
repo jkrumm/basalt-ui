@@ -384,7 +384,7 @@ describe('the mailbox composer', () => {
   })
   const present = persisted<'peek' | 'window' | 'page'>('panel:compose:present', {
     version: 1,
-    initial: 'peek',
+    initial: 'window',
   })
   const SUBJECT = 'Re: Thread pitch on the M8 batch'
 
@@ -394,26 +394,26 @@ describe('the mailbox composer', () => {
     localStorage.clear()
   })
 
-  test('a reply opens under the thread; moved to a panel, the next reply opens there', async () => {
+  test('a reply opens under the thread; moved to the surface, it opens as a window there next time', async () => {
     mount('/ref/mail?mail=mail-4&compose=reply')
     const lead = await screen.findByText('Reply to Katrin Brenner')
     expect(lead.closest('[data-slot="peek"]')).toBeNull()
     expect(lead.closest('[data-slot="mail-thread"]')).not.toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'Open in a panel' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Pop out' }))
     const panel = await screen.findByRole('dialog', { name: SUBJECT })
-    expect(panel.getAttribute('data-present')).toBe('peek')
+    expect(panel.getAttribute('data-present')).toBe('window')
     expect(home.get()).toBe('surface')
     cleanup()
     mount('/ref/mail?mail=mail-4&compose=reply')
     expect(
       (await screen.findByRole('dialog', { name: SUBJECT })).getAttribute('data-present'),
-    ).toBe('peek')
+    ).toBe('window')
     fireEvent.click(screen.getByRole('button', { name: 'Reply under the thread' }))
     expect(await screen.findByText('Reply to Katrin Brenner')).toBeDefined()
     expect(home.get()).toBe('inline')
   })
 
-  for (const choice of ['window', 'page'] as const) {
+  for (const choice of ['peek', 'page'] as const) {
     test(`a new mail opens as the ${choice} the reader picked for the compose kind`, async () => {
       present.set(choice)
       mount('/ref/mail?compose=new')
