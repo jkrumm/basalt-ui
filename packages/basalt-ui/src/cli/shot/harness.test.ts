@@ -10,7 +10,7 @@ import type { AddressInfo } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { capture, readFactsInPage, readScaleInPage } from './capture'
+import { capture, coveredInPage, readFactsInPage, readScaleInPage } from './capture'
 import type { PwBrowser, PwPage } from './playwright'
 import { ShotError, resolvePlaywright, withBrowser } from './playwright'
 import { NO_STATES_NOTE, parseViewport } from './types'
@@ -111,6 +111,38 @@ describe('a target that is not visible', () => {
     const strip = out.shots.filter((s) => s.name === 'strip')
     expect(strip.every((s) => s.status === 'absent')).toBe(true)
   })
+})
+
+describe('an anchor under an open overlay', () => {
+  const covered = {
+    first: () => covered,
+    count: () => Promise.resolve(1),
+    boundingBox: () => Promise.resolve({ x: 0, y: 0, width: 10, height: 10 }),
+    hover: hangs,
+    waitFor: hangs,
+    screenshot: () => Promise.resolve(),
+    evaluate: (fn: unknown) =>
+      Promise.resolve(
+        typeof fn === 'function' && fn.name === 'coveredInPage'
+          ? 'covered by an open overlay (dialog-content)'
+          : '',
+      ),
+  }
+
+  test('hover, focus, keys and tooltip are absent with the reason, rest still shoots', async () => {
+    const started = Date.now()
+    const out = await capture(
+      input(fakePage([], covered), ['rest', 'hover', 'focus', 'keys', 'tooltip']),
+    )
+    expect(Date.now() - started).toBeLessThan(5_000)
+    const strip = out.shots.filter((s) => s.name === 'strip' && s.status !== 'skipped')
+    const steps = strip.filter((s) => s.state !== 'rest')
+    expect(steps.length).toBeGreaterThan(0)
+    expect(steps.every((s) => s.status === 'absent' && s.file === null)).toBe(true)
+    expect(steps.every((s) => /covered by an open overlay/.test(s.note ?? ''))).toBe(true)
+    expect(strip.filter((s) => s.state === 'rest').every((s) => s.status === 'ok')).toBe(true)
+    expect(out.shots.some((s) => s.status === 'error')).toBe(false)
+  }, 8_000)
 })
 
 describe('framing an anchor', () => {
@@ -521,6 +553,51 @@ describe('real Chrome', () => {
           'document.querySelectorAll("[data-shot-anchor]").length',
         )
         expect(named).toBe(5)
+        await context.close()
+      },
+    )
+  }, 120_000)
+
+  test('an open overlay is an anchor of its own, its cards stay anchors, and it covers what sits under it', async () => {
+    await shoot(
+      [],
+      async () => undefined,
+      '/',
+      async (browser) => {
+        const context = await browser.newContext({
+          viewport: { width: 400, height: 300 },
+          deviceScaleFactor: 1,
+          isMobile: false,
+          hasTouch: false,
+          colorScheme: 'light',
+          reducedMotion: 'reduce',
+        })
+        const page = await context.newPage()
+        await page.setContent(
+          `<body style="margin:0"><div data-slot="card" style="height:60px">under</div>
+          <div data-slot="card" style="position:fixed;inset:200px 0 0 0">clear</div>
+          <div style="position:fixed;inset:0 0 100px 0;z-index:5">
+            <div data-slot="dialog-content" style="height:100px">
+              <div data-slot="card">inside</div>
+              <div data-slot="sheet-content">nested overlay</div>
+            </div>
+          </div>`,
+          { waitUntil: 'load' },
+        )
+        const facts = await page.evaluate(readFactsInPage, [
+          'card',
+          'dialog-content',
+          'sheet-content',
+        ])
+        expect(facts.anchors).toEqual(['card-1', 'card-2', 'dialog-content-1', 'card-3'])
+        const coverOf = (name: string): Promise<string> =>
+          page.locator(`[data-shot-anchor="${name}"]`).first().evaluate(coveredInPage)
+        expect(await coverOf('card-1')).toBe('covered by an open overlay (dialog-content)')
+        expect(await Promise.all(['card-2', 'dialog-content-1', 'card-3'].map(coverOf))).toEqual([
+          '',
+          '',
+          '',
+        ])
         await context.close()
       },
     )
