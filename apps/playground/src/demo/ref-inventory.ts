@@ -447,6 +447,8 @@ export const PARTS: readonly Part[] = PART_SEEDS.map(
   }),
 )
 
+export const partOf = (id: string): Part | undefined => PARTS.find((p) => p.id === id)
+
 export const ORDER_STATES = ['draft', 'sent', 'confirmed', 'partial', 'received'] as const
 export type OrderState = (typeof ORDER_STATES)[number]
 export const ORDER_LABELS: Record<OrderState, string> = {

@@ -13,6 +13,7 @@ import { join } from 'node:path'
 import type { ReactNode } from 'react'
 import { PHOTOS } from './kit-photos'
 import { NAV } from './nav-model'
+import { supplierOf } from './ref-inventory'
 import { RUNS } from './runs'
 
 afterEach(cleanup)
@@ -280,7 +281,21 @@ describe('the reference pages', () => {
     const headings = screen.getAllByRole('heading', { level: 1 })
     expect(headings).toHaveLength(1)
     expect(headings[0]!.closest('[data-slot="page-bar"]')).not.toBeNull()
-    expect(document.querySelectorAll('[data-slot="entity-title"]')).toHaveLength(1)
+    const name = supplierOf('sup-4')!.name
+    expect(
+      [...document.querySelectorAll('[data-slot="entity-title"]')].filter((el) =>
+        el.textContent?.includes(name),
+      ),
+    ).toHaveLength(1)
+    // The band prints it twice (breadcrumb leaf and heading); nothing below the band repeats it.
+    const outside = screen
+      .getAllByText(name)
+      .filter(
+        (el) =>
+          el.closest('[data-slot="page-bar"]') === null &&
+          el.getAttribute('data-slot') !== 'page-breadcrumb-leaf',
+      )
+    expect(outside).toHaveLength(0)
     fireEvent.click(lead)
     const input = screen.getByRole('textbox', { name: 'Quoted lead time' })
     fireEvent.change(input, { target: { value: '21' } })
@@ -288,6 +303,35 @@ describe('the reference pages', () => {
     expect(screen.getByRole('button', { name: 'Edit Quoted lead time' }).textContent).toBe(
       '21 days',
     )
+  })
+
+  test('record: the overview relates the parts it supplies as cards that link their record', async () => {
+    mount('/ref/suppliers/sup-4')
+    await screen.findByRole('button', { name: 'Edit Quoted lead time' })
+    const cards = document.querySelectorAll('[data-slot="relationship-card"]')
+    expect(cards.length).toBeGreaterThan(0)
+    expect(cards.length).toBeLessThanOrEqual(4)
+    for (const card of cards) {
+      const href = card.querySelector('[data-slot="relationship-link"]')?.getAttribute('href')
+      expect(href).toMatch(/^\/ref\/part\/[^/]+$/)
+      expect(card.querySelectorAll('dt').length).toBe(3)
+    }
+  })
+
+  test('record: the tabs carry counts and the activity tab heads its feed by period', async () => {
+    mount('/ref/suppliers/sup-4?tab=activity')
+    await screen.findByRole('tab', { name: /^Activity \d+$/ })
+    for (const tab of ['Orders', 'Parts', 'Notes']) {
+      expect(screen.getByRole('tab', { name: new RegExp(`^${tab} \\d+$`) })).toBeDefined()
+    }
+    const headings = [...document.querySelectorAll('[data-slot="event-list-header"]')].map((h) =>
+      (h.firstChild?.textContent ?? '').trim(),
+    )
+    expect(headings.length).toBeGreaterThan(0)
+    expect(
+      headings.every((h) => /^(This week|Earlier this month|[A-Z][a-z]+|\d{4})$/.test(h)),
+    ).toBe(true)
+    expect(headings).not.toContain('Today')
   })
 
   test('create flow: the new-order wizard opens on its first step', async () => {

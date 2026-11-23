@@ -2,10 +2,10 @@ import { createFileRoute, linkOptions } from '@tanstack/react-router'
 import { useFormat } from 'basalt-ui'
 import type { Format } from 'basalt-ui'
 import { useQuery } from '@tanstack/react-query'
-import { EventList } from 'basalt-ui/cards'
+import { EventList, RelationshipCard } from 'basalt-ui/cards'
 import type { QueryStateLike } from 'basalt-ui/cards'
 import { shotState } from 'basalt-ui/data'
-import { EmptyState, Page, PageBar, PropertyList, Section } from 'basalt-ui/page'
+import { CardGrid, EmptyState, Page, PageBar, PropertyList, Section } from 'basalt-ui/page'
 import { defineControls, field, navTarget } from 'basalt-ui/router'
 import { col, DataTable, useDataTable } from 'basalt-ui/table'
 import { Lozenge } from 'basalt-ui/ui/badge'
@@ -13,6 +13,7 @@ import { Card } from 'basalt-ui/ui/card'
 import {
   Factory,
   Mail,
+  Package,
   Pencil,
   Phone,
   Plus,
@@ -24,6 +25,7 @@ import {
 import { useState } from 'react'
 import type { ReactElement } from 'react'
 import {
+  CATEGORY_LABELS,
   NOTE_TYPE_LABELS,
   ORDER_LABELS,
   ORDER_STATES,
@@ -47,16 +49,20 @@ import type {
 } from '../../demo/ref-inventory'
 import { NewOrderDialog } from './-new-order'
 
-const TABS = ['overview', 'orders', 'parts', 'notes'] as const
+const TABS = ['overview', 'activity', 'orders', 'parts', 'notes'] as const
 
 /** The record's tab and the create flow are fields: a link opens either, Back walks the tabs. */
 const store = defineControls({
   id: 'ref-supplier',
   scope: 'page',
   fields: {
-    tab: field
-      .enum(TABS, 'overview', { history: 'push' })
-      .labels({ overview: 'Overview', orders: 'Orders', parts: 'Parts', notes: 'Notes' }),
+    tab: field.enum(TABS, 'overview', { history: 'push' }).labels({
+      overview: 'Overview',
+      activity: 'Activity',
+      orders: 'Orders',
+      parts: 'Parts',
+      notes: 'Notes',
+    }),
     order: field.boolean(false),
   },
 })
@@ -175,7 +181,7 @@ function activityOf(f: Format, orders: readonly Order[], notes: readonly Note[])
   const placed = orders.map((o) => ({
     id: `${o.id}-placed`,
     at: Date.parse(o.ordered) + 10 * 3_600_000,
-    actor: o.buyer,
+    actor: { name: o.buyer },
     title: `placed ${o.number}`,
     body: `${o.lines} ${o.lines === 1 ? 'line' : 'lines'}, due ${f.date(Date.parse(o.due))}`,
     icon: Plus,
@@ -185,14 +191,14 @@ function activityOf(f: Format, orders: readonly Order[], notes: readonly Note[])
     .map((o) => ({
       id: `${o.id}-received`,
       at: Date.parse(o.due) + 14 * 3_600_000,
-      actor: 'Goods in',
+      actor: { name: 'Goods in', shape: 'object' as const, icon: Truck },
       title: `received ${o.number}`,
       icon: Truck,
     }))
   const written = notes.map((n) => ({
     id: n.id,
     at: Date.parse(n.updated),
-    actor: n.author,
+    actor: { name: n.author },
     title: n.title,
     chips: [NOTE_TYPE_LABELS[n.type], n.part],
     icon: NOTE_ICONS[n.type],
@@ -207,6 +213,32 @@ const TERMS = ['Net 30', 'Net 45', 'Net 60', 'Letter of credit'].map((value) => 
   value,
   label: value,
 }))
+
+/** The parts that tie most stock value to this supplier, each a relationship card that opens its record. */
+function RelatedParts({ parts }: { parts: readonly Part[] | undefined }): ReactElement {
+  const f = useFormat()
+  const top = (parts ?? []).toSorted((a, b) => b.value - a.value).slice(0, 4)
+  if (top.length === 0) return <p className="m-0 text-sm text-muted-foreground">No parts yet.</p>
+  return (
+    <CardGrid>
+      {top.map((p) => (
+        <RelationshipCard
+          key={p.id}
+          title={p.name}
+          subtitle={p.sku}
+          avatar={{ shape: 'object', icon: Package }}
+          relation={CATEGORY_LABELS[p.category]}
+          facts={[
+            { label: 'On hand', value: `${f.number(p.onHand)} pcs` },
+            { label: 'Stock value', value: f.money(p.value, 'EUR') },
+            { label: 'Next', value: f.date(Date.parse(p.nextDelivery), 'day') },
+          ]}
+          href={navTarget(linkOptions({ to: '/ref/part/$id', params: { id: p.id } }))}
+        />
+      ))}
+    </CardGrid>
+  )
+}
 
 function Overview({
   supplier,
@@ -314,16 +346,9 @@ function Overview({
           <OrdersTable rows={open} phase={records} id="ref-supplier-open" compact />
         </Section>
       </div>
-      <EventList
-        title="Activity"
-        phase={records}
-        items={
-          records.data === undefined ? [] : activityOf(f, records.data.orders, records.data.notes)
-        }
-        bodyRows={10}
-        pageSize={12}
-        now={TODAY}
-      />
+      <Section title="Parts supplied" summary="By stock value">
+        <RelatedParts parts={records.data?.parts} />
+      </Section>
     </div>
   )
 }
@@ -344,6 +369,8 @@ function SupplierRoute(): ReactElement {
     empty: { orders: [], parts: [], notes: [] },
   })
   const related = records.data
+  const f = useFormat()
+  const activity = related === undefined ? [] : activityOf(f, related.orders, related.notes)
   const parent = { label: 'Parts', href: navTarget(linkOptions({ to: '/ref/parts' })) }
   if (supplier === undefined) {
     return (
@@ -378,6 +405,7 @@ function SupplierRoute(): ReactElement {
             related === undefined
               ? {}
               : {
+                  activity: { count: activity.length },
                   orders: { count: related.orders.length },
                   parts: {
                     count: related.parts.length,
@@ -404,6 +432,17 @@ function SupplierRoute(): ReactElement {
           edit={(change) => {
             setEdits((previous) => ({ ...previous, [id]: { ...previous[id], ...change } }))
           }}
+        />
+      )}
+      {tab === 'activity' && (
+        <EventList
+          title="Activity"
+          phase={records}
+          items={activity}
+          group="period"
+          bodyRows={12}
+          pageSize={30}
+          now={TODAY}
         />
       )}
       {tab === 'orders' && (
