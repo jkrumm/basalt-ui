@@ -220,7 +220,7 @@ export function ExprN77Scenario({ shotState, fixture }: ScenarioProps) {
             <Heatmap
               label="Count by app and day, one cell each"
               data={cells}
-              matchHeight={box.height === 'fill'}
+              height={box.height}
               rows={heatRows}
               cols={DAYS}
               getRow={getRow}

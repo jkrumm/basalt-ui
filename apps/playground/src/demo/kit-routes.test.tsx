@@ -83,6 +83,7 @@ describe('the Kit nav', () => {
       '/kit/split',
       '/kit/interval-track',
       '/kit/bar-list-series',
+      '/kit/stat-states',
       '/kit/board',
       '/kit/layouts',
       '/kit/chain',
