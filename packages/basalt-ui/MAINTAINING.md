@@ -26,7 +26,7 @@ Named exports only — **no default exports**. Files `kebab-case`, components `P
 | `./controls`   | headless     | the control tier: `FilterSet` over `spec(...)`, `ViewTabs`, `ControlView`, `ControlHome`, `filterSlot` and the v3 forms                                             |
 | `./table`      | headless     | `col<Row>()` kind columns, `useDataTable`, `DataTable` and its parts, `tableCodec`                                                                                  |
 | `./content`    | ui           | `Prose`, `Markdown`, `CodeBlock`, `MermaidDiagram`, MDX map                                                                                                         |
-| `./vite`       | —            | `basaltViteConfig` (config only, never `plugins`) + `basalt()` (gates, sources.css, head/PWA)                                                                       |
+| `./vite`       | —            | `basalt()` (gates, sources.css, head/PWA)                                                                                                                           |
 | `./styles.css` | —            | `@layer basalt` base styles, the iOS input floor, the font stack — mandatory import                                                                                 |
 | `./configs/*`  | —            | raw toolchain presets (real paths — `extends` needs them)                                                                                                           |
 

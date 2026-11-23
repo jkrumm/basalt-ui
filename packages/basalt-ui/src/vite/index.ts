@@ -12,9 +12,6 @@
  *   so the table tiers (cards below the phone width) need no second import from the app.
  * - It regenerates `<root>/.basalt/sources.css` each run.
  * - It owns the head: the theme script, the theme-color pair and, with an app config, the manifest.
- *
- * `basalt()` replaces the 2.x head plugin on this entry (src/vite.ts keeps the 2.x source); the
- * 2.x `basaltViteConfig` stays exported until its migration row retires it.
  */
 import { existsSync, readFileSync } from 'node:fs'
 import { join, relative, resolve } from 'node:path'
@@ -37,8 +34,6 @@ import {
 import { headPlugin, serviceWorkerPlugins } from './head'
 import type { HeadOptions } from './head'
 import { renderSources, writeSources } from './sources'
-
-export { basaltViteConfig } from '../vite'
 
 /** Not exported (the type budget is full): read it as `Parameters<typeof basalt>[0]`. */
 type BasaltOptions = HeadOptions & {

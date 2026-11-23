@@ -343,6 +343,12 @@
       "kind": "removed",
       "from": "basalt-ui/format",
       "note": "the 2.x subpath is deleted in 3.0; instead: useFormat or createFormat from basalt-ui, and the column kinds of basalt-ui/table"
+    },
+    {
+      "id": "removed-2x-global-APP_VERSION",
+      "kind": "removed",
+      "from": "basalt-ui#__APP_VERSION__",
+      "note": "the ambient global went with basaltViteConfig, the one thing that defined it; an app that reads it puts `define: { __APP_VERSION__: ... }` in its vite.config and declares it in its own src"
     }
   ],
   "tokens": {

@@ -205,7 +205,7 @@ export const SURFACES = {
     kind: 'tooling',
     layer: 'build-tooling',
     description:
-      'basalt(opts) — v3 plugin: peer and seed build gates, eject aliases, `.basalt/sources.css`, theme script, theme-color and manifest; basaltViteConfig(opts) — 2.x Vite preset',
+      'basalt(opts) — v3 plugin: peer and seed build gates, eject aliases, `.basalt/sources.css`, theme script, theme-color and manifest',
     optionalPeers: ['vite', 'vite-plugin-pwa'],
     forbiddenImports: [],
   },
