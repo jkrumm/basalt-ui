@@ -69,9 +69,13 @@ async function fromSite<T>(root: URL, specifier: string): Promise<T> {
   return (await import(pathToFileURL(require.resolve(specifier)).href)) as T
 }
 
-/** The head scripts, in order: the scheme first (before paint), then the parts' listeners. */
+/**
+ * The head scripts, in order: the scheme first (before paint), then the parts' listeners. A content
+ * site stamps the scheme only: it has no appearance setter, so the appearance statement would be bytes
+ * on every page for nothing.
+ */
 function headScript(options: BasaltAstroOptions = {}): string {
-  return `${themeScript(options.scheme)};${siteScript(options.scheme)}`
+  return `${themeScript({ ...options.scheme, appearance: false })};${siteScript(options.scheme)}`
 }
 
 /**
