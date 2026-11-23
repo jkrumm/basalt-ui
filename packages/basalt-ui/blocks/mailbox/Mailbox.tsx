@@ -6,6 +6,7 @@ import { FormRow, useFormDraft } from 'basalt-ui/controls'
 import type { NavTarget } from 'basalt-ui/core/ports'
 import { useAppForm } from 'basalt-ui/form'
 import { EmptyState, Page, PageBar, Peek, SplitPage, useSizeClass } from 'basalt-ui/page'
+import { CardPhase } from 'basalt-ui/ui/card'
 import { defineControls, field } from 'basalt-ui/router'
 import { BulkBar } from 'basalt-ui/table'
 import { Button } from 'basalt-ui/ui/button'
@@ -460,7 +461,7 @@ export function Mailbox({
       />
       <div data-shot="mailbox" className="flex min-h-0 flex-1 flex-col">
         <SplitPage
-          selected={mail.useIsSet()}
+          selected={mail.useIsSet() && query.data !== undefined}
           onBack={mail.clear}
           backLabel={MAIL_FOLDER_LABELS[values.folder]}
           scroll="panes"
@@ -471,13 +472,20 @@ export function Mailbox({
               items={items}
               now={now}
               phase={query}
-              {...(needle !== '' &&
-                items.length === 0 && {
-                  empty: {
-                    cause: `No mail matches "${values.search}". Try a supplier, a contact or an order number.`,
-                    filtered: { reset: () => mailControls.field.search.clear() },
-                  },
-                })}
+              {...(items.length === 0 &&
+                (needle === ''
+                  ? {
+                      empty: {
+                        cause: `Nothing in ${MAIL_FOLDER_LABELS[values.folder]}. Mail from suppliers about their orders lands here.`,
+                        action: { label: 'New email', onClick: () => composeField.choose('new') },
+                      },
+                    }
+                  : {
+                      empty: {
+                        cause: `No mail matches "${values.search}". Try a supplier, a contact or an order number.`,
+                        filtered: { reset: () => mailControls.field.search.clear() },
+                      },
+                    }))}
               open={open?.id ?? null}
               onOpen={(id) => {
                 patch([id], { unread: false })
@@ -538,7 +546,11 @@ export function Mailbox({
             />
           )}
           detail={() =>
-            query.data === undefined ? null : open === undefined ? (
+            query.data === undefined ? (
+              <div className="flex flex-1 flex-col p-4">
+                <CardPhase phase={query}>{null}</CardPhase>
+              </div>
+            ) : items.length === 0 ? null : open === undefined ? (
               <div className="flex flex-1 items-center justify-center">
                 <EmptyState
                   tier="section"
@@ -583,19 +595,26 @@ export function Mailbox({
             onSend={onSend}
             onDone={close}
             aside={(fillTo) => {
-              const replied = open?.messages.at(-1)
-              if (kind !== 'new' && replied !== undefined) {
+              if (kind !== 'new' && open !== undefined) {
                 return (
-                  <figure className="m-0 flex flex-col gap-2 border-s-2 border-border ps-3">
-                    <figcaption className="text-xs text-muted-foreground">
-                      {`${replied.from.name} wrote on ${f.date(Date.parse(replied.at), 'day')}`}
-                    </figcaption>
-                    <blockquote className="m-0 text-sm whitespace-pre-line text-muted-foreground">
-                      {replied.body}
-                    </blockquote>
-                  </figure>
+                  <div className="flex flex-col gap-4">
+                    {open.messages.toReversed().map((m) => (
+                      <figure
+                        key={m.id}
+                        className="m-0 flex flex-col gap-2 border-s-2 border-border ps-3"
+                      >
+                        <figcaption className="text-xs text-muted-foreground">
+                          {`${m.from.name} wrote on ${f.date(Date.parse(m.at), 'day')}`}
+                        </figcaption>
+                        <blockquote className="m-0 text-sm whitespace-pre-line text-muted-foreground">
+                          {m.body}
+                        </blockquote>
+                      </figure>
+                    ))}
+                  </div>
                 )
               }
+              if (contacts.length === 0) return null
               return (
                 <div className="flex flex-col gap-2">
                   <span className="text-xs text-muted-foreground">Supplier contacts</span>
