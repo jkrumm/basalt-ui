@@ -10,6 +10,20 @@
 
 export type UrlTrust = 'trusted' | 'untrusted'
 
+/**
+ * A path inside the app: one leading slash, so not `//host`, a scheme, a hash or a relative path,
+ * and no backslash or control character, which a parser folds into `/` or drops (`/\host` is
+ * another origin). The one rule the router's link adapter and the stored favourites share.
+ */
+export function isInAppPath(href: string): boolean {
+  if (!href.startsWith('/') || href.startsWith('//')) return false
+  for (let i = 0; i < href.length; i++) {
+    const code = href.charCodeAt(i)
+    if (code <= 0x1f || code === 0x7f || code === 0x5c) return false
+  }
+  return true
+}
+
 const BASE = 'https://x.invalid'
 const ALLOWED_PROTOCOLS: ReadonlySet<string> = new Set(['https:', 'mailto:', 'tel:'])
 // remend's repair placeholders for a half-streamed destination, never a real URL.

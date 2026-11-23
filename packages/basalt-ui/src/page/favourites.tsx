@@ -14,6 +14,7 @@ import { cn } from '../core/cn'
 import { useMessages } from '../core/messages/use-messages'
 import { page } from '../core/messages/page'
 import { persisted } from '../core/persisted'
+import { isInAppPath } from '../core/url'
 import type { IconComponent } from '../core/ports'
 import { Button } from '../ui/button'
 import { Tooltip } from '../ui/tooltip'
@@ -59,16 +60,14 @@ export function useFavouriteGlyph(id: string): IconComponent | undefined {
 
 // ---- The default store ---------------------------------------------------------------------------
 
-/** A stored href opens inside the app only: one leading slash, never `//host` or a scheme. */
-function isInApp(href: string): boolean {
-  return href.startsWith('/') && !href.startsWith('//')
-}
-
 function isEntry(value: unknown): value is FavouriteEntry {
   if (typeof value !== 'object' || value === null) return false
   const { id, label, href } = value as Record<string, unknown>
   return (
-    typeof id === 'string' && typeof label === 'string' && typeof href === 'string' && isInApp(href)
+    typeof id === 'string' &&
+    typeof label === 'string' &&
+    typeof href === 'string' &&
+    isInAppPath(href)
   )
 }
 
@@ -144,8 +143,8 @@ export type FavouriteToggleProps = FavouriteInput & {
  * The star button that adds a record to the rail's Favourites section and takes it off again. It is
  * a toggle (`aria-pressed`) named by the action it would do, and draws nothing outside an `AppShell`
  * or on a phone, where the rail that lists favourites is not drawn.
- * Drop it in a `PageBar`'s `actions`; a `Peek`, `Dock` or `PageAside` header draws it from its
- * `favourite` prop.
+ * A `PageBar`, a `Peek` and a `Dock` draw it from their `favourite` prop; use the component itself
+ * for a star of your own. `PageAside` takes no `favourite` prop.
  *
  * @useWhen a record's page or panel should offer to pin it to the rail
  * @neverWhen the app has no `AppShell`, or the pin is a per-user setting that belongs on a settings page

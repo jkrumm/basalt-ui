@@ -123,6 +123,7 @@ describe('the default store', () => {
           { id: 'b', label: 'B', href: 'https://example.com' },
           { id: 'c', label: 'C', href: '//example.com' },
           { id: 'd', label: 'D', href: 'javascript:alert(1)' },
+          { id: 'f', label: 'F', href: '/\\example.com' },
           { id: 'e' },
           'text',
         ],
