@@ -32,6 +32,29 @@ describe('PropertyList layout', () => {
     expect(container.querySelector('dl')?.className).toContain('@regular:grid-cols-')
     expect(container.querySelectorAll('button')).toHaveLength(1)
   })
+
+  test('on touch an editable row is one 44 px target and its label centres on it; a read-only row keeps the Facts pitch', () => {
+    const { container } = render(
+      <PropertyList
+        rows={[
+          { id: 'since', label: 'Since', value: 'Mar 2021' },
+          {
+            id: 'contact',
+            kind: 'text',
+            label: 'Contact',
+            value: 'Ida',
+            autoComplete: 'off',
+            onCommit: () => {},
+          },
+        ]}
+      />,
+    )
+    const [fact, editable] = [...container.querySelectorAll('dt')]
+    expect(fact!.className).not.toContain('pointer-coarse')
+    expect(editable!.className).toContain('pointer-coarse:min-h-11')
+    expect(container.querySelector('button')!.className).toContain('pointer-coarse:min-h-11')
+    expect(container.querySelector('button')!.className).not.toContain('pointer-coarse:-my')
+  })
 })
 
 describe('PropertyList text row', () => {
