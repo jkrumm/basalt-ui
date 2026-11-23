@@ -2,14 +2,20 @@ import { Radio as BaseRadio } from '@base-ui/react/radio'
 import { RadioGroup as BaseRadioGroup } from '@base-ui/react/radio-group'
 import { cva } from 'class-variance-authority'
 import { useRef, useState } from 'react'
-import type { FocusEvent, ReactElement } from 'react'
+import type { CSSProperties, FocusEvent, ReactElement } from 'react'
 import { cn } from '../core/cn'
+import { ACCENT_FILLS } from '../tokens/accents'
+import type { AccentName } from '../tokens/accents'
 import { base as baseMessages } from '../core/messages/base'
 import { useMessages } from '../core/messages/use-messages'
 import { buttonVariants } from './button'
 import { Popover, PopoverContent, PopoverTrigger } from './popover'
 
-/** The named colour tokens a swatch can carry. A free colour value is not a choice: the palette decides. */
+/**
+ * The named colour tokens a swatch can carry. A free colour value is not a choice: the palette decides.
+ * `accent-<name>` is one of the package's accents (`ACCENTS`, basalt-ui/tokens), painted in that
+ * accent's own fill whatever accent the page wears: the swatches of an accent picker.
+ */
 export const SWATCH_TOKENS = [
   'neutral',
   'brand',
@@ -22,6 +28,12 @@ export const SWATCH_TOKENS = [
   'chart-3',
   'chart-4',
   'chart-5',
+  'accent-blue',
+  'accent-violet',
+  'accent-rose',
+  'accent-orange',
+  'accent-green',
+  'accent-teal',
 ] as const
 
 export type SwatchToken = (typeof SWATCH_TOKENS)[number]
@@ -39,6 +51,20 @@ const FILL: Record<SwatchToken, string> = {
   'chart-3': 'bg-chart-3',
   'chart-4': 'bg-chart-4',
   'chart-5': 'bg-chart-5',
+  'accent-blue': 'bg-(--swatch-fill)',
+  'accent-violet': 'bg-(--swatch-fill)',
+  'accent-rose': 'bg-(--swatch-fill)',
+  'accent-orange': 'bg-(--swatch-fill)',
+  'accent-green': 'bg-(--swatch-fill)',
+  'accent-teal': 'bg-(--swatch-fill)',
+}
+
+/** An accent swatch's fill, as the `--swatch-fill` its class reads; none for a theme token. */
+function fillStyle(token: SwatchToken): CSSProperties | undefined {
+  if (!token.startsWith('accent-')) return undefined
+  return {
+    '--swatch-fill': ACCENT_FILLS[token.slice('accent-'.length) as AccentName],
+  } as CSSProperties
 }
 
 /**
@@ -90,7 +116,13 @@ export type SwatchPickerProps = {
 }
 
 function Dot({ token }: { token: SwatchToken }): ReactElement {
-  return <span aria-hidden="true" className={cn('size-3 shrink-0 rounded-full', FILL[token])} />
+  return (
+    <span
+      aria-hidden="true"
+      style={fillStyle(token)}
+      className={cn('size-3 shrink-0 rounded-full', FILL[token])}
+    />
+  )
 }
 
 /**
@@ -173,6 +205,7 @@ export function SwatchPicker({
             spaceDown.current = false
             if (event.detail > 0 || fromSpace) pick()
           }}
+          style={fillStyle(option.value)}
           className={cn(swatchVariants(), FILL[option.value])}
         >
           <BaseRadio.Indicator>

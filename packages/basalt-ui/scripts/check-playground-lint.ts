@@ -23,6 +23,7 @@ import { renderStylelintConfig } from '../src/lint/stylelint/render'
 
 const PACKAGE = resolve(import.meta.dirname, '..')
 const PLAYGROUND = resolve(PACKAGE, '..', '..', 'apps', 'playground')
+const GENERATED_SHEETS = new Set(['src/accents.css'])
 
 type StylelintResult = {
   source: string
@@ -81,7 +82,9 @@ function runStylelint(project: Project, files: readonly string[]): Finding[] {
 
 export function checkPlaygroundLint(root: string = PLAYGROUND): Finding[] {
   const project: Project = { root, manifest: null, roots: [['src', 'app']] }
-  const files = rootFiles(project)
+  // The playground has no manifest; its one generated sheet (`tokens:css --accents`) is skipped as a
+  // consumer's `tokens` output in `.basalt/manifest.json` is.
+  const files = rootFiles(project).filter((f) => !GENERATED_SHEETS.has(f))
   return [
     ...runCheckTokens(project, files),
     ...runStylelint(
