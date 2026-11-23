@@ -10,6 +10,7 @@ import { table } from '../../core/messages/table'
 import { Button } from '../../ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '../../ui/popover'
 import type { TableModel } from '../use-data-table'
+import { PlusGlyph } from './plus-glyph'
 import { FilterEditor } from './toolbar-editor'
 import { filterableSpecs } from './toolbar-filters'
 
@@ -22,7 +23,11 @@ export function AddFilter<T>({ model }: { model: TableModel<T> }): ReactElement 
   if (specs.length === 0) return null
   return (
     <Popover onOpenChange={(open) => open && setPicked(null)}>
-      <PopoverTrigger render={<Button />}>{t('table.filterAdd')}</PopoverTrigger>
+      {/* Below the regular tier the trigger gives its words up to the plus, so the view tabs keep the room. */}
+      <PopoverTrigger render={<Button className="@max-regular:w-11 @max-regular:px-0" />}>
+        <PlusGlyph className="hidden @max-regular:block" />
+        <span className="@max-regular:sr-only">{t('table.filterAdd')}</span>
+      </PopoverTrigger>
       <PopoverContent
         aria-label={t('table.filterColumn')}
         align="start"

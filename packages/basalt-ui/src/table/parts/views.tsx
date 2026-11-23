@@ -30,6 +30,7 @@ import { SEARCH_DEBOUNCE_MS } from '../core/state'
 import { modelOf } from '../use-data-table'
 import type { TableModel } from '../use-data-table'
 import { AddFilter } from './add-filter'
+import { PlusGlyph } from './plus-glyph'
 import { ChipList } from './chips'
 import { useSearchLabel } from './search-label'
 import { filterableSpecs } from './toolbar-filters'
@@ -471,14 +472,6 @@ function Panel<T>({ c }: { c: ViewsController<T> }): ReactElement | null {
     <Suspense fallback={null}>
       <LazyPanel c={c as unknown as ViewsController<unknown>} />
     </Suspense>
-  )
-}
-
-function PlusGlyph(): ReactElement {
-  return (
-    <svg viewBox="0 0 16 16" className="size-icon" fill="none" aria-hidden="true">
-      <path d="M8 3.5v9M3.5 8h9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
   )
 }
 
