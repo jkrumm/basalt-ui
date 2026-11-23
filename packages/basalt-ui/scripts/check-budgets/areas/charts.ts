@@ -86,7 +86,8 @@ export const rows: readonly RowDef[] = [
     // 139400 -> 140400 (Issue 2883): 140242 B measured, +~1.0 KB gz over master (139280) for the segment value label (`valuesAt: 'segment'`)
     // placed inside its own segment of a stack, fitted like a clamped stack, and the stack-aware `y.domain` extent
     // (expression cycle 19 contract).
-    ceiling: 140400,
+    // 140400 -> 140500 (trial 2 kit defects): 140476 B measured, +~80 B gz over master (140242) for the room under the longest negative bar that keeps its value label outside it (compile.ts roomForValues) and height 'fill' on Heatmap.
+    ceiling: 140500,
     measure: () => measureSource(THREE_KIND),
   },
 ]
@@ -109,6 +110,13 @@ export const raises: Raises = {
     },
   ],
   'charts-three-kind': [
+    {
+      from: 140400,
+      to: 140500,
+      consumer:
+        "a CBBI median-return bar chart whose most negative bar ended at the domain floor (trial 2 kit defects): its value stood inside the bar in dark ink while its neighbours' stood below theirs; the plot keeps the room under the longest negative bar, so every negative value stands below its end",
+      repo: 'basalt-ui',
+    },
     {
       from: 139400,
       to: 140400,
