@@ -26,6 +26,7 @@ import { modelOf } from '../use-data-table'
 import type { TableModel } from '../use-data-table'
 import { ChipList } from './chips'
 import { AddFilter } from './add-filter'
+import { useSearchLabel } from './search-label'
 import { FilterEditor } from './toolbar-editor'
 import { CategoryOrder } from './category-order'
 import { OrderList } from './order-list'
@@ -34,15 +35,15 @@ import { ViewsBar } from './views'
 import type { ViewParam } from './views'
 
 function Search<T>({ model }: { model: TableModel<T> }): ReactElement {
-  const t = useMessages(table)
+  const searchLabel = useSearchLabel(model.label)
   const search = useSearchDraft(model.state.request.q, (q) => model.state.setRequest({ q }))
   // An IME composition is not a phrase yet: the box shows it, nothing is written until it ends.
   const [composed, setComposed] = useState<string | null>(null)
   return (
     <Input
       type="search"
-      aria-label={t('table.search')}
-      placeholder={t('table.searchIn', model.label)}
+      aria-label={searchLabel.name}
+      placeholder={searchLabel.placeholder}
       className="min-w-32 flex-1"
       value={composed ?? search.draft}
       onChange={(event) => {
