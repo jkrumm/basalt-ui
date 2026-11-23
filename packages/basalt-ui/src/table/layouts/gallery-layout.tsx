@@ -48,7 +48,7 @@ function GalleryCard<T>({
               <button
                 type="button"
                 data-slot="table-gallery-open"
-                className="min-h-6 min-w-0 cursor-pointer truncate text-start text-sm font-medium text-foreground after:absolute after:inset-0 after:rounded-card focus-ring focus-visible:after:outline-2"
+                className="min-h-6 min-w-0 cursor-pointer line-clamp-2 text-start text-sm wrap-anywhere font-medium text-foreground after:absolute after:inset-0 after:rounded-card focus-ring focus-visible:after:outline-2"
                 onClick={() => model.activate(row.id)}
               >
                 {face.title}
@@ -76,7 +76,7 @@ function GalleryCard<T>({
             <dl className="m-0 grid grid-cols-2 gap-3 border-t border-border pt-3">
               {facts.map((fact) => (
                 <div key={fact.spec.id} className="flex min-w-0 flex-col gap-0.5">
-                  <dt className="truncate text-xs text-muted-foreground">{fact.label}</dt>
+                  <dt className="text-xs text-muted-foreground wrap-break-word">{fact.label}</dt>
                   <dd className="m-0 truncate text-sm text-foreground tabular-nums">
                     {cell(fact, row.original, env)}
                   </dd>

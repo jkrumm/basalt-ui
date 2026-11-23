@@ -110,13 +110,23 @@ export const rows: readonly RowDef[] = [
     // the board (`Board`, `KanbanCard` and its menu, the drop with rollback) and the gallery (`CardGrid` of card
     // faces) are lazy chunks of `DataTable`, fetched only when a view draws them; this row sums every chunk,
     // so they count here while a table-only page loads none of them. The list is CSS on the table markup.
-    ceiling: 207000,
+
+    // 207000 -> 208500 (Issue 3088): 207019 B measured, +~1.5 KB gz for the board and gallery frames (`LayoutPhase`: skeleton
+    // lanes and cards, the arm's message with no table head above it), eager so a first load is never blank.
+    ceiling: 208500,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
 
 export const raises: Raises = {
   'table-own': [
+    {
+      from: 207000,
+      to: 208500,
+      consumer:
+        'the shipped parts raising design-check P1s on every page that uses them (Issue 3088): a board and a gallery draw their own loading, empty and error frames instead of the table head over skeleton rows',
+      repo: 'basalt-ui',
+    },
     {
       from: 186500,
       to: 207000,

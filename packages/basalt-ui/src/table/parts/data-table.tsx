@@ -25,6 +25,7 @@ import { BulkBar } from './bulk-bar'
 import { DataTableFooter, hasFooter } from './footer'
 import { VirtualTable } from './virtual'
 import { DataTableHead, visibleColumns } from './head'
+import { LayoutPhase } from '../layouts/layout-phase'
 import { FrameArmRow } from './phases'
 import { RowFocusProvider, clearOnBlur, rowLinkOf } from './row-focus'
 import { TablePager } from './pager'
@@ -296,6 +297,16 @@ export function DataTable<T, I = unknown>({
   const link = rowLinkOf({ focus, focusSeries, focusItems }, model.getRowId)
   const onBlur = clearOnBlur(link)
   const windowed = virtual !== undefined && (phase.tag === 'ready' || phase.tag === 'stale')
+
+  // A board and a gallery draw their own frames while they have no cards: never the table's head over its rows.
+  const cardLayout = model.layout === 'board' || model.layout === 'gallery'
+  if (cardLayout && (frame !== undefined || (phase.tag !== 'ready' && phase.tag !== 'stale')))
+    return (
+      <LayoutPhase
+        model={model as unknown as TableModel<unknown>}
+        {...(frame !== undefined && { frame })}
+      />
+    )
 
   if (frame !== undefined)
     return <FramedArm table={table} frame={frame} windowed={virtual !== undefined} />
