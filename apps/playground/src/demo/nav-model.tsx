@@ -22,6 +22,7 @@ import {
   FlaskConical as Flask,
   Image,
   LayoutDashboard as Dashboard,
+  Mail,
   MessagesSquare,
   PanelLeft as Layout,
   PanelRight as Panel,
@@ -93,6 +94,13 @@ export const NAV = defineNav({
           icon: Notebook,
           mobile: 'more',
           link: linkOptions({ to: '/ref/notes' }),
+        },
+        {
+          id: 'ref-mail',
+          label: 'Mail',
+          icon: Mail,
+          mobile: 'more',
+          link: linkOptions({ to: '/ref/mail' }),
         },
         {
           id: 'ref-supplier',

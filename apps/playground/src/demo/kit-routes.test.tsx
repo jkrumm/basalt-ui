@@ -4,7 +4,8 @@
  */
 import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider, createMemoryHistory, createRouter } from '@tanstack/react-router'
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { persisted } from 'basalt-ui'
 import { createQueryClient } from 'basalt-ui/data'
 import { BasaltProvider, routerDefaults } from 'basalt-ui/router'
 import { afterEach, describe, expect, test } from 'bun:test'
@@ -249,6 +250,7 @@ describe('the reference pages', () => {
     expect(navPaths('reference')).toEqual([
       '/ref/parts',
       '/ref/notes',
+      '/ref/mail',
       '/ref/suppliers/$id',
       '/ref/schedule',
       '/ref/settings',
@@ -261,6 +263,14 @@ describe('the reference pages', () => {
     mount('/ref/parts')
     expect(await screen.findByText('Hex bolt M8 x 40, A2 stainless')).toBeDefined()
     expect(await screen.findByText('To reorder')).toBeDefined()
+  })
+
+  test('mail: the inbox lists the mail under day groups and opens a thread from the address', async () => {
+    mount('/ref/mail?mail=mail-4')
+    expect(await screen.findByRole('list', { name: 'Inbox' })).toBeDefined()
+    expect(
+      await screen.findByRole('region', { name: 'Re: Thread pitch on the M8 batch' }),
+    ).toBeDefined()
   })
 
   test('notes: a note named in the address opens beside the list', async () => {
@@ -364,5 +374,74 @@ describe('the reference pages', () => {
     cleanup()
     mount('/ref/settings?section=workspace')
     expect((await screen.findAllByText('Delete inventory')).length).toBeGreaterThan(0)
+  })
+})
+
+describe('the mailbox composer', () => {
+  const home = persisted<'inline' | 'surface'>('ref-mail:composer', {
+    version: 1,
+    initial: 'inline',
+  })
+  const present = persisted<'peek' | 'window' | 'page'>('panel:compose:present', {
+    version: 1,
+    initial: 'peek',
+  })
+  const SUBJECT = 'Re: Thread pitch on the M8 batch'
+
+  afterEach(() => {
+    home.reset()
+    present.reset()
+    localStorage.clear()
+  })
+
+  test('a reply opens under the thread; moved to a panel, the next reply opens there', async () => {
+    mount('/ref/mail?mail=mail-4&compose=reply')
+    const lead = await screen.findByText('Reply to Katrin Brenner')
+    expect(lead.closest('[data-slot="peek"]')).toBeNull()
+    expect(lead.closest('[data-slot="mail-thread"]')).not.toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Open in a panel' }))
+    const panel = await screen.findByRole('dialog', { name: SUBJECT })
+    expect(panel.getAttribute('data-present')).toBe('peek')
+    expect(home.get()).toBe('surface')
+    cleanup()
+    mount('/ref/mail?mail=mail-4&compose=reply')
+    expect(
+      (await screen.findByRole('dialog', { name: SUBJECT })).getAttribute('data-present'),
+    ).toBe('peek')
+    fireEvent.click(screen.getByRole('button', { name: 'Reply under the thread' }))
+    expect(await screen.findByText('Reply to Katrin Brenner')).toBeDefined()
+    expect(home.get()).toBe('inline')
+  })
+
+  for (const choice of ['window', 'page'] as const) {
+    test(`a new mail opens as the ${choice} the reader picked for the compose kind`, async () => {
+      present.set(choice)
+      mount('/ref/mail?compose=new')
+      const dialog = await screen.findByRole('dialog', { name: 'New email' })
+      expect(dialog.getAttribute('data-present')).toBe(choice)
+    })
+  }
+
+  // Unmounting closes the composer as a close does (the panel's close is the browser's to prove: happy-dom stalls on it).
+  test('a draft survives closing the composer and comes back when it opens again', async () => {
+    mount('/ref/mail?compose=new')
+    const dialog = await screen.findByRole('dialog', { name: 'New email' })
+    fireEvent.change(within(dialog).getByRole('textbox', { name: /^To/ }), {
+      target: { value: 'erik.holm@nordlager.example' },
+    })
+    fireEvent.input(within(dialog).getByRole('textbox', { name: 'Message' }), {
+      target: { value: 'Please confirm the new delivery date.' },
+    })
+    cleanup()
+    mount('/ref/mail?compose=new')
+    const again = await screen.findByRole('dialog', { name: 'New email' })
+    await waitFor(() =>
+      expect(
+        (within(again).getByRole('textbox', { name: 'Message' }) as HTMLTextAreaElement).value,
+      ).toBe('Please confirm the new delivery date.'),
+    )
+    expect((within(again).getByRole('textbox', { name: /^To/ }) as HTMLInputElement).value).toBe(
+      'erik.holm@nordlager.example',
+    )
   })
 })
