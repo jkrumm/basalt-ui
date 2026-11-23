@@ -134,7 +134,7 @@ describe('check 3: peers and ai-major-parity', () => {
     expect(r.detail).toContain('tailwindcss is not declared')
   })
 
-  it('names the build peers init installs: the Tailwind Vite plugin and the router plugin', async () => {
+  it('names each app peer init installs when it is missing: build plugins and the shell runtime', async () => {
     const files = (drop: string): Record<string, string | null> => ({
       [`node_modules/${drop}`]: null,
       'package.json': JSON.stringify({
@@ -148,13 +148,20 @@ describe('check 3: peers and ai-major-parity', () => {
             '@base-ui/react': '~1.9.0',
             '@tanstack/react-router': '^1.170.0',
             '@tanstack/react-query': '^5.104.0',
+            '@tanstack/react-hotkeys': '0.27.1',
+            '@atlaskit/pragmatic-drag-and-drop': '^4.0.0',
             '@tailwindcss/vite': '4.3.5',
             '@tanstack/router-plugin': '1.168.40',
           }).filter(([name]) => name !== drop),
         ),
       }),
     })
-    for (const peer of ['@tailwindcss/vite', '@tanstack/router-plugin']) {
+    for (const peer of [
+      '@tailwindcss/vite',
+      '@tanstack/router-plugin',
+      '@tanstack/react-hotkeys',
+      '@atlaskit/pragmatic-drag-and-drop',
+    ]) {
       const r = await runCheck(makeTree('app', files(peer)), 3)
       expect(r.status).toBe('fail')
       expect(r.detail).toContain(`${peer} is not declared`)
@@ -243,6 +250,8 @@ describe('check 3: peers and ai-major-parity', () => {
         '@base-ui/react': '~1.9.0',
         '@tanstack/react-router': '^1.170.0',
         '@tanstack/react-query': '^5.104.0',
+        '@tanstack/react-hotkeys': '0.27.1',
+        '@atlaskit/pragmatic-drag-and-drop': '^4.0.0',
         '@tailwindcss/vite': '4.3.5',
         '@tanstack/router-plugin': '1.168.40',
         ai,
