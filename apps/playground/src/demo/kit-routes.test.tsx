@@ -253,6 +253,7 @@ describe('the reference pages', () => {
       '/ref/schedule',
       '/ref/settings',
       '/ref/flow',
+      '/ref/assistant',
     ])
   })
 
