@@ -231,7 +231,7 @@ function RelatedParts({ parts }: { parts: readonly Part[] | undefined }): ReactE
           facts={[
             { label: 'On hand', value: `${f.number(p.onHand)} pcs` },
             { label: 'Stock value', value: f.money(p.value, 'EUR') },
-            { label: 'Next', value: f.date(Date.parse(p.nextDelivery), 'day') },
+            { label: 'Delivery', value: f.date(Date.parse(p.nextDelivery), 'day') },
           ]}
           href={navTarget(linkOptions({ to: '/ref/part/$id', params: { id: p.id } }))}
         />
@@ -346,7 +346,14 @@ function Overview({
           <OrdersTable rows={open} phase={records} id="ref-supplier-open" compact />
         </Section>
       </div>
-      <Section title="Parts supplied" summary="By stock value">
+      <Section
+        title="Parts supplied"
+        summary={
+          records.data === undefined
+            ? undefined
+            : `${Math.min(4, records.data.parts.length)} of ${records.data.parts.length} by stock value`
+        }
+      >
         <RelatedParts parts={records.data?.parts} />
       </Section>
     </div>
@@ -440,7 +447,7 @@ function SupplierRoute(): ReactElement {
           phase={records}
           items={activity}
           group="period"
-          bodyRows={12}
+          bodyRows={14}
           pageSize={30}
           now={TODAY}
         />
