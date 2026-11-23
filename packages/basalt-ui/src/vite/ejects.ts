@@ -6,7 +6,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join, relative, resolve, sep } from 'node:path'
 
-import { readRow } from '../cli/eject/ledger'
+import { isBlockRow, readRow } from '../cli/eject/ledger'
 import type { EjectedRow } from '../cli/eject/ledger'
 import { MANIFEST_PATH, parseManifest } from '../cli/manifest'
 import { readSeed } from '../cli/merge/seed'
@@ -45,7 +45,8 @@ export function appEjects(viteRoot: string): AppEjects {
   for (const [key, value] of Object.entries(parsed.manifest.ejected)) {
     const hash = key.lastIndexOf('#')
     const root = hash === -1 ? '' : key.slice(0, hash)
-    if (hash === -1 || !inside(viteRoot, resolve(installRoot, root))) continue
+    // A block (`basalt-ui add`) is app source under its own path: nothing to alias.
+    if (hash === -1 || isBlockRow(value) || !inside(viteRoot, resolve(installRoot, root))) continue
     const row = readRow(value)
     if (row === null) {
       throw new Error(`${MANIFEST_PATH}: ejected["${key}"] is malformed; run \`basalt-ui doctor\``)

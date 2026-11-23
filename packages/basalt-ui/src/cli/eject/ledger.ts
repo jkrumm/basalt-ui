@@ -35,6 +35,37 @@ export const dashedRoot = (root: string): string =>
 export const basePath = (root: string, name: string): string =>
   `.basalt/base/${dashedRoot(root)}/${name}.tsx`
 
+/**
+ * A block's row (`basalt-ui add`), kept in `manifest.ejected` beside the primitive rows under the
+ * key `<root>#block:<name>`. `path` is the block's directory, `files` what was installed in it and
+ * `seedDigest` the shipped block's digest (`add/catalog.ts`). The primitive readers skip these rows:
+ * a block aliases nothing, lints at full strength and counts against no ceiling.
+ */
+export type BlockRow = {
+  origin: 'block'
+  path: string
+  files: string[]
+  fromVersion: string
+  seedDigest: string
+}
+
+export const blockKey = (root: string, name: string): string => `${root}#block:${name}`
+
+/** Whether a `manifest.ejected` value is a block row (well formed or not). */
+export const isBlockRow = (value: Record<string, unknown>): boolean => value['origin'] === 'block'
+
+export function readBlockRow(value: Record<string, unknown>): BlockRow | null {
+  const { path, files, fromVersion, seedDigest } = value
+  if (!isBlockRow(value) || typeof path !== 'string' || typeof fromVersion !== 'string') return null
+  if (typeof seedDigest !== 'string') return null
+  if (!Array.isArray(files) || !files.every((f) => typeof f === 'string')) return null
+  return { origin: 'block', path, files: files as string[], fromVersion, seedDigest }
+}
+
+/** The merge base of one block file, relative to the install root. */
+export const blockBasePath = (root: string, name: string, file: string): string =>
+  `.basalt/base/${dashedRoot(root)}/blocks/${name}/${file}`
+
 export function readRow(value: Record<string, unknown>): EjectedRow | null {
   const { path, fromVersion, seedDigest, reason, origin } = value
   if (typeof path !== 'string' || typeof fromVersion !== 'string' || typeof reason !== 'string') {
@@ -54,7 +85,7 @@ export function rowsOfRoot(
   const bad: string[] = []
   for (const [key, value] of Object.entries(manifest.ejected)) {
     const hash = key.lastIndexOf('#')
-    if (hash === -1 || key.slice(0, hash) !== root) continue
+    if (hash === -1 || key.slice(0, hash) !== root || isBlockRow(value)) continue
     const row = readRow(value)
     if (row === null) bad.push(key)
     else rows.set(key.slice(hash + 1), row)

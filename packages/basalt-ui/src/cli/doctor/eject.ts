@@ -11,7 +11,7 @@ import { dirname, resolve } from 'node:path'
 import { SLOTS } from '../../ui/slots'
 import { BUDGET_PATH, countedFigure } from '../budget'
 import type { Budget } from '../budget'
-import { basePath, countRows, rowsOfRoot } from '../eject/ledger'
+import { basePath, countRows, isBlockRow, rowsOfRoot } from '../eject/ledger'
 import type { EjectedRow } from '../eject/ledger'
 import { appTsconfig } from '../eject/tsconfig'
 import { parseHeader } from '../merge/header'
@@ -139,7 +139,8 @@ export function ejectFindings(ctx: Ctx, budget: Budget): string[] {
       )
     }
   }
-  for (const key of Object.keys(manifest.ejected)) {
+  for (const [key, value] of Object.entries(manifest.ejected)) {
+    if (isBlockRow(value)) continue
     if (!keyed.has(key) && !findings.some((f) => f.includes(key))) {
       findings.push(`ejected ${key} belongs to no declared root`)
     }
