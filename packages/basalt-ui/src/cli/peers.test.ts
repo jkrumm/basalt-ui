@@ -1,6 +1,33 @@
 import { describe, expect, it } from 'bun:test'
 
-import { peerSpec, satisfiesRange } from './peers'
+import { readdirSync, readFileSync } from 'node:fs'
+import { join, resolve } from 'node:path'
+
+import { closureOf, packageGraph, requiredPeers, subpathOf } from '../vite/graph'
+import { BUILD_PEERS, peerSpec, RUNTIME_PEERS, satisfiesRange } from './peers'
+
+const PKG_ROOT = resolve(import.meta.dir, '../..')
+const TEMPLATES = join(PKG_ROOT, 'agent/templates')
+const SEED_IMPORT = /\bfrom\s*(['"])(basalt-ui(?:\/[\w./-]+)?)\1/g
+
+describe('the app profile', () => {
+  // What `init --profile app` wires (the router seeds) must build with what it installs: the peers
+  // `basalt()` requires for the seeds' import closure all sit in the profile's peer set, so a peer a
+  // shell part starts to import statically fails here before a fresh install fails its first build.
+  it('installs every peer the seeds it writes reach', () => {
+    const imports = new Set<string>()
+    for (const name of readdirSync(TEMPLATES).filter((f) => f.endsWith('.tpl'))) {
+      for (const [, , spec] of readFileSync(join(TEMPLATES, name), 'utf8').matchAll(SEED_IMPORT)) {
+        const key = subpathOf(spec ?? '')
+        if (key !== null) imports.add(key)
+      }
+    }
+    expect(imports).toContain('shell')
+    const needed = requiredPeers(closureOf([...imports], packageGraph(PKG_ROOT)))
+    const installed = new Set(['react', 'react-dom', ...RUNTIME_PEERS.app, ...BUILD_PEERS.app])
+    expect([...needed.keys()].filter((peer) => !installed.has(peer))).toEqual([])
+  })
+})
 
 describe('satisfiesRange', () => {
   it.each([

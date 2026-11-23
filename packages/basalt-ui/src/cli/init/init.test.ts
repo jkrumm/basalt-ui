@@ -483,6 +483,8 @@ describe('init: the budget, the install and the seeds', () => {
       '@base-ui/react',
       '@tanstack/react-query',
       '@tanstack/react-router',
+      '@tanstack/react-hotkeys',
+      '@atlaskit/pragmatic-drag-and-drop',
       '@tanstack/router-plugin',
       'lucide-react',
       'oxlint',

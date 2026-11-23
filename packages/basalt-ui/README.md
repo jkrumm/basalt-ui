@@ -27,7 +27,8 @@ bun add basalt-ui
 
 That is the whole install. A create-vite React app already has `react`, `react-dom` and `vite`; `init`
 (step 2) installs the rest of the `app` profile's peers (`tailwindcss`, `@tailwindcss/vite`,
-`@base-ui/react`, `@tanstack/react-router`, `@tanstack/react-query`, `@tanstack/router-plugin`) and the lint
+`@base-ui/react`, `@tanstack/react-router`, `@tanstack/react-query`, `@tanstack/router-plugin`, and the two
+`basalt-ui/shell` imports: `@tanstack/react-hotkeys` and `@atlaskit/pragmatic-drag-and-drop`) and the lint
 tools. Every peer has a range matched to how tightly basalt is coupled to it (the table in `MAINTAINING.md` §
 Dependencies: a caret for a stable package, a tilde for one whose internals basalt reads, an exact pin for 0.x or alpha tooling).
 `@tanstack/router-plugin` is pinned at `1.168.40` but accepts any newer 1.x. An app already on a version inside the
@@ -39,11 +40,11 @@ as the exact `bun add` line, and `basalt-ui doctor` lists what is missing; a mis
 surfaces as an unresolved import at build time, not as an install warning. Exact versions:
 `peerDependencies` in `package.json`.
 
-| Class            | Peers                                                                                                                                                                 | Rule                                                                                                     |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| App              | `react`, `react-dom`, `@tanstack/react-router`, `@tanstack/react-query`, `@base-ui/react`, `tailwindcss`, `@tailwindcss/vite`; dev: `vite`, `@tanstack/router-plugin` | `init` installs all but `react`, `react-dom` and `vite`, the app's own                                   |
-| Subpath-required | `./charts`: `@tanstack/charts`, `d3-scale` · `./table`: `@tanstack/react-table` · `./content`, `./ai`: `react-markdown`, `remark-gfm`, `rehype-sanitize`, `remend`    | needed only by consumers of that subpath; declared `optional` in `peerDependenciesMeta`                  |
-| Optional         | `shiki`, `@shikijs/*`, `pele`, `@tanstack/react-router-devtools`, `vite-plugin-pwa`                                                                                   | reached through `import()` only; absent, the feature degrades (dev devtools panels, plain-text markdown) |
+| Class            | Peers                                                                                                                                                                                                                                 | Rule                                                                                                     |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| App              | `react`, `react-dom`, `@tanstack/react-router`, `@tanstack/react-query`, `@tanstack/react-hotkeys`, `@atlaskit/pragmatic-drag-and-drop`, `@base-ui/react`, `tailwindcss`, `@tailwindcss/vite`; dev: `vite`, `@tanstack/router-plugin` | `init` installs all but `react`, `react-dom` and `vite`, the app's own                                   |
+| Subpath-required | `./charts`: `@tanstack/charts`, `d3-scale` · `./table`: `@tanstack/react-table` · `./content`, `./ai`: `react-markdown`, `remark-gfm`, `rehype-sanitize`, `remend`                                                                    | needed only by consumers of that subpath; declared `optional` in `peerDependenciesMeta`                  |
+| Optional         | `shiki`, `@shikijs/*`, `pele`, `@tanstack/react-router-devtools`, `vite-plugin-pwa`                                                                                                                                                   | reached through `import()` only; absent, the feature degrades (dev devtools panels, plain-text markdown) |
 
 No peer is required: every peer above is optional, `react` included, so an install pulls in only what the
 subpaths you import need. The three `@fontsource-variable/*` faces are regular dependencies.
