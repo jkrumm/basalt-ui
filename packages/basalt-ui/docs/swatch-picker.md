@@ -28,7 +28,7 @@ UI `Field` when wrapped in one.
 ```ts
 SwatchPicker({ options, value, onValueChange, display, name, disabled, required, "aria-invalid": invalid, "aria-label": ariaLabel, "aria-labelledby": ariaLabelledBy, "aria-describedby": ariaDescribedBy, onBlur, className, }: SwatchPickerProps): ReactElement
   options: readonly SwatchOption[]
-  value?: "neutral" | "good" | "warn" | "bad" | "info" | "brand" | "chart-1" | "chart-2" | "chart-3" | "chart-4" | "chart-5"
+  value?: "neutral" | "good" | "warn" | "bad" | "info" | "brand" | "chart-1" | "chart-2" | "chart-3" | "chart-4" | "chart-5" | "accent-blue" | "accent-violet" | "accent-rose" | "accent-orange" | "accent-green" | "accent-teal"
   onValueChange?: (value: SwatchToken) => void
   display?: "menu" | "inline"  // `inline` draws the grid in place; `menu` draws a trigger with the picked colour that opens it
   name?: string
