@@ -26,7 +26,7 @@
     "conversations: the mail query state (data and phase), typed QueryStateLike with data?: readonly Conversation[]",
     "now: the reading time in ms, for the day groups and the times",
     "supplierHref: (supplierId) => NavTarget, the supplier link on the reader and the order chips",
-    "onSend: (mail: Outgoing) => unknown, hands a written mail to the transport; a rejection keeps the composer open with its text",
+    "onSend: (mail: Outgoing) => unknown, hands a written mail and its attached files to the transport; a rejection keeps the composer open with its text",
     "export mailControls: the folder, search, open mail and composer URL fields; the route wires validateSearch and middlewares"
   ]
 }
