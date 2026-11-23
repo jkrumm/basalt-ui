@@ -18,7 +18,7 @@ import { Tooltip } from '../../ui/tooltip'
 import { useContext } from 'react'
 import { useRailControl } from './grid'
 import { RAIL_ROW } from './rail-rows'
-import { RAIL_TEXT, monogramOf } from './rail-text'
+import { RAIL_TEXT } from './rail-text'
 
 const LABEL =
   'flex h-6 w-full items-center gap-1.5 px-2.5 text-micro font-medium tracking-wide text-faint uppercase @max-[120px]:hidden'
@@ -34,11 +34,7 @@ function Glyph({ entry }: { entry: FavouriteEntry }): ReactElement {
         // oxlint-disable-next-line react/static-components -- the glyph is a component the record passed in, remembered by id: stable across renders
         <Icon className="size-4" aria-hidden />
       ) : (
-        <span
-          aria-hidden="true"
-          data-nav-glyph={monogramOf(entry.label)}
-          className="text-xs leading-none font-medium before:content-[attr(data-nav-glyph)]"
-        />
+        <StarGlyph filled={false} />
       )}
     </span>
   )
@@ -74,7 +70,7 @@ function ExpandedRows({ api, here }: { api: FavouritesApi; here: string }): Reac
       items={api.entries}
       itemLabel={(entry) => entry.label}
       onMove={({ from, to }) => api.move(from, to)}
-      className="gap-px [&_[data-sortable=handle]]:pointer-fine:opacity-0 [&_[data-sortable=handle]:focus-visible]:opacity-100 [&_li:hover_[data-sortable=handle]]:opacity-100 [&_li:focus-within_[data-sortable=handle]]:opacity-100"
+      className="gap-px [&_[data-sortable=handle]]:absolute [&_[data-sortable=handle]]:end-8 [&_[data-sortable=handle]]:z-10 [&_[data-sortable=handle]]:pointer-fine:opacity-0 [&_[data-sortable=handle]:focus-visible]:opacity-100 [&_li:hover_[data-sortable=handle]]:opacity-100 [&_li:focus-within_[data-sortable=handle]]:opacity-100"
     >
       {(entry) => (
         <span className="group/fav flex min-w-0 flex-1 items-center">
@@ -85,7 +81,7 @@ function ExpandedRows({ api, here }: { api: FavouritesApi; here: string }): Reac
             shape="icon"
             aria-label={RAIL_TEXT.removeFavourite(entry.label)}
             data-slot="shell-favourite-remove"
-            className="-ms-7 shrink-0 opacity-0 group-focus-within/fav:opacity-100 group-hover/fav:opacity-100"
+            className="absolute end-1 opacity-0 group-focus-within/fav:opacity-100 group-hover/fav:opacity-100"
             onClick={() => api.remove(entry.id)}
           >
             <StarGlyph filled />
