@@ -109,12 +109,16 @@ export function measureAnchor(root: Element): Reading {
       const s = getComputedStyle(n)
       const reached = from === null || from === n
       if (from === n) from = null
-      if (reached && (CLIPPING.test(s.overflowX) || CLIPPING.test(s.overflowY))) {
+      if (reached && s.display !== 'contents') {
         const r = n.getBoundingClientRect()
-        box.left = Math.max(box.left, r.left + (px(s.borderLeftWidth) || 0))
-        box.top = Math.max(box.top, r.top + (px(s.borderTopWidth) || 0))
-        box.right = Math.min(box.right, r.right - (px(s.borderRightWidth) || 0))
-        box.bottom = Math.min(box.bottom, r.bottom - (px(s.borderBottomWidth) || 0))
+        if (CLIPPING.test(s.overflowX)) {
+          box.left = Math.max(box.left, r.left + (px(s.borderLeftWidth) || 0))
+          box.right = Math.min(box.right, r.right - (px(s.borderRightWidth) || 0))
+        }
+        if (CLIPPING.test(s.overflowY)) {
+          box.top = Math.max(box.top, r.top + (px(s.borderTopWidth) || 0))
+          box.bottom = Math.min(box.bottom, r.bottom - (px(s.borderBottomWidth) || 0))
+        }
       }
       if (from === null && s.position === 'fixed') from = 'none'
       if (from === null && s.position === 'absolute') {
