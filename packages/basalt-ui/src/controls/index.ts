@@ -26,6 +26,10 @@ export type {
 } from './settings-rows'
 export type { FormFieldLayout } from './form-field'
 
+// The reader's theme, accent, density and layout on <html>, applied at once and kept across reloads.
+export { AppearanceSwitcher, useAppearance } from './appearance-switcher'
+export type { AppearanceSwitcherProps } from './appearance-switcher'
+
 // A multi-step form's step list: the current step marked, done steps reachable, folded when narrow.
 export { Stepper } from './stepper'
 export type { StepperProps, StepperStep } from './stepper'

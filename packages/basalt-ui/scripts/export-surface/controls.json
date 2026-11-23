@@ -1,4 +1,5 @@
 [
+  "AppearanceSwitcher",
   "ControlHome",
   "ControlView",
   "FilterSet",
@@ -15,5 +16,6 @@
   "filterSlot",
   "spec",
   "toSubmitErrors",
+  "useAppearance",
   "useFormDraft"
 ]
