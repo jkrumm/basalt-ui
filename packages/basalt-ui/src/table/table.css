@@ -1379,7 +1379,7 @@
     }
     [data-layout='list'] thead tr {
       min-height: calc(var(--spacing) * 8);
-      font-size: var(--text-xs);
+      font-size: 0.75rem;
       color: var(--basalt-ink-muted);
     }
     [data-layout='list'] thead :is(button, span) {
