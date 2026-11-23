@@ -6,6 +6,12 @@ export type FactRow = {
   value: ReactNode
 }
 
+/** The list's grid, shared with `PropertyList` so an editable row looks like a fact. Internal: not in the barrel. */
+export const FACTS_GRID =
+  'm-0 grid min-w-0 grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2 text-sm @regular:grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)]'
+export const FACTS_TERM = 'text-muted-foreground'
+export const FACTS_VALUE = 'm-0 min-w-0 [overflow-wrap:anywhere] text-foreground'
+
 export type FactsProps = {
   /** One row per entry, in order; labels are unique within one list. */
   rows: readonly FactRow[]
@@ -30,11 +36,11 @@ export type FactsProps = {
 export function Facts({ rows }: FactsProps): ReactElement {
   return (
     <div data-slot="facts" className="@container min-w-0">
-      <dl className="m-0 grid min-w-0 grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2 text-sm @regular:grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)]">
+      <dl className={FACTS_GRID}>
         {rows.map((row) => (
           <div key={row.label} data-slot="facts-row" className="contents">
-            <dt className="text-muted-foreground">{row.label}</dt>
-            <dd className="m-0 min-w-0 [overflow-wrap:anywhere] text-foreground">{row.value}</dd>
+            <dt className={FACTS_TERM}>{row.label}</dt>
+            <dd className={FACTS_VALUE}>{row.value}</dd>
           </div>
         ))}
       </dl>
