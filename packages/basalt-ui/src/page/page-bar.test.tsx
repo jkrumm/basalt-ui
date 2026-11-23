@@ -1019,3 +1019,107 @@ describe('PageBar view row', () => {
     expect(opened).toEqual(['settings'])
   })
 })
+
+describe('PageBar identity', () => {
+  const identity = {
+    avatar: { shape: 'object' as const },
+    subtitle: 'Hamburg, DE',
+    tags: <span>Preferred</span>,
+  }
+  const view = () =>
+    memoryHandle<string>('view', 'a', {
+      kind: 'enum',
+      options: [
+        { value: 'a', label: 'Alpha' },
+        { value: 'b', label: 'Beta' },
+      ],
+    })
+
+  test('without a shell the title is one heading with its face, subtitle and tag, in the band', () => {
+    render(
+      <Page>
+        <PageBar title="Acme" identity={identity} />
+      </Page>,
+    )
+    const h1 = screen.getByRole('heading', { level: 1, name: 'Acme' })
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
+    const title = h1.closest('[data-slot="entity-title"]')!
+    expect(band()?.contains(title)).toBe(true)
+    expect(title.textContent).toContain('Hamburg, DE')
+    expect(title.textContent).toContain('Preferred')
+    expect(title.querySelector('[role="img"]')).not.toBeNull()
+  })
+
+  test('a title alone with an identity still draws the band, and a title with none does not change', () => {
+    const { rerender } = render(
+      <Page>
+        <PageBar title="Acme" identity={identity} />
+      </Page>,
+    )
+    expect(band()).not.toBeNull()
+    rerender(
+      <Page>
+        <PageBar title="Acme" />
+      </Page>,
+    )
+    expect(document.querySelector('[data-slot="entity-title"]')).toBeNull()
+  })
+
+  test('in a shell the visible h1 is the identity and the breadcrumb leaf is kept', () => {
+    const shell = fakeHost()
+    render(
+      <PageHostContext value={shell.host}>
+        <Page>
+          <PageBar title="Acme" identity={identity} />
+        </Page>
+      </PageHostContext>,
+    )
+    const headings = screen.getAllByRole('heading', { level: 1 })
+    expect(headings).toHaveLength(1)
+    expect(headings[0]!.classList.contains('sr-only')).toBe(false)
+    expect(band()?.contains(headings[0]!)).toBe(true)
+    expect(shell.of('breadcrumb')).toHaveLength(1)
+    expect(document.title).toBe('Acme')
+  })
+
+  test('the tabs take their own line under the identity row', () => {
+    render(
+      <Page>
+        <PageBar
+          title="Acme"
+          identity={identity}
+          tabs={{ state: view(), label: 'Supplier' }}
+          actions={[action('edit', { primary: true })]}
+        />
+      </Page>,
+    )
+    const row = band()!.querySelector('[data-slot="page-bar-row"]')!
+    const tabsRow = band()!.querySelector('[data-slot="page-bar-tabs-row"]')!
+    expect(row.querySelector('[data-slot="page-bar-tabs"]')).toBeNull()
+    expect(tabsRow.querySelector('[data-slot="page-bar-tabs"]')).not.toBeNull()
+    expect(row.querySelector('[data-action-id="edit"]')).not.toBeNull()
+    expect(band()?.classList.contains('sticky')).toBe(true)
+  })
+
+  test('without an identity the tabs stay in the row', () => {
+    render(
+      <Page>
+        <PageBar title="Acme" tabs={{ state: view(), label: 'Supplier' }} />
+      </Page>,
+    )
+    expect(band()!.querySelector('[data-slot="page-bar-tabs-row"]')).toBeNull()
+    expect(
+      band()!.querySelector('[data-slot="page-bar-row"] [data-slot="page-bar-tabs"]'),
+    ).not.toBeNull()
+  })
+
+  test('an identity without a title draws nothing', () => {
+    render(
+      <Page>
+        <PageBar identity={identity} />
+      </Page>,
+    )
+    expect(document.querySelector('[data-slot="entity-title"]')).toBeNull()
+    expect(band()).toBeNull()
+  })
+})

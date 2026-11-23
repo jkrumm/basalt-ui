@@ -4,7 +4,7 @@ use when: 'a screen needs a title, tabs, search, filters, a layout toggle, a ref
 never when: 'the screen has none of those (leave the bar out) or the title belongs to a card (use the card title)'
 subpath: basalt-ui/page
 peers: ['@base-ui/react', '@tanstack/react-router']
-slots: [page-bar, page-bar-controls, page-bar-end, page-bar-row, page-bar-search-line, page-bar-tabs, page-breadcrumb-parent]
+slots: [page-bar, page-bar-controls, page-bar-end, page-bar-row, page-bar-search-line, page-bar-tabs, page-bar-tabs-row, page-breadcrumb-parent]
 ---
 
 # PageBar
@@ -19,8 +19,9 @@ instead of stacking two bands.
 ## Signature
 
 ```ts
-PageBar<K extends string = string, L extends string = string>({ title, parent, controls, tabs, search, connection, refresh, layout, settings, actions, }: PageBarProps<K, L>): ReactElement | null
+PageBar<K extends string = string, L extends string = string>({ title, identity, parent, controls, tabs, search, connection, refresh, layout, settings, actions, }: PageBarProps<K, L>): ReactElement | null
   title?: string  // Breadcrumb leaf and `h1` in a shell; the visible `h1` without one
+  identity?: PageIdentity  // A record page's identity: the band draws the title as a heading with its face, subtitle and tags (the title is then the visible `h1` in a shell too, and the breadcrumb leaf is kept)
   parent?: { label: string; href: string | NavTarget; }
   controls?: { readonly kind: "controls-slot"; readonly count: number; readonly compact?: boolean; render(): ReactNode; }
   tabs?: PageTabs<K>
@@ -53,6 +54,18 @@ PageBar<K extends string = string, L extends string = string>({ title, parent, c
   parent={{ label: 'Runs', href: '/runs' }}
   controls={filterSlot([rangeSpec, envSpec])}
   refresh={{ scope: 'page', ...freshness.button }}
+/>
+```
+
+## Example
+
+```tsx
+// A record page: the band carries the record's face, type line and tag, so the body never repeats its name.
+<PageBar
+  title={supplier.name}
+  identity={{ avatar: { shape: 'object', icon: Factory }, subtitle: 'Hamburg, DE', tags: <Lozenge tone="good">Preferred</Lozenge> }}
+  parent={{ label: 'Suppliers', href: '/suppliers' }}
+  tabs={{ state: store.field.tab, label: 'Supplier' }}
 />
 ```
 

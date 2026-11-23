@@ -9,6 +9,7 @@ import { SlotHomeContext } from '../core/slot-home'
 import { useMessages } from '../core/messages/use-messages'
 import { Button } from '../ui/button'
 import { ButtonGroup } from '../ui/control-group'
+import { EntityTitle } from '../ui/entity'
 import { Input } from '../ui/input'
 import { Menu, MenuContent, MenuItem, MenuTrigger } from '../ui/menu'
 import { ConnectionIndicator } from './connection-indicator'
@@ -385,7 +386,9 @@ function SettingsButton({ settings }: { settings: PageSettings }): ReactElement 
  * away. It publishes its measured height as `--page-bar-h`; an empty band renders nothing. `tabs`
  * is `{ state, label, badges }` of an enum field (a tab strip bound to it; `badges` keyed by value
  * give a tab its count, `attention` and tone) or a `ControlsSlot` for custom content.
- * `actions` holds at most five entries and at most one `primary`.
+ * `actions` holds at most five entries and at most one `primary`. An `identity` (avatar, subtitle,
+ * tags) makes the band a record header: the title is drawn beside its face as the page's visible
+ * `h1`, in a shell too, and the tabs take a line under it, so a record page names itself once.
  *
  * @useWhen a screen needs a title, tabs, search, filters, a layout toggle, a refresh button or page-level actions in one band
  * @neverWhen the screen has none of those (leave the bar out) or the title belongs to a card (use the card title)
@@ -409,6 +412,15 @@ function SettingsButton({ settings }: { settings: PageSettings }): ReactElement 
  * />
  *
  * @example
+ * // A record page: the band carries the record's face, type line and tag, so the body never repeats its name.
+ * <PageBar
+ *   title={supplier.name}
+ *   identity={{ avatar: { shape: 'object', icon: Factory }, subtitle: 'Hamburg, DE', tags: <Lozenge tone="good">Preferred</Lozenge> }}
+ *   parent={{ label: 'Suppliers', href: '/suppliers' }}
+ *   tabs={{ state: store.field.tab, label: 'Supplier' }}
+ * />
+ *
+ * @example
  * // Date navigation: grouped actions that stay in the phone bar and a text action that does not.
  * <PageBar
  *   actions={[
@@ -420,6 +432,7 @@ function SettingsButton({ settings }: { settings: PageSettings }): ReactElement 
  */
 export function PageBar<K extends string = string, L extends string = string>({
   title,
+  identity,
   parent,
   controls,
   tabs,
@@ -517,10 +530,21 @@ export function PageBar<K extends string = string, L extends string = string>({
 
   const bandActions = !actionsInHeader && list.length > 0
   const hasControls = hasRow || (!inShell && list.length > 0)
-  const bandHasContent = hasControls || (!inShell && title !== undefined)
+  const named = identity !== undefined && title !== undefined
+  const bandHasContent = hasControls || named || (!inShell && title !== undefined)
 
+  // An identity names the page visibly, in the band, with its face; the heading is then its `h1`.
   const heading: ReactNode =
-    title === undefined ? null : (
+    title === undefined ? null : named ? (
+      <EntityTitle
+        level={1}
+        title={title}
+        className="min-w-0 shrink"
+        {...(identity.subtitle !== undefined && { subtitle: identity.subtitle })}
+        {...(identity.avatar !== undefined && { avatar: identity.avatar })}
+        {...(identity.tags !== undefined && { tags: identity.tags })}
+      />
+    ) : (
       <h1
         className={
           inShell
@@ -553,9 +577,20 @@ export function PageBar<K extends string = string, L extends string = string>({
       </>
     )
 
+  const tabsNode = !isEmptyTabs(tabs) && (
+    // Below regular the tabs scroll: the end fades so a cut tab reads as more, and the list keeps
+    // that fade's width free at its end so the last tab is whole once scrolled to.
+    <div
+      data-slot="page-bar-tabs"
+      className="flex min-w-0 shrink @max-regular:mask-[linear-gradient(to_right,black_calc(100%-1rem),transparent)] @max-regular:[&_[data-slot=tabs-list]]:pe-4"
+    >
+      {renderTabs(tabs, 'pill')}
+    </div>
+  )
+
   return (
     <>
-      {inShell && heading}
+      {inShell && !named && heading}
       <div
         ref={attach}
         data-slot="page-bar"
@@ -572,22 +607,15 @@ export function PageBar<K extends string = string, L extends string = string>({
       >
         {/* One line at every tier: what does not fit scrolls (the tabs) or folds (filters, actions). */}
         <div data-slot="page-bar-row" className="flex min-w-0 flex-nowrap items-center gap-3">
-          {!inShell && (trail !== null || heading !== null) && (
-            <div className="flex min-w-0 shrink items-baseline gap-2">
+          {(!inShell || named) && (trail !== null || heading !== null) && (
+            <div
+              className={cn('flex min-w-0 shrink gap-2', named ? 'items-center' : 'items-baseline')}
+            >
               {trail}
               {heading}
             </div>
           )}
-          {!isEmptyTabs(tabs) && (
-            // Below regular the tabs scroll: the end fades so a cut tab reads as more, and the list keeps
-            // that fade's width free at its end so the last tab is whole once scrolled to.
-            <div
-              data-slot="page-bar-tabs"
-              className="flex min-w-0 shrink @max-regular:mask-[linear-gradient(to_right,black_calc(100%-1rem),transparent)] @max-regular:[&_[data-slot=tabs-list]]:pe-4"
-            >
-              {renderTabs(tabs, 'pill')}
-            </div>
-          )}
+          {!named && tabsNode}
           {/* Grows into the room the tabs leave; never narrower than its fixed parts, so the tabs scroll first. */}
           <div
             data-slot="page-bar-end"
@@ -614,6 +642,12 @@ export function PageBar<K extends string = string, L extends string = string>({
             {bandActions && <PageActions actions={list} primaryLast />}
           </div>
         </div>
+        {named && tabsNode && (
+          // With an identity the tabs take the line under it, so the face and name keep their room.
+          <div data-slot="page-bar-tabs-row" className="flex min-w-0 items-center">
+            {tabsNode}
+          </div>
+        )}
       </div>
       {search !== undefined && (
         // Below the sticky band, so the band stays one line tall and the search scrolls away with the page.
