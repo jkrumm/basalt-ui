@@ -52,7 +52,7 @@ const PER_PRIMITIVE: Readonly<Record<string, number>> = {
   card: 10100, // 10004 B
   checkbox: 15500, // 15025 B, with the card and tile variants and `ChoiceCard`
   collapsible: 13000, // 11967 B
-  combobox: 61500, // 58535 B
+  combobox: 68500, // 58535 B; 68024 B with the list engine (Issue 3102)
   'control-group': 6000, // 5672 B
   'copy-button': 12000, // 10982 B, the message catalog for its name
   'date-picker': 73500, // 69556 B
@@ -71,7 +71,7 @@ const PER_PRIMITIVE: Readonly<Record<string, number>> = {
   resizable: 23500, // 22370 B, react-resizable-panels bundled
   'scroll-area': 6000, // 5254 B
   segmented: 15000, // 14087 B
-  select: 54500, // 51614 B
+  select: 72000, // 51614 B; 71719 B with the list engine and the searchable list on Base UI Combobox (Issue 3102)
   separator: 7500, // 6767 B
   sheet: 45300, // 41473 B; 45114 B with the panel header, the scrolling body, the footer band and the width handle (Issue 2939)
   skeleton: 7000, // 6522 B
@@ -105,7 +105,8 @@ export const rows: readonly RowDef[] = [
     order: 300,
     label: 'ui ten-primitive page (gzip B minus base0, src/ui, peers bundled)',
     // 81600 B measured. Informative target 95 KB (gap-perf 6.1); the seed is the measurement.
-    ceiling: 86000,
+    // 86000 -> 104100 (Issue 3102): 103626 B measured; Select draws the shared option row and opens a searchable list on Base UI Combobox.
+    ceiling: 104100,
     measure: () => measureSource(page(TEN)),
   },
   {
@@ -116,7 +117,8 @@ export const rows: readonly RowDef[] = [
     // 157500 -> 157700 (Issue 2939): 157574 B measured; the Sheet draws the panel header, its footer band and width handle.
     // 157700 -> 158600 (Issue 2996): 158482 B measured; the page's Checkbox and RadioGroup also hold the card variant over `ChoiceCard`.
     // 158600 -> 158800 (Issue 3109): 158756 B measured; the Tabs trigger draws a count, an attention tone and a tone dot, which the page's Tabs carry.
-    ceiling: 158800,
+    // 158800 -> 167300 (Issue 3102): 166769 B measured; Select and Combobox share the list engine, its option row and its state rows.
+    ceiling: 167300,
     measure: () => measureSource(page([...TEN, ...REST_OF_25])),
   },
   ...Object.entries(PER_PRIMITIVE).map(([name, ceiling], i): RowDef => ({
@@ -132,13 +134,47 @@ export const rows: readonly RowDef[] = [
     label: 'ui value exports, every src/ui .tsx module (exact; SLOTS is pinned)',
     // 275 measured. Exact: a new value export is a row here and a consumer named for it; a lower
     // number ratchets the ceiling down in the same commit.
-    ceiling: 275,
+    ceiling: 276,
     measure: valueExports,
   },
 ]
 
 export const raises: Raises = {
+  'ui-page-ten': [
+    {
+      from: 86000,
+      to: 104100,
+      consumer:
+        'one list engine behind Select, Combobox and the command palette (plan row bench-list-engine, Issue 3102): groups as data, the rich option row with an avatar, a loader with loading, empty and error rows, a create row, and a searchable Select on Base UI Combobox; the mention list and the model picker of bench-chat-parts draw it',
+      repo: 'basalt-ui',
+    },
+  ],
+  'ui-prim-combobox': [
+    {
+      from: 61500,
+      to: 68500,
+      consumer:
+        'one list engine behind Select, Combobox and the command palette (plan row bench-list-engine, Issue 3102): groups as data, the rich option row with an avatar, a loader with loading, empty and error rows, a create row, and a searchable Select on Base UI Combobox; the mention list and the model picker of bench-chat-parts draw it',
+      repo: 'basalt-ui',
+    },
+  ],
+  'ui-prim-select': [
+    {
+      from: 54500,
+      to: 72000,
+      consumer:
+        'one list engine behind Select, Combobox and the command palette (plan row bench-list-engine, Issue 3102): groups as data, the rich option row with an avatar, a loader with loading, empty and error rows, a create row, and a searchable Select on Base UI Combobox; the mention list and the model picker of bench-chat-parts draw it',
+      repo: 'basalt-ui',
+    },
+  ],
   'ui-page-25': [
+    {
+      from: 158800,
+      to: 167300,
+      consumer:
+        'one list engine behind Select, Combobox and the command palette (plan row bench-list-engine, Issue 3102): groups as data, the rich option row with an avatar, a loader with loading, empty and error rows, a create row, and a searchable Select on Base UI Combobox; the mention list and the model picker of bench-chat-parts draw it',
+      repo: 'basalt-ui',
+    },
     {
       from: 158600,
       to: 158800,
@@ -189,6 +225,13 @@ export const raises: Raises = {
     },
   ],
   'ui-value-exports': [
+    {
+      from: 275,
+      to: 276,
+      consumer:
+        '`defaultRank` from `basalt-ui/ui/combobox`: the one ranking every list uses (Combobox, a searchable Select, the command palette), exported so an app can wrap it as its own `rank` (Issue 3102)',
+      repo: 'basalt-ui',
+    },
     {
       from: 256,
       to: 275,

@@ -129,7 +129,7 @@ object prop: Astro hands that over as an Astro template and the build fails. Lab
 | inline JavaScript on any page, Astro's island loader included, gzip | 3,250 B |
 | the React runtime the first island brings, gzip | 72,000 B |
 | a further island's cost (the chart island on `/charts`), gzip | 128,500 B |
-| the two MDX islands together (`/guides/islands-in-mdx`), gzip | 321,500 B |
+| the two MDX islands together (`/guides/islands-in-mdx`), gzip | 330,000 B |
 | CSS per page, gzip | 27,500 B |
 | LCP, landing, article and docs page, 390 px, local | 1,000 ms |
 | CLS, the same three pages | 0.05 |
@@ -172,7 +172,7 @@ const components = { ...siteMdxComponents(labels), Chart, DataTable }
 | `Tabs`, `Tab` | ARIA tab list and panels | none | none | none | 0.4 kB inline, in the head script |
 | `Form`, `Field`, `SubmitButton` | a native form | none | none | none | 0 |
 | `DataTable` | a static table | none | none | none | 0 |
-| `DataTable interactive` | the same table | sortable, pageable `DataTable` | `client:visible` (`load="idle"` above the fold) | `data-table` | 255.2 kB |
+| `DataTable interactive` | the same table | sortable, pageable `DataTable` | `client:visible` (`load="idle"` above the fold) | `data-table` | 263.4 kB |
 | `Chart` | a fallback box of the card's height | `ChartCard` over `Lines` or `Bars` | `client:only="react"` (`load="visible"` or `"idle"` once its server picture is right) | `chart-card` | 133.5 kB |
 
 <!-- mdx-island-cost:end -->

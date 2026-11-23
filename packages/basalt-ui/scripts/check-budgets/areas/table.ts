@@ -114,13 +114,21 @@ export const rows: readonly RowDef[] = [
     // 207000 -> 208500 (Issue 3088): 207019 B measured, +~1.5 KB gz for the board and gallery frames (`LayoutPhase`: skeleton
     // lanes and cards, the arm's message with no table head above it), eager so a first load is never blank.
     // 208500 -> 212700 (Issue 3106): 212200 B measured; the table reads the page barrel's parts, which gained the favourite star.
-    ceiling: 212700,
+    // 212700 -> 222400 (Issue 3102): 221902 B measured; the table's selects draw the shared list engine.
+    ceiling: 222400,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
 
 export const raises: Raises = {
   'table-own': [
+    {
+      from: 212700,
+      to: 222400,
+      consumer:
+        'one list engine behind Select, Combobox and the command palette (plan row bench-list-engine, Issue 3102): groups as data, the rich option row with an avatar, a loader with loading, empty and error rows, a create row, and a searchable Select on Base UI Combobox; the mention list and the model picker of bench-chat-parts draw it',
+      repo: 'basalt-ui',
+    },
     {
       from: 208500,
       to: 212700,

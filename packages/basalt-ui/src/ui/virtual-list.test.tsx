@@ -1,4 +1,4 @@
-import { cleanup, render } from '@testing-library/react'
+import { act, cleanup, render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -99,6 +99,43 @@ describe('virtual-list module', () => {
     const at = kids.findIndex((k) => k.getAttribute('data-row') === 'r500')
     expect(kids[at - 1]!.getAttribute('aria-hidden')).toBe('true')
     expect(kids[at + 1]!.getAttribute('aria-hidden')).toBe('true')
+  })
+
+  test('revealIndex scrolls its row into view when it changes', async () => {
+    // virtual-core clamps a scroll to scrollHeight - clientHeight, which happy-dom reports as 0.
+    const lengths = { clientHeight: VIEWPORT, scrollHeight: 1000 * ROW }
+    const originals = Object.keys(lengths).map(
+      (prop) => [prop, Object.getOwnPropertyDescriptor(HTMLElement.prototype, prop)] as const,
+    )
+    for (const [prop, px] of Object.entries(lengths)) {
+      Object.defineProperty(HTMLElement.prototype, prop, {
+        configurable: true,
+        get(this: HTMLElement) {
+          return this.dataset['slot'] === 'virtual-list' ? px : 0
+        },
+      })
+    }
+    const rows = make(1000)
+    const view = (reveal?: number): React.ReactElement => (
+      <VirtualList
+        count={rows.length}
+        estimateSize={() => ROW}
+        getItemKey={(i) => rows[i]!.id}
+        revealIndex={reveal}
+      >
+        {([item]) => <div data-row={rows[item!.index]!.id}>{rows[item!.index]!.id}</div>}
+      </VirtualList>
+    )
+    const { container, rerender } = render(view())
+    const scroller = container.querySelector('[data-slot="virtual-list"]') as HTMLElement
+    expect(scroller.scrollTop).toBe(0)
+    await act(async () => rerender(view(100)))
+    // Aligned to the nearest edge: the row's bottom meets the viewport's.
+    expect(scroller.scrollTop).toBe(101 * ROW - VIEWPORT)
+    for (const [prop, descriptor] of originals) {
+      if (descriptor) Object.defineProperty(HTMLElement.prototype, prop, descriptor)
+      else delete (HTMLElement.prototype as unknown as Record<string, unknown>)[prop]
+    }
   })
 
   test('spacer="tr" renders a table with real rows and tr spacers', () => {

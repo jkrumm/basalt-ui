@@ -20,10 +20,20 @@ A searchable select on Base UI. Which job, which part: fewer than 10 known value
 search, async, multi or 50+ options, `Combobox`; free text with suggestions, `Autocomplete`.
 
 ```ts
-Combobox<Value = string, Multiple extends boolean | undefined = false>({ className, children, onCreate, ...props }: ComboboxProps<Value, Multiple>): ReactElement
+Combobox<Value = string, Multiple extends boolean | undefined = false>(props: ComboboxProps<Value, Multiple>): ReactElement
+  // either children or options + aria-label
   className?: string  // Layout only (`w-full`, `w-64`, `flex-1`)
+  options?: ListSource<Value>  // Options and groups (`{ label, options }`), or a loader `(query, { signal }) => Promise<...>` called on open and on each change of the text, the last call aborted
   children?: ReactNode
-  onCreate?: (text: string) => Value  // Makes the combobox creatable
+  onCreate?: (text: string) => Value | ((text: string) => Value)  // Makes the combobox creatable
+  size?: "sm" | "md" | null  [with options + aria-label]
+  aria-label: string
+  placeholder?: string  [with options + aria-label]
+  rank?: RankFn<ListOption<Value>>  [with options + aria-label]  // Orders and filters a static list for the typed text
+  empty?: ReactNode  [with options + aria-label]  // Shown when nothing matches
+  container?: HTMLElement | ShadowRoot | React.RefObject<HTMLElement | ShadowRoot | null> | null  [with options + aria-label]  // Where the popup renders
+  virtual?: ListVirtual  [with options + aria-label]  // The windowing port for a long list: pass `VirtualList` from `basalt-ui/ui/virtual-list` and past 100 rows only the rows in view mount, with the keyboard and the active row intact
+  items?: never
 ```
 
 ### `ComboboxInput`
@@ -52,11 +62,12 @@ ComboboxContent({ className, empty, container, children, ...props }: ComboboxCon
 
 ### `ComboboxItem`
 
-One option. The selected one carries a check.
+One option of the parts form, in the option row's box. The selected one carries a check.
 
 ```ts
-ComboboxItem({ className, children, ...props }: ComboboxItemProps): ReactElement
+ComboboxItem({ size, className, children, ...props }: ComboboxItemProps): ReactElement
   className?: string  // Layout only (`w-full`, `w-64`, `flex-1`)
+  size?: "sm" | "md" | "lg" | null
 ```
 
 ### `ComboboxChips`
@@ -150,7 +161,7 @@ No variant axes.
 
 Part `combobox-item`.
 
-No variant axes.
+- `size`: `sm`, `md`, `lg` (default `md`)
 
 ## `comboboxChipsVariants`
 

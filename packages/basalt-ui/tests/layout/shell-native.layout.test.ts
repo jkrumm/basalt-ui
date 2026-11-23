@@ -153,7 +153,7 @@ layout('chrome web', () => {
 
 layout('command palette', () => {
   const PALETTE = slot('command-palette')
-  const ITEMS = `${PALETTE} ${slot('autocomplete-item')}`
+  const ITEMS = `${PALETTE} ${slot('option-row')}`
 
   for (const viewport of [DESKTOP_1800, PHONE]) {
     test(`opens on Mod+K inside the window at ${viewport.width}x${viewport.height}`, async () => {
@@ -184,7 +184,7 @@ layout('command palette', () => {
     await p.raw.keyboard.type('dep')
     await p.raw.waitForFunction(() =>
       document
-        .querySelector('[data-slot="autocomplete-item"]')
+        .querySelector('[data-slot="command-palette"] [data-slot="option-row"]')
         ?.textContent?.startsWith('Deploy now'),
     )
     await p.raw.keyboard.press('Enter')

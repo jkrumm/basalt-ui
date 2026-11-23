@@ -1,0 +1,8 @@
+/*
+ * The `option-list` fixture's Tailwind v4 entry, compiled with preflight. `option-list.layout.test.ts`
+ * compiles it into a temp directory; nothing generated lands in the repo.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './option-list-fixture.tsx';
+@source '../../../src/ui';
+@source '../../../src/core/list';

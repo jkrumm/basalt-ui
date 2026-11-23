@@ -3,11 +3,30 @@ import { Combobox as BaseCombobox } from '@base-ui/react/combobox'
 import { cva } from 'class-variance-authority'
 import type { VariantProps } from 'class-variance-authority'
 import { createContext, useCallback, useContext, useRef, useState } from 'react'
-import type { ReactElement, ReactNode, Ref } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
-import { scopeClass, useControlScope, ControlScopeProvider } from '../core/control-scope'
+import { scopeClass, useControlScope } from '../core/control-scope'
 import { select } from '../core/messages/select'
 import { useMessages } from '../core/messages/use-messages'
+import { OptionListBody, useListRoot } from '../core/list/engine'
+import { AnchorContext, PopupFrame, useDismissRef } from '../core/list/popup'
+import { CheckMark, CreateRowText } from '../core/list/option-row'
+import type { ListVirtual } from '../core/list/engine'
+import type { ListOption, ListSource } from '../core/list/options'
+import { defaultRank } from '../core/list/rank'
+import type { RankFn } from '../core/list/rank'
+
+export type { ListVirtual } from '../core/list/engine'
+export type {
+  ListAvatar,
+  ListGroup,
+  ListItems,
+  ListLoader,
+  ListOption,
+  ListSource,
+} from '../core/list/options'
+export type { RankFn, Rankable } from '../core/list/rank'
+export { defaultRank } from '../core/list/rank'
 
 /**
  * The `Combobox` cva table: the box the input fills and the popup anchors to. A width class on
@@ -51,13 +70,25 @@ export const comboboxContentVariants = cva(
 )
 
 /**
- * The `ComboboxItem` cva table: one option row. A coarse pointer lifts it to the 44 px floor.
+ * The `ComboboxItem` cva table: one option row, the same row `Select` and the command palette draw
+ * (`sm` and `md` at the control heights, `lg` the palette's). A coarse pointer lifts it to the
+ * 44 px floor.
  *
  * @example
- * comboboxItemVariants()
+ * comboboxItemVariants({ size: 'sm' })
  */
 export const comboboxItemVariants = cva(
-  'relative flex w-full cursor-default items-center justify-between gap-2 rounded-chip px-2 py-1.5 text-sm outline-none select-none data-highlighted:bg-accent data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base',
+  'relative flex w-full cursor-default items-center rounded-chip text-left outline-none select-none data-highlighted:bg-accent data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base',
+  {
+    variants: {
+      size: {
+        sm: 'min-h-6 gap-1.5 px-1.5 py-0.5 text-xs',
+        md: 'min-h-ctl gap-2 px-2 py-1 text-sm',
+        lg: 'min-h-row gap-3 px-3 py-1.5 text-sm',
+      },
+    },
+    defaultVariants: { size: 'md' },
+  },
 )
 
 /**
@@ -137,7 +168,11 @@ export const autocompleteItemVariants = cva(
   'relative flex w-full cursor-default items-center gap-2 rounded-chip px-2 py-1.5 text-sm outline-none select-none data-highlighted:bg-accent data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base',
 )
 
-/** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
+/**
+ * Every `data-slot` the parts form renders, in export order. Read by the generator for `SLOTS`. The
+ * `options` form draws the list engine's slots for its rows instead (`option-row`, `option-group`,
+ * `option-group-label`, `option-create`, `option-status`); those are not parts.
+ */
 export const comboboxParts = [
   'combobox',
   'combobox-input',
@@ -154,35 +189,6 @@ export const comboboxParts = [
 type Layout = {
   /** Layout only (`w-full`, `w-64`, `flex-1`). Height belongs to `size`. */
   className?: string
-}
-
-/** The popup anchors to the whole field box (input or chips), and its width follows it. */
-const AnchorContext = createContext<Ref<HTMLDivElement> | undefined>(undefined)
-
-/**
- * Base UI hardcodes `aria-label="Dismiss"` on the two hidden buttons that close an open combobox
- * and offers no prop for it (spike Q4). The wrapper rewrites the attribute on the nodes it owns,
- * now and on every mount, before paint. Drop this when Base UI ships a localisation prop.
- */
-function relabel(root: Element, text: string): void {
-  if (text === 'Dismiss') return
-  for (const node of root.querySelectorAll('[aria-label="Dismiss"]')) {
-    node.setAttribute('aria-label', text)
-  }
-}
-
-function useDismissRef(): (node: HTMLElement | null) => (() => void) | undefined {
-  const text = useMessages(select)('combobox.dismiss')
-  return useCallback(
-    (node) => {
-      if (node === null) return undefined
-      relabel(node, text)
-      const observer = new MutationObserver(() => relabel(node, text))
-      observer.observe(node, { childList: true, subtree: true })
-      return () => observer.disconnect()
-    },
-    [text],
-  )
 }
 
 function Field({
@@ -213,21 +219,81 @@ function Field({
   )
 }
 
-export type ComboboxProps<Value = string, Multiple extends boolean | undefined = false> = Omit<
+/** The parts form: `items` and composed `ComboboxInput` (or `ComboboxChips`) and `ComboboxContent`. */
+export type ComboboxPartsProps<Value = string, Multiple extends boolean | undefined = false> = Omit<
   BaseCombobox.Root.Props<Value, Multiple>,
   'children'
 > &
   Layout & {
+    options?: never
     children?: ReactNode
     /**
      * Makes the combobox creatable. When the trimmed text typed matches no item's label (ignoring
      * case), the popup ends with a `Create "<text>"` row; choosing it calls `onCreate(text)`, adds the
-     * returned value to the items and selects it. Needs a flat `items` array: with grouped items the
-     * combobox is not creatable and `onCreate` is never called. The text of the row is the message
+     * returned value to the items and selects it. In this form it needs a flat `items` array; the
+     * `options` form is creatable with groups and a loader too. The text of the row is the message
      * key `combobox.create`.
      */
     onCreate?: (text: string) => Value
   }
+
+/**
+ * The options form: the input (chips with `multiple`) and the list are built from `options`, a
+ * static array of options and groups or a loader. The value is an option's `value`.
+ */
+export type ComboboxOptionsProps<
+  Value = string,
+  Multiple extends boolean | undefined = false,
+> = Omit<
+  BaseCombobox.Root.Props<Value, Multiple>,
+  | 'children'
+  | 'items'
+  | 'filter'
+  | 'filteredItems'
+  | 'itemToStringLabel'
+  | 'itemToStringValue'
+  | 'virtualized'
+  | 'limit'
+  | 'inline'
+> &
+  Layout &
+  VariantProps<typeof comboboxInputVariants> & {
+    /**
+     * Options and groups (`{ label, options }`), or a loader `(query, { signal }) => Promise<...>`
+     * called on open and on each change of the text, the last call aborted. A loader filters its
+     * own answer; a static list is ranked with `rank`. Past 100 rows the list is windowed when
+     * `virtual` is given. A loader runs only while the list is open, so until the first open a
+     * preselected value shows as the value itself, not its label.
+     */
+    options: ListSource<Value>
+    /** Names the input. */
+    'aria-label': string
+    placeholder?: string | undefined
+    /** Orders and filters a static list for the typed text. Default `defaultRank`. */
+    rank?: RankFn<ListOption<Value>> | undefined
+    /** Shown when nothing matches. Default the message key `select.empty`. */
+    empty?: ReactNode
+    /** Where the popup renders. Default `document.body`. */
+    container?: BaseCombobox.Portal.Props['container']
+    /**
+     * The windowing port for a long list: pass `VirtualList` from `basalt-ui/ui/virtual-list` and
+     * past 100 rows only the rows in view mount, with the keyboard and the active row intact.
+     * Without it every row renders.
+     */
+    virtual?: ListVirtual | undefined
+    /**
+     * Makes the combobox creatable, with groups and a loader alike: text that names no option ends
+     * the list with a `Create "<text>"` row; choosing it calls `onCreate(text)` and selects the value.
+     */
+    onCreate?: ((text: string) => Value) | undefined
+    items?: never
+    children?: never
+  }
+
+/** `Combobox` takes its choices as `options` (input and list built for you) or as parts. */
+export type ComboboxProps<Value = string, Multiple extends boolean | undefined = false> =
+  | ComboboxPartsProps<Value, Multiple>
+  | ComboboxOptionsProps<Value, Multiple>
 
 /**
  * True when `items` is a flat list. Base UI reads a list as groups when its first item has an
@@ -256,7 +322,7 @@ function labelOf(item: unknown, toLabel: ((item: never) => string) | undefined):
 }
 
 type CreatableRootProps = Omit<
-  ComboboxProps<unknown, boolean | undefined>,
+  ComboboxPartsProps<unknown, boolean | undefined>,
   'className' | 'onCreate'
 > & {
   items: readonly unknown[]
@@ -350,47 +416,153 @@ function CreatableRoot({
  * A searchable select on Base UI. Which job, which part: fewer than 10 known values, `Select`;
  * search, async, multi or 50+ options, `Combobox`; free text with suggestions, `Autocomplete`.
  *
- * Pass `items` (strings, or objects with `label` and `value`) and compose `ComboboxInput` and
- * `ComboboxContent`; `multiple` with `ComboboxChips` selects several. The hidden close buttons are
- * named from the message key `combobox.dismiss`. Works with no provider and joins a Base UI `Field`
- * when wrapped in one. `onCreate` makes it creatable (a tag input): typed text that matches no item
- * ends the list with a `Create "<text>"` row. No virtualisation here.
+ * Give `options` (options and groups, or a loader) and the input and the list are built: the rows
+ * are the one option row `Select` and the command palette draw (icon or avatar, label,
+ * description, hint, check), groups get a header, a loader shows loading, empty and error rows and
+ * drops a late answer, and past 100 rows a `virtual` port (`VirtualList`) windows the list with
+ * the keyboard intact. Or pass
+ * `items` and compose `ComboboxInput` and `ComboboxContent`. `multiple` selects several as chips.
+ * The hidden close buttons are named from the message key `combobox.dismiss`. Works with no
+ * provider and joins a Base UI `Field` when wrapped in one. `onCreate` makes it creatable (a tag
+ * input): typed text that matches no option ends the list with a `Create "<text>"` row.
  *
  * @useWhen search, async or multi-select, or 50 or more options
  * @neverWhen fewer than 10 known values (Select) or free text (Autocomplete)
  *
  * @example
+ * <Combobox aria-label="Owner" options={[{ label: 'Team', options: people }]} value={v} onValueChange={setV} />
+ * <Combobox aria-label="Repo" options={(q, { signal }) => searchRepos(q, signal)} placeholder="Search" />
  * <Combobox items={countries} value={v} onValueChange={setV}>
  *   <ComboboxInput aria-label="Country" placeholder="Search" />
  *   <ComboboxContent empty="No results">
  *     {(item) => <ComboboxItem key={item} value={item}>{item}</ComboboxItem>}
  *   </ComboboxContent>
  * </Combobox>
- * <Combobox multiple items={tags} value={v} onValueChange={setV} onCreate={(text) => text}>
- *   <ComboboxChips aria-label="Tags" placeholder="Add a tag" />
- *   <ComboboxContent>...</ComboboxContent>
- * </Combobox>
  */
-export function Combobox<Value = string, Multiple extends boolean | undefined = false>({
-  className,
-  children,
-  onCreate,
-  ...props
-}: ComboboxProps<Value, Multiple>): ReactElement {
+export function Combobox<Value = string, Multiple extends boolean | undefined = false>(
+  props: ComboboxProps<Value, Multiple>,
+): ReactElement {
+  if (props.options !== undefined) {
+    const { className, ...rest } = props
+    return (
+      <Field slot="combobox" table={comboboxVariants()} className={className}>
+        <OptionsCombobox
+          {...(rest as unknown as OptionsComboboxProps)}
+          options={props.options as ListSource<unknown>}
+        />
+      </Field>
+    )
+  }
+  const { className, children, onCreate, ...parts } = props
   return (
     <Field slot="combobox" table={comboboxVariants()} className={className}>
-      {onCreate !== undefined && isFlat(props.items) ? (
+      {onCreate !== undefined && isFlat(parts.items) ? (
         <CreatableRoot
-          {...(props as unknown as Omit<CreatableRootProps, 'items' | 'onCreate' | 'children'>)}
-          items={props.items}
+          {...(parts as unknown as Omit<CreatableRootProps, 'items' | 'onCreate' | 'children'>)}
+          items={parts.items}
           onCreate={onCreate}
         >
           {children}
         </CreatableRoot>
       ) : (
-        <BaseCombobox.Root<Value, Multiple> {...props}>{children}</BaseCombobox.Root>
+        <BaseCombobox.Root<Value, Multiple> {...parts}>{children}</BaseCombobox.Root>
       )}
     </Field>
+  )
+}
+
+type OptionsComboboxProps = Omit<
+  ComboboxOptionsProps<unknown, boolean | undefined>,
+  'className' | 'options'
+> & { options: ListSource<unknown> }
+
+/**
+ * The options form: `useListRoot` owns the selection, the text and the open state, and hands Base
+ * UI the exact rows the body draws.
+ */
+function OptionsCombobox({
+  options,
+  rank = defaultRank,
+  onCreate,
+  empty,
+  placeholder,
+  size,
+  container,
+  'aria-label': label,
+  multiple,
+  value,
+  defaultValue,
+  onValueChange,
+  onInputValueChange,
+  inputValue,
+  defaultInputValue,
+  open,
+  defaultOpen,
+  onOpenChange,
+  onItemHighlighted,
+  autoHighlight,
+  virtual: port,
+  ...rest
+}: OptionsComboboxProps): ReactElement {
+  const scope = useControlScope()
+  const { list, highlight, selectedIndex, virtual, root } = useListRoot({
+    options,
+    rank,
+    onCreate,
+    multiple,
+    value,
+    defaultValue,
+    onValueChange,
+    inputValue,
+    defaultInputValue,
+    onInputValueChange,
+    open,
+    defaultOpen,
+    onOpenChange,
+    onItemHighlighted,
+    virtual: port,
+  })
+  return (
+    <BaseCombobox.Root<unknown, boolean | undefined>
+      {...(rest as Omit<BaseCombobox.Root.Props<unknown, boolean | undefined>, 'items'>)}
+      {...root}
+      autoHighlight={autoHighlight ?? true}
+    >
+      {multiple === true ? (
+        <ComboboxChips
+          aria-label={label}
+          size={size}
+          itemToLabel={list.textOf as (value: never) => string}
+          {...(placeholder !== undefined && { placeholder })}
+        />
+      ) : (
+        <ComboboxInput
+          aria-label={label}
+          size={size}
+          {...(placeholder !== undefined && { placeholder })}
+        />
+      )}
+      <PopupFrame
+        kind="combobox"
+        slot="combobox-content"
+        className={cn(
+          comboboxContentVariants(),
+          'relative',
+          virtual !== undefined && 'overflow-hidden',
+        )}
+        container={container}
+      >
+        <OptionListBody
+          list={list}
+          size={size ?? scope?.size ?? 'md'}
+          kind="combobox"
+          highlight={highlight}
+          virtual={virtual}
+          empty={empty}
+          selectedIndex={selectedIndex}
+        />
+      </PopupFrame>
+    </BaseCombobox.Root>
   )
 }
 
@@ -440,13 +612,10 @@ export function ComboboxContent({
   children,
   ...props
 }: ComboboxContentProps): ReactElement {
-  const anchor = useContext(AnchorContext)
-  const dismiss = useDismissRef()
-  const t = useMessages(select)
   const createText = useContext(CreateContext)
   const createRow = (
     <ComboboxItem key="create" value={CREATE_ITEM}>
-      {t('combobox.create', createText ?? '')}
+      <CreateRowText text={createText ?? ''} />
     </ComboboxItem>
   )
   const list =
@@ -462,59 +631,47 @@ export function ComboboxContent({
       </>
     )
   return (
-    <ControlScopeProvider value={null}>
-      <BaseCombobox.Portal {...(container !== undefined && { container })}>
-        <BaseCombobox.Positioner
-          sideOffset={4}
-          className="z-50 outline-none"
-          ref={dismiss}
-          {...(anchor !== undefined && { anchor: anchor as never })}
-        >
-          <BaseCombobox.Popup
-            {...props}
-            data-slot="combobox-content"
-            className={cn(comboboxContentVariants(), className)}
-          >
-            {empty !== undefined && (
-              <BaseCombobox.Empty className="px-2 py-1.5 text-sm text-muted-foreground empty:hidden">
-                {empty}
-              </BaseCombobox.Empty>
-            )}
-            <BaseCombobox.List>{list as ReactNode}</BaseCombobox.List>
-          </BaseCombobox.Popup>
-        </BaseCombobox.Positioner>
-      </BaseCombobox.Portal>
-    </ControlScopeProvider>
+    <PopupFrame
+      kind="combobox"
+      slot="combobox-content"
+      className={cn(comboboxContentVariants(), className)}
+      container={container}
+      popupProps={props}
+    >
+      {empty !== undefined && (
+        <BaseCombobox.Empty className="px-2 py-1.5 text-sm text-muted-foreground empty:hidden">
+          {empty}
+        </BaseCombobox.Empty>
+      )}
+      <BaseCombobox.List>{list as ReactNode}</BaseCombobox.List>
+    </PopupFrame>
   )
 }
 
-export type ComboboxItemProps = Omit<BaseCombobox.Item.Props, 'className'> & Layout
+export type ComboboxItemProps = Omit<BaseCombobox.Item.Props, 'className'> &
+  Layout &
+  VariantProps<typeof comboboxItemVariants>
 
 /**
- * One option. The selected one carries a check.
+ * One option of the parts form, in the option row's box. The selected one carries a check.
  *
  * @example
  * <ComboboxItem value="de">Germany</ComboboxItem>
  */
-export function ComboboxItem({ className, children, ...props }: ComboboxItemProps): ReactElement {
+export function ComboboxItem({
+  size,
+  className,
+  children,
+  ...props
+}: ComboboxItemProps): ReactElement {
   return (
     <BaseCombobox.Item
       {...props}
       data-slot="combobox-item"
-      className={cn(comboboxItemVariants(), className)}
+      className={cn(comboboxItemVariants({ size }), className)}
     >
-      <span className="truncate">{children}</span>
-      <BaseCombobox.ItemIndicator>
-        <svg viewBox="0 0 16 16" className="size-icon" fill="none" aria-hidden="true">
-          <path
-            d="M3.5 8.5l3 3 6-7"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </BaseCombobox.ItemIndicator>
+      <span className="min-w-0 flex-1 truncate">{children}</span>
+      <BaseCombobox.ItemIndicator render={<CheckMark />} />
     </BaseCombobox.Item>
   )
 }
@@ -697,32 +854,21 @@ export function AutocompleteContent({
   children,
   ...props
 }: AutocompleteContentProps): ReactElement {
-  const anchor = useContext(AnchorContext)
-  const dismiss = useDismissRef()
   return (
-    <ControlScopeProvider value={null}>
-      <BaseAutocomplete.Portal {...(container !== undefined && { container })}>
-        <BaseAutocomplete.Positioner
-          sideOffset={4}
-          className="z-50 outline-none"
-          ref={dismiss}
-          {...(anchor !== undefined && { anchor: anchor as never })}
-        >
-          <BaseAutocomplete.Popup
-            {...props}
-            data-slot="autocomplete-content"
-            className={cn(autocompleteContentVariants(), className)}
-          >
-            {empty !== undefined && (
-              <BaseAutocomplete.Empty className="px-2 py-1.5 text-sm text-muted-foreground empty:hidden">
-                {empty}
-              </BaseAutocomplete.Empty>
-            )}
-            <BaseAutocomplete.List>{children as ReactNode}</BaseAutocomplete.List>
-          </BaseAutocomplete.Popup>
-        </BaseAutocomplete.Positioner>
-      </BaseAutocomplete.Portal>
-    </ControlScopeProvider>
+    <PopupFrame
+      kind="autocomplete"
+      slot="autocomplete-content"
+      className={cn(autocompleteContentVariants(), className)}
+      container={container}
+      popupProps={props}
+    >
+      {empty !== undefined && (
+        <BaseAutocomplete.Empty className="px-2 py-1.5 text-sm text-muted-foreground empty:hidden">
+          {empty}
+        </BaseAutocomplete.Empty>
+      )}
+      <BaseAutocomplete.List>{children as ReactNode}</BaseAutocomplete.List>
+    </PopupFrame>
   )
 }
 

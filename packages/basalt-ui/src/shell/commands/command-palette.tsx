@@ -4,13 +4,11 @@ import type { ReactElement } from 'react'
 import { requestMainFocus } from '../../common/focus'
 import { useIsomorphicLayoutEffect } from '../../common/isomorphic-layout-effect'
 import { navFor } from '../../router/nav/registry'
-import {
-  Autocomplete,
-  AutocompleteContent,
-  AutocompleteInput,
-  AutocompleteItem,
-} from '../../ui/combobox'
+import { Autocomplete, AutocompleteInput } from '../../ui/combobox'
 import { Dialog, DialogContent } from '../../ui/dialog'
+import { OptionListBody, useListHighlight, useOptionList } from '../../core/list/engine'
+import type { ListGroup, ListItems, ListOption } from '../../core/list/options'
+import { PopupFrame } from '../../core/list/popup'
 import { RailControlProvider } from '../parts/grid'
 import { currentArea } from './area'
 import { useChordBindings } from './bindings'
@@ -154,6 +152,10 @@ export function CommandPalette({
     queueMicrotask(() => void item.run())
   }
 
+  const byId = new Map(rows.map((item) => [item.id, item]))
+  const list = useOptionList({ source: toListItems(rows), query: '', open })
+  const highlight = useListHighlight()
+
   return (
     <>
       <ShortcutOverlay commands={commands} />
@@ -161,31 +163,39 @@ export function CommandPalette({
         <DialogContent title="Command palette">
           <div data-slot="command-palette">
             <Autocomplete
-              items={rows}
+              items={list.values as readonly string[]}
               mode="none"
               inline
               open
               autoHighlight="always"
               value={query}
               onValueChange={setQuery}
-              itemToStringValue={(item: PaletteItem) => item.label}
+              itemToStringValue={list.textOf}
             >
               <AutocompleteInput aria-label="Search commands" placeholder={placeholder} />
-              <AutocompleteContent
-                empty="No match"
+              <PopupFrame
+                kind="autocomplete"
+                slot="autocomplete-content"
+                className="relative max-h-80 overflow-y-auto outline-none"
                 container={listHost ?? undefined}
-                className="max-h-80 rounded-none border-0 p-0 shadow-none"
               >
-                {(item: PaletteItem) => (
-                  <AutocompleteItem key={item.id} value={item} onClick={() => choose(item)}>
-                    <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                    {item.group !== undefined && (
-                      <span className="shrink-0 text-xs text-faint">{item.group}</span>
-                    )}
-                    {item.steps.length > 0 && <ChordKeys steps={item.steps} />}
-                  </AutocompleteItem>
-                )}
-              </AutocompleteContent>
+                <OptionListBody
+                  list={list}
+                  size="lg"
+                  kind="autocomplete"
+                  highlight={highlight}
+                  virtual={undefined}
+                  checked={false}
+                  trailing={(option) => {
+                    const steps = byId.get(option.value)?.steps ?? []
+                    return steps.length > 0 ? <ChordKeys steps={steps} /> : null
+                  }}
+                  onRowClick={(option) => {
+                    const item = byId.get(option.value)
+                    if (item !== undefined) choose(item)
+                  }}
+                />
+              </PopupFrame>
             </Autocomplete>
             {/* The popup's positioner is pulled back into the flow: the palette is a list, not a dropdown. */}
             <div
@@ -197,5 +207,27 @@ export function CommandPalette({
         </DialogContent>
       </Dialog>
     </>
+  )
+}
+
+/**
+ * The palette's ranked rows as list items: one group per `group`, placed where the rank first
+ * reaches it, so the best match's group leads; rows with no group form one loose run the same way.
+ */
+function toListItems(rows: readonly PaletteItem[]): ListItems<string> {
+  const runs = new Map<string | undefined, ListOption<string>[]>()
+  for (const item of rows) {
+    const option: ListOption<string> = {
+      value: item.id,
+      label: item.label,
+      ...(item.icon !== undefined && { icon: item.icon }),
+      ...(item.keywords !== undefined && { keywords: item.keywords }),
+    }
+    const run = runs.get(item.group)
+    if (run === undefined) runs.set(item.group, [option])
+    else run.push(option)
+  }
+  return [...runs].flatMap(([label, options]): ListItems<string> =>
+    label === undefined ? options : [{ label, options } satisfies ListGroup<string>],
   )
 }
