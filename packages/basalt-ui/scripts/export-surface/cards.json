@@ -7,11 +7,13 @@
   "FlowCanvas",
   "FlowChecklist",
   "KanbanCard",
+  "RelationshipCard",
   "RowList",
   "StatCard",
   "StatCell",
   "StatGroup",
   "StepRail",
   "applyMove",
+  "periodOf",
   "useFlow"
 ]
