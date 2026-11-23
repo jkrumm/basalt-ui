@@ -5,9 +5,8 @@ import { cn } from '../core/cn'
 import { useFormat } from '../core/format'
 
 /**
- * The `Slider` cva table: a 4 px track with a filled range and 16 px thumbs. The row is 24 px high
- * for a fine pointer and 44 px for a coarse one, and each thumb grows only its invisible `::after`
- * hit area (24 and 44 px), so the drawn control keeps one size. No axes.
+ * The `Slider` cva table: a 4 px track with a filled range. The row is 24 px high for a fine pointer
+ * and 44 px for a coarse one. No axes.
  *
  * @example
  * sliderVariants() // class string for a hand-built wrapper
@@ -16,10 +15,11 @@ export const sliderVariants = cva(
   'flex h-6 w-full min-w-0 touch-none items-center select-none pointer-coarse:h-11 data-disabled:cursor-not-allowed data-disabled:opacity-50',
 )
 
-// A ring that takes the focus outline from its inner range input. Base UI positions it, so the
-// class list sets no `position`; the drawn size is 16 px on every pointer and only `::after` grows.
+// The thumb is the hit area: 24 px, 44 px on a coarse pointer, so the nested range input fills it and
+// is a 24 px control. The drawn ring is its `::before` at 16 px, and takes the focus outline from the
+// input. Base UI positions the thumb, so the class list sets no `position`.
 const THUMB =
-  'block size-4 cursor-grab rounded-full border-2 border-brand-fill bg-background shadow-raised transition-colors after:absolute after:top-1/2 after:left-1/2 after:size-6 after:-translate-1/2 pointer-coarse:after:size-11 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-brand active:cursor-grabbing data-disabled:cursor-not-allowed'
+  'block size-6 cursor-grab transition-colors before:absolute before:top-1/2 before:left-1/2 before:size-4 before:-translate-1/2 before:rounded-full before:border-2 before:border-brand-fill before:bg-background before:shadow-raised before:transition-colors pointer-coarse:size-11 has-focus-visible:before:outline-2 has-focus-visible:before:outline-offset-2 has-focus-visible:before:outline-brand active:cursor-grabbing data-disabled:cursor-not-allowed'
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
 export const sliderParts = ['slider'] as const
