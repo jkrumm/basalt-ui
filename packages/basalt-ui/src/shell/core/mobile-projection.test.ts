@@ -432,6 +432,50 @@ describe('block More rows', () => {
 // ── v3 additions ─────────────────────────────────────────────────────────────────────────────────
 
 describe('projector-owned rows and badges', () => {
+  test('workspace rows: a heading, one option per workspace with the current marked, then manage', () => {
+    const workspace = {
+      current: { id: 'acme', label: 'Acme' },
+      options: [
+        { id: 'acme', label: 'Acme' },
+        { id: 'globex', label: 'Globex' },
+      ],
+      onSwitch: () => {},
+      manage: { label: 'Manage', href: '/workspaces' },
+    }
+    const rows = phoneExtraRows({ workspace })
+    expect(rows.map((r) => r.id)).toEqual([
+      'workspace:heading',
+      'workspace:option:acme',
+      'workspace:option:globex',
+      'workspace:manage',
+    ])
+    expect(rows.map((r) => (r.kind === 'workspace' ? r.current : undefined))).toEqual([
+      undefined,
+      true,
+      false,
+      undefined,
+    ])
+    expect(
+      phoneExtraRows({ workspace: { ...workspace, manage: undefined } }).map((r) => r.id),
+    ).not.toContain('workspace:manage')
+  })
+
+  test('workspace rows come before the account rows', () => {
+    const rows = phoneExtraRows({
+      workspace: {
+        current: { id: 'a', label: 'A' },
+        options: [{ id: 'a', label: 'A' }],
+        onSwitch: () => {},
+      },
+      account: { status: 'signed-out', onSignIn: () => {} },
+    })
+    expect(rows.map((r) => r.id)).toEqual([
+      'workspace:heading',
+      'workspace:option:a',
+      'account:sign-in',
+    ])
+  })
+
   test('account rows: none while loading, sign-in signed out, identity + rows + sign-out signed in', () => {
     expect(phoneExtraRows({ account: { status: 'loading' } })).toEqual([])
     expect(

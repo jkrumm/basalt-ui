@@ -67,16 +67,23 @@ export type RailControl = {
 
 export const RAIL_EXPANDED_PX = 240
 export const RAIL_COLLAPSED_PX = 64
+/** The bounds of the width the reader drags the open rail to: Tailwind spacing 50 and 90. */
+export const RAIL_MIN_PX = 200
+export const RAIL_MAX_PX = 360
 
 /** The default key; the stored value is the 2.x envelope `{ v: 1, value: boolean }`. */
 export const DEFAULT_STORAGE_KEY = 'basalt-sidebar-collapsed'
 
 /** The rail's width at a size class and state, in px: what the dock rule subtracts from the room. */
-export function railWidth(sizeClass: SizeClass, state: RailState): number {
+export function railWidth(
+  sizeClass: SizeClass,
+  state: RailState,
+  openPx: number = RAIL_EXPANDED_PX,
+): number {
   if (sizeClass === 'compact') return 0
-  if (state === 'expanded') return RAIL_EXPANDED_PX
+  if (state === 'expanded') return openPx
   if (state === 'collapsed') return RAIL_COLLAPSED_PX
-  return sizeClass === 'expanded' ? RAIL_EXPANDED_PX : RAIL_COLLAPSED_PX
+  return sizeClass === 'expanded' ? openPx : RAIL_COLLAPSED_PX
 }
 
 const RailControlContext = createContext<RailControl | null>(null)
@@ -112,6 +119,56 @@ export function useRailState(storageKey: string, sizeClass: SizeClass): RailCont
   )
 }
 
+// ---- Rail width ---------------------------------------------------------------------------------
+
+/** The width of the open rail, and what changes it: the handle on the rail's inner edge. */
+export type RailWidthControl = {
+  /** The open rail's width in px, within `min` and `max`. */
+  readonly width: number
+  readonly min: number
+  readonly max: number
+  /** Clamps to the bounds and stores. */
+  setWidth(px: number): void
+  /** Back to the default width, and the stored value forgotten. */
+  reset(): void
+}
+
+const RailWidthContext = createContext<RailWidthControl | null>(null)
+
+export const RailWidthProvider = RailWidthContext
+
+/** The width control, or `null` outside an `AppShell` (a rail drawn alone has no handle). */
+export function useRailWidth(): RailWidthControl | null {
+  return useContext(RailWidthContext)
+}
+
+export const clampRail = (px: number): number =>
+  Math.min(RAIL_MAX_PX, Math.max(RAIL_MIN_PX, Math.round(px)))
+
+/**
+ * The open rail's width, persisted under `basalt:<storageKey>-width`. The server and the hydration
+ * pass render the default; a stored width applies once the client has read it. Anything stored that
+ * is not a finite number is the default, and a number outside the bounds is brought inside them.
+ */
+export function useRailWidthState(storageKey: string): RailWidthControl {
+  const store = useMemo(
+    () => persisted<number>(`${storageKey}-width`, { version: 1, initial: RAIL_EXPANDED_PX }),
+    [storageKey],
+  )
+  const [stored, setStored] = store.use()
+  const width = Number.isFinite(stored) ? clampRail(stored) : RAIL_EXPANDED_PX
+  return useMemo(
+    () => ({
+      width,
+      min: RAIL_MIN_PX,
+      max: RAIL_MAX_PX,
+      setWidth: (px: number) => setStored(clampRail(px)),
+      reset: () => store.reset(),
+    }),
+    [width, setStored, store],
+  )
+}
+
 /** The rail control, for the rail's own toggle. Throws outside an `AppShell`. */
 export function useRailControl(): RailControl {
   const control = useContext(RailControlContext)
@@ -137,7 +194,11 @@ export function useDocumentFrame(): void {
 
 // ---- The root -----------------------------------------------------------------------------------
 
-type RootStyle = CSSProperties & { '--shell-aside-w': string; '--shell-dock-w': string }
+type RootStyle = CSSProperties & {
+  '--shell-aside-w': string
+  '--shell-dock-w': string
+  '--shell-rail-open-w': string
+}
 
 export type ShellGridProps = {
   rootRef: (el: HTMLDivElement | null) => void
@@ -150,6 +211,8 @@ export type ShellGridProps = {
   asideWidth: number
   /** The width the dock region reserves, in px: 0 while the dock overlays main or is closed. */
   dockWidth: number
+  /** The width of the open rail, in px: the default unless the reader dragged it. */
+  railOpenWidth?: number
   children: ReactNode
 }
 
@@ -200,10 +263,12 @@ export function ShellGrid({
   compactHeader,
   asideWidth,
   dockWidth,
+  railOpenWidth = RAIL_EXPANDED_PX,
   children,
 }: ShellGridProps): ReactElement {
   const shifting = useDockShift(dockWidth)
   const style: RootStyle = {
+    '--shell-rail-open-w': `${railOpenWidth}px`,
     '--shell-aside-w': `${asideWidth}px`,
     '--shell-dock-w': `${dockWidth}px`,
   }
@@ -222,11 +287,11 @@ export function ShellGrid({
         titlebar
           ? '[grid-template-areas:"header_header"_"rail_surface"_"footer_footer"] [--shell-top-h:var(--shell-header-h)]'
           : '[grid-template-areas:"brand_surface"_"rail_surface"_"footer_footer"] [--shell-top-h:0px] md:[--shell-top-h:calc(var(--shell-header-h)_+_var(--shell-inset))]',
-        '[--shell-header-h:--spacing(12)] [--shell-rail-w:0px] [--shell-gutter:--spacing(2)] [--shell-inset:0px]',
+        '[--shell-header-h:--spacing(12)] [--shell-rail-open-w:--spacing(60)] [--shell-rail-w:0px] [--shell-gutter:--spacing(2)] [--shell-inset:0px]',
         'data-[frame=panel]:md:[--shell-inset:--spacing(2)]',
         'md:[--shell-rail-w:--spacing(16)] md:[--shell-gutter:--spacing(4)]',
-        'xl:[--shell-rail-w:--spacing(60)] xl:[--shell-gutter:--spacing(6)]',
-        'data-[rail=expanded]:md:[--shell-rail-w:--spacing(60)] data-[rail=collapsed]:md:[--shell-rail-w:--spacing(16)] data-[rail=collapsed]:xl:[--shell-rail-w:--spacing(16)]',
+        'xl:[--shell-rail-w:var(--shell-rail-open-w)] xl:[--shell-gutter:--spacing(6)]',
+        'data-[rail=expanded]:md:[--shell-rail-w:var(--shell-rail-open-w)] data-[rail=collapsed]:md:[--shell-rail-w:--spacing(16)] data-[rail=collapsed]:xl:[--shell-rail-w:--spacing(16)]',
         '[@media(max-height:30rem)_and_(orientation:landscape)]:max-md:[--shell-header-h:clamp(2.25rem,9dvh,3rem)]',
         'data-[compact-header=hidden]:max-md:[--shell-header-h:0px]',
         PRINT_FRAME,
@@ -412,10 +477,11 @@ export function useAsideModel(
   claim: AsideClaim | undefined,
   sizeClass: SizeClass,
   rail: RailState,
+  railOpenPx: number = RAIL_EXPANDED_PX,
 ): AsideModel {
   const width = claim?.width ?? DEFAULT_ASIDE_WIDTH
   const room = useMediaQuery(
-    asideDockQuery({ navbarWidth: railWidth(sizeClass, rail), asideWidth: width }),
+    asideDockQuery({ navbarWidth: railWidth(sizeClass, rail, railOpenPx), asideWidth: width }),
     false,
   )
   return resolveAsideDocking({
@@ -448,10 +514,11 @@ export function useDockModel(
   asideReserved: number,
   /** The width the open `Dock` draws at: the reader can drag it. */
   dockWidth: number = DOCK_WIDTH,
+  railOpenPx: number = RAIL_EXPANDED_PX,
 ): DockModel {
   const room = useMediaQuery(
     asideDockQuery({
-      navbarWidth: railWidth(sizeClass, rail) + asideReserved,
+      navbarWidth: railWidth(sizeClass, rail, railOpenPx) + asideReserved,
       asideWidth: dockWidth,
     }),
     false,

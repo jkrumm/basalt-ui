@@ -5,8 +5,8 @@
  * 3.1, 3.5 and 8.
  */
 import type { ReactNode } from 'react'
-import type { ControlsSlot, IconComponent } from '../core/ports'
-import type { NavBadge } from '../page/contract'
+import type { ControlsSlot, IconComponent, NavTarget } from '../core/ports'
+import type { FavouritesStore, NavBadge } from '../page/contract'
 
 // ---- Opaque targets and size ---------------------------------------------------------------
 
@@ -117,6 +117,21 @@ export type ShellFrame = 'panel' | 'flush'
 
 export type ShellBrand = { name: string; logo?: IconComponent }
 
+/** One workspace in the switcher: a face (an image, else a glyph, else its initials) and a name. */
+export type Workspace = { id: string; label: string; avatar?: string; icon?: IconComponent }
+
+/**
+ * The workspace switcher at the top of the rail. `onSwitch` gets the chosen id; the app decides what
+ * switching does (a route, a session, a refetch). `manage` adds a last row that opens the app's own
+ * workspace settings.
+ */
+export type WorkspaceSwitcher = {
+  current: Workspace
+  options: readonly Workspace[]
+  onSwitch: (id: string) => void
+  manage?: { label: string; href: string | NavTarget }
+}
+
 export type AppShellProps<Id extends string = string> = {
   nav: NavConfig
   brand: ShellBrand
@@ -127,6 +142,17 @@ export type AppShellProps<Id extends string = string> = {
   settings?: SettingsConfig
   account?: Account
   search?: { onOpen: () => void }
+  /** A workspace switcher in the brand zone; on a phone its options are rows of the More surface. */
+  workspace?: WorkspaceSwitcher
+  /**
+   * Where the rail's Favourites section keeps its entries. Default: `persisted` under
+   * `basalt:<storageKey>-favourites`.
+   */
+  favourites?: FavouritesStore
+  /**
+   * The key the rail's collapse is stored under; the width the reader dragged it to lives beside it
+   * under `<storageKey>-width`.
+   */
   storageKey?: string
   chrome?: ShellChrome
   /** Default `panel`. */

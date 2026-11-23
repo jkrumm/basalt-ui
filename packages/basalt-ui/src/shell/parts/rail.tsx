@@ -13,7 +13,14 @@
  */
 import { useSyncExternalStore } from 'react'
 import type { ReactElement } from 'react'
-import type { Account, NavBadges, SettingsConfig, ShellBrand, SidebarBlock } from '../contract'
+import type {
+  Account,
+  NavBadges,
+  SettingsConfig,
+  ShellBrand,
+  SidebarBlock,
+  WorkspaceSwitcher,
+} from '../contract'
 import type { NavRuntime } from '../core/nav-runtime'
 import { projectRail } from '../core/projector'
 import type { RailBlockRow } from '../core/projector'
@@ -22,11 +29,17 @@ import type { CoreBlock } from '../core/block-model'
 import { SHELL_TEXT } from './a11y'
 import { RailAccount } from './account'
 import { RailBlock } from './blocks'
+import { Button } from '../../ui/button'
+import { Tooltip } from '../../ui/tooltip'
+import { useRailControl } from './grid'
+import { RailFavourites } from './rail-favourites'
+import { RailResizeHandle } from './rail-resize'
 import { RailRowView } from './rail-rows'
 import { useSectionFolds } from './rail-folds'
 import { RailSearch } from './rail-search'
 import { RailSectionView } from './rail-section'
 import { RailSettings } from './settings'
+import { RAIL_TEXT } from './rail-text'
 
 export type RailProps = {
   runtime: NavRuntime
@@ -36,6 +49,39 @@ export type RailProps = {
   settings: SettingsConfig | undefined
   account: Account | undefined
   search: { onOpen: () => void } | undefined
+  /** With a workspace switcher the brand zone's collapse toggle is a face, so the footer holds the expander. */
+  workspace?: WorkspaceSwitcher | undefined
+}
+
+/** The collapsed rail's way back open, where the brand zone shows the workspace instead of the toggle. */
+function RailExpand(): ReactElement {
+  const rail = useRailControl()
+  return (
+    <div data-slot="shell-rail-expand" className="hidden justify-center @max-[120px]:flex">
+      <Tooltip label={RAIL_TEXT.expand} side="right">
+        <Button
+          variant="ghost"
+          shape="icon"
+          aria-label={RAIL_TEXT.expand}
+          aria-expanded={false}
+          onClick={rail.toggle}
+        >
+          <svg viewBox="0 0 16 16" className="size-icon" fill="none" aria-hidden="true">
+            <rect
+              x="2"
+              y="3"
+              width="12"
+              height="10"
+              rx="2"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            />
+            <path d="M6 3v10" stroke="currentColor" strokeWidth="1.5" />
+          </svg>
+        </Button>
+      </Tooltip>
+    </div>
+  )
 }
 
 /** The first bottom progress block that asks for the ring: the settings row wears it collapsed. */
@@ -56,6 +102,7 @@ export function Rail({
   settings,
   account,
   search,
+  workspace,
 }: RailProps): ReactElement {
   const state = useSyncExternalStore(runtime.subscribe, runtime.getState, runtime.getState)
   const nav: CoreNavConfig = runtime.nav
@@ -74,19 +121,21 @@ export function Rail({
     model.blocks.bottom.length > 0 ||
     model.pinned.length > 0 ||
     settings !== undefined ||
-    account !== undefined
+    account !== undefined ||
+    workspace !== undefined
 
   return (
     <nav
       data-slot="shell-rail"
       aria-label={SHELL_TEXT.primary}
-      className="@container flex h-full min-h-0 flex-col"
+      className="@container relative flex h-full min-h-0 flex-col"
     >
       <div
         data-slot="shell-rail-viewport"
         className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-1.5 pb-3 [mask-image:linear-gradient(to_bottom,black_calc(100%-12px),transparent)]"
       >
         {search !== undefined && <RailSearch onOpen={search.onOpen} />}
+        <RailFavourites />
         {model.sections.map((section, index) => (
           <RailSectionView key={section.id} section={section} first={index === 0} />
         ))}
@@ -104,8 +153,10 @@ export function Rail({
           ))}
           <RailSettings settings={settings} ring={ring} />
           <RailAccount account={account} />
+          {workspace !== undefined && <RailExpand />}
         </div>
       )}
+      <RailResizeHandle />
     </nav>
   )
 }

@@ -21,6 +21,8 @@ import {
 import { Sheet, SheetContent } from '../ui/sheet'
 import { PRESENTATIONS, presentationStore, widthStore } from './core/panel-store'
 import type { Presentation } from './core/panel-store'
+import type { FavouriteInput } from './contract'
+import { FavouriteToggle } from './favourites'
 import { PageHostContext, ShellOverlayContext } from './page'
 import { PeekChip, PeekWindow } from './peek-window'
 import type { WindowRect } from './peek-window'
@@ -57,6 +59,8 @@ export type PeekProps = {
   kind?: string
   /** The record's own page. Draws an `Open full page` link in the header; a plain click leaves the peek. */
   fullPage?: string | NavTarget
+  /** Draws a star in the header that adds the record to the shell rail's Favourites; nothing outside an `AppShell`. */
+  favourite?: FavouriteInput
   /** Escape, the close button and Back: the caller decides how the address changes (`usePeek().close`). */
   onClose: () => void
   /** Draws a button that moves the record into the shell's `Dock` (`usePeek().pin`). Not drawn on a phone. */
@@ -211,6 +215,7 @@ function PeekSheet({
   title,
   tag,
   fullPage,
+  favourite,
   records,
   actions,
   footer,
@@ -231,8 +236,12 @@ function PeekSheet({
         footer={footer}
         data-present="sheet"
         actions={
-          records === undefined && fullPage === undefined && actions === undefined ? undefined : (
+          records === undefined &&
+          fullPage === undefined &&
+          favourite === undefined &&
+          actions === undefined ? undefined : (
             <>
+              {favourite !== undefined && <FavouriteToggle {...favourite} />}
               {records !== undefined && <PanelSteps records={records} />}
               {actions !== undefined && <PanelActionBar actions={actions} />}
               {fullPage !== undefined && <FullPageLink href={fullPage} />}
@@ -253,6 +262,7 @@ function PeekPanel({
   avatar,
   kind = 'record',
   fullPage,
+  favourite,
   onClose,
   onPin,
   actions,
@@ -312,6 +322,7 @@ function PeekPanel({
       records={records}
       actions={actions}
       fullPage={fullPage}
+      favourite={favourite}
       onPin={onPin}
       menu={menu}
       onClose={onClose}
