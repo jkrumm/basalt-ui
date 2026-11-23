@@ -151,9 +151,55 @@ bun run build   # tsup && tsc --emitDeclarationOnly && copy-assets && fix-esm-ex
   resolution error instead of an install warning. Version-mismatch warnings are unaffected and must
   stay that way, so every peer stays listed in `peerDependencies` (`tests/required-peers.test.ts`
   pins both halves).
-- Exact-pinned: `@tanstack/charts`, `d3-scale`, `remend` (peers) and the three `@fontsource-variable/*` (dependencies).
-  `motion` is caret-ranged (`^14.1.0`); no reason for an exact pin is recorded.
-  `remend` is `./content`'s one eagerly-imported peer.
+- **Peers are ranged by how tightly basalt is coupled to them** (`tests/peer-table.test.ts` checks the table below against `peerDependencies`, class by range shape):
+  - **stable**: a caret from the tested floor (`^4.3.5`), for a package used through its public API only. A consumer ahead of the floor in range is met by `doctor`, which checks the declared range and not equality.
+  - **coupled**: a tilde (`~1.9.0`), for a package whose data attributes, row model or engine marks basalt reads; a minor can move them.
+  - **pinned**: exact, for 0.x and alpha tooling, with the reason in the table.
+    `oxlint` is declared as an optional peer and `peerDependencies` is the one source of its pin: `gen-oxlint` writes it into the presets and `init` installs it at that pin. A scheduled job (`.github/workflows/newest-peers.yml`) installs the newest in-range version of every peer and runs the unit and pack tests; it reports and never gates a pull request. The three `@fontsource-variable/*` dependencies are exact. `remend` is `./content`'s one eagerly-imported peer.
+
+<!-- peers:begin -->
+
+| Peer                                | Class   | Range         | Reason                                                                                    |
+| ----------------------------------- | ------- | ------------- | ----------------------------------------------------------------------------------------- |
+| `@astrojs/react`                    | stable  | `^7.0.1`      | Astro integration used by the site profile; basalt reads no internals                     |
+| `@atlaskit/pragmatic-drag-and-drop` | stable  | `^4.0.0`      | public drag API only                                                                      |
+| `@axe-core/playwright`              | stable  | `^4.14.0`     | public test helper API                                                                    |
+| `@base-ui/react`                    | coupled | `~1.9.0`      | data attributes and slot structure that the primitives style                              |
+| `@shadcn/lint`                      | pinned  | `0.2.5`       | 0.x; a patch can add findings, and the preset names the rules                             |
+| `@shikijs/langs`                    | stable  | `^4.5.0`      | public grammar bundle                                                                     |
+| `@shikijs/themes`                   | stable  | `^4.5.0`      | public theme bundle                                                                       |
+| `@tailwindcss/vite`                 | stable  | `^4.3.5`      | public plugin API                                                                         |
+| `@tanstack/charts`                  | coupled | `~1.5.0`      | engine marks and scale internals under the chart kinds                                    |
+| `@tanstack/react-form`              | stable  | `^1.33.0`     | public API                                                                                |
+| `@tanstack/react-hotkeys`           | pinned  | `0.27.1`      | 0.x API, no stability promise                                                             |
+| `@tanstack/react-query`             | stable  | `^5.104.0`    | public API                                                                                |
+| `@tanstack/react-router`            | stable  | `^1.170.0`    | public API                                                                                |
+| `@tanstack/react-router-devtools`   | stable  | `^1.166.13`   | dev panel, public API                                                                     |
+| `@tanstack/react-table`             | coupled | `~9.3.1`      | row model and column internals under `DataTable`                                          |
+| `@tanstack/react-virtual`           | stable  | `>=3.14.0 <4` | public API; the range excludes the next major                                             |
+| `ai`                                | stable  | `^7.0.137`    | public chat API                                                                           |
+| `astro`                             | stable  | `^7.3.8`      | integration hook and `astro:assets` only                                                  |
+| `d3-scale`                          | stable  | `^4.0.2`      | public scale API                                                                          |
+| `motion`                            | stable  | `^14.1.0`     | public animation API                                                                      |
+| `oxlint`                            | pinned  | `1.93.0`      | JS plugin API is alpha and outside semver, so the preset and its rules sit on one version |
+| `pele`                              | stable  | `^1.13.0`     | public API                                                                                |
+| `postcss-html`                      | stable  | `^2.0.0`      | public stylelint syntax                                                                   |
+| `react`                             | stable  | `^19.3.0`     | React 19 public API                                                                       |
+| `react-day-picker`                  | stable  | `^10.0.2`     | public API                                                                                |
+| `react-dom`                         | stable  | `^19.3.0`     | React 19 public API                                                                       |
+| `react-markdown`                    | stable  | `^10.1.0`     | public API                                                                                |
+| `react-resizable-panels`            | stable  | `^4.22.1`     | public API                                                                                |
+| `rehype-sanitize`                   | stable  | `^6.0.0`      | public API                                                                                |
+| `remark-gfm`                        | stable  | `^4.0.1`      | public API                                                                                |
+| `remend`                            | stable  | `^1.4.0`      | public API                                                                                |
+| `shiki`                             | stable  | `^4.5.0`      | public highlighter API                                                                    |
+| `stylelint`                         | stable  | `^18.0.0`     | public config and plugin API                                                              |
+| `tailwindcss`                       | stable  | `^4.3.5`      | public theme and utility API                                                              |
+| `vite`                              | stable  | `^7 \|\| ^8`  | public plugin API; two majors are tested                                                  |
+| `vite-plugin-pwa`                   | stable  | `^1.3.0`      | public plugin API                                                                         |
+
+<!-- peers:end -->
+
 - **NO** zustand, **NO** `@tanstack/*` as a dependency, **NO** icon package — icons are `ReactNode`.
 - `sideEffects: ['*.css']`.
 

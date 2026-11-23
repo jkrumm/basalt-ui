@@ -143,6 +143,8 @@ export const SUBPATH_REQUIRED_PEERS: Readonly<Record<string, readonly string[]>>
   // `useMotionPreset` reads `useReducedMotionConfig` from `motion/react`; the scale itself is `./tokens`, peer-free.
   './motion': ['motion'],
   './vite': ['vite'],
+  // The integration runs inside an Astro site: its public types and setup example name `astro` and `@astrojs/react`, and it imports neither at runtime.
+  './astro': ['astro', '@astrojs/react'],
   [CHART_SUBPATH]: ['@tanstack/charts', 'd3-scale'],
 }
 

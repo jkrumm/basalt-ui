@@ -292,25 +292,22 @@ const repoPath = join(root, '.oxlintrc.json')
 /** Exact `x.y.z`: a patch can add findings, so a range is not a pin (guardrails section 9). */
 function exactPin(label: string, spec: string | undefined): string {
   if (spec === undefined || !/^\d+\.\d+\.\d+$/.test(spec)) {
-    throw new Error(`${label} must be an exact pin in package.json, found ${spec ?? 'nothing'}`)
+    throw new Error(
+      `${label} must be an exact pin in the package peerDependencies, found ${spec ?? 'nothing'}`,
+    )
   }
   return spec
 }
 
-type Manifest = { devDependencies?: Record<string, string> }
+type Manifest = { peerDependencies?: Record<string, string> }
 const readManifest = (path: string): Manifest => JSON.parse(readFileSync(path, 'utf8')) as Manifest
 
-/** The pins are read, never written here: the dependency issue owns them. */
+/** The pins are read, never written here: the package's `peerDependencies` is their one source (MAINTAINING.md § Peers). */
 export function readPins(): { oxlint: string; shadcnLint: string } {
+  const peers = readManifest(join(pkgRoot, 'package.json')).peerDependencies
   return {
-    oxlint: exactPin(
-      'oxlint',
-      readManifest(join(root, 'package.json')).devDependencies?.['oxlint'],
-    ),
-    shadcnLint: exactPin(
-      '@shadcn/lint',
-      readManifest(join(pkgRoot, 'package.json')).devDependencies?.['@shadcn/lint'],
-    ),
+    oxlint: exactPin('oxlint', peers?.['oxlint']),
+    shadcnLint: exactPin('@shadcn/lint', peers?.['@shadcn/lint']),
   }
 }
 

@@ -349,18 +349,18 @@ describe('init: the budget, the install and the seeds', () => {
     expect('budget' in read && read.budget.ejects).toBe(7)
   })
 
-  it('installs the tokens peers at exact pins with the lockfile’s package manager, never bunx', async () => {
+  it('installs the tokens peers at their declared range, saved exact, with the lockfile’s package manager, never bunx', async () => {
     const dir = repo()
     const { commands } = await runInit(['--profile', 'tokens'], dir)
     expect(commands).toHaveLength(1)
     const [command] = commands
     expect(command?.slice(0, 4)).toEqual(['bun', 'add', '--dev', '--exact'])
-    expect(command?.slice(4).map((spec) => spec.replace(/@\d.*$/, ''))).toEqual([
+    expect(command?.slice(4).map((spec) => spec.replace(/@[\^~]?\d.*$/, ''))).toEqual([
       'stylelint',
       'postcss-html',
       'oxfmt',
     ])
-    expect(command?.slice(4).every((spec) => /@\d+\.\d+\.\d+$/.test(spec))).toBe(true)
+    expect(command?.slice(4).every((spec) => /@[\^~]?\d+\.\d+\.\d+$/.test(spec))).toBe(true)
   })
 
   it('bridge adds the frame peers, oxlint and @shadcn/lint; pnpm and npm lockfiles pick their own command', async () => {

@@ -10,7 +10,7 @@ const APP_RUNTIME = ['@tanstack/react-query', '@tanstack/react-router'] as const
 
 export const RUNTIME_PEERS: Readonly<Record<Profile, readonly string[]>> = {
   tokens: [],
-  site: [],
+  site: ['astro', '@astrojs/react'],
   bridge: FRAME,
   parts: FRAME,
   app: [...FRAME, ...APP_RUNTIME],

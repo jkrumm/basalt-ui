@@ -77,7 +77,12 @@ const PEERS: Record<string, string> = {
   '@tanstack/react-query': '5.104.0',
   '@tailwindcss/vite': '4.3.5',
   '@tanstack/router-plugin': '1.168.40',
+  astro: '7.3.8',
+  '@astrojs/react': '7.0.1',
 }
+
+/** Declared only by the site profile, whose runtime peers they are. */
+const SITE_ONLY = ['astro', '@astrojs/react']
 
 const ROUTER = `import { createRouter } from '@tanstack/react-router'
 export const router = createRouter({
@@ -120,6 +125,7 @@ export function makeTree(profile: Profile = 'app', files: Patch = {}): string {
     ? Object.fromEntries(
         Object.keys(PEERS)
           .filter((name) => app || !name.startsWith('@tanstack/'))
+          .filter((name) => profile === 'site' || !SITE_ONLY.includes(name))
           .map((name) => [name, `^${PEERS[name]}`]),
       )
     : {}
