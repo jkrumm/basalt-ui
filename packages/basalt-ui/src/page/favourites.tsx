@@ -18,6 +18,7 @@ import type { IconComponent } from '../core/ports'
 import { Button } from '../ui/button'
 import { Tooltip } from '../ui/tooltip'
 import type { FavouriteEntry, FavouriteInput, FavouritesStore } from './contract'
+import { useSizeClass } from './use-size-class'
 
 /** What the shell provides: the list, and the three ways to change it. */
 export type FavouritesApi = {
@@ -141,7 +142,8 @@ export type FavouriteToggleProps = FavouriteInput & {
 
 /**
  * The star button that adds a record to the rail's Favourites section and takes it off again. It is
- * a toggle (`aria-pressed`) named by the action it would do, and draws nothing outside an `AppShell`.
+ * a toggle (`aria-pressed`) named by the action it would do, and draws nothing outside an `AppShell`
+ * or on a phone, where the rail that lists favourites is not drawn.
  * Drop it in a `PageBar`'s `actions`; a `Peek`, `Dock` or `PageAside` header draws it from its
  * `favourite` prop.
  *
@@ -157,7 +159,9 @@ export function FavouriteToggle({
 }: FavouriteToggleProps): ReactElement | null {
   const t = useMessages(page)
   const favourite = useFavourite(input)
-  if (favourite === null) return null
+  // A phone has no rail to show the list in, so the star would pin to nothing it can see.
+  const compact = useSizeClass() === 'compact'
+  if (favourite === null || compact) return null
   const label = favourite.on ? t('page.unfavourite') : t('page.favourite')
   return (
     <Tooltip label={label}>
