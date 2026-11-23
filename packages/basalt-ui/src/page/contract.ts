@@ -110,9 +110,28 @@ export type PageLayout<L extends string = string> = {
 /** The view row's view-settings button, drawn as an icon before the actions. */
 export type PageSettings = { label: string; icon?: IconComponent; onClick: () => void }
 
+/**
+ * What a record page's band says about the record beside its title: a face, a type line and tags.
+ * Draws only with a `title`, which it then names visibly, so the page is named once.
+ */
+export type PageIdentity = {
+  /** A face before the title. `{}` draws the title's initials. */
+  avatar?: { src?: string; icon?: IconComponent; shape?: 'person' | 'object' }
+  /** One muted line under the title: a city, a domain, a type. */
+  subtitle?: string
+  /** Trailing tags (Lozenges, a Status); they never shrink below their content. */
+  tags?: ReactNode
+}
+
 export type PageBarProps<K extends string = string, L extends string = string> = {
   /** Breadcrumb leaf and `h1` in a shell; the visible `h1` without one. */
   title?: string
+  /**
+   * A record page's identity: the band draws the title as a heading with its face, subtitle and
+   * tags (the title is then the visible `h1` in a shell too, and the breadcrumb leaf is kept).
+   * Needs `title`; the page's own body then never repeats the record's name.
+   */
+  identity?: PageIdentity
   parent?: { label: string; href: string | NavTarget }
   controls?: ControlsSlot
   tabs?: PageTabs<K>

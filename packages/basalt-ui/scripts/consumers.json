@@ -48,6 +48,7 @@
   "expectShellInvariants": "shutterflow:e2e/desktop/visual/invariants.spec.ts",
   "externalField": "argo:apps/dashboard/src/features/strength-tracker/components/timer-card.tsx",
   "Facts": "basalt-ui:apps/playground/src/cycle/dogfood-1/FlowOverview.tsx",
+  "PropertyList": "basalt-ui:apps/playground/src/routes/ref/suppliers.$id.tsx",
   "field": "argo:apps/dashboard/src/lib/window-stores.ts",
   "FilterSet": "argo:apps/dashboard/src/routes/strength-tracker.tsx",
   "filterSlot": "argo:apps/dashboard/src/routes/strength-tracker.tsx",
