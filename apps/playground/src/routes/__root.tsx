@@ -11,14 +11,16 @@
  */
 import { Outlet, createRootRouteWithContext, useNavigate } from '@tanstack/react-router'
 import type { QueryClient } from '@tanstack/react-query'
+import { AppearanceSwitcher } from 'basalt-ui/controls'
 import { AppShell, CommandPalette } from 'basalt-ui/shell'
-import { Building2, Globe, Rocket } from 'lucide-react'
+import { Building2, Globe, Palette, Rocket } from 'lucide-react'
 import { useState } from 'react'
 import type { ComponentProps } from 'react'
 import { COMMANDS } from '../demo/commands'
 import { globals } from '../demo/globals'
 import { NAV } from '../demo/nav-model'
 import { PeekLayer } from '../demo/peek-layer'
+import { ACCENTS } from '../lib/accents'
 
 type ShellProps = ComponentProps<typeof AppShell>
 type Blocks = NonNullable<ShellProps['blocks']>
@@ -32,6 +34,18 @@ const BADGES = { cards: { count: 4 } }
 /** Rail blocks, declared once: a progress row pinned at the bottom of the rail. */
 const BLOCKS: Blocks = [
   { kind: 'progress', id: 'getting-started', label: 'Getting started', value: 0.2 },
+]
+
+/** The header's appearance popover: the same part the settings page's Appearance pane draws. */
+const GLOBAL_ACTIONS: NonNullable<ShellProps['globalActions']> = [
+  {
+    id: 'appearance',
+    kind: 'popover',
+    label: 'Appearance',
+    icon: Palette,
+    mobile: 'more',
+    content: () => <AppearanceSwitcher accents={ACCENTS} className="w-80" />,
+  },
 ]
 
 const noop = (): void => {}
@@ -66,6 +80,7 @@ function RootLayout() {
       badges={BADGES}
       blocks={BLOCKS}
       search={{ onOpen: () => setPaletteOpen(true) }}
+      globalActions={GLOBAL_ACTIONS}
       settings={{
         mode: 'menu',
         items: [

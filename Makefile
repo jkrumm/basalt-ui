@@ -257,6 +257,7 @@ regen: ## After a rebase: rewrite every generated file (sync-self, the marketing
 	@$(MAKE) --no-print-directory sync-self
 	@bun apps/playground-astro/scripts/matrix.ts --render
 	@bun packages/basalt-ui/scripts/gen-oxlint.ts
+	@bun packages/basalt-ui/bin/basalt-ui.mjs tokens:css --accents violet,rose,orange,green,teal --out apps/playground/src/accents.css > /dev/null
 	@git status --short
 
 # A lead runs this right before it merges its pull request: PR CI green for the exact HEAD, generated files in sync, master not moved under it.
