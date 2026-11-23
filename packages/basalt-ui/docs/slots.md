@@ -17,7 +17,7 @@ value (the same object, never a copy), so a new part shows up here with no edit.
 
 ```ts
 SLOTS: { full key list below }
-  accordion, alert, avatar, badge, button, card, checkbox-matrix, checkbox, choice-card, collapsible, combobox, control-group, copy-button, date-picker, dialog, entity, field, file-upload, info-hint, input, kbd, menu, meter, num, number-field, one-time-code, password-input, popover, preview-card, progress, quick-picks, radio-group, resizable, scroll-area, segmented, select, separator, sheet, skeleton, slider, sortable-list, status, swatch-picker, switch, table, tabs, tag-input, textarea, toast, toolbar, tooltip, virtual-list
+  accordion, alert, avatar, badge, button, calendar, card, checkbox-matrix, checkbox, choice-card, collapsible, combobox, control-group, copy-button, date-picker, dialog, entity, field, file-upload, info-hint, input, kbd, menu, meter, num, number-field, one-time-code, password-input, popover, preview-card, progress, quick-picks, radio-group, resizable, scroll-area, segmented, select, separator, sheet, skeleton, slider, sortable-list, status, swatch-picker, switch, table, tabs, tag-input, textarea, toast, toolbar, tooltip, virtual-list
 ```
 
 ## Example

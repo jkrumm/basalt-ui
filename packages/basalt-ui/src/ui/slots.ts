@@ -8,6 +8,7 @@ export const SLOTS = {
   avatar: ['avatar', 'avatar-stack'],
   badge: ['lozenge', 'count-badge', 'delta-badge'],
   button: ['button', 'pressable'],
+  calendar: ['calendar'],
   card: ['card', 'card-band', 'card-info', 'icon-tile', 'inset', 'card-phase'],
   'checkbox-matrix': ['checkbox-matrix'],
   checkbox: ['checkbox-group', 'checkbox'],
