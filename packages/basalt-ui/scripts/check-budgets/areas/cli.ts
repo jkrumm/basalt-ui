@@ -57,12 +57,12 @@ export const rows: readonly RowDef[] = [
   // 12517 -> 12641 (v3-wiring-3-route-tree): `init --profile app` writes the first `src/routeTree.gen.ts` through the router plugin's own generator and swaps create-vite's `tsc -b && vite build` to `vite build && tsc -b` (cli/route-tree.ts +59, cli/init/steps.ts +31, cli/init/index.ts +15); doctor check 12 fails a script that runs `tsc` before the tree exists (cli/doctor/app.ts +23). Consumer: a create-vite `app` whose own build was red right after `init` and after every new route.
   // 12641 -> 12869 (bench-blocks): `basalt-ui add` installs a shipped block with its merge base and ledger row (cli/add/: catalog, flag parse, plan, help, +240) and `sync` merges an added block file by file (cli/sync/blocks.ts +150); the primitive readers skip block rows (ledger, vite ejects, doctor, +30); the shared three-way helpers are exported, not moved; eject's manifest location and root picking move to cli/install-root.ts, shared with add. Consumer: an app copying a reference page, which had only recipes no compiler checks.
   // 12869 -> 12905 (bench-theme-attributes, Issue 3105): `tokens:css --accents <names>` emits the accent sheet, one :root[data-accent] block per named accent (cli/tokens-css.ts +33, cli/help.ts +3). Consumer: an app that offers its readers an accent picker.
-  // 12905 -> 12934 (shot-overlap): `shot`'s measurer clips each text box by its clipping ancestors and its own ellipsis before the overlap test (measure.ts, +29).
+  // 12905 -> 12943 (shot-overlap): `shot`'s measurer clips each text box by its clipping ancestors and its own ellipsis before the overlap test (measure.ts, +38).
   {
     id: 'cli-lines',
     order: 110,
     label: 'CLI non-test lines (src/cli/**)',
-    ceiling: 12934,
+    ceiling: 12943,
     measure: () =>
       totalLines(
         walkFiles(join(PKG_ROOT, 'src/cli'), /\.tsx?$/).filter((p) => !/\.test\.tsx?$/.test(p)),
@@ -176,7 +176,7 @@ export const raises: Raises = {
     },
     {
       from: 12905,
-      to: 12934,
+      to: 12943,
       consumer:
         '`basalt-ui shot` rounds on the schedule page (Issue 3103): text a scroller clips or an ellipsis cuts is measured as the box the reader sees, not its full run',
       repo: 'basalt-ui',

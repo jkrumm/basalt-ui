@@ -102,20 +102,31 @@ export function measureAnchor(root: Element): Reading {
   // The box a text node can show in: every ancestor that clips (overflow hidden, clip, auto or scroll) cuts it to its
   // padding box, and an element with text-overflow: ellipsis cuts its own text there. Infinite edges: nothing clips it.
   const CLIPPING = /^(hidden|clip|auto|scroll)$/
+  // The box a text node can show in. Overflow clips a box only from the ancestors that contain its containing block:
+  // an absolutely positioned box is cut by none below its containing block, a fixed one by no overflow at all.
   const clipChain = (el: Element): { left: number; top: number; right: number; bottom: number } => {
     const box = { left: -Infinity, top: -Infinity, right: Infinity, bottom: Infinity }
+    let from: Element | 'none' | null = null
     for (let n: Element | null = el; n; n = n.parentElement) {
       const s = getComputedStyle(n)
-      const clips =
-        CLIPPING.test(s.overflowX) ||
-        CLIPPING.test(s.overflowY) ||
-        (n === el && s.textOverflow === 'ellipsis')
-      if (!clips) continue
-      const r = n.getBoundingClientRect()
-      box.left = Math.max(box.left, r.left + (px(s.borderLeftWidth) || 0))
-      box.top = Math.max(box.top, r.top + (px(s.borderTopWidth) || 0))
-      box.right = Math.min(box.right, r.right - (px(s.borderRightWidth) || 0))
-      box.bottom = Math.min(box.bottom, r.bottom - (px(s.borderBottomWidth) || 0))
+      const reached = from === null || from === n
+      if (from === n) from = null
+      if (reached && (CLIPPING.test(s.overflowX) || CLIPPING.test(s.overflowY))) {
+        const r = n.getBoundingClientRect()
+        box.left = Math.max(box.left, r.left + (px(s.borderLeftWidth) || 0))
+        box.top = Math.max(box.top, r.top + (px(s.borderTopWidth) || 0))
+        box.right = Math.min(box.right, r.right - (px(s.borderRightWidth) || 0))
+        box.bottom = Math.min(box.bottom, r.bottom - (px(s.borderBottomWidth) || 0))
+      }
+      if (from === null && s.position === 'fixed') from = 'none'
+      if (from === null && s.position === 'absolute') {
+        from = 'none'
+        for (let p: Element | null = n.parentElement; p; p = p.parentElement)
+          if (getComputedStyle(p).position !== 'static') {
+            from = p
+            break
+          }
+      }
     }
     return box
   }
