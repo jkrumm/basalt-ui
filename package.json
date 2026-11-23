@@ -66,6 +66,7 @@
     "anymatch": {
       "picomatch": "2.3.2"
     },
+    "lodash-es": "4.18.1",
     "micromatch": {
       "picomatch": "2.3.2"
     },
