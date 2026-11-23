@@ -228,3 +228,40 @@ for the engine and the API shape. It does not stand for the look: sections 3.1 t
 - Drag and drop, empty and loading states, and reduced motion in the demo were not exercised.
 - Whether `Combobox` groups or virtualises its options: its doc names async only.
 - Our type scale was counted by class name, not measured in a browser.
+
+## 11. Results: the reference pages, 2026-11-23
+
+After the `bench-*` rows, five reference pages were built from shipped parts only (Issue 3079). They use one parts-inventory
+domain with a fixed today, in `apps/playground/src/routes/ref/`: a parts list, a notes list, a supplier record, a
+create flow and a settings page. They compile on the playground's app lint preset with zero `basalt/*` waivers and no
+`c.custom` column. `basalt-design` names each one as the page to copy for its archetype.
+
+"Buildable" here means a consumer can build the family from shipped parts, without a waiver or a custom column.
+
+| Screen family         | Now       | Built as                                                                                                                                                                                                       | Gaps filed                                                                                 |
+| --------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Shell and nav         | Yes       | Every page sits on the work surface and in one `defineNav` group                                                                                                                                               | None; the section 2 additive items were not exercised                                      |
+| Dashboard             | Yes       | Not rebuilt; unchanged since section 2                                                                                                                                                                         | None                                                                                       |
+| List page             | Mostly    | `/ref/parts`: saved views as counted tabs, a flush summary strip, a grid with a sticky identity column, person, tags, status and countdown cells, group-by, a footer sum, the manage-view panel and a bulk bar | 3086: the table's search and filters cannot join the view row, so they sit in a second row |
+| Board, gallery        | Yes       | The same parts as a board by replenishment and as a gallery, each a saved view                                                                                                                                 | 3088: the board's and gallery's loading, empty and error frames fall back to the table     |
+| Record preview        | Yes       | `/ref/notes`: a typed-icon title, a quiet preview and linked records with no tick column; a row opens as a side panel, a window or the page, with previous and next                                            | None                                                                                       |
+| Record page           | Mostly    | `/ref/suppliers/$id`: identity with a face, properties, tabs with counts over related lists, an activity feed                                                                                                  | 3087: the name shows twice (band and identity card), and properties do not edit in place   |
+| Inbox, mail, messages | Not built | Out of scope (`bench-next-plan`)                                                                                                                                                                               | None                                                                                       |
+| Calendar              | Not built | Out of scope (`bench-next-plan`)                                                                                                                                                                               | None                                                                                       |
+| AI chat               | Not built | Out of scope (`bench-next-plan`)                                                                                                                                                                               | None                                                                                       |
+| Workflow builder      | Not built | Out of scope (`bench-next-plan`)                                                                                                                                                                               | None                                                                                       |
+| Settings              | Yes       | `/ref/settings`: an inner nav of panes, bordered sections of rows, choice cards, a checkbox matrix, a tag input, an export row and a danger row                                                                | None                                                                                       |
+| Themes                | No        | Not in scope; runtime attributes are still the open decision of section 3.4                                                                                                                                    | None                                                                                       |
+| Sign-in, onboarding   | Partly    | The create flow: a new purchase order in the split wizard dialog with a live preview and a review step                                                                                                         | None for the wizard; sign-in itself was not built                                          |
+
+**The look, measured.** The design reviewer scored the last shot round of the five pages (1800 and 390, light and dark,
+every state). Every P1 it still marks comes from inside a shipped part, not from how the pages compose them: 16 px
+hit areas on ticks, radios and steppers, overlapping text boxes in the flush stat cell and the link cell, nested radii
+in the board and the matrix, a grid's state body clipped at its pinned edge, and default state copy with no cause.
+`/kit/layouts` and `/kit/forms/choices` raise the same findings. They are filed together as 3088. The shot runner
+cannot hover under an open panel or dialog and does not anchor one. That is 3089, so the two overlay routes were shot at
+rest in a round of their own.
+
+**What the pages show about the parts.** Two gaps matter for the Accordee look, and both are page chrome. The list
+page needs a second row for search and filters (3086). The record page names its record twice (3087). The engine,
+the column kinds, the views and the form parts held without an escape.
