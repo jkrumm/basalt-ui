@@ -17,6 +17,10 @@ import { createState } from '../core/state'
 import { useDataTable, modelOf } from '../use-data-table'
 import type { TableModel } from '../use-data-table'
 import { sheetContentVariants } from '../../ui/sheet'
+import { Page } from '../../page/page'
+import { PageBar } from '../../page/page-bar'
+import { installLayoutDoubles, restoreLayoutDoubles } from '../../page/page.test-support'
+import { useTableViews } from './views'
 import { DataTable } from './data-table'
 import { TableToolbar } from './toolbar'
 import { openViewPanel } from './view-door'
@@ -652,5 +656,86 @@ describe("a caller's ViewStore", () => {
     await menu('Open', 'Duplicate')
     expect(tabs()).toEqual(['All rows', 'Open'])
     expect(screen.getByRole('alert').textContent).toBe('The views could not be updated')
+  })
+})
+
+function BarSubject(): ReactElement {
+  const t = useDataTable<Row>({
+    id: 'bar',
+    label: 'Rows',
+    columns: [
+      c.entity('payee', { header: 'Payee', filter: 'text' }),
+      c.status('state', { header: 'State', options: ['Open', 'Done'], filter: 'multi' }),
+    ],
+    data: [
+      { id: 'a', payee: 'Acme', state: 'Open', amount: 3 },
+      { id: 'b', payee: 'Bolt', state: 'Done', amount: 5 },
+    ],
+    getRowId: (r) => r.id,
+    mode: { kind: 'client' },
+    layouts: ['table', 'list'],
+  })
+  const built = modelOf(t)
+  useEffect(() => {
+    latest = built
+  })
+  const views = useTableViews(t)
+  return (
+    <Page area="bar">
+      <PageBar
+        title="Rows"
+        tabs={views.tabs}
+        search={views.search}
+        controls={views.controls}
+        layout={views.layout}
+        settings={views.settings}
+      />
+      {views.chips}
+      <DataTable table={t} />
+      {views.panel}
+    </Page>
+  )
+}
+
+describe('the PageBar view row', () => {
+  beforeEach(installLayoutDoubles)
+  afterEach(restoreLayoutDoubles)
+
+  test('tabs, search, filter, layout and Edit view share the one band; no TableToolbar', async () => {
+    render(<BarSubject />)
+    await settled()
+    const row = document.querySelector('[data-slot="page-bar-row"]')!
+    expect(within(row as HTMLElement).getByRole('tablist', { name: 'Views' })).toBeTruthy()
+    expect(
+      within(row as HTMLElement).getAllByRole('searchbox', { name: 'Search rows' }),
+    ).toBeTruthy()
+    expect(within(row as HTMLElement).getByRole('button', { name: '+ Filter' })).toBeTruthy()
+    expect(within(row as HTMLElement).getByRole('group', { name: 'Layout' })).toBeTruthy()
+    expect(within(row as HTMLElement).getByRole('button', { name: 'Edit view' })).toBeTruthy()
+    expect(document.querySelector('[data-slot="table-toolbar"]')).toBeNull()
+  })
+
+  test('the search writes the table request after the debounce; clearing it writes at once', async () => {
+    render(<BarSubject />)
+    await settled()
+    const [box] = screen.getAllByRole('searchbox', { name: 'Search rows' }) as HTMLInputElement[]
+    fireEvent.change(box!, { target: { value: 'acme' } })
+    expect(model().state.request.q).toBe('')
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 400))
+    })
+    expect(model().state.request.q).toBe('acme')
+    fireEvent.change(box!, { target: { value: '' } })
+    await settled()
+    expect(model().state.request.q).toBe('')
+  })
+
+  test('an active filter draws its chip under the bar', async () => {
+    render(<BarSubject />)
+    await settled()
+    expect(document.querySelector('[data-slot="table-chips"]')).toBeNull()
+    act(() => model().state.setRequest({ filters: [OPEN] }))
+    await settled()
+    expect(document.querySelector('[data-slot="table-chips"]')).not.toBeNull()
   })
 })

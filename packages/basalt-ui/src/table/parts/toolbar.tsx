@@ -25,6 +25,7 @@ import { useSearchDraft } from '../core/state'
 import { modelOf } from '../use-data-table'
 import type { TableModel } from '../use-data-table'
 import { ChipList } from './chips'
+import { AddFilter } from './add-filter'
 import { FilterEditor } from './toolbar-editor'
 import { CategoryOrder } from './category-order'
 import { OrderList } from './order-list'
@@ -59,49 +60,6 @@ function Search<T>({ model }: { model: TableModel<T> }): ReactElement {
         if (commitsDraft(event)) search.commit()
       }}
     />
-  )
-}
-
-/** `+ Filter`: pick a filterable column, then edit its value in that kind's editor. */
-function AddFilter<T>({ model }: { model: TableModel<T> }): ReactElement | null {
-  const t = useMessages(table)
-  const specs = filterableSpecs(model.specs)
-  const [picked, setPicked] = useState<string | null>(null)
-  const spec = specs.find((s) => s.id === picked)
-  if (specs.length === 0) return null
-  return (
-    <Popover onOpenChange={(open) => open && setPicked(null)}>
-      <PopoverTrigger render={<Button />}>{t('table.filterAdd')}</PopoverTrigger>
-      <PopoverContent
-        aria-label={t('table.filterColumn')}
-        align="start"
-        {...(spec !== undefined && spec.filter === 'range' && { className: 'w-80' })}
-      >
-        {spec === undefined ? (
-          <ul className="m-0 flex list-none flex-col gap-1 p-0">
-            {specs.map((s) => (
-              <li key={s.id}>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start"
-                  onClick={() => setPicked(s.id)}
-                >
-                  {s.header}
-                </Button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div className="flex flex-col gap-2">
-            <Button variant="ghost" className="justify-start" onClick={() => setPicked(null)}>
-              {t('table.filterBack')}
-            </Button>
-            <span className="font-medium">{spec.header}</span>
-            <FilterEditor model={model} spec={spec} />
-          </div>
-        )}
-      </PopoverContent>
-    </Popover>
   )
 }
 
@@ -204,7 +162,7 @@ function FiltersSheet<T>({ model }: { model: TableModel<T> }): ReactElement | nu
 
 /**
  * The toolbar of a table: the saved views as tabs with Edit view, then search, filters, chips and
- * display. A page that draws the views in its `PageBar` (`useTableViews`) passes `views={false}`.
+ * display. A list page whose `PageBar` holds the views, search and filter (`useTableViews`) draws no toolbar.
  *
  * @useWhen a data table needs search, filters or saved views above it
  * @neverWhen the table is small and fixed (omit the toolbar), or the page owns the filters in a `FilterSet`
