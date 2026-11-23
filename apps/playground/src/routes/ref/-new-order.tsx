@@ -37,7 +37,9 @@ const ok =
     schema.safeParse(v).success
 
 const SUPPLIER_STEP = Values.pick({ supplierId: true, reference: true })
-const LINE_STEP = Values.pick({ part: true, quantity: true }).refine((v) => v.quantity !== null)
+const LINE_STEP = Values.pick({ supplierId: true, part: true, quantity: true }).refine(
+  (v) => v.quantity !== null && PARTS.find((p) => p.id === v.part)?.supplierId === v.supplierId,
+)
 const DELIVERY_STEP = Values.pick({ warehouse: true, due: true }).refine((v) => v.due !== null)
 
 const dayAfter = (days: number): string =>

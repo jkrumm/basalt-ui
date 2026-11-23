@@ -13,8 +13,6 @@ import { useState } from 'react'
 import type { ReactElement } from 'react'
 import {
   BASELINE,
-  BUYERS,
-  CATEGORIES,
   CATEGORY_LABELS,
   PARTS,
   PLANS,
@@ -128,7 +126,6 @@ function PartsRoute(): ReactElement {
       c.entity('name', {
         header: 'Part',
         ref: (p) => p.sku,
-        width: 'content',
       }),
       c.status('stock', {
         header: 'Stock',
@@ -298,6 +295,3 @@ export const Route = createFileRoute('/ref/parts')({
   staticData: { title: 'Parts' },
   component: PartsRoute,
 })
-
-/** The buyers and categories the filters list, for a test that walks them. */
-export const PARTS_FACETS = { buyers: BUYERS, categories: CATEGORIES }

@@ -171,12 +171,7 @@ function NotesTable({ rows, phase }: Related<Note>): ReactElement {
 }
 
 /** What happened with the supplier, newest first: orders placed and received, and notes written. */
-function activityOf(
-  f: Format,
-  supplier: Supplier,
-  orders: readonly Order[],
-  notes: readonly Note[],
-) {
+function activityOf(f: Format, orders: readonly Order[], notes: readonly Note[]) {
   const placed = orders.map((o) => ({
     id: `${o.id}-placed`,
     at: Date.parse(o.ordered) + 10 * 3_600_000,
@@ -203,7 +198,7 @@ function activityOf(
     icon: NOTE_ICONS[n.type],
   }))
   return [...placed, ...received, ...written]
-    .filter((e) => e.at <= TODAY && e.id !== supplier.id)
+    .filter((e) => e.at <= TODAY)
     .toSorted((a, b) => b.at - a.at)
 }
 
@@ -254,9 +249,7 @@ function Overview({
         title="Activity"
         phase={records}
         items={
-          records.data === undefined
-            ? []
-            : activityOf(f, supplier, records.data.orders, records.data.notes)
+          records.data === undefined ? [] : activityOf(f, records.data.orders, records.data.notes)
         }
         bodyRows={10}
         pageSize={12}
