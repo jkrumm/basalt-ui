@@ -1,0 +1,29 @@
+{
+  "name": "record-page",
+  "archetype": "record page",
+  "summary": "A supplier record: identity band, tabs with counts, editable properties, related tables and an activity feed.",
+  "files": ["RecordPage.tsx", "model.ts"],
+  "imports": [
+    "basalt-ui",
+    "basalt-ui/cards",
+    "basalt-ui/core/ports",
+    "basalt-ui/page",
+    "basalt-ui/router",
+    "basalt-ui/table",
+    "basalt-ui/ui/badge",
+    "basalt-ui/ui/card",
+    "lucide-react",
+    "react"
+  ],
+  "ports": [
+    "id: the supplier id from the route",
+    "supplier: the supplier record, or undefined for the not-found frame",
+    "records: the related orders, parts and notes query state, typed QueryStateLike with data?: SupplierRecords",
+    "now: the reading time in ms, for countdowns, relative times and the activity feed",
+    "partsHref: NavTarget, the parent link of the PageBar",
+    "recordHref: NavTarget, this record's own link, the favourite target",
+    "partHref: (partId) => NavTarget, the link of each relationship card",
+    "newOrder: (dialog: NewOrderSlot) => ReactNode, renders the create flow with supplier, open and onOpenChange",
+    "export recordControls: the tab and order URL fields; the route wires validateSearch and middlewares"
+  ]
+}

@@ -61,6 +61,7 @@ for f in \
   agent/templates/_app-pending.tpl agent/templates/_app-index.tpl agent/templates/__root.start.tpl agent/templates/router.start.tpl \
   agent/skills/basalt-app/SKILL.md agent/skills/basalt-charts/SKILL.md \
   agent/skills/basalt-design/SKILL.md \
+  blocks/list-page/block.json blocks/record-page/block.json \
   llms.txt \
   bin/basalt-ui.mjs; do require "$f"; done
 # CSS-module type decls must NOT be transpiled into runtime JS (the tsup *.d.ts exclude).
@@ -149,7 +150,8 @@ SCRATCH2=""
 SCRATCH3=""
 SCRATCH4=""
 SCRATCH5=""
-trap 'rm -rf "$SCRATCH" "$SCRATCH2" "$SCRATCH3" "$SCRATCH4" "$SCRATCH5"; rm -f "$LISTFILE"' EXIT
+SCRATCH6=""
+trap 'rm -rf "$SCRATCH" "$SCRATCH2" "$SCRATCH3" "$SCRATCH4" "$SCRATCH5" "$SCRATCH6"; rm -f "$LISTFILE"' EXIT
 cd "$SCRATCH"
 echo '{ "name": "scratch", "private": true, "type": "module" }' >package.json
 # vite is pinned to the package's own dev version: an unpinned `vite` resolves to the registry's
@@ -636,5 +638,39 @@ console.log('tokens-only resolution OK, no chart engine in tree')
 JS
 node light.mjs
 echo "tokens-only install is light OK"
+
+echo "==> blocks: basalt-ui add installs every block into a fresh app that typechecks and lints at error"
+# The block tier's promise (docs/v3/BENCHMARK-ACCORDEE-BLUEPRINT.md section 6): a block copied out of
+# the TARBALL compiles where it lands, with no import rewrite and no waiver. A fresh app with a bare
+# manifest, the peers, the recommended icon set and zod; then add, tsc and oxlint on the app preset.
+SCRATCH6=$(mktemp -d)
+cd "$SCRATCH6"
+echo '{ "name": "scratch-blocks", "private": true, "type": "module" }' >package.json
+OXLINT_VERSION=$(node -p "require('$PWD_PKG/../../package.json').devDependencies.oxlint")
+TS_VERSION=$(node -p "require('$PWD_PKG/package.json').devDependencies.typescript")
+TYPES_REACT=$(node -p "require('$PWD_PKG/package.json').devDependencies['@types/react']")
+scratch_install "$ABS_TGZ" "${ALL_PEERS[@]}" "vite@8.0.16" "typescript@$TS_VERSION" "oxlint@$OXLINT_VERSION" \
+  "@types/react@$TYPES_REACT" "@types/react-dom@$TYPES_REACT" lucide-react zod
+mkdir -p .basalt src
+echo '{ "profile": "app", "version": "", "roots": { "src": "app" } }' >.basalt/manifest.json
+cat >tsconfig.json <<'JSON'
+{
+  "extends": "basalt-ui/configs/tsconfig.react-app.json",
+  "compilerOptions": { "noEmit": true, "types": [] },
+  "include": ["src"]
+}
+JSON
+echo '{ "extends": ["./node_modules/basalt-ui/configs/oxlint-app.json"] }' >.oxlintrc.json
+./node_modules/.bin/basalt-ui add --list
+BLOCKS=$(./node_modules/.bin/basalt-ui add --list | awk '{ print $1 }')
+# shellcheck disable=SC2086 # one argument per block name
+./node_modules/.bin/basalt-ui add $BLOCKS
+for block in $BLOCKS; do
+  [ -f ".basalt/base/src/blocks/$block/block.json" ] && { echo "FAILED: block.json was installed"; exit 1; }
+  [ -d "src/blocks/$block" ] || { echo "FAILED: $block was not installed"; exit 1; }
+done
+./node_modules/.bin/tsc -p tsconfig.json
+./node_modules/.bin/oxlint -c .oxlintrc.json --deny-warnings src
+echo "blocks: $(echo $BLOCKS | wc -w | tr -d ' ') added; tsc and oxlint (app preset, deny warnings) clean"
 
 echo "PACK TEST PASSED"

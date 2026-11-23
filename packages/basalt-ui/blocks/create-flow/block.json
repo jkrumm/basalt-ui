@@ -1,0 +1,30 @@
+{
+  "name": "create-flow",
+  "archetype": "create flow",
+  "summary": "A new purchase order: a three-step wizard dialog with a live preview, a review and a draft kept on reload.",
+  "files": ["NewOrderDialog.tsx", "model.ts"],
+  "imports": [
+    "basalt-ui",
+    "basalt-ui/controls",
+    "basalt-ui/form",
+    "basalt-ui/page",
+    "basalt-ui/ui/date-picker",
+    "basalt-ui/ui/dialog",
+    "basalt-ui/ui/entity",
+    "basalt-ui/ui/input",
+    "basalt-ui/ui/number-field",
+    "basalt-ui/ui/radio-group",
+    "basalt-ui/ui/select",
+    "lucide-react",
+    "react",
+    "zod"
+  ],
+  "ports": [
+    "supplier: the supplier the order starts with, typed { id, name, leadDays }",
+    "suppliers: the supplier options of the supplier step",
+    "parts: the parts the line step offers, matched to the chosen supplier, typed { id, sku, name, supplierId, unitCost }",
+    "now: the reading time in ms, the due day defaults to the quoted lead time from it",
+    "open: boolean, the dialog state the caller owns",
+    "onOpenChange: (open: boolean) => void, the dialog state setter the caller owns"
+  ]
+}

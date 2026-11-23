@@ -36,6 +36,7 @@
     "!src/**/*.oxlint.mjs",
     "!src/css/files",
     "configs/",
+    "blocks/",
     "agent/",
     "bin/",
     "llms.txt",

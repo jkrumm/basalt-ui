@@ -1,0 +1,26 @@
+{
+  "name": "settings-page",
+  "archetype": "settings page",
+  "summary": "Inventory settings: an inner nav of panes, each a column of bordered sections with forms and a danger zone.",
+  "files": ["SettingsPage.tsx", "model.ts"],
+  "imports": [
+    "basalt-ui/controls",
+    "basalt-ui/form",
+    "basalt-ui/page",
+    "basalt-ui/router",
+    "basalt-ui/ui/button",
+    "basalt-ui/ui/checkbox",
+    "basalt-ui/ui/checkbox-matrix",
+    "basalt-ui/ui/number-field",
+    "basalt-ui/ui/radio-group",
+    "basalt-ui/ui/select",
+    "basalt-ui/ui/tag-input",
+    "lucide-react",
+    "react",
+    "zod"
+  ],
+  "ports": [
+    "hash: string, the URL hash naming the row to open at, or the empty string (the route reads it from the router)",
+    "export settingsControls: the section URL field; the route wires validateSearch and middlewares"
+  ]
+}
