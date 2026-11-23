@@ -439,6 +439,35 @@ layout('the two planes: the rail on the frame, one work surface for the page', (
     expect((await p.box('header', HEADER)).box.top).toBe(0)
   })
 
+  test('data-frame on <html> wins over the prop both ways, and a phone stays flush', async () => {
+    const setFrame = (p: LayoutPage, frame: string | null) =>
+      p.raw.evaluate((f) => {
+        if (f === null) document.documentElement.removeAttribute('data-frame')
+        else document.documentElement.setAttribute('data-frame', f)
+      }, frame)
+    const panelProp = await openFixture(specOf(), DESKTOP_1440)
+    await setFrame(panelProp, 'flush')
+    const flush = await surfaceOf(panelProp)
+    expect([flush.top, flush.left, flush.right, flush.radius]).toEqual([0, 240, 1440, 0])
+    expect(flush.edges).toEqual([0, 0, 0, 1])
+    await setFrame(panelProp, null)
+
+    const flushProp = await openFixture(specOf({ frame: 'flush' }), DESKTOP_1440)
+    await setFrame(flushProp, 'panel')
+    const panel = await surfaceOf(flushProp)
+    expect([panel.top, panel.left, panel.radius]).toEqual([INSET, 240, CARD_RADIUS])
+    expect(panel.edges).toEqual([0, 0, 0, 0])
+    expect(panel.ring).toMatch(/0px 0px 0px 1px/)
+    await setFrame(flushProp, null)
+
+    const phone = await openFixture(specOf(), PHONE)
+    await setFrame(phone, 'panel')
+    const compact = await surfaceOf(phone)
+    expect([compact.top, compact.left, compact.radius]).toEqual([0, 0, 0])
+    expect(compact.ring).toBe('none')
+    await setFrame(phone, null)
+  })
+
   test('a fill page runs its table to the surface edges with no card and no gutter', async () => {
     for (const viewport of [DESKTOP_1440, PHONE]) {
       const p = await openFixture(specOf({ fill: true }), viewport)
