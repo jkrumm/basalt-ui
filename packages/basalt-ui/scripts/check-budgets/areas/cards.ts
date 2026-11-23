@@ -15,13 +15,21 @@ export const rows: readonly RowDef[] = [
     // 14000 -> 14100 (Issue 2500): 14011 B measured, +~11 B gz for the card taking its grid row's height.
     // 14100 -> 14150 (Issue 2696): 14117 B measured, +~17 B gz for `chartHeight`, the chart box's own height.
     // 14150 -> 14200 (Issue 2716): 14157 B measured, +~40 B gz for the delta pill that draws no arrow for an unsigned value.
-    ceiling: 14200,
+    // 14200 -> 14250 (Issue 3088): 14202 B measured, +~2 B gz for the default error line that says a cause.
+    ceiling: 14250,
     measure: () => measureSource(reExportNamed('cards/stat-card', ['StatCard'])),
   },
 ]
 
 export const raises: Raises = {
   'cards-stat-card': [
+    {
+      from: 14200,
+      to: 14250,
+      consumer:
+        'the shipped parts raising design-check P1s on every page that uses them (Issue 3088): the default error line says a cause, "Could not load this. The request failed."',
+      repo: 'basalt-ui',
+    },
     {
       from: 14150,
       to: 14200,
