@@ -4,7 +4,7 @@
  */
 import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider, createMemoryHistory, createRouter } from '@tanstack/react-router'
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { createQueryClient } from 'basalt-ui/data'
 import { BasaltProvider, routerDefaults } from 'basalt-ui/router'
 import { afterEach, describe, expect, test } from 'bun:test'
@@ -266,10 +266,27 @@ describe('the reference pages', () => {
 
   test('record: the overview shows the contact and the orders tab lists the orders', async () => {
     mount('/ref/suppliers/sup-4')
-    expect(await screen.findByText('Lukas Gruber, Account manager')).toBeDefined()
+    expect(await screen.findByRole('button', { name: 'Edit Contact' })).toBeDefined()
+    expect(screen.getByRole('button', { name: 'Edit Contact' }).textContent).toBe('Lukas Gruber')
     cleanup()
     mount('/ref/suppliers/sup-4?tab=orders')
     expect((await screen.findAllByText(/^PO-2026-/)).length).toBeGreaterThan(0)
+  })
+
+  test('record: the supplier is named once, in the band, and its lead time edits in place', async () => {
+    mount('/ref/suppliers/sup-4')
+    const lead = await screen.findByRole('button', { name: 'Edit Quoted lead time' })
+    const headings = screen.getAllByRole('heading', { level: 1 })
+    expect(headings).toHaveLength(1)
+    expect(headings[0]!.closest('[data-slot="page-bar"]')).not.toBeNull()
+    expect(document.querySelectorAll('[data-slot="entity-title"]')).toHaveLength(1)
+    fireEvent.click(lead)
+    const input = screen.getByRole('textbox', { name: 'Quoted lead time' })
+    fireEvent.change(input, { target: { value: '21' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+    expect(screen.getByRole('button', { name: 'Edit Quoted lead time' }).textContent).toBe(
+      '21 days',
+    )
   })
 
   test('create flow: the new-order wizard opens on its first step', async () => {
