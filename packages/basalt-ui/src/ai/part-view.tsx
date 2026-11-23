@@ -1,34 +1,32 @@
 /**
  * `partView`: the one safe renderer of a message's parts (docs/v3/concepts/ai-mdx.md section 3,
  * rows 1 and 6). Text goes through `Markdown` with `contentTrust` pinned to `'untrusted'`: no
- * `<img>`, no raw HTML, no way to pass a trusted arm from here. Tool parts are gathered into one
- * rail under the answer, each row a `ToolView` (or the app's own renderer for that tool name).
- * Everything else a model can send (reasoning, sources, files, `data-*`, step markers) gets a quiet
- * one-line fallback, because the app renders those itself from the recipes.
+ * `<img>`, no raw HTML, no way to pass a trusted arm from here. Reasoning and tool parts are the
+ * steps of one `ReasoningTrace`, drawn where the first of them sits, each tool a `ToolView` row (or
+ * the app's own renderer for that tool name). Everything else a model can send (sources, files,
+ * `data-*`, step markers) gets a quiet one-line fallback, because the app renders those itself from
+ * the recipes.
  *
  * It never throws on wire data: a part that is not an object, has no string `type`, or carries text
  * that is not a string is skipped or rendered empty, and nothing it prints is ever a link or an
  * image built from a part's URL. The `catalog` and `onBlockEvent` options belong to the catalog
  * Issue (v3-ai-i4) and are not read here.
  *
- * The rail folds into "N steps · 42 s" once the message has settled and no tool is still
+ * The trace folds into "N tools used · 42 s" once the message has settled and no tool is still
  * unresolved; while streaming, or while any tool is pending, running or awaiting approval, it stays
- * open and non-collapsing so the streaming text and the call that needs the user are never hidden.
+ * open and non-collapsing so the streaming steps and the call that needs the user are never hidden.
  * Hide a streaming `partView` with `Collapsible` or CSS if you must; never with `<Activity>`.
  */
-import { Fragment, useEffect, useRef, useState } from 'react'
+import { Fragment } from 'react'
 import type { ReactElement, ReactNode } from 'react'
-import { ai } from '../core/messages/ai'
-import { useMessages } from '../core/messages/use-messages'
 import { Markdown } from '../content/markdown'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible'
-import { Status } from '../ui/status'
-import type { MessagePart, PartViewOptions, ToolView } from './contract'
+import type { MessagePart, PartViewOptions } from './contract'
+import { ReasoningTrace } from './reasoning-trace'
+import type { TraceStep } from './reasoning-trace'
 import { isToolPart, toolView } from './tool-view'
 import type { ToolPart } from './tool-view'
 
 type DataPart = Extract<MessagePart, { type: `data-${string}` }>
-type ToolRenderers = NonNullable<PartViewOptions['toolRenderers']>
 
 const LABEL_MAX = 120
 
@@ -71,7 +69,7 @@ function renderPart(part: Exclude<MessagePart, ToolPart>, streaming: boolean): R
     case 'text':
       return <Text text={part.text} streaming={streaming && part.state !== 'done'} />
     case 'reasoning':
-      return <Fallback type={part.type} />
+      return null
     case 'step-start':
       return null
     case 'file':
@@ -87,99 +85,6 @@ function renderPart(part: Exclude<MessagePart, ToolPart>, streaming: boolean): R
     default:
       return unknownPart(part satisfies never)
   }
-}
-
-const STATUS_TONE = { running: 'info', 'awaiting-approval': 'warn', denied: 'neutral' } as const
-
-function ToolStatus({ view }: { view: ToolView }): ReactNode {
-  const t = useMessages(ai)
-  switch (view.state) {
-    case 'pending':
-    case 'running':
-      return <Status tone={STATUS_TONE.running}>{t('ai.toolRunning')}</Status>
-    case 'awaiting-approval':
-      return <Status tone={STATUS_TONE['awaiting-approval']}>{t('ai.toolAwaitingApproval')}</Status>
-    case 'denied':
-      return <Status tone={STATUS_TONE.denied}>{t('ai.toolDenied')}</Status>
-    case 'error':
-      return <Status tone="bad">{short(view.error) ?? view.name}</Status>
-    case 'done':
-      return null
-    default:
-      return view.state satisfies never
-  }
-}
-
-function ToolRow({ view, renderers }: { view: ToolView; renderers: ToolRenderers | undefined }) {
-  // `hasOwn`: a tool named `constructor` or `toString` must not resolve to an inherited member.
-  const custom = renderers !== undefined && Object.hasOwn(renderers, view.name)
-  return (
-    <li data-slot="ai-tool" data-state={view.state} className="flex flex-wrap items-center gap-2">
-      {custom ? (
-        renderers[view.name]?.(view)
-      ) : (
-        <>
-          <span className="font-mono text-sm text-foreground">{short(view.name)}</span>
-          <ToolStatus view={view} />
-        </>
-      )}
-    </li>
-  )
-}
-
-const UNRESOLVED: ReadonlySet<ToolView['state']> = new Set([
-  'pending',
-  'running',
-  'awaiting-approval',
-])
-
-/** Whole seconds this client watched the rail run; undefined for a rail first seen settled. */
-function useWatchedSeconds(settled: boolean): number | undefined {
-  const startedAt = useRef<number | null>(null)
-  const [seconds, setSeconds] = useState<number | undefined>()
-  useEffect(() => {
-    if (!settled) startedAt.current ??= Date.now()
-    else if (startedAt.current !== null)
-      setSeconds(
-        (prev) => prev ?? Math.max(1, Math.round((Date.now() - startedAt.current!) / 1000)),
-      )
-  }, [settled])
-  return seconds
-}
-
-function ToolRail({
-  views,
-  settled,
-  renderers,
-}: {
-  views: readonly { key: string; view: ToolView }[]
-  settled: boolean
-  renderers: ToolRenderers | undefined
-}): ReactElement {
-  const t = useMessages(ai)
-  const seconds = useWatchedSeconds(settled)
-  const list = (
-    <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
-      {views.map(({ key, view }) => (
-        <ToolRow key={key} view={view} renderers={renderers} />
-      ))}
-    </ul>
-  )
-  const open = !settled || views.some(({ view }) => UNRESOLVED.has(view.state))
-  return (
-    <div data-slot="ai-tools" className="mt-2">
-      {open ? (
-        list
-      ) : (
-        <Collapsible>
-          <CollapsibleTrigger className="text-sm text-muted-foreground">
-            {t('ai.steps', views.length, seconds)}
-          </CollapsibleTrigger>
-          <CollapsibleContent className="mt-1.5">{list}</CollapsibleContent>
-        </Collapsible>
-      )}
-    </div>
-  )
 }
 
 /**
@@ -199,7 +104,8 @@ export function partView(parts: readonly MessagePart[], o: PartViewOptions = {})
   if (!Array.isArray(parts)) return null
   const settled = o.settled !== false
   const body: ReactNode[] = []
-  const tools: { key: string; view: ToolView }[] = []
+  const steps: TraceStep[] = []
+  let traceAt = -1
 
   parts.forEach((raw: unknown, index) => {
     if (typeof raw !== 'object' || raw === null) return
@@ -207,14 +113,33 @@ export function partView(parts: readonly MessagePart[], o: PartViewOptions = {})
     const part = raw as MessagePart
     if (isToolPart(part)) {
       const id = (part as { toolCallId?: unknown }).toolCallId
-      tools.push({ key: typeof id === 'string' ? id : `i${index}`, view: toolView(part) })
+      steps.push({
+        kind: 'tool',
+        key: typeof id === 'string' ? id : `i${index}`,
+        view: toolView(part),
+      })
+    } else if (part.type === 'reasoning') {
+      const text = (part as { text?: unknown }).text
+      steps.push({
+        kind: 'reasoning',
+        key: `i${index}`,
+        text: typeof text === 'string' ? text : '',
+      })
+    } else {
+      body.push(<Fragment key={index}>{renderPart(part, !settled)}</Fragment>)
       return
     }
-    body.push(<Fragment key={index}>{renderPart(part, !settled)}</Fragment>)
+    if (traceAt < 0) traceAt = body.length
   })
 
-  if (tools.length > 0) {
-    body.push(<ToolRail key="tools" views={tools} settled={settled} renderers={o.toolRenderers} />)
+  if (steps.length > 0) {
+    body.splice(
+      traceAt,
+      0,
+      <div key="trace" data-slot="ai-tools" className="my-2">
+        <ReasoningTrace steps={steps} settled={settled} toolRenderers={o.toolRenderers} />
+      </div>,
+    )
   }
   return body.length === 0 ? null : body
 }

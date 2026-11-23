@@ -77,7 +77,8 @@ describe('partView — dispatch', () => {
 
   test('non-text, non-tool parts get a quiet fallback and never a link or image', () => {
     const fallbacks = wire.filter(
-      (p) => !['text', 'step-start'].includes(p.type) && !/^(tool|dynamic)/.test(p.type),
+      (p) =>
+        !['text', 'step-start', 'reasoning'].includes(p.type) && !/^(tool|dynamic)/.test(p.type),
     )
     const { container } = render(<>{partView(fallbacks as readonly MessagePart[])}</>)
     expect(container.querySelectorAll('[data-slot="ai-part"]')).toHaveLength(fallbacks.length)
@@ -124,7 +125,7 @@ describe('partView — dispatch', () => {
 })
 
 describe('partView — tools', () => {
-  test('tools gather into one rail under the answer', () => {
+  test('tools gather into one trace where the first of them sits', () => {
     const { container } = render(
       <>
         {partView([tool('a', 'input-available'), text('answer'), tool('b', 'input-streaming')], {
@@ -133,7 +134,7 @@ describe('partView — tools', () => {
       </>,
     )
     const slots = [...container.children].map((c) => c.getAttribute('data-slot'))
-    expect(slots).toEqual(['ai-text', 'ai-tools'])
+    expect(slots).toEqual(['ai-tools', 'ai-text'])
     expect(container.querySelectorAll('[data-slot="ai-tool"]')).toHaveLength(2)
   })
 
@@ -154,7 +155,7 @@ describe('partView — tools', () => {
     expect(container.textContent).toContain('pay')
   })
 
-  test('a settled rail with every tool resolved folds under "N steps"', () => {
+  test('a settled trace with every tool resolved folds under "N tools used"', () => {
     const { container } = render(
       <>
         {partView([
@@ -164,7 +165,7 @@ describe('partView — tools', () => {
       </>,
     )
     const trigger = container.querySelector('[data-slot="collapsible-trigger"]')
-    expect(trigger?.textContent).toBe('2 steps')
+    expect(trigger?.textContent).toBe('2 tools used')
     expect(container.textContent).not.toContain('boom')
     fireEvent.click(trigger!)
     expect(container.textContent).toContain('boom')
@@ -178,7 +179,7 @@ describe('partView — tools', () => {
       rerender(<>{partView(parts, { settled: true })}</>)
     })
     expect(container.querySelector('[data-slot="collapsible-trigger"]')?.textContent).toBe(
-      '1 step · 1 s',
+      '1 tool used · 1 s',
     )
   })
 
@@ -211,5 +212,47 @@ describe('partView — tools', () => {
     )
     expect(container.querySelector('b')).toBeNull()
     expect(container.textContent).toContain('<b>bad</b>')
+  })
+})
+
+const reasoning = (t: string): MessagePart => ({ type: 'reasoning', text: t })
+
+describe('partView — reasoning', () => {
+  test('reasoning and tools are one trace, in wire order, with the reasoning as plain text', () => {
+    const { container } = render(
+      <>
+        {partView(
+          [
+            reasoning('Check **stock** <img src=x>'),
+            tool('stock', 'output-available'),
+            text('Two parts.'),
+          ],
+          { settled: false },
+        )}
+      </>,
+    )
+    const slots = [...container.children].map((c) => c.getAttribute('data-slot'))
+    expect(slots).toEqual(['ai-tools', 'ai-text'])
+    const steps = [...container.querySelectorAll('[data-slot="ai-trace"] li')]
+    expect(steps.map((s) => s.getAttribute('data-slot'))).toEqual(['ai-trace-step', 'ai-tool'])
+    expect(steps[0]?.textContent).toBe('Check **stock** <img src=x>')
+    expect(container.querySelector('img, strong')).toBeNull()
+    expect(container.querySelector('[data-slot="ai-part"]')).toBeNull()
+  })
+
+  test('a settled trace with no tool folds under "Reasoned"', () => {
+    const { container } = render(<>{partView([reasoning('Thinking it over'), text('Done.')])}</>)
+    const trigger = container.querySelector('[data-slot="collapsible-trigger"]')
+    expect(trigger?.textContent).toBe('Reasoned')
+    expect(container.textContent).not.toContain('Thinking it over')
+    fireEvent.click(trigger!)
+    expect(container.textContent).toContain('Thinking it over')
+  })
+
+  test('a streaming trace stays open and says it is thinking', () => {
+    const { container } = render(<>{partView([reasoning('Looking')], { settled: false })}</>)
+    expect(container.querySelector('[data-slot="collapsible"]')).toBeNull()
+    expect(container.textContent).toContain('Thinking')
+    expect(container.textContent).toContain('Looking')
   })
 })

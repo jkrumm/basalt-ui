@@ -4,7 +4,7 @@ use when: 'rendering the parts of a model message, from the AI SDK or a mapper o
 never when: 'the text is authored and trusted (use Markdown with contentTrust trusted) or the Chat itself is the question (it is not owned here)'
 subpath: basalt-ui/ai
 peers: ['@base-ui/react', react-markdown, rehype-sanitize, remark-gfm, remend]
-slots: []
+slots: [ai-tools]
 ---
 
 # partView
