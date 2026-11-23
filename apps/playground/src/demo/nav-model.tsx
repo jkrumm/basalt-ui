@@ -240,6 +240,13 @@ export const NAV = defineNav({
           link: linkOptions({ to: '/kit/forms/choices' }),
         },
         {
+          id: 'kit-forms-lists',
+          label: 'Option lists',
+          icon: Form,
+          mobile: 'more',
+          link: linkOptions({ to: '/kit/forms/lists' }),
+        },
+        {
           id: 'kit-forms-dates',
           label: 'Dates and numbers',
           icon: Form,
