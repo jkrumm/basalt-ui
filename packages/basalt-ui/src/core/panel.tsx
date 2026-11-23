@@ -7,6 +7,7 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent, PointerEvent, ReactElement, RefObject } from 'react'
+import { cn } from './cn'
 
 /**
  * The header row: under a shell with a page bar band the band's height (`--page-bar-h`, unset while
@@ -44,6 +45,16 @@ const STEP_BIG = 64
 /** The room a panel leaves when its `max-width` does not compute to px (a percentage). */
 const ROOM = 48
 
+/** The handle's box and hairline; `EDGE_CLASS` puts it on the panel's start or end edge. */
+const HANDLE_CLASS =
+  'absolute inset-y-0 z-10 w-2 cursor-col-resize touch-none select-none focus-ring focus-visible:-outline-offset-2 after:absolute after:inset-y-0 after:w-px after:bg-transparent after:transition-colors hover:after:bg-border data-dragging:after:w-0.5 data-dragging:after:bg-brand motion-reduce:after:transition-none'
+
+const EDGE_CLASS = {
+  start: 'start-0 after:start-0',
+  // Centred on the column's hairline, so the list's own scrollbar stays clear of the hit area.
+  end: '-end-1 after:start-1',
+} as const
+
 export type PanelHandleProps = {
   /** The panel it resizes; its width is read from the box and its widest from the `max-width` it computes to. */
   panel: RefObject<HTMLElement | null>
@@ -56,6 +67,8 @@ export type PanelHandleProps = {
   label: string
   /** The handle's `data-slot`, where a panel already published one (`peek-handle`); every handle carries `data-panel="handle"`. */
   slot?: string | undefined
+  /** The edge the handle sits on: `start` for a side panel (the default), `end` for a column that widens toward its end. */
+  edge?: 'start' | 'end' | undefined
 }
 
 type Bounds = { now: number; max: number }
@@ -68,12 +81,13 @@ function readBounds(panel: HTMLElement, min: number): Bounds {
 }
 
 /**
- * The drag and keyboard handle on a side panel's start edge. A window splitter (`role="separator"`)
- * that moves the panel's one width: the pointer follows the edge, ArrowLeft widens and ArrowRight
- * narrows by 16px (64px with Shift), Home and End go to the narrowest and the widest, Enter and a
- * double click return to the default. The value is the panel's px width; the library-free
- * alternative to a split group, because a panel is laid over or beside the page and has no sibling
- * to trade space with.
+ * The drag and keyboard handle on a panel's edge: its start edge for a side panel, its end edge with
+ * `edge="end"` for a list column. A window splitter (`role="separator"`) that moves the panel's one
+ * width: the pointer follows the edge, and moving it outward from the panel widens it. The key that
+ * widens is ArrowLeft on the start edge and ArrowRight on the end edge, the other narrows; each steps
+ * 16px (64px with Shift). Home and End go to the narrowest and the widest, Enter and a double click
+ * return to the default. The value is the panel's px width; the library-free alternative to a split
+ * group, because a panel is laid over or beside the page and has no sibling to trade space with.
  */
 export function PanelHandle({
   panel,
@@ -82,6 +96,7 @@ export function PanelHandle({
   onCommit,
   label,
   slot,
+  edge = 'start',
 }: PanelHandleProps): ReactElement {
   const [bounds, setBounds] = useState<Bounds | null>(null)
   const drag = useRef<{ x: number; start: number; max: number; last: number } | null>(null)
@@ -123,8 +138,8 @@ export function PanelHandle({
   const onPointerMove = (e: PointerEvent<HTMLDivElement>): void => {
     const d = drag.current
     if (d === null) return
-    // The panel sits on the end edge: moving the pointer toward the start widens it.
-    d.last = apply(d.start + (d.x - e.clientX), d.max)
+    const outward = edge === 'start' ? d.x - e.clientX : e.clientX - d.x
+    d.last = apply(d.start + outward, d.max)
   }
   const endDrag = (e: PointerEvent<HTMLDivElement>): void => {
     const d = drag.current
@@ -143,9 +158,11 @@ export function PanelHandle({
     if (el === null) return
     const now = readBounds(el, min)
     const step = e.shiftKey ? STEP_BIG : STEP
+    const widen = edge === 'start' ? 'ArrowLeft' : 'ArrowRight'
+    const narrow = edge === 'start' ? 'ArrowRight' : 'ArrowLeft'
     let next: number
-    if (e.key === 'ArrowLeft') next = now.now + step
-    else if (e.key === 'ArrowRight') next = now.now - step
+    if (e.key === widen) next = now.now + step
+    else if (e.key === narrow) next = now.now - step
     else if (e.key === 'Home') next = min
     else if (e.key === 'End') next = now.max
     else if (e.key === 'Enter') {
@@ -178,7 +195,7 @@ export function PanelHandle({
       onDoubleClick={reset}
       // The hairline shows on hover and while dragging, keyboard focus draws the shared ring inside the 8px
       // hit area, so a panel that clips its overflow keeps it whole.
-      className="absolute inset-y-0 start-0 z-10 w-2 cursor-col-resize touch-none select-none focus-ring focus-visible:-outline-offset-2 after:absolute after:inset-y-0 after:start-0 after:w-px after:bg-transparent after:transition-colors hover:after:bg-border data-dragging:after:w-0.5 data-dragging:after:bg-brand motion-reduce:after:transition-none"
+      className={cn(HANDLE_CLASS, EDGE_CLASS[edge])}
     />
   )
 }

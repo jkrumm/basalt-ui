@@ -4,6 +4,7 @@
  */
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
+import { widthStore } from '../core/panel-store'
 import { SplitPage } from './split-page'
 
 afterEach(cleanup)
@@ -145,5 +146,111 @@ describe('SplitPage focus follows the swap', () => {
     link.focus()
     rerender(<Pair selected />)
     expect(document.activeElement).toBe(link)
+  })
+})
+
+const resizable = () => (
+  <SplitPage
+    selected={false}
+    resize={{ id: 'mail' }}
+    list={() => <p>list</p>}
+    detail={() => <p>pane</p>}
+  />
+)
+const separator = (): HTMLElement => screen.getByRole('separator', { name: 'Resize the list' })
+const splitW = (): string | undefined =>
+  document
+    .querySelector<HTMLElement>('[data-slot="split-page"]')
+    ?.style.getPropertyValue('--split-w')
+
+describe('SplitPage resize', () => {
+  const proto = HTMLElement.prototype
+  const rect = Object.getOwnPropertyDescriptor(proto, 'getBoundingClientRect')
+  const realStyle = window.getComputedStyle
+
+  beforeEach(() => {
+    proto.getBoundingClientRect = function (this: HTMLElement): DOMRect {
+      const root = this.closest<HTMLElement>('[data-slot="split-page"]')
+      const w =
+        this.dataset['slot'] === 'split-page-list'
+          ? parseFloat(root?.style.getPropertyValue('--split-w') ?? '') || 0
+          : 0
+      return { width: w, height: 0, x: 0, y: 0, top: 0, left: 0, right: w, bottom: 0, toJSON() {} }
+    }
+    window.getComputedStyle = ((node: Element) =>
+      (node as HTMLElement).dataset?.['slot'] === 'split-page-list'
+        ? ({ maxWidth: '640px' } as CSSStyleDeclaration)
+        : realStyle(node)) as typeof realStyle
+  })
+
+  afterEach(() => {
+    cleanup()
+    widthStore('split:mail').reset()
+    window.getComputedStyle = realStyle
+    if (rect !== undefined) Object.defineProperty(proto, 'getBoundingClientRect', rect)
+    else Reflect.deleteProperty(proto, 'getBoundingClientRect')
+  })
+
+  test('the separator is a named vertical separator with its px range', () => {
+    render(resizable())
+    expect(separator().getAttribute('aria-orientation')).toBe('vertical')
+    expect(separator().getAttribute('aria-valuemin')).toBe('240')
+  })
+
+  test('a stored width is read from its basalt key and sets the list column on mount', () => {
+    widthStore('split:mail').set(400)
+    expect(window.localStorage.getItem('basalt:panel:split:mail:width')).not.toBeNull()
+    render(resizable())
+    expect(splitW()).toBe('400px')
+  })
+
+  test('a stored width outside the range is clamped to the max', () => {
+    widthStore('split:mail').set(900)
+    render(resizable())
+    expect(splitW()).toBe('640px')
+  })
+
+  test('ArrowRight widens the list by 16px and commits it; ArrowLeft narrows it back', () => {
+    render(resizable())
+    fireEvent.keyDown(separator(), { key: 'ArrowRight' })
+    expect(widthStore('split:mail').get()).toBe(336)
+    expect(splitW()).toBe('336px')
+    fireEvent.keyDown(separator(), { key: 'ArrowLeft' })
+    expect(widthStore('split:mail').get()).toBe(320)
+  })
+
+  test('Enter resets the stored width to the default', () => {
+    widthStore('split:mail').set(400)
+    render(resizable())
+    fireEvent.keyDown(separator(), { key: 'Enter' })
+    expect(widthStore('split:mail').get()).toBeNull()
+    expect(splitW()).toBe('320px')
+  })
+
+  test('a double click resets the stored width to the default', () => {
+    widthStore('split:mail').set(400)
+    render(resizable())
+    fireEvent.doubleClick(separator())
+    expect(widthStore('split:mail').get()).toBeNull()
+  })
+
+  test('without resize there is no separator and no list width variable', () => {
+    render(<SplitPage selected={false} list={() => <p>list</p>} detail={() => <p>pane</p>} />)
+    expect(screen.queryByRole('separator')).toBeNull()
+    expect(splitW()).toBe('')
+  })
+
+  test('scroll panes: the list pane has no ScrollArea and is a flex column', () => {
+    render(
+      <SplitPage
+        selected={false}
+        scroll="panes"
+        list={() => <p>list</p>}
+        detail={() => <p>pane</p>}
+      />,
+    )
+    expect(part('split-page-list').querySelector('[data-slot="scroll-area"]')).toBeNull()
+    expect(part('split-page-list').textContent).toBe('list')
+    expect(part('split-page-list').className).toContain('flex min-h-0 flex-col')
   })
 })

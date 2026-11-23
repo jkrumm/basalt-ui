@@ -1,0 +1,9 @@
+/*
+ * The `split-page-resize` fixture's Tailwind v4 entry: compiled WITH preflight, the way a Tailwind
+ * consumer renders `SplitPage`. `split-page-resize.layout.test.ts` compiles it into a temp directory;
+ * nothing generated lands in the repo.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './split-page-resize-fixture.tsx';
+@source '../../../src/ui';
+@source '../../../src/page';

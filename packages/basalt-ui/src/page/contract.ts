@@ -225,6 +225,10 @@ export type SplitPageProps = {
   backLabel?: string
   list: () => ReactNode
   detail: () => ReactNode
+  /** The list column's width becomes the reader's: a separator on its end edge (pointer, arrows, Home and End, Enter or a double click to reset), remembered on the device per id. Only at the wide tier; below it one pane shows. `initial`, `min` and `max` default to 320, 240 and 640 px. */
+  resize?: { id: string; initial?: number; min?: number; max?: number }
+  /** Who scrolls: 'page' (default) the list in its own ScrollArea and the detail with the page; 'panes' both panes are bounded to the page's height and each brings its own scroller (a virtual list, a ScrollArea), for a fill page such as a mailbox. */
+  scroll?: 'page' | 'panes'
 }
 
 // ---- MDX (ai-mdx 4) -----------------------------------------------------------------------
