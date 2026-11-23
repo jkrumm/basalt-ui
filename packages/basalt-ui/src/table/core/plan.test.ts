@@ -68,6 +68,70 @@ describe('phoneKeep', () => {
   })
 })
 
+describe('a column that draws a mark keeps its card place', () => {
+  type R = { id: string; name: string; a: number; b: number; c: number; used: number }
+  const c = col<R>()
+  const base = [
+    c.entity('name'),
+    c.number('a', { header: 'A' }),
+    c.number('b', { header: 'B' }),
+    c.number('c', { header: 'C' }),
+    c.meter('used', { max: 100 }),
+  ]
+
+  test('a meter beside three numbers is a meta column of the card', () => {
+    const plan = planTable(base, quiet)
+    expect(plan.columns.find((p) => p.id === 'used')?.place).toBe('meta')
+  })
+
+  test('it is placed ahead of plain numbers when the meta slots run out', () => {
+    const numbers = Array.from({ length: 8 }, (_, i) =>
+      c.number('a', { header: `N${i}`, id: `n${i}`, card: 'meta' }),
+    )
+    const plan = planTable([c.entity('name'), ...numbers, c.meter('used', { max: 100 })], quiet)
+    expect(plan.columns.find((p) => p.id === 'used')?.place).toBe('detail')
+    const named = planTable(
+      [c.entity('name'), ...numbers.slice(0, 5), c.meter('used', { max: 100 })],
+      quiet,
+    )
+    expect(named.columns.find((p) => p.id === 'used')?.place).toBe('meta')
+  })
+
+  test("phone: 'columns' keeps the meter as its one meta column", () => {
+    const kept = planTable(base, quiet)
+      .columns.filter((p) => p.phoneKeep)
+      .map((p) => p.id)
+    expect(kept).toEqual(['name', 'a', 'used'])
+  })
+
+  test('a caller-named slot still wins', () => {
+    const plan = planTable(
+      [c.entity('name'), c.meter('used', { max: 100, card: 'detail' }), c.number('a')],
+      quiet,
+    )
+    expect(plan.columns.find((p) => p.id === 'used')).toMatchObject({
+      place: 'detail',
+      cardDetail: true,
+    })
+  })
+})
+
+describe('the free width', () => {
+  type R = { id: string; name: string; note: string; a: number }
+  const c = col<R>()
+  const columns = [c.entity('name'), c.text('note'), c.number('a')]
+
+  test('a flexible column of the reading look has no cap', () => {
+    const plan = planTable(columns, quiet)
+    expect(plan.columns.filter((p) => p.flex).map((p) => p.capPx)).toEqual([null, null])
+  })
+
+  test('the grid look keeps the cap of its kind', () => {
+    const plan = planTable(columns, { ...quiet, look: 'grid' })
+    expect(plan.columns.filter((p) => p.flex).every((p) => p.capPx !== null)).toBe(true)
+  })
+})
+
 /** Mulberry32: a seeded generator, so a failing set reproduces from its seed. */
 function rng(seed: number): () => number {
   let a = seed

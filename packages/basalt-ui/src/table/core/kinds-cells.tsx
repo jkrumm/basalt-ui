@@ -70,8 +70,13 @@ export function currencyDigits(currency: string): number {
   return digits
 }
 
-export function formatMoney(format: Format, value: number, currency: string): string {
-  const digits = currencyDigits(currency)
+export function formatMoney(
+  format: Format,
+  value: number,
+  currency: string,
+  fractionDigits?: number,
+): string {
+  const digits = fractionDigits ?? currencyDigits(currency)
   return format
     .number(value, { minimumFractionDigits: digits, maximumFractionDigits: digits })
     .replaceAll('-', TRUE_MINUS)

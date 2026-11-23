@@ -228,12 +228,18 @@ export type NumberOptions<T = unknown> = CommonOptions &
     /** With `of`: a share below this is drawn in the bad ink. */
     badBelow?: number
   }
-export type MoneyOptions = CommonOptions & FooterOption & RangeFilterOptions & { currency: string }
+export type MoneyOptions = CommonOptions &
+  FooterOption &
+  RangeFilterOptions & {
+    currency: string
+    /** Fraction digits of the figure (`0` writes whole euros); default: the currency's own (2 for EUR, 0 for JPY). */
+    digits?: number
+  }
 export type DateOptions<T = unknown> = CommonOptions &
   DateFilterOptions &
   CellIconOption<T> & {
     style?: DateStyle
-    /** The date is a time: drawn in the mono face with tabular numerals, in the cell and on its phone card line. */
+    /** The date is an id-like time: drawn in the mono face with tabular numerals, in the cell and on its phone card line. Default: the body face with tabular numerals, like a date elsewhere on the page. */
     mono?: boolean | undefined
   }
 export type RelativeTimeOptions<T = unknown> = CommonOptions &
@@ -397,7 +403,7 @@ const OPTION_KEYS: Readonly<
     required: [],
   },
   money: {
-    allowed: [...COMMON, 'currency', 'footer', 'filter', 'bounds'],
+    allowed: [...COMMON, 'currency', 'digits', 'footer', 'filter', 'bounds'],
     required: ['currency'],
   },
   date: { allowed: [...COMMON, 'style', 'filter', 'picker', 'icon', 'mono'], required: [] },
@@ -1082,15 +1088,16 @@ export function col<T>(): Col<T> {
         key,
         o,
         (v, _row, env) =>
-          typeof v === 'number' ? formatMoney(env.format, v, o.currency) : String(v),
+          typeof v === 'number' ? formatMoney(env.format, v, o.currency, o.digits) : String(v),
         {
           header: (h) => withUnit(h, o?.currency),
           text: (v, _row, format) =>
-            typeof v === 'number' ? formatMoney(format, v, o.currency) : '',
+            typeof v === 'number' ? formatMoney(format, v, o.currency, o.digits) : '',
           spec: {
             unit: o.currency,
-            drawTotal: (v, env) => formatMoney(env.format, v, o.currency),
-            ...footerOf<T>(o?.footer, (v, env) => formatMoney(env.format, v, o.currency)).spec,
+            drawTotal: (v, env) => formatMoney(env.format, v, o.currency, o.digits),
+            ...footerOf<T>(o?.footer, (v, env) => formatMoney(env.format, v, o.currency, o.digits))
+              .spec,
             ...rangeFilter<T>(o),
           },
         },

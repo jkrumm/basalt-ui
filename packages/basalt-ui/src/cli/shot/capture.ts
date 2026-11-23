@@ -240,8 +240,10 @@ export function readFactsInPage(slots: string[]): PageFacts {
       if (!slots.includes(slot)) continue
       const outer = overlay(slot) ? nestOverlay : nest
       if (el.parentElement?.closest(outer)) continue
-      counts[slot] = (counts[slot] ?? 0) + 1
-      name = `${slot}-${counts[slot]}`
+      // A DataTable's root is `table-root`; the anchor carries the name the help gives it.
+      const base = slot === 'table-root' ? 'data-table' : slot
+      counts[base] = (counts[base] ?? 0) + 1
+      name = `${base}-${counts[base]}`
     }
     if (facts.anchors.includes(name)) continue
     el.setAttribute('data-shot-anchor', name)

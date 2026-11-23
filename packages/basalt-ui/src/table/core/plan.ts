@@ -82,10 +82,10 @@ export type PlannedColumn = {
   widthPx: number
   /**
    * A text-like column (title, text, link, person, tags) not resized by a reader and not sized to a short
-   * value: it shares the free width of its table, from `widthPx` up to `capPx`.
+   * value: it shares the free width of its table, from `widthPx` up to `capPx` (no cap in the reading look).
    */
   flex: boolean
-  /** The widest a flexible column grows in px (`null`: no cap, or not flexible). */
+  /** The widest a flexible column grows in px (`null`: no cap, or not flexible). The reading look has none: it fills its container. */
   capPx: number | null
   /**
    * Kept by `phone: 'columns'`: the identity, the card's `value`, its first `meta` and the actions.
@@ -196,6 +196,10 @@ function identityIndex(inputs: readonly PlanInput[]): number {
   return inputs.findIndex((c) => c.kind !== 'actions')
 }
 
+/** The kinds that answer with a drawn mark, not a plain value: they keep a card slot first. */
+const MARKED_KINDS: ReadonlySet<KindName> = new Set(['meter', 'delta', 'status'])
+const marked = (input: PlanInput): boolean => MARKED_KINDS.has(input.kind)
+
 function placeCards(
   inputs: readonly PlanInput[],
   identity: number,
@@ -227,10 +231,14 @@ function placeCards(
     const wanted = input.card.filter((p): p is CardSlot => p !== 'title' && p !== 'kebab')
     places[index] = wanted.find(take) ?? 'detail'
   }
-  // A slot the caller named is theirs before any default is read: declaration order only breaks
-  // ties among columns of the same standing.
+  // A slot the caller named is theirs before any default is read; of the rest, a column that draws a
+  // meter, a delta or a status is placed ahead of plain text and numbers, so a full slot costs the
+  // plain column its place. Declaration order only breaks ties among columns of the same standing.
   inputs.forEach((input, index) => input.cardFirst === true && place(input, index))
-  inputs.forEach((input, index) => input.cardFirst !== true && place(input, index))
+  inputs.forEach((input, index) => input.cardFirst !== true && marked(input) && place(input, index))
+  inputs.forEach(
+    (input, index) => input.cardFirst !== true && !marked(input) && place(input, index),
+  )
   return places
 }
 
@@ -332,7 +340,9 @@ export function planInputs(inputs: readonly PlanInput[], options: PlanOptions = 
   }
 
   const firstValue = places.findIndex((p, index) => p === 'value' && visible[index])
-  const firstMeta = places.findIndex((p, index) => p === 'meta' && visible[index])
+  // `phone: 'columns'` keeps one meta column: the first that draws a mark, else the first.
+  const metas = places.flatMap((p, index) => (p === 'meta' && visible[index] ? [index] : []))
+  const firstMeta = metas.find((index) => marked(inputs[index]!)) ?? metas[0] ?? -1
   const columns = inputs.map((c, index): PlannedColumn => ({
     id: c.id,
     kind: c.kind,
@@ -343,7 +353,7 @@ export function planInputs(inputs: readonly PlanInput[], options: PlanOptions = 
     visible: visible[index]!,
     widthPx: widths[index]!,
     flex: flexible[index]!,
-    capPx: flexible[index] ? capWidthPx(c, widths[index]!) : null,
+    capPx: flexible[index] && grid ? capWidthPx(c, widths[index]!) : null,
     cardDetail: c.cardFirst === true && c.card[0] === 'detail',
     phoneKeep:
       index === identity ||

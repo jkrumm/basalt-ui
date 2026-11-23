@@ -22,7 +22,7 @@ Every chart is a shipped kind or `CartesianChart`; props live in the shipped typ
 - Extra tooltip rows are data, never markup. [type:ChartTooltipConfig]
 - A card footer holds at most two facts. [type:FootFacts]
 - An optional figure, card or footer field takes a maybe-value straight; `undefined` is an absent key, so never a conditional spread or a placeholder. [type:ChartFigure] [type:StatCellProps]
-- A time or an id in a figure `period` (at rest, on focus and in a hover stamp), a stat card's `sub`, an entity column's name or `sub`, a `c.date` or `c.relativeTime` column's value, a `BarList`'s labels, a stat row's value, a page summary fact's value or a footer fact's value sets `periodMono`, `subMono` or `mono`; never a class, never a whole sentence, and one face for a slot at rest and on focus. [type:ChartFigure] [type:StatCellProps] [type:FootFacts]
+- A time or an id in a figure `period` (at rest, on focus and in a hover stamp), a stat card's `sub`, an entity column's name or `sub`, a `BarList`'s labels, a stat row's value, a page summary fact's value or a footer fact's value sets `periodMono`, `subMono` or `mono`; never a class, never a whole sentence, and one face for a slot at rest and on focus. A `c.date` or `c.relativeTime` column keeps the table's tabular figures; `mono` is for a time that is an id. [type:ChartFigure] [type:StatCellProps] [type:FootFacts]
 
 ## Boundaries
 

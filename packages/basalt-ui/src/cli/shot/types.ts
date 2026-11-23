@@ -24,6 +24,7 @@ export const ANCHOR_SLOTS = [
   'stat-card',
   'chart-card',
   'data-table',
+  'table-root',
   'section',
   'card',
   'board',

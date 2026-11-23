@@ -62,11 +62,12 @@ export const rows: readonly RowDef[] = [
   // 12970 -> 13272 (ga-agent-layer, Issue 3167): `init --profile app` installs lucide-react for the icon provider its root templates mount (init/steps.ts +13); `shot detect --facts <dir>` counts the words, phrases and constants a page says in several places (shot/facts.ts +208, shot/detect.ts +79, help.ts +2). Consumer: a basalt-design page whose fact count was a shell one-liner.
   // 13272 -> 13285 (init-sibling-oxfmt): a sibling app's new `.oxfmtrc.json` copies the repo root's formatter settings, so oxfmt does not read a file holding only ignorePatterns (cli/init/steps.ts +13).
   // 13285 -> 13308 (init-layout-seeds, Issue 3171): `init` seeds no `_app` layout or nav beside a root route the app keeps or a page that already serves `/`, and names the skip as a to-do (cli/init/router-seeds.ts +23). Consumer: the playground, moved onto init by Issue 3164, which kept its own `__root.tsx` and could not build.
+  // 13308 -> 13311 (Issue 3162): `shot` names a DataTable's `table-root` the `data-table` anchor its help promises (capture.ts +2, types.ts +1).
   {
     id: 'cli-lines',
     order: 110,
     label: 'CLI non-test lines (src/cli/**)',
-    ceiling: 13308,
+    ceiling: 13311,
     measure: () =>
       totalLines(
         walkFiles(join(PKG_ROOT, 'src/cli'), /\.tsx?$/).filter((p) => !/\.test\.tsx?$/.test(p)),
@@ -211,6 +212,13 @@ export const raises: Raises = {
       to: 13308,
       consumer:
         'the playground, moved onto init by Issue 3164, kept its own __root.tsx and could not build (Issue 3171)',
+      repo: 'basalt-ui',
+    },
+    {
+      from: 13308,
+      to: 13311,
+      consumer:
+        '`basalt-ui shot` rounds on any page with a DataTable (Issue 3162): the table is an anchor, as the help says',
       repo: 'basalt-ui',
     },
   ],

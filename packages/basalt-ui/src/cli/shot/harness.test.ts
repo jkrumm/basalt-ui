@@ -568,6 +568,33 @@ describe('real Chrome', () => {
     )
   }, 120_000)
 
+  test('the outermost DataTable root is the data-table anchor', async () => {
+    await shoot(
+      [],
+      async () => undefined,
+      '/',
+      async (browser) => {
+        const context = await browser.newContext({
+          viewport: { width: 400, height: 300 },
+          deviceScaleFactor: 1,
+          isMobile: false,
+          hasTouch: false,
+          colorScheme: 'light',
+          reducedMotion: 'reduce',
+        })
+        const page = await context.newPage()
+        await page.setContent(
+          `<body><div data-slot="table-root"><div data-slot="table-root"></div></div>
+          <div data-slot="table-root"></div></body>`,
+          { waitUntil: 'load' },
+        )
+        const facts = await page.evaluate(readFactsInPage, ['data-table', 'table-root'])
+        expect(facts.anchors).toEqual(['data-table-1', 'data-table-2'])
+        await context.close()
+      },
+    )
+  }, 120_000)
+
   test('an open overlay is an anchor of its own, its cards stay anchors, and it covers what sits under it', async () => {
     await shoot(
       [],
