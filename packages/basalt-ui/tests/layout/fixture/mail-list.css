@@ -1,0 +1,9 @@
+/*
+ * The `mail-list` fixture's Tailwind v4 entry, compiled with preflight. `mail-list.layout.test.ts`
+ * compiles it into a temp directory; nothing generated lands in the repo.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './mail-list-fixture.tsx';
+@source '../../../src/ui';
+@source '../../../src/cards';
+@source '../../../src/table/parts';

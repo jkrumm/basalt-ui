@@ -1,4 +1,4 @@
-/** `basalt-ui/cards` — the card composites (`StatCard`, `StatGroup`, `StatCell`, `DataPanel`, `BarList`, `EventList`, `RowList`, `RelationshipCard`, `StepRail`, `KanbanCard`, `Board`, `ChainView`, `FlowCanvas`, `FlowChecklist`, `Schedule`). Peers: react, `@base-ui/react` (via `ui/card`). */
+/** `basalt-ui/cards` — the card composites (`StatCard`, `StatGroup`, `StatCell`, `DataPanel`, `BarList`, `EventList`, `RowList`, `RelationshipCard`, `StepRail`, `KanbanCard`, `Board`, `ChainView`, `FlowCanvas`, `FlowChecklist`, `Schedule`, `MailList`, `MailThread`). Peers: react, `@base-ui/react` (via `ui/card`). */
 
 export { StatCard } from './stat-card'
 export { StatGroup } from './stat-group'
@@ -17,6 +17,8 @@ export { FlowCanvas } from './flow-canvas'
 export { FlowChecklist } from './flow-checklist'
 export { useFlow } from './flow'
 export { Schedule } from './schedule'
+export { MailList } from './mail-list'
+export { MailThread } from './mail-thread'
 export type {
   StatCardProps,
   DataPanelProps,
@@ -45,3 +47,5 @@ export type { FlowCanvasProps } from './flow-canvas'
 export type { FlowChecklistProps } from './flow-checklist'
 export type { BoardProps } from './board'
 export type { MiniMonthLike, ScheduleEvent, ScheduleProps } from './schedule'
+export type { MailItem, MailListProps } from './mail-list'
+export type { MailMessage, MailThreadProps } from './mail-thread'
