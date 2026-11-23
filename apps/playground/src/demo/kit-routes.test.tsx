@@ -249,6 +249,7 @@ describe('the reference pages', () => {
       '/ref/notes',
       '/ref/suppliers/$id',
       '/ref/settings',
+      '/ref/flow',
     ])
   })
 
@@ -292,6 +293,14 @@ describe('the reference pages', () => {
   test('create flow: the new-order wizard opens on its first step', async () => {
     mount('/ref/suppliers/sup-4?order=true')
     expect(await screen.findByText('Who is the order for?')).toBeDefined()
+  })
+
+  test('builder: the workflow groups draw on the canvas and the checklist names the open issue', async () => {
+    mount('/ref/flow')
+    expect(await screen.findByText('Stock drops under its minimum')).toBeDefined()
+    expect(
+      screen.getByRole('button', { name: /Connect the accounting app so step 3/ }),
+    ).toBeDefined()
   })
 
   test('settings: the matrix and the danger row sit in their sections', async () => {
