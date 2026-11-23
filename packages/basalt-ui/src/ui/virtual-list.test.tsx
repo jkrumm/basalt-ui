@@ -101,6 +101,25 @@ describe('virtual-list module', () => {
     expect(kids[at + 1]!.getAttribute('aria-hidden')).toBe('true')
   })
 
+  test('keepIndex takes several rows: each stays rendered, in order, between spacers', () => {
+    const rows = make(1000)
+    const { container } = render(
+      <VirtualList
+        count={rows.length}
+        estimateSize={() => ROW}
+        getItemKey={(i) => rows[i]!.id}
+        keepIndex={[700, 300]}
+        overscan={2}
+      >
+        {([item]) => <span data-row={rows[item!.index]!.id}>{rows[item!.index]!.id}</span>}
+      </VirtualList>,
+    )
+    const nodes = rendered(container)
+    expect(nodes.indexOf('r300')).toBeGreaterThan(-1)
+    expect(nodes.indexOf('r700')).toBeGreaterThan(nodes.indexOf('r300'))
+    expect(nodes.length).toBeLessThan(60)
+  })
+
   test('revealIndex scrolls its row into view when it changes', async () => {
     // virtual-core clamps a scroll to scrollHeight - clientHeight, which happy-dom reports as 0.
     const lengths = { clientHeight: VIEWPORT, scrollHeight: 1000 * ROW }

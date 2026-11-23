@@ -13,13 +13,13 @@ type Accepts<P> = (c: Called) => P
 type Spacer = NonNullable<VirtualListProps['spacer']>
 type WithoutTr = {
   count: number
-  keepIndex?: number | undefined
+  keepIndex?: number | readonly number[] | undefined
   overscan?: number | undefined
   spacer?: Exclude<Spacer, 'tr'> | undefined
 }
 type WithLi = {
   count: number
-  keepIndex?: number | undefined
+  keepIndex?: number | readonly number[] | undefined
   overscan?: number | undefined
   spacer?: Spacer | 'li' | undefined
 }
