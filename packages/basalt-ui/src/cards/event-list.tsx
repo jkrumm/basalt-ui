@@ -220,6 +220,7 @@ export function EventList(props: EventListProps): ReactElement {
                             item={item}
                             lead={lead}
                             first={i === 0}
+                            dated={byPeriod}
                             last={i === g.items.length - 1}
                           />
                         ))}
@@ -253,11 +254,14 @@ function Row({
   lead,
   first,
   last,
+  dated,
 }: {
   item: EventListItem
   lead: boolean
   first: boolean
   last: boolean
+  /** The time carries its day: a period heading names a span, not a day. */
+  dated: boolean
 }): ReactElement {
   const f = useFormat()
   const t = useMessages(lists)
@@ -319,7 +323,7 @@ function Row({
             className="shrink-0 tabular-nums"
             {...(valid && { dateTime: at.toISOString() })}
           >
-            {valid ? f.time(at) : '—'}
+            {valid ? (dated ? `${f.date(at, 'day')}, ${f.time(at)}` : f.time(at)) : '—'}
           </time>
           {item.body !== undefined && !folds && (
             <span data-slot="event-list-body" className="min-w-0 truncate">

@@ -84,6 +84,17 @@ describe('EventList period groups, faces, rail and folding', () => {
     ).toEqual([['a'], ['b', 'c'], ['d'], ['e'], ['f']])
   })
 
+  test('a period entry carries its day with its time', () => {
+    const { container } = render(
+      <EventList title="Activity" items={FEED} now={TODAY} group="period" />,
+    )
+    const times = [...container.querySelectorAll('[data-slot="event-list-time"]')].map(
+      (el) => el.textContent,
+    )
+    expect(times[0]).toBe('Nov 23, 10:00 AM')
+    expect(times[2]).toBe('Nov 20, 10:00 AM')
+  })
+
   test('the default stays one header per day', () => {
     const { container } = render(<EventList title="Activity" items={FEED} now={TODAY} />)
     expect(headers(container).slice(0, 2)).toEqual(['Today', 'Yesterday'])
