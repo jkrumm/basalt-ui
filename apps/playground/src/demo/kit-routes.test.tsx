@@ -92,6 +92,7 @@ describe('the Kit nav', () => {
     expect(navPaths('kit-forms')).toEqual([
       '/kit/forms/inputs',
       '/kit/forms/choices',
+      '/kit/forms/lists',
       '/kit/forms/dates',
       '/kit/forms/buttons',
       '/kit/forms/whole',
