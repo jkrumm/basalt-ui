@@ -67,7 +67,7 @@ export const rows: readonly RowDef[] = [
     id: 'cli-lines',
     order: 110,
     label: 'CLI non-test lines (src/cli/**)',
-    ceiling: 13311,
+    ceiling: 13313,
     measure: () =>
       totalLines(
         walkFiles(join(PKG_ROOT, 'src/cli'), /\.tsx?$/).filter((p) => !/\.test\.tsx?$/.test(p)),
@@ -219,6 +219,13 @@ export const raises: Raises = {
       to: 13311,
       consumer:
         '`basalt-ui shot` rounds on any page with a DataTable (Issue 3162): the table is an anchor, as the help says',
+      repo: 'basalt-ui',
+    },
+    {
+      from: 13311,
+      to: 13313,
+      consumer:
+        '`init --profile app` installs the two peers `basalt-ui/shell` imports, so a fresh app builds (trial 2, entry 5)',
       repo: 'basalt-ui',
     },
   ],
