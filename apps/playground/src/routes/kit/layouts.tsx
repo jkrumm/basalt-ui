@@ -98,7 +98,7 @@ function LayoutsRoute(): ReactElement {
   })
   const views = useTableViews(t)
   return (
-    <Page area="kit-layouts" fill>
+    <Page area="kit-layouts">
       <PageBar title="Accounts" tabs={views.tabs} layout={views.layout} settings={views.settings} />
       <TableToolbar table={t} views={false} />
       <div data-shot="accounts">
