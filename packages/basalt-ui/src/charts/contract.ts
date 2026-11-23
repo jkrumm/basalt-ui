@@ -423,8 +423,9 @@ export type ChartFigure = {
 /** An `undefined` field is an absent one, so a maybe-value passes straight. */
 export type ChartCardProps = Omit<FrameState, 'phase'> & {
   /**
-   * A `Phase` or the query itself. With a query, `empty` takes effect only once `data` is an empty
-   * array, so it can be passed unconditionally; with a `Phase`, `empty` applies whenever it is set.
+   * A `Phase` or the query itself. With a query, `empty` takes effect only once the settled `data` is
+   * empty (an empty array, or where `empty.when(data)` says so for a result of another shape), so it can
+   * be passed unconditionally; with a `Phase`, `empty` applies whenever it is set.
    */
   phase?: Phase | QueryStateLike | undefined
 
