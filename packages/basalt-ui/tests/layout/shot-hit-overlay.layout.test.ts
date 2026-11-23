@@ -44,3 +44,30 @@ layout('the hit floor of the in-page measurer', () => {
     ])
   })
 })
+
+const CLIPPED = `<!doctype html><meta charset="utf-8"><style>
+  #root { position: relative; width: 400px; height: 60px; font: 14px/20px sans-serif; }
+  .clip { position: absolute; left: 0; top: 0; width: 100px; height: 20px; overflow: hidden; white-space: nowrap; }
+  .ell { position: absolute; left: 0; top: 30px; width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .next { position: absolute; white-space: nowrap; }
+  .a { position: absolute; left: 0; top: 50px; white-space: nowrap; }
+  .b { position: absolute; left: 10px; top: 50px; white-space: nowrap; }
+</style>
+<div id="root">
+  <div class="clip"><span>a very long label that runs well past the clipping box</span></div>
+  <span class="next" style="left: 150px; top: 0">next</span>
+  <div class="ell">an ellipsised label that is cut to a short box by its own text-overflow</div>
+  <span class="next" style="left: 80px; top: 30px">beside</span>
+  <span class="a">aaa</span><span class="b">bbb</span>
+</div>`
+
+layout('the text boxes the overlap measurer reads', () => {
+  test('text a clipping ancestor or an ellipsis hides is no overlap; text both shown is', async () => {
+    const page = await openDocument(CLIPPED, DESKTOP)
+    const handle = await page.raw.$('#root')
+    const m = finishMeasurement(await page.raw.evaluate(measureAnchor, handle as never))
+    expect(m.overlaps ?? []).toHaveLength(1)
+    expect(m.overlaps?.[0]).toContain('span.a')
+    expect(m.overlaps?.[0]).toContain('span.b')
+  })
+})
