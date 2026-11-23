@@ -71,7 +71,7 @@ Columns: `No directive` is the static HTML: `clean`, `differs` from the client:o
 | toc | Toc | clean | client:visible | 82.0 kB | 10.8 kB | 31.8 kB | Static picture first, the island adds behaviour: the scroll-spy marks the current section with JS. client:visible, up to 10.8 kB further (client:idle above the fold). |
 | callout | Callout | clean | no directive | 80.9 kB | 9.7 kB | 31.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: a static note; no behaviour. |
 | prose | Prose | clean | no directive | 76.7 kB | 5.5 kB | 31.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: typography only. |
-| page | Page, PageBar, PageSummary, Section, CardGrid | clean | client:visible | 186.2 kB | 115.0 kB | 31.8 kB | Static picture first, the island adds behaviour: action buttons need JS; the frame, title, summary and figures are the static picture. client:visible, up to 115.0 kB further (client:idle above the fold). |
+| page | Page, PageBar, PageSummary, Section, CardGrid | clean | client:visible | 188.5 kB | 117.3 kB | 31.8 kB | Static picture first, the island adds behaviour: action buttons need JS; the frame, title, summary and figures are the static picture. client:visible, up to 117.3 kB further (client:idle above the fold). |
 | empty-state | EmptyState | clean | no directive | 86.6 kB | 15.4 kB | 31.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: the cause line and the link action are drawn at rest; the filtered reset needs JS and is not shown. |
 | facts | Facts | clean | no directive | 73.1 kB | 1.9 kB | 31.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: a definition list is drawn at rest. |
 | inner-nav | InnerNav | fails | none works | 162.4 kB | 91.2 kB | 31.8 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
@@ -119,7 +119,7 @@ Every part of a family on one page, each its own island, in one mode: the JavaSc
 | charts | 8 | 0 | 205.7 kB | 223.6 kB | 223.5 kB | 223.5 kB |
 | table | 4 | 0 | 320.4 kB | 333.8 kB | 333.7 kB | 333.7 kB |
 | content | 5 | 0 | 271.7 kB | 272.9 kB | 272.9 kB | 272.9 kB |
-| page | 19 | 0 | 188.6 kB | 265.9 kB | 265.8 kB | 348.9 kB |
+| page | 19 | 0 | 190.9 kB | 267.1 kB | 267.0 kB | 350.0 kB |
 | forms | 18 | 0 | 163.5 kB | 239.3 kB | 239.2 kB | 239.2 kB |
 
 ## Charts: is the static picture correct?
@@ -193,7 +193,7 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 - toc: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - callout: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - prose: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
-- page: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
+- page: PageBar identity (EntityTitle, Avatar) and PropertyList (Input, NativeSelect) join the page barrel (Issue 3087)
 - empty-state: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - facts: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - inner-nav: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
@@ -231,7 +231,7 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 - stepper: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - family ui: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
 - family table: the board and gallery draw their own loading, empty and error frames (LayoutPhase) instead of the table head over skeleton rows: +0.8 KB gzip in the data-table chunk (Issue 3088)
-- family page: choice cards and the form parts (plan row bench-form-parts, Issue 2996): the checkbox and radio modules gain the card variant and the tile grid keys on size containers, a few dozen bytes of CSS in every part and a few hundred of JavaScript in the table and forms
+- family page: PageBar identity (EntityTitle, Avatar) and PropertyList (Input, NativeSelect) join the page barrel (Issue 3087)
 - family forms: choice cards and the form parts (plan row bench-form-parts, Issue 2996): the checkbox and radio modules gain the card variant and the tile grid keys on size containers, a few dozen bytes of CSS in every part and a few hundred of JavaScript in the table and forms
 
 ## Findings
