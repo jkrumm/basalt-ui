@@ -29,7 +29,7 @@ import { monogramOf, rowName } from './rail-text'
 const countOf = (badge: NavBadge | null): number | undefined =>
   badge !== null && 'count' in badge && isLit(badge) ? badge.count : undefined
 
-const ROW =
+export const RAIL_ROW =
   'group/row flex h-8 w-full min-w-0 items-center gap-2.5 rounded-ctrl px-2.5 text-sm text-muted-foreground outline-none select-none hover:bg-accent hover:text-foreground focus-ring aria-[current=page]:bg-selected aria-[current=page]:font-medium aria-[current=page]:text-foreground data-ancestor:text-foreground data-disabled:pointer-events-none data-disabled:opacity-50'
 
 /** The dot: the collapsed rail's form of a lit badge, on the icon's corner. */
@@ -124,7 +124,7 @@ function RowBody({
     // a destination's label as `aria-label`: the phone tab bar is a second `Primary` landmark and
     // a name-keyed query (`nav[aria-label=Primary] [aria-label=Library]`) must find its tab alone.
     ...(countOf(row.badge) !== undefined && { 'aria-label': name }),
-    className: cn(ROW, className),
+    className: cn(RAIL_ROW, className),
   }
   if (row.disabled) {
     return (

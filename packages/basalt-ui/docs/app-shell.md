@@ -28,7 +28,7 @@ shows its nav label, and a path no route matches shows `Not found`, in the crumb
 ## Signature
 
 ```ts
-AppShell<Id extends string = string>({ nav, brand, badges, blocks, globalControls, globalActions, settings, account, search, storageKey, compactHeader, chrome, frame, children, }: AppShellProps<Id>): ReactElement
+AppShell<Id extends string = string>({ nav, brand, badges, blocks, globalControls, globalActions, settings, account, search, workspace, favourites, storageKey, compactHeader, chrome, frame, children, }: AppShellProps<Id>): ReactElement
   nav: NavConfig
   brand: ShellBrand
   badges?: Partial<Record<Id, NavBadge>>
@@ -38,7 +38,9 @@ AppShell<Id extends string = string>({ nav, brand, badges, blocks, globalControl
   settings?: SettingsConfig
   account?: Account
   search?: { onOpen: () => void; }
-  storageKey?: string
+  workspace?: WorkspaceSwitcher  // A workspace switcher in the brand zone; on a phone its options are rows of the More surface
+  favourites?: FavouritesStore  // Where the rail's Favourites section keeps its entries
+  storageKey?: string  // The key the rail's collapse is stored under; the width the reader dragged it to lives beside it under `<storageKey>-width`
   chrome?: ShellChrome
   frame?: ShellFrame  // Default `panel`
   compactHeader?: "hidden" | "show"

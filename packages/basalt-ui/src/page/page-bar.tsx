@@ -13,6 +13,7 @@ import { EntityTitle } from '../ui/entity'
 import { Input } from '../ui/input'
 import { Menu, MenuContent, MenuItem, MenuTrigger } from '../ui/menu'
 import { ConnectionIndicator } from './connection-indicator'
+import { FavouriteToggle } from './favourites'
 import { devAssertOnce, createBarClaims } from './core/claims'
 import { observeBarHeight, publishBarHeight } from './core/bar-measure'
 import type {
@@ -441,6 +442,7 @@ export function PageBar<K extends string = string, L extends string = string>({
   refresh,
   layout,
   settings,
+  favourite,
   actions,
 }: PageBarProps<K, L>): ReactElement | null {
   const context = useContext(PageContext)
@@ -493,14 +495,18 @@ export function PageBar<K extends string = string, L extends string = string>({
   }, [host, owns, id, title, parent])
 
   useIsomorphicLayoutEffect(() => {
-    if (host === null || !owns || list.length === 0 || !actionsInHeader) return undefined
+    if (host === null || !owns || !actionsInHeader) return undefined
+    if (list.length === 0 && favourite === undefined) return undefined
     return host.claim(
       'actions',
-      <PageActions actions={list} primaryLast={false} />,
+      <div data-slot="page-header-actions" className="flex min-w-0 items-center gap-2">
+        {favourite !== undefined && <FavouriteToggle {...favourite} />}
+        {list.length > 0 && <PageActions actions={list} primaryLast={false} />}
+      </div>,
       `${id}:actions`,
     )
     // `list` is rebuilt per render, `actions` is the caller's value.
-  }, [host, owns, id, actions, actionsInHeader])
+  }, [host, owns, id, actions, favourite, actionsInHeader])
 
   // Publish the band height onto Page before paint, then on every resize. A zero reading is refused.
   useIsomorphicLayoutEffect(() => {
@@ -638,6 +644,7 @@ export function PageBar<K extends string = string, L extends string = string>({
             )}
             {refresh !== undefined && <RefreshButton {...refresh} />}
             {layout !== undefined && <LayoutToggle layout={layout} />}
+            {favourite !== undefined && <FavouriteToggle {...favourite} />}
             {settings !== undefined && <SettingsButton settings={settings} />}
             {bandActions && <PageActions actions={list} primaryLast />}
           </div>

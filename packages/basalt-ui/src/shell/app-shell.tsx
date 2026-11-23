@@ -12,7 +12,9 @@ import { flattenNavEntries, resolveActive } from '../router/nav/resolve-active'
 import type { AnyNavConfig } from '../router/nav/types'
 import { Button } from '../ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet'
+import { FavouritesContext } from '../page/favourites'
 import { createShellHost, useClaim } from './app-shell-host'
+import { useFavouritesApi } from './favourites-host'
 import { ChromeHost, useChromeRoot } from './chrome'
 import type { AppShellProps } from './contract'
 import { createNavRuntime } from './core/nav-runtime'
@@ -32,6 +34,7 @@ import {
   DEFAULT_STORAGE_KEY,
   DockRegion,
   RailControlProvider,
+  RailWidthProvider,
   ShellGrid,
   ShellMain,
   ShellSurface,
@@ -40,6 +43,7 @@ import {
   useDockModel,
   useDocumentFrame,
   useRailState,
+  useRailWidthState,
 } from './parts/grid'
 import type { AsideClaim } from './parts/grid'
 import { BrandZone, Header } from './parts/header'
@@ -137,6 +141,8 @@ export function AppShell<Id extends string = string>({
   settings,
   account,
   search,
+  workspace,
+  favourites,
   storageKey = DEFAULT_STORAGE_KEY,
   compactHeader = 'show',
   chrome = 'web',
@@ -197,17 +203,26 @@ export function AppShell<Id extends string = string>({
 
   const sizeClass = useSizeClass()
   const rail = useRailState(storageKey, sizeClass)
+  const railWidth = useRailWidthState(storageKey)
+  const favouritesApi = useFavouritesApi(favourites, storageKey)
   const claim = readAsideClaim(asideNode)
   // A bound aside claims while closed too (the phone's header button needs it); beside main a
   // closed one is no region.
   const regionClaim = claim?.sheet?.open === false ? undefined : claim
-  const model = useAsideModel(regionClaim, sizeClass, rail.state)
+  const model = useAsideModel(regionClaim, sizeClass, rail.state, railWidth.width)
   const dockOpen = useSyncExternalStore(
     shellHost.regions.dock.subscribe,
     () => shellHost.regions.dock.getSnapshot().count > 0,
     () => false,
   )
-  const dockModel = useDockModel(dockOpen, sizeClass, rail.state, model.width, dockWidth)
+  const dockModel = useDockModel(
+    dockOpen,
+    sizeClass,
+    rail.state,
+    model.width,
+    dockWidth,
+    railWidth.width,
+  )
   const dock: ShellDock = {
     slot: dockSlot,
     docked: dockModel.docks,
@@ -249,6 +264,7 @@ export function AppShell<Id extends string = string>({
         ) : null
       }
       sizeClass={sizeClass}
+      workspace={workspace}
       chrome={chrome}
     />
   )
@@ -256,46 +272,53 @@ export function AppShell<Id extends string = string>({
   return (
     <ChromeHost chrome={chrome} host={shellHost.host}>
       <RailControlProvider value={rail}>
-        <ShellOverlayContext value={overlaySlot}>
-          <ShellDockContext value={dock}>
-            <ShellGrid
-              rootRef={attachRoot}
-              rail={rail.state}
-              frame={frame}
-              titlebar={titlebar}
-              compactHeader={compactHeader}
-              asideWidth={model.width}
-              dockWidth={dockModel.width}
-            >
-              <SkipLink />
-              <RouteAnnouncer message={announcement} />
-              {titlebar ? header : <BrandZone brand={brand} />}
-              <RailMount
-                runtime={runtime}
-                brand={brand}
-                badges={badges as AppShellProps['badges']}
-                blocks={blocks}
-                settings={settings}
-                account={account}
-                search={search}
-              />
-              <ShellSurface titlebar={titlebar}>
-                {!titlebar && header}
-                <ShellMain pending={pending}>{children}</ShellMain>
-                <AsideRegion claim={regionClaim} model={model} regionRef={setOverlaySlot} />
-                <DockRegion model={dockModel} regionRef={setDockSlot} />
-              </ShellSurface>
-              <TabBarMount
-                runtime={runtime}
-                badges={badges as AppShellProps['badges']}
-                blocks={blocks}
-                globalActions={globalActions}
-                settings={settings}
-                account={account}
-              />
-            </ShellGrid>
-          </ShellDockContext>
-        </ShellOverlayContext>
+        <RailWidthProvider value={railWidth}>
+          <FavouritesContext value={favouritesApi}>
+            <ShellOverlayContext value={overlaySlot}>
+              <ShellDockContext value={dock}>
+                <ShellGrid
+                  rootRef={attachRoot}
+                  rail={rail.state}
+                  frame={frame}
+                  titlebar={titlebar}
+                  compactHeader={compactHeader}
+                  asideWidth={model.width}
+                  dockWidth={dockModel.width}
+                  railOpenWidth={railWidth.width}
+                >
+                  <SkipLink />
+                  <RouteAnnouncer message={announcement} />
+                  {titlebar ? header : <BrandZone brand={brand} workspace={workspace} />}
+                  <RailMount
+                    runtime={runtime}
+                    brand={brand}
+                    badges={badges as AppShellProps['badges']}
+                    blocks={blocks}
+                    settings={settings}
+                    account={account}
+                    search={search}
+                    workspace={workspace}
+                  />
+                  <ShellSurface titlebar={titlebar}>
+                    {!titlebar && header}
+                    <ShellMain pending={pending}>{children}</ShellMain>
+                    <AsideRegion claim={regionClaim} model={model} regionRef={setOverlaySlot} />
+                    <DockRegion model={dockModel} regionRef={setDockSlot} />
+                  </ShellSurface>
+                  <TabBarMount
+                    runtime={runtime}
+                    badges={badges as AppShellProps['badges']}
+                    blocks={blocks}
+                    globalActions={globalActions}
+                    settings={settings}
+                    account={account}
+                    workspace={workspace}
+                  />
+                </ShellGrid>
+              </ShellDockContext>
+            </ShellOverlayContext>
+          </FavouritesContext>
+        </RailWidthProvider>
       </RailControlProvider>
     </ChromeHost>
   )

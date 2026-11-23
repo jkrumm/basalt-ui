@@ -5,6 +5,11 @@
  */
 export const RAIL_TEXT = {
   search: 'Search',
+  resize: 'Resize sidebar',
+  favourites: 'Favourites',
+  switchWorkspace: 'Switch workspace',
+  expand: 'Expand sidebar',
+  removeFavourite: (label: string): string => `Remove ${label} from favourites`,
   /** The cue on a folded section's header while the current page sits inside it. */
   containsActive: 'Contains the current page',
 } as const

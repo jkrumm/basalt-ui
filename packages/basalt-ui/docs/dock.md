@@ -24,10 +24,11 @@ owns the `?dock=` address, the click that swaps its record and the pin from a `P
 ## Signature
 
 ```ts
-Dock({ title, tag, fullPage, onClose, icon, avatar, actions, records, footer, children, }: DockProps): ReactElement | null
+Dock({ title, tag, fullPage, favourite, onClose, icon, avatar, actions, records, footer, children, }: DockProps): ReactElement | null
   title: string  // The accessible name and the visible heading: what is shown (`Issue 12`)
   tag?: string  // A short mono tag before the title (`#12`), for what the heading does not say
   fullPage?: string | NavTarget  // The record's own page
+  favourite?: FavouriteInput  // Draws a star in the header that adds the record to the shell rail's Favourites; nothing outside an `AppShell`
   onClose: () => void  // The close button and Escape inside the panel: the caller decides how the address changes (`usePeek().dock.close`)
   icon?: IconComponent  // A glyph before the title, for what kind of record it is
   avatar?: AvatarEntry  // A face before the title, for a person or an object; wins over `icon`

@@ -36,7 +36,9 @@ export type PageMessages = Record<
   | 'page.minimise'
   | 'page.restore'
   | 'page.propertyEmpty'
-  | 'page.propertyInvalid',
+  | 'page.propertyInvalid'
+  | 'page.favourite'
+  | 'page.unfavourite',
   string
 > &
   Record<'page.minRead', (f: Format, minutes: number) => string> &
@@ -69,6 +71,8 @@ export const page = {
   'page.presentPage': 'Full page',
   'page.minimise': 'Minimise',
   'page.restore': 'Restore',
+  'page.favourite': 'Add to favourites',
+  'page.unfavourite': 'Remove from favourites',
   'page.itemActions': (_f, label) => `Actions for ${label}`,
   'page.propertyEdit': (_f, label) => `Edit ${label}`,
   'page.propertyEmpty': 'Not set',

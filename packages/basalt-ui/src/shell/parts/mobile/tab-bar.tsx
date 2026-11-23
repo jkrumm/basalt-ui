@@ -19,7 +19,14 @@ import type { MouseEvent, ReactElement } from 'react'
 import { cn } from '../../../core/cn'
 import { navAnchor } from '../../../router/nav/anchor'
 import type { AnyNavItem } from '../../../router/nav/types'
-import type { Account, GlobalAction, NavBadges, SettingsConfig, SidebarBlock } from '../../contract'
+import type {
+  Account,
+  GlobalAction,
+  NavBadges,
+  SettingsConfig,
+  SidebarBlock,
+  WorkspaceSwitcher,
+} from '../../contract'
 import { isLit } from '../../core/badges'
 import type { CoreBlock } from '../../core/block-model'
 import type { NavRuntime } from '../../core/nav-runtime'
@@ -48,6 +55,8 @@ export type TabBarProps = {
   globalActions: readonly GlobalAction[]
   settings: SettingsConfig | undefined
   account: Account | undefined
+  /** The switcher's options are rows of the More surface, above the account rows. */
+  workspace?: WorkspaceSwitcher | undefined
 }
 
 /** A bar label longer than this clips in a 72 px slot; `NavItem.short` is the fix, not an ellipsis. */
@@ -180,7 +189,14 @@ function SurfaceTab({
   )
 }
 
-export function TabBar({ runtime, badges, blocks, settings, account }: TabBarProps): ReactElement {
+export function TabBar({
+  runtime,
+  badges,
+  blocks,
+  settings,
+  account,
+  workspace,
+}: TabBarProps): ReactElement {
   const state = useSyncExternalStore(runtime.subscribe, runtime.getState, runtime.getState)
   // Keyed by slot id, never by the slot object: the model is rebuilt every render and an open
   // surface must survive that.
@@ -194,6 +210,7 @@ export function TabBar({ runtime, badges, blocks, settings, account }: TabBarPro
     blocks: blocks as readonly CoreBlock[],
     ...(settings !== undefined && { settings }),
     ...(account !== undefined && { account }),
+    ...(workspace !== undefined && { workspace }),
   })
   warnLongShort(model.slots)
 
@@ -249,6 +266,7 @@ export function TabBar({ runtime, badges, blocks, settings, account }: TabBarPro
             open={openId === slot.id}
             onOpenChange={(open) => setOpenId(open ? slot.id : null)}
             account={account}
+            workspace={workspace}
             onBlock={openBlock}
           />
         ),

@@ -18,7 +18,9 @@ import { Sheet, SheetContent } from '../../../ui/sheet'
 import { requestMainFocus } from '../../../common/focus'
 import { navAnchor } from '../../../router/nav/anchor'
 import type { AnyNavItem } from '../../../router/nav/types'
-import type { Account, SidebarBlock } from '../../contract'
+import { AppLink } from '../../../core/link'
+import { Avatar } from '../../../ui/avatar'
+import type { Account, SidebarBlock, WorkspaceSwitcher } from '../../contract'
 import { isLit } from '../../core/badges'
 import type { CoreBlock } from '../../core/block-model'
 import type { PhoneExtraRow, PhoneGroup, PhoneRow, PhoneSlot } from '../../core/mobile-projection'
@@ -35,6 +37,7 @@ export type SurfaceSlot = Extract<PhoneSlot, { kind: 'menu' | 'sheet' }>
 export const MOBILE_TEXT = {
   signIn: 'Sign in',
   signOut: 'Sign out',
+  workspace: 'Workspace',
 } as const
 
 /** A destination's own row height: above the 44 px touch floor, below nothing. */
@@ -194,21 +197,83 @@ export type MoreSurfaceProps = {
   onOpenChange: (open: boolean) => void
   /** The settings and account declared on the shell; the projector holds only their row ids. */
   account: Account | undefined
+  workspace?: WorkspaceSwitcher | undefined
   /** A list or custom block raised its own sheet; the bar opens it one frame after this closes. */
   onBlock: (block: CoreBlock) => void
+}
+
+/** One workspace row: the heading, an option (the current one marked) or the manage link. */
+function WorkspaceRow({
+  extra,
+  workspace,
+  close,
+}: {
+  extra: Extract<PhoneExtraRow, { kind: 'workspace' }>
+  workspace: WorkspaceSwitcher | undefined
+  close: () => void
+}): ReactElement | null {
+  if (workspace === undefined) return null
+  if (extra.role === 'heading') {
+    return (
+      <p className="px-4 pt-3 pb-1 text-micro font-medium text-muted-foreground">
+        {MOBILE_TEXT.workspace}
+      </p>
+    )
+  }
+  if (extra.role === 'manage' && workspace.manage !== undefined) {
+    return (
+      <AppLink
+        href={workspace.manage.href}
+        data-slot="shell-sheet-rows"
+        className={ROW}
+        onClick={close}
+      >
+        <span className="min-w-0 flex-1 truncate">{workspace.manage.label}</span>
+      </AppLink>
+    )
+  }
+  const { option } = extra
+  if (extra.role !== 'option' || option === undefined) return null
+  return (
+    <button
+      type="button"
+      data-slot="shell-sheet-rows"
+      aria-current={extra.current === true ? 'true' : undefined}
+      className={cn(ROW, extra.current === true && 'bg-selected font-medium')}
+      onClick={() => {
+        close()
+        if (extra.current !== true) workspace.onSwitch(option.id)
+      }}
+    >
+      <Avatar
+        name={option.label}
+        aria-hidden="true"
+        size="sm"
+        shape="object"
+        {...(option.avatar !== undefined && { src: option.avatar })}
+        {...(option.icon !== undefined && { icon: option.icon })}
+      />
+      <span className="min-w-0 flex-1 truncate">{option.label}</span>
+    </button>
+  )
 }
 
 function ExtraRow({
   extra,
   account,
+  workspace,
   close,
   onBlock,
 }: {
   extra: PhoneExtraRow
   account: Account | undefined
+  workspace: WorkspaceSwitcher | undefined
   close: () => void
   onBlock: (block: CoreBlock) => void
 }): ReactElement | null {
+  if (extra.kind === 'workspace') {
+    return <WorkspaceRow extra={extra} workspace={workspace} close={close} />
+  }
   if (extra.kind === 'block') {
     return (
       <ActionRow
@@ -298,6 +363,7 @@ export function MoreSurface({
   open,
   onOpenChange,
   account,
+  workspace,
   onBlock,
 }: MoreSurfaceProps): ReactElement {
   const close = (): void => onOpenChange(false)
@@ -323,6 +389,7 @@ export function MoreSurface({
               key={extra.id}
               extra={extra}
               account={account}
+              workspace={workspace}
               close={close}
               onBlock={onBlock}
             />

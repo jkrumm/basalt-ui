@@ -46,6 +46,21 @@ function isNavTarget(value: unknown): value is NavTarget {
   return typeof value === 'object' && value !== null && opened.has(value)
 }
 
+/**
+ * The URL a target or an in-app path opens, for a store that must keep it as text (the shell's
+ * favourites). `undefined` for a path that leaves the app or a target this router cannot build.
+ */
+export function targetHref(router: AnyRouter, target: string | NavTarget): string | undefined {
+  if (typeof target === 'string') return isInApp(target) ? target : undefined
+  const options = opened.get(target)
+  if (options === undefined) return undefined
+  try {
+    return router.buildLocation(options as Parameters<AnyRouter['buildLocation']>[0]).href
+  } catch {
+    return undefined
+  }
+}
+
 /** `LinkComponent` already takes a `NavTarget`; the name stays for what `routerDefaults` returns. */
 export type RouterLinkComponent = LinkComponent
 

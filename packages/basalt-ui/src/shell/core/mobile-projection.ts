@@ -15,7 +15,14 @@
  * one it COVERS, and coverage is the same set the overflow is built from, so no destination is in
  * two slots and never two tabs carry `aria-current`.
  */
-import type { Account, AccountRow, SettingsConfig, SettingsItem } from '../contract'
+import type {
+  Account,
+  AccountRow,
+  SettingsConfig,
+  SettingsItem,
+  Workspace,
+  WorkspaceSwitcher,
+} from '../contract'
 import type { IconComponent } from '../../core/ports'
 import { rollupBadges } from './badges'
 import { blockMoreRows } from './block-model'
@@ -69,6 +76,13 @@ export type PhoneExtraRow =
   | { readonly kind: 'block'; readonly id: string; readonly block: CoreBlock }
   | { readonly kind: 'settings'; readonly id: string; readonly item: SettingsItem }
   | {
+      readonly kind: 'workspace'
+      readonly id: string
+      readonly role: 'heading' | 'option' | 'manage'
+      readonly option?: Workspace
+      readonly current?: boolean
+    }
+  | {
       readonly kind: 'account'
       readonly id: string
       readonly role: 'identity' | 'sign-in' | 'sign-out' | 'row'
@@ -106,6 +120,7 @@ export type PhoneProjectionInput = {
   blocks?: readonly CoreBlock[]
   settings?: SettingsConfig
   account?: Account
+  workspace?: WorkspaceSwitcher
 }
 
 type Group = {
@@ -392,6 +407,23 @@ function buildOverflow(
   return out
 }
 
+function workspaceRows(workspace: WorkspaceSwitcher | undefined): PhoneExtraRow[] {
+  if (workspace === undefined) return []
+  const rows: PhoneExtraRow[] = [{ kind: 'workspace', id: 'workspace:heading', role: 'heading' }]
+  for (const option of workspace.options) {
+    rows.push({
+      kind: 'workspace',
+      id: `workspace:option:${option.id}`,
+      role: 'option',
+      option,
+      current: option.id === workspace.current.id,
+    })
+  }
+  if (workspace.manage !== undefined)
+    rows.push({ kind: 'workspace', id: 'workspace:manage', role: 'manage' })
+  return rows
+}
+
 function accountRows(account: Account | undefined): PhoneExtraRow[] {
   if (account === undefined || account.status === 'loading') return []
   if (account.status === 'signed-out')
@@ -410,7 +442,7 @@ function accountRows(account: Account | undefined): PhoneExtraRow[] {
  * They count toward `needsMore` and the menu-against-sheet threshold like any row.
  */
 export function phoneExtraRows(
-  input: Pick<PhoneProjectionInput, 'blocks' | 'settings' | 'account'>,
+  input: Pick<PhoneProjectionInput, 'blocks' | 'settings' | 'account' | 'workspace'>,
 ): PhoneExtraRow[] {
   return [
     ...blockMoreRows(input.blocks).map((block): PhoneExtraRow => ({
@@ -423,6 +455,7 @@ export function phoneExtraRows(
       id: `settings:${item.id}`,
       item,
     })),
+    ...workspaceRows(input.workspace),
     ...accountRows(input.account),
   ]
 }

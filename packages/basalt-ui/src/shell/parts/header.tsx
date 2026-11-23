@@ -23,10 +23,18 @@ import type { ControlsSlot } from '../../core/ports'
 import { Button } from '../../ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '../../ui/popover'
 import { NATIVE_BRAND, NATIVE_HEADER, Titlebar } from '../chrome'
-import type { GlobalAction, ShellBox, ShellBrand, ShellChrome, SizeClass } from '../contract'
+import type {
+  GlobalAction,
+  ShellBox,
+  ShellBrand,
+  ShellChrome,
+  SizeClass,
+  WorkspaceSwitcher,
+} from '../contract'
 import { headerPriority } from '../core/header-tiers'
 import { useRailControl } from './grid'
 import { HeaderKebab, kebabTiers } from './header-kebab'
+import { WORKSPACE_COLLAPSED_HIDE, WorkspaceMenu } from './workspace-switcher'
 import { PRINT_OFF } from './print'
 
 /** The height a `custom` or `popover` global action is clipped to: one control row. */
@@ -43,6 +51,7 @@ export type HeaderProps = {
   /** The compact-screen trigger of a claimed aside. */
   asideTrigger: ReactNode
   sizeClass: SizeClass
+  workspace?: WorkspaceSwitcher | undefined
   /** `native-overlay` makes the header the window's drag region. */
   chrome?: ShellChrome
 }
@@ -53,11 +62,25 @@ export type HeaderProps = {
  * frame's top cell, above the rail and level with the identity row; under `native-overlay` it sits in
  * the title bar.
  */
-export function BrandZone({ brand }: { brand: ShellBrand }): ReactElement {
-  return <Brand brand={brand} native={false} />
+export function BrandZone({
+  brand,
+  workspace,
+}: {
+  brand: ShellBrand
+  workspace?: WorkspaceSwitcher | undefined
+}): ReactElement {
+  return <Brand brand={brand} native={false} workspace={workspace} />
 }
 
-function Brand({ brand, native }: { brand: ShellBrand; native: boolean }): ReactElement {
+function Brand({
+  brand,
+  native,
+  workspace,
+}: {
+  brand: ShellBrand
+  native: boolean
+  workspace?: WorkspaceSwitcher | undefined
+}): ReactElement {
   const Logo = brand.logo
   const rail = useRailControl()
   const label = rail.collapsed ? 'Expand sidebar' : 'Collapse sidebar'
@@ -75,7 +98,9 @@ function Brand({ brand, native }: { brand: ShellBrand; native: boolean }): React
         native && NATIVE_BRAND,
       )}
     >
-      {Logo !== undefined ? (
+      {workspace !== undefined ? (
+        <WorkspaceMenu workspace={workspace} className="min-w-0 flex-1" />
+      ) : Logo !== undefined ? (
         <Logo
           className={cn(
             'size-6 shrink-0',
@@ -94,20 +119,23 @@ function Brand({ brand, native }: { brand: ShellBrand; native: boolean }): React
           {brand.name.slice(0, 1).toUpperCase()}
         </span>
       )}
-      <span
-        className={cn(
-          'hidden min-w-0 truncate font-head text-sm font-semibold',
-          // The name shows only when the rail beside it is open.
-          'group-data-[rail=expanded]/shell:md:inline group-data-[rail=auto]/shell:xl:inline',
-          'group-data-[rail=collapsed]/shell:hidden',
-        )}
-      >
-        {brand.name}
-      </span>
+      {workspace === undefined && (
+        <span
+          className={cn(
+            'hidden min-w-0 truncate font-head text-sm font-semibold',
+            // The name shows only when the rail beside it is open.
+            'group-data-[rail=expanded]/shell:md:inline group-data-[rail=auto]/shell:xl:inline',
+            'group-data-[rail=collapsed]/shell:hidden',
+          )}
+        >
+          {brand.name}
+        </span>
+      )}
       <span
         data-slot="shell-rail-toggle"
         className={cn(
           'ms-auto hidden shrink-0 md:inline-flex',
+          workspace !== undefined && WORKSPACE_COLLAPSED_HIDE,
           'group-data-[rail=collapsed]/shell:md:ms-0 group-data-[rail=auto]/shell:md:max-xl:ms-0',
         )}
       >
@@ -250,6 +278,7 @@ export function Header({
   globalActions,
   asideTrigger,
   sizeClass,
+  workspace,
   chrome,
 }: HeaderProps): ReactElement {
   const native = chrome === 'native-overlay'
@@ -292,7 +321,11 @@ export function Header({
           )}
         >
           {native && <Titlebar />}
-          {native ? <Brand brand={brand} native /> : <BrandMark brand={brand} />}
+          {native ? (
+            <Brand brand={brand} native workspace={workspace} />
+          ) : (
+            <BrandMark brand={brand} />
+          )}
           <div
             data-slot="shell-breadcrumb"
             className="ms-(--shell-gutter) flex min-w-0 items-center gap-2 text-sm text-muted-foreground [&>*]:min-w-0 [&>*]:truncate [&>[data-slot=page-breadcrumb-leaf]]:font-medium [&>[data-slot=page-breadcrumb-leaf]]:text-foreground [&>[data-slot=page-breadcrumb-parent]]:after:ms-2 [&>[data-slot=page-breadcrumb-parent]]:after:text-faint [&>[data-slot=page-breadcrumb-parent]]:after:content-['/']"
