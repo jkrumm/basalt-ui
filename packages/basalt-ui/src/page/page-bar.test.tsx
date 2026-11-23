@@ -835,13 +835,12 @@ describe('PageBar view row', () => {
     )
     const { rerender } = render(bar(17))
     const overdue = screen.getByRole('tab', { name: 'Overdue 17' })
-    const count = overdue.querySelector('[data-slot="tabs-trigger-count"]')!
+    const count = overdue.querySelector('[data-badge="count"]')!
     expect(count.hasAttribute('data-attention')).toBe(true)
     expect(count.className).toContain('text-bad')
-    expect(overdue.querySelector('[data-slot="tabs-trigger-dot"]')?.className).toContain('bg-bad')
+    expect(overdue.querySelector('[data-badge="dot"]')?.className).toContain('bg-bad')
     expect(
-      screen.getByRole('tab', { name: 'All 236' }).querySelector('[data-slot="tabs-trigger-count"]')
-        ?.className,
+      screen.getByRole('tab', { name: 'All 236' }).querySelector('[data-badge="count"]')?.className,
     ).toContain('text-muted-foreground')
     rerender(bar(18))
     expect(screen.getByRole('tab', { name: 'Overdue 18' })).toBeDefined()
@@ -868,7 +867,7 @@ describe('PageBar view row', () => {
       </Page>,
     )
     const badge = (tab: Element): string[] =>
-      [...tab.querySelectorAll('[data-slot^="tabs-trigger-"]')].map((el) => el.outerHTML)
+      [...tab.querySelectorAll('[data-badge]')].map((el) => el.outerHTML)
     const tabs = [...container.querySelectorAll('[role="tab"]')]
     const inBar = tabs.find((el) => el.textContent === 'Overdue7')!
     const plain = tabs.find((el) => el !== inBar && el.textContent === 'Overdue7')!
