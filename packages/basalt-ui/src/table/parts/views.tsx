@@ -18,15 +18,20 @@ import { Suspense, lazy, useEffect, useRef, useState, useSyncExternalStore } fro
 import type { ComponentType, MouseEvent, ReactElement } from 'react'
 import { useMessages } from '../../core/messages/use-messages'
 import { table } from '../../core/messages/table'
-import type { ControlsSlot } from '../../core/ports'
-import type { PageLayout, PageSettings } from '../../page/contract'
+import { useDebouncedCallback } from '../../core/debounce'
+import type { ControlHandle, ControlsSlot } from '../../core/ports'
+import type { PageLayout, PageSearch, PageSettings } from '../../page/contract'
 import { Button } from '../../ui/button'
 import { Tabs, TabsList, TabsTrigger } from '../../ui/tabs'
 import type { DataTableInstance, TableLayout, TableState, View, ViewStore } from '../contract'
 import type { AddViewMenuProps } from '../layouts/add-menu'
 import { LayoutToggle, layoutHandle, useLayoutLabel, useLayoutOptions } from '../layouts/toggle'
+import { SEARCH_DEBOUNCE_MS } from '../core/state'
 import { modelOf } from '../use-data-table'
 import type { TableModel } from '../use-data-table'
+import { AddFilter } from './add-filter'
+import { ChipList } from './chips'
+import { filterableSpecs } from './toolbar-filters'
 import { setDoor, useDoor, useMountDoor } from './view-door'
 import type { TabMenuProps } from './view-tab-menu'
 import type { DoorState, PanelPage } from './view-door'
@@ -613,10 +618,16 @@ export function ViewStrip<T>({ c }: { c: ViewsController<T> }): ReactElement {
   )
 }
 
-/** What `useTableViews` hands a page: the strip for `PageBar tabs`, its `settings`, and the panel. */
+/** What `useTableViews` hands a page: the slots of `PageBar`'s one view row, the chips and the panel. */
 export type TableViewsResult = {
   /** The view tabs as a `PageBar` (or `Section`) `tabs` slot. */
   tabs: ControlsSlot
+  /** `PageBar search`: the table's quick search, written to its request after the search debounce. */
+  search: PageSearch
+  /** `PageBar controls`: `+ Filter`; empty (`count` 0) when no column filters. */
+  controls: ControlsSlot
+  /** The chip of each active filter: place it under the bar; it renders nothing while none is active. */
+  chips: ReactElement
   /** `PageBar settings`: Edit view, which opens the panel. */
   settings: PageSettings
   /** `PageBar layout`: the view's layout toggle; absent when the table offers one layout. */
@@ -630,14 +641,18 @@ export type TableViewsResult = {
  * Discard for a modified view, and the manage-view panel that edits everything the view owns (name,
  * sharing, row height, column widths, columns, filters, sort, grouping) while the table follows.
  *
- * @useWhen a list page puts a table's saved views in its `PageBar` view row
+ * It also binds the table's own search and filter to the bar, so a list page draws one view row (tabs,
+ * search, filter, layout, Edit view, the primary) and no `TableToolbar`.
+ *
+ * @useWhen a list page puts a table's saved views, search and filter in its `PageBar` view row
  * @neverWhen the table sits in a card with its own toolbar (`TableToolbar` draws the same views)
  *
  * @example
  * const t = useDataTable({ id: 'invoices', label: 'Invoices', columns, data, getRowId, mode: { kind: 'client' } })
  * const views = useTableViews(t)
  * <Page area="invoices" fill>
- *   <PageBar tabs={views.tabs} settings={views.settings} />
+ *   <PageBar tabs={views.tabs} search={views.search} controls={views.controls} layout={views.layout} settings={views.settings} />
+ *   {views.chips}
  *   <DataTable table={t} />
  *   {views.panel}
  * </Page>
@@ -651,7 +666,31 @@ export function useTableViews<T>(
   const t = useMessages(table)
   const layouts = useLayoutOptions(model)
   const layoutLabel = useLayoutLabel()
+  const searchLabel = t('table.searchIn', model.label)
+  const write = useDebouncedCallback(
+    (q: string) => model.state.setRequest({ q }),
+    SEARCH_DEBOUNCE_MS,
+  )
+  const q = model.state.request.q
+  const searchHandle: ControlHandle<string> = {
+    key: `${model.id}.q`,
+    kind: 'string',
+    use: () => [q, (next) => write.call(next)],
+    useSource: () => ({ source: 'own', inherited: undefined }),
+    clear() {
+      write.cancel()
+      model.state.setRequest({ q: '' })
+    },
+    isDefault: q === '',
+  }
   return {
+    search: { state: searchHandle, label: t('table.search'), placeholder: searchLabel },
+    controls: {
+      kind: 'controls-slot',
+      count: filterableSpecs(model.specs).length > 0 ? 1 : 0,
+      render: () => <AddFilter model={model} />,
+    },
+    chips: <ChipList model={model} />,
     tabs: { kind: 'controls-slot', count: 1, render: () => <ViewStrip c={c} /> },
     settings: { label: t('table.viewEdit'), onClick: () => c.show('root') },
     layout:

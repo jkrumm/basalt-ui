@@ -1,6 +1,6 @@
 ---
 name: useTableViews
-use when: 'a list page puts a table''s saved views in its `PageBar` view row'
+use when: 'a list page puts a table''s saved views, search and filter in its `PageBar` view row'
 never when: 'the table sits in a card with its own toolbar (`TableToolbar` draws the same views)'
 subpath: basalt-ui/table
 peers: ['@base-ui/react', '@tanstack/react-table']
@@ -28,7 +28,8 @@ useTableViews<T>(instance: DataTableInstance<T>, options?: TableViewsOptions): T
 const t = useDataTable({ id: 'invoices', label: 'Invoices', columns, data, getRowId, mode: { kind: 'client' } })
 const views = useTableViews(t)
 <Page area="invoices" fill>
-  <PageBar tabs={views.tabs} settings={views.settings} />
+  <PageBar tabs={views.tabs} search={views.search} controls={views.controls} layout={views.layout} settings={views.settings} />
+  {views.chips}
   <DataTable table={t} />
   {views.panel}
 </Page>

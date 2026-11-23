@@ -10,7 +10,7 @@ slots: [table-filter-add, table-toolbar]
 # TableToolbar
 
 The toolbar of a table: the saved views as tabs with Edit view, then search, filters, chips and
-display. A page that draws the views in its `PageBar` (`useTableViews`) passes `views={false}`.
+display. A list page whose `PageBar` holds the views, search and filter (`useTableViews`) draws no toolbar.
 
 ## Signature
 
