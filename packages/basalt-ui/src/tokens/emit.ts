@@ -8,6 +8,8 @@
  * `tw-off-law`). The Tailwind bridge file, the CLI and the JSON format consume the same table in
  * their own Issues.
  */
+import { ACCENTS } from './accents'
+import type { AccentName } from './accents'
 import { DEFAULT_DERIVE_V3_CONFIG, deriveV3 } from './derive'
 import type { DerivedV3, DeriveV3Config } from './derive'
 import { block, schemeBlocks } from './emit-fallback'
@@ -142,12 +144,8 @@ export function emitDerived(derived: DerivedV3, options: EmitOptions): string {
   const tokens = resolveTokens(undefined, derived)
   const header = provenanceHeader(options.version, options.command ?? 'basalt-ui tokens:css')
 
-  if (options.selector !== undefined) {
-    const baseline = resolveTokens(DEFAULT_DERIVE_V3_CONFIG)
-    const changed = tokens.filter((t, i) => isPair(t.value) && !same(t.value, baseline[i]!.value))
-    const selectors = tenantSelectors(options.selector)
-    return changed.length === 0 ? header : `${header}${colorBlocks(selectors, changed, false)}`
-  }
+  if (options.selector !== undefined)
+    return header + tenantBlocks(tokens, resolveTokens(DEFAULT_DERIVE_V3_CONFIG), options.selector)
 
   const pairs = tokens.filter((t) => isPair(t.value))
   return (
@@ -163,6 +161,41 @@ export function emitDerived(derived: DerivedV3, options: EmitOptions): string {
     ) +
     scalarBlocks(tokens)
   )
+}
+
+/** The colour roles of `tokens` that differ from `baseline`, scoped to `selector`; empty when none do. */
+function tenantBlocks(
+  tokens: readonly ResolvedToken[],
+  baseline: readonly ResolvedToken[],
+  selector: string,
+): string {
+  const selectors = tenantSelectors(selector)
+  const changed = tokens.filter((t, i) => isPair(t.value) && !same(t.value, baseline[i]!.value))
+  return changed.length === 0 ? '' : colorBlocks(selectors, changed, false)
+}
+
+export type EmitAccentsOptions = Omit<EmitOptions, 'selector'> & {
+  /** The accents the app ships, by name; each becomes one `:root[data-accent='<name>']` block. */
+  accents: readonly AccentName[]
+}
+
+/**
+ * The accent sheet: per named accent, the colour roles its seed changes against the app's own base
+ * (`config`, the same retune its `tokens.css` was emitted with), scoped to
+ * `:root[data-accent='<name>']`. An accent equal to the base emits nothing, so the default accent costs
+ * no bytes. Each seed passes the gates or the emitter throws, as a retune does.
+ * @throws GateError when an accent over this base fails a gate.
+ */
+export function emitAccentsCss(options: EmitAccentsOptions): string {
+  const base = { ...DEFAULT_DERIVE_V3_CONFIG, ...options.config }
+  const baseline = resolveTokens(undefined, deriveV3(base))
+  const header = provenanceHeader(options.version, options.command ?? 'basalt-ui tokens:css')
+  const blocks = [...new Set(options.accents)].map((name) => {
+    const derived = deriveV3({ ...base, accent: ACCENTS[name] })
+    assertGates(derived)
+    return tenantBlocks(resolveTokens(undefined, derived), baseline, `:root[data-accent='${name}']`)
+  })
+  return header + blocks.join('')
 }
 
 /** The public `--basalt-*` names, in table order. */

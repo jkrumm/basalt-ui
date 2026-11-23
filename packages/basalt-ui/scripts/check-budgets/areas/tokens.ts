@@ -14,6 +14,8 @@ import { gzipSync } from 'node:zlib'
 import { PKG_ROOT, REPO_ROOT, Unmeasured, walkFiles } from '../lib'
 import type { Raises, RowDef } from '../lib'
 import { TOKENS } from '../../../src/tokens/table'
+import { emitAccentsCss } from '../../../src/tokens/emit'
+import type { AccentName } from '../../../src/tokens/accents'
 
 const CSS_DIR = join(PKG_ROOT, 'src/css')
 const TOKENS_DIR = join(PKG_ROOT, 'src/tokens')
@@ -84,6 +86,22 @@ export function fullScanGzipBytes(): number {
   }
 }
 
+/** gzip bytes of one accent's sheet, as `tokens:css --accents <name>` emits it over the default base. */
+export function accentGzipBytes(name: AccentName): number {
+  return gzipSync(emitAccentsCss({ version: '3.0.0', accents: [name] })).length
+}
+
+/**
+ * Accent bytes an app that ships no accent pays: `data-accent` selectors in the default sheet, plus
+ * the body of an empty `--accents` sheet (everything after its two header lines).
+ */
+export function accentBytesWithoutAccents(): number {
+  const inDefault =
+    readFileSync(join(CSS_DIR, 'tokens.css'), 'utf8').split('data-accent').length - 1
+  const empty = emitAccentsCss({ version: '3.0.0', accents: [] }).split('\n').slice(2).join('\n')
+  return inDefault + empty.length
+}
+
 export const rows: readonly RowDef[] = [
   {
     id: 'tokens-css-gzip',
@@ -109,6 +127,54 @@ export const rows: readonly RowDef[] = [
     label: 'public --basalt-* names (exact, src/tokens/table.ts)',
     ceiling: 90,
     measure: () => publicBasaltNames(),
+  },
+  {
+    id: 'tokens-accent-none',
+    order: 324,
+    label:
+      'accent bytes in an app that ships none (data-accent in tokens.css + an empty --accents body)',
+    ceiling: 0,
+    measure: accentBytesWithoutAccents,
+  },
+  {
+    id: 'tokens-accent-violet-gzip',
+    order: 325,
+    label: 'accent violet: its tokens:css --accents block (gzip B, header included)',
+    // 445 B measured, +5 percent (Issue 3105).
+    ceiling: 468,
+    measure: () => accentGzipBytes('violet'),
+  },
+  {
+    id: 'tokens-accent-rose-gzip',
+    order: 326,
+    label: 'accent rose: its tokens:css --accents block (gzip B, header included)',
+    // 472 B measured, +5 percent (Issue 3105).
+    ceiling: 496,
+    measure: () => accentGzipBytes('rose'),
+  },
+  {
+    id: 'tokens-accent-orange-gzip',
+    order: 327,
+    label: 'accent orange: its tokens:css --accents block (gzip B, header included)',
+    // 471 B measured, +5 percent (Issue 3105).
+    ceiling: 495,
+    measure: () => accentGzipBytes('orange'),
+  },
+  {
+    id: 'tokens-accent-green-gzip',
+    order: 328,
+    label: 'accent green: its tokens:css --accents block (gzip B, header included)',
+    // 477 B measured, +5 percent (Issue 3105).
+    ceiling: 501,
+    measure: () => accentGzipBytes('green'),
+  },
+  {
+    id: 'tokens-accent-teal-gzip',
+    order: 329,
+    label: 'accent teal: its tokens:css --accents block (gzip B, header included)',
+    // 452 B measured, +5 percent (Issue 3105).
+    ceiling: 475,
+    measure: () => accentGzipBytes('teal'),
   },
   {
     id: 'tokens-peers',

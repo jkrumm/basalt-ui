@@ -8,7 +8,9 @@ import { dirname, isAbsolute, relative, resolve } from 'node:path'
 
 import { VIBRANCY_RANGE_V3 } from '../tokens/derive'
 import type { DeriveV3Config, NeutralV3 } from '../tokens/derive'
-import { GENERATED_HEADER_LINE, emitTokensCss } from '../tokens/emit'
+import { ACCENT_NAMES, isAccentName } from '../tokens/accents'
+import type { AccentName } from '../tokens/accents'
+import { GENERATED_HEADER_LINE, emitAccentsCss, emitTokensCss } from '../tokens/emit'
 import { emitJsonText } from '../tokens/emit-json'
 import { packageRoot, readFrameworkVersion, readIfExists, readSource } from './index'
 import { emitExtra, loadExtra } from './tokens-css-extra'
@@ -120,6 +122,7 @@ const VALUE_FLAGS = [
   '--neutral',
   '--vibrancy',
   '--selector',
+  '--accents',
   '--extra',
   '--format',
   '--out',
@@ -181,6 +184,17 @@ function readConfig(flags: string[]): { config: Partial<DeriveV3Config> } | { er
   return { config }
 }
 
+/** `--accents violet,teal` as names, null when absent, or the reason it is not a list of known names. */
+function readAccents(flags: string[]): { names: AccentName[] } | { error: string } | null {
+  const raw = flagValue(flags, '--accents')
+  if (raw === undefined) return null
+  const names = raw.split(',').map((n) => n.trim())
+  const unknown = names.find((n) => !isAccentName(n))
+  if (unknown !== undefined)
+    return { error: `--accents takes names from ${ACCENT_NAMES.join(', ')} (got '${unknown}')` }
+  return { names: names as AccentName[] }
+}
+
 /** `tokens:css <flags minus --check>`: the invocation line 2 of the header (and `$provenance`) records. */
 function invocationOf(flags: string[]): string {
   const shown = flags.filter((f) => f !== '--check')
@@ -197,8 +211,8 @@ function extraOutput(flags: string[], cwd: string, version: string): number {
     )
     return 1
   }
-  const clash = ['--accent', '--neutral', '--vibrancy', '--selector', '--format'].find((f) =>
-    flags.includes(f),
+  const clash = ['--accent', '--neutral', '--vibrancy', '--selector', '--accents', '--format'].find(
+    (f) => flags.includes(f),
   )
   if (clash !== undefined) {
     console.error(
@@ -266,6 +280,19 @@ export function tokensCss(argv: string[], cwd: string = process.cwd()): number {
     console.error('tokens:css: --selector scopes a stylesheet; the JSON has no selectors.')
     return 1
   }
+  const accents = readAccents(flags)
+  if (accents !== null) {
+    if ('error' in accents) {
+      console.error(`tokens:css: ${accents.error}`)
+      return 1
+    }
+    if (selector !== undefined || format === 'json') {
+      console.error(
+        'tokens:css: --accents emits its own :root[data-accent] sheet; drop --selector and --format.',
+      )
+      return 1
+    }
+  }
 
   const options = {
     version,
@@ -276,7 +303,13 @@ export function tokensCss(argv: string[], cwd: string = process.cwd()): number {
   let content: string
   try {
     content =
-      format === 'json' ? emitJsonText(options) : normalizeColorFunctions(emitTokensCss(options))
+      format === 'json'
+        ? emitJsonText(options)
+        : normalizeColorFunctions(
+            accents === null
+              ? emitTokensCss(options)
+              : emitAccentsCss({ ...options, accents: accents.names }),
+          )
   } catch (err) {
     console.error(`✖ tokens:css: ${err instanceof Error ? err.message : String(err)}`)
     return 1

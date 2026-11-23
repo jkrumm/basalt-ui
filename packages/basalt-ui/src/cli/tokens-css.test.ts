@@ -12,7 +12,7 @@ import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSy
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 
-import { GENERATED_HEADER_LINE, emitTokensCss, tokenNames } from '../tokens/emit'
+import { GENERATED_HEADER_LINE, emitAccentsCss, emitTokensCss, tokenNames } from '../tokens/emit'
 import { emitJsonText } from '../tokens/emit-json'
 import { normalizeColorFunctions, run, tokensCss } from './index'
 
@@ -481,5 +481,41 @@ describe('tokens:css --check', () => {
     const lines = emit([]).split('\n')
     expect(lines[0]).toBe(GENERATED_HEADER_LINE)
     expect(lines[1]).toMatch(/^\/\* basalt-ui [\d.]+ — `basalt-ui tokens:css --out out\.css` \*\/$/)
+  })
+})
+
+describe('tokens:css --accents', () => {
+  it('emits the accent sheet the emitter returns, the header naming the flag', () => {
+    const out = emit(['--accents', 'violet,teal'])
+    expect(out.split('\n').slice(2).join('\n')).toBe(
+      emitAccentsCss({ version: '0', accents: ['violet', 'teal'] })
+        .split('\n')
+        .slice(2)
+        .join('\n'),
+    )
+    expect(out.split('\n')[1]).toContain('--accents violet,teal')
+    expect(out).toContain(":root[data-accent='violet']")
+  })
+
+  it('takes the base from --accent and --neutral', () => {
+    const out = body(['--accents', 'blue,teal', '--accent', '#0d9488'])
+    expect(out).toContain("data-accent='blue'")
+    expect(out).not.toContain("data-accent='teal'")
+  })
+
+  it('refuses an unknown name, naming the set', () => {
+    const { value, log } = capture(() => tokensCss(['--accents', 'violet,red'], dir))
+    expect(value).toBe(1)
+    expect(log).toContain("got 'red'")
+    expect(log).toContain('blue, violet, rose, orange, green, teal')
+  })
+
+  it('refuses --selector, --format json and --extra beside it', () => {
+    for (const extra of [
+      ['--selector', ':root[x]'],
+      ['--format', 'json'],
+      ['--extra', 'x.ts'],
+    ])
+      expect(capture(() => tokensCss(['--accents', 'violet', ...extra], dir)).value).toBe(1)
   })
 })
