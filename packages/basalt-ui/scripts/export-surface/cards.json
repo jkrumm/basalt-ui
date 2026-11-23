@@ -9,6 +9,7 @@
   "KanbanCard",
   "RelationshipCard",
   "RowList",
+  "Schedule",
   "StatCard",
   "StatCell",
   "StatGroup",

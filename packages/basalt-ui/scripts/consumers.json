@@ -163,5 +163,6 @@
   "SiteHeader": "basalt-ui:apps/marketing/src/layouts/Layout.astro",
   "SitePager": "basalt-ui:apps/marketing/src/pages/guides/content-sites.astro",
   "ThemeSwitch": "basalt-ui:apps/marketing/src/layouts/Layout.astro",
-  "siteMdxComponents": "basalt-ui:apps/marketing/src/pages/guides/content-sites.astro"
+  "siteMdxComponents": "basalt-ui:apps/marketing/src/pages/guides/content-sites.astro",
+  "Schedule": "basalt-ui:apps/playground/src/routes/ref/schedule.tsx (the reference schedule of deliveries and supplier calls, Issue 3103)"
 }
