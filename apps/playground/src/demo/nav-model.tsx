@@ -15,6 +15,7 @@ import { linkOptions } from '@tanstack/react-router'
 import { defineNav } from 'basalt-ui/router'
 import {
   Boxes,
+  CalendarDays,
   ChartColumn as Chart,
   Factory,
   Notebook,
@@ -98,6 +99,13 @@ export const NAV = defineNav({
           icon: Factory,
           mobile: 'more',
           link: linkOptions({ to: '/ref/suppliers/$id', params: { id: 'sup-1' } }),
+        },
+        {
+          id: 'ref-schedule',
+          label: 'Schedule',
+          icon: CalendarDays,
+          mobile: 'more',
+          link: linkOptions({ to: '/ref/schedule' }),
         },
         {
           id: 'ref-settings',

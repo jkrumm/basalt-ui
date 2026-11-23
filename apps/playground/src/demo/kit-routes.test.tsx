@@ -250,6 +250,7 @@ describe('the reference pages', () => {
       '/ref/parts',
       '/ref/notes',
       '/ref/suppliers/$id',
+      '/ref/schedule',
       '/ref/settings',
       '/ref/flow',
     ])
@@ -346,6 +347,14 @@ describe('the reference pages', () => {
     expect(
       screen.getByRole('button', { name: /Connect the accounting app so step 3/ }),
     ).toBeDefined()
+  })
+
+  test('schedule: the week of deliveries and calls, and an entry by its address', async () => {
+    mount('/ref/schedule')
+    expect((await screen.findAllByLabelText(/ call, /)).length).toBeGreaterThan(0)
+    cleanup()
+    mount('/ref/events/e-197')
+    expect((await screen.findAllByText('Delivery')).length).toBeGreaterThan(0)
   })
 
   test('settings: the matrix and the danger row sit in their sections', async () => {
