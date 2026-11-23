@@ -41,7 +41,8 @@ import { ChartLegend } from '../legend'
 import { ChartPlaceholder, resolveChartState } from '../state'
 import type { ChartSeries, ChartState, ChartTooltipRow, ResponsiveChartHeight } from '../types'
 import { cssColor, toChartState } from './cartesian-adapt'
-import { LABEL_SLACK, assignLanes, cutToFit, placeLaneLabels } from './interval-layout'
+import { assignLanes } from '../../core/lanes'
+import { LABEL_SLACK, cutToFit, placeLaneLabels } from './interval-layout'
 import type { PlacedLaneLabel } from './interval-layout'
 
 /** A value the x axis spans: a number (minutes, ms, a count) or a `Date`. */

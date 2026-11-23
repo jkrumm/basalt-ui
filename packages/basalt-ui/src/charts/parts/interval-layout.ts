@@ -47,46 +47,6 @@ export const LABEL_SLACK = 1.2
 const MIN_KEPT = 5
 const ELLIPSIS = '\u2026'
 
-/**
- * A lane index per item: in start order, each takes the first lane whose last span ended at or
- * before its start. Returns the lane per item (by input position) and the lane count (at least 1).
- */
-export function assignLanes(items: readonly { start: number; end: number }[]): {
-  lanes: number[]
-  count: number
-} {
-  const order = items
-    .map((_, i) => i)
-    .toSorted((a, b) => {
-      const p = items[a] as { start: number; end: number }
-      const q = items[b] as { start: number; end: number }
-      return p.start - q.start || p.end - q.end || a - b
-    })
-  const ends: number[] = []
-  // Whether the last item in each lane is a point.
-  const pointLast: boolean[] = []
-  const lanes: number[] = Array.from({ length: items.length }, () => 0)
-  for (const i of order) {
-    const item = items[i] as { start: number; end: number }
-    const point = item.start === item.end
-    // A point (start === end) shares a lane with a span that ends where it sits, but never with
-    // another point at the same instant: coincident points each take a lane, so the second shows.
-    let lane = ends.findIndex(
-      (end, l) => end < item.start || (end === item.start && !(point && pointLast[l])),
-    )
-    if (lane === -1) {
-      lane = ends.length
-      ends.push(item.end)
-      pointLast.push(point)
-    } else {
-      ends[lane] = item.end
-      pointLast[lane] = point
-    }
-    lanes[i] = lane
-  }
-  return { lanes, count: Math.max(1, ends.length) }
-}
-
 const meets = (a: PxSpan, b: PxSpan): boolean => a.from < b.to && b.from < a.to
 
 /** The longest prefix of `text` that fits `room` px with an ellipsis, or `null`. */
