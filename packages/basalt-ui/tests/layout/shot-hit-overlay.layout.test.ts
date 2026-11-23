@@ -73,7 +73,7 @@ layout('the text boxes the overlap measurer reads', () => {
 })
 
 const ESCAPES =
-  '<!doctype html><meta charset="utf-8"><style>\n  #root { position: relative; width: 400px; height: 40px; font: 14px/20px sans-serif; }\n  .card { position: static; overflow: hidden; width: 100px; height: 20px; white-space: nowrap; }\n  .esc { position: absolute; left: 110px; top: 0; white-space: nowrap; }\n  .outside { position: absolute; left: 150px; top: 0; white-space: nowrap; }\n</style>\n<div id="root">\n  <div class="card"><span>card label</span></div>\n  <span class="esc">escapes</span>\n  <span class="outside">outside</span>\n</div>'
+  '<!doctype html><meta charset="utf-8"><style>\n  #root { position: relative; width: 400px; height: 40px; font: 14px/20px sans-serif; }\n  .card { position: static; overflow: hidden; width: 100px; height: 20px; white-space: nowrap; }\n  .esc { position: absolute; left: 110px; top: 0; white-space: nowrap; }\n  .outside { position: absolute; left: 150px; top: 0; white-space: nowrap; }\n</style>\n<div id="root">\n  <div class="card"><span>card label</span><span class="esc">escapes</span></div>\n  <span class="outside">outside</span>\n</div>'
 
 layout('an absolute box is cut only by the overflow of its containing block', () => {
   test('a box escaping a clipping card still overlaps the text beside it', async () => {

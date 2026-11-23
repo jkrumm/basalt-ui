@@ -99,8 +99,6 @@ export function measureAnchor(root: Element): Reading {
   const control =
     'a[href], button, input:not([type="hidden"]), select, textarea, summary, [role="button"], [role="tab"], [role="switch"], [role="checkbox"], [role="radio"], [role="menuitem"]'
   const range = document.createRange()
-  // The box a text node can show in: every ancestor that clips (overflow hidden, clip, auto or scroll) cuts it to its
-  // padding box, and an element with text-overflow: ellipsis cuts its own text there. Infinite edges: nothing clips it.
   const CLIPPING = /^(hidden|clip|auto|scroll)$/
   // The box a text node can show in. Overflow clips a box only from the ancestors that contain its containing block:
   // an absolutely positioned box is cut by none below its containing block, a fixed one by no overflow at all.
