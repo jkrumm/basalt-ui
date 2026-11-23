@@ -1,4 +1,4 @@
-/** `basalt-ui/cards` — the card composites (`StatCard`, `StatGroup`, `StatCell`, `DataPanel`, `BarList`, `EventList`, `RowList`, `StepRail`, `KanbanCard`, `Board`, `ChainView`, `FlowCanvas`, `FlowChecklist`). Peers: react, `@base-ui/react` (via `ui/card`). */
+/** `basalt-ui/cards` — the card composites (`StatCard`, `StatGroup`, `StatCell`, `DataPanel`, `BarList`, `EventList`, `RowList`, `RelationshipCard`, `StepRail`, `KanbanCard`, `Board`, `ChainView`, `FlowCanvas`, `FlowChecklist`). Peers: react, `@base-ui/react` (via `ui/card`). */
 
 export { StatCard } from './stat-card'
 export { StatGroup } from './stat-group'
@@ -8,6 +8,7 @@ export { BarList } from './bar-list'
 export { EventList } from './event-list'
 export { periodOf } from './event-list-model'
 export { RowList } from './row-list'
+export { RelationshipCard } from './relationship-card'
 export { StepRail } from './step-rail'
 export { KanbanCard } from './kanban-card'
 export { Board, applyMove } from './board'
@@ -36,6 +37,12 @@ export type { BarListProps } from './bar-list'
 export type { EventListProps, EventListItem, EventActor } from './event-list'
 export type { Period, PeriodKind, PeriodOptions } from './event-list-model'
 export type { RowListProps } from './row-list'
+export type {
+  RelationshipCardProps,
+  RelationshipFact,
+  RelationshipFacts,
+  RelationshipStrength,
+} from './relationship-card'
 export type { StepRailProps, StepRailRow } from './step-rail'
 export type { ChainViewProps, ChainFace } from './chain-view'
 export type { FlowCanvasProps } from './flow-canvas'
