@@ -3,7 +3,7 @@ name: chat-thread-scroll
 use-when: a scroller that follows a streaming reply to the bottom, releases on a scroll up and survives a late image or the keyboard closing
 ---
 
-Part of the `chat-thread` recipe. It replaces `use-stick-to-bottom` and `message-scroller`: over a 90 s stream the first lost its pin when the soft keyboard closed, the second ran one line behind; neither is a dependency.
+Part of the `chat-thread` recipe; no part ships a scroller, so this hook stays a copy. It replaces `use-stick-to-bottom` and `message-scroller`: over a 90 s stream the first lost its pin when the soft keyboard closed, the second ran one line behind; neither is a dependency.
 Call it in a component that re-renders with the stream: the no-deps layout effect scrolls in the same task as the commit, and the `ResizeObserver` covers reflow React did not cause.
 The scroll element is `ui/scroll-area` (its `ref` is the scroller) with `overflow-anchor: none`. Release is a scroll up with a gap above 8 px; returning within 8 px re-pins.
 Real iOS touch scrolling is untested.
