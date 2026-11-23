@@ -26,6 +26,7 @@ import {
   SlidersHorizontal as Sliders,
   Table,
   TextCursorInput as Form,
+  Workflow,
 } from 'lucide-react'
 import { SCENARIO_INFO } from '../scenarios/scenario-info'
 
@@ -104,6 +105,13 @@ export const NAV = defineNav({
           icon: Sliders,
           mobile: 'more',
           link: linkOptions({ to: '/ref/settings' }),
+        },
+        {
+          id: 'ref-flow',
+          label: 'Reorder workflow',
+          icon: Workflow,
+          mobile: 'more',
+          link: linkOptions({ to: '/ref/flow' }),
         },
       ],
     },
