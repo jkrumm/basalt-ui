@@ -61,6 +61,7 @@ export function PageCrumb({
         <AppLink
           href={parent.href}
           data-slot="page-breadcrumb-parent"
+          data-basalt-hit=""
           className="focus-ring hover:text-foreground"
           onClick={handOffOnPlainClick}
         >
@@ -541,7 +542,8 @@ export function PageBar<K extends string = string, L extends string = string>({
         <AppLink
           href={parent.href}
           data-slot="page-breadcrumb-parent"
-          className="py-0.5 text-sm text-muted-foreground hover:text-foreground focus-ring"
+          data-basalt-hit=""
+          className="text-sm text-muted-foreground hover:text-foreground focus-ring"
         >
           {parent.label}
         </AppLink>
