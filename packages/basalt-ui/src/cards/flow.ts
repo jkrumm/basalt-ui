@@ -76,7 +76,8 @@ const foldsOf = (id: string) =>
 
 /**
  * The handle of the flow `id`: the pointer tool, the folds the reader left, and the reveal a
- * checklist calls. `id` names the persisted folds, so it is stable per flow (a workflow's id).
+ * checklist calls. `id` names the persisted folds, so it is stable per flow (a workflow's id). The
+ * handle's type is not exported; pass it as it comes.
  *
  * @useWhen a page draws a `FlowCanvas`, alone or with a `FlowChecklist` in its `PageAside`
  * @neverWhen the page draws a `ChainView`, which keeps its own viewport

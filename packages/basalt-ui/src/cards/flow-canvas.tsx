@@ -433,7 +433,8 @@ function measure(stage: HTMLElement, anchors: ReadonlySet<string>): Map<string, 
  * its group header (a chip with the count), its row (a triangle) and its edge, and `FlowChecklist`
  * lists it. Below 480 px of container the groups stack in source order, with no edges and no zoom.
  * A drawing smaller than the frame sits in its middle. Put it in a `fill` page; a `PageAside` beside
- * it docks and the canvas refits to the narrower frame.
+ * it docks and the canvas refits to the narrower frame. The column, group, row, edge and issue shapes
+ * are not exported: type data off `FlowCanvasProps['columns'][number]`, and take `flow` from `useFlow`.
  *
  * @useWhen a workflow or a pipeline is a few stages of configured steps with connectors between them (a builder), edited in place, with a workflow-level panel
  * @neverWhen the records wait on each other in a graph the layout should place (use `ChainView`), or the nodes are free to move (a whiteboard, out of scope)
