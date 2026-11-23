@@ -286,7 +286,7 @@ lint and stylelint scan, the seeded CI `oxfmt` globs, the rule `paths:`:
 
 `doctor` check 5 fails loudly (instead of a false `✓`) when the configured roots resolve to zero
 files for the v3 lint and stylelint scans. Each root's **parent** also contributes its `index.html`
-and its `public/` tree — the Vite layout `basaltViteConfig` assumes. The keys of the 2.x text guard
+and its `public/` tree — the Vite layout `basalt()` assumes. The keys of the 2.x text guard
 (`exempt`, `include`, `profile`, `severity`, `exemptRules`, `spacingSteps`, `forbiddenAccents`,
 `rawRadius` and the per-kind switches) are gone with `check-theme`; `MIGRATING.md` lists the row.
 

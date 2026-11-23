@@ -8,7 +8,6 @@
   "Bars": "argo:apps/dashboard/src/features/walking-pad/charts/daily-activity-chart.tsx",
   "basalt": "linewatch:web/vite.config.ts",
   "BasaltProvider": "argo:apps/dashboard/src/main.tsx",
-  "basaltViteConfig": "argo:apps/dashboard/vite.config.ts",
   "bindInvalidation": "software-factory:apps/console/src/lib/live.ts",
   "Board": "software-factory:apps/console/src/components/flow/board.tsx (flow columns; drag between states, Issue 2855)",
   "BP": "argo:apps/dashboard/src/lib/series.ts",

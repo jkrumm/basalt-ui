@@ -256,7 +256,7 @@ async function buildFixture(dir: string): Promise<void> {
  *   vite build →  `container: basalt-x/inline-size` `@container basalt-x (width >= 768px)`
  *
  * Bun hashes the name in the AT-RULE prelude and not in the declaration, so the two halves can
- * never meet. Vite (postcss-modules, which is what `basaltViteConfig` and therefore every consumer
+ * never meet. Vite (postcss-modules, which is what every consumer's build
  * runs) does not scope container names at all, in either half — so UNSCOPING is not a workaround
  * that makes a test pass, it is the only rewrite that makes this harness render what a consumer
  * renders. That is the same standard the rest of this file holds itself to: the fixture is

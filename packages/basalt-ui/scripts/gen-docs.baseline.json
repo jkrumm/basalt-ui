@@ -13,6 +13,5 @@
   "basalt-ui/tokens#defineSeries",
   "basalt-ui/tokens#groupTokens",
   "basalt-ui/tokens#p",
-  "basalt-ui/tokens#seriesTokens",
-  "basalt-ui/vite#basaltViteConfig"
+  "basalt-ui/tokens#seriesTokens"
 ]

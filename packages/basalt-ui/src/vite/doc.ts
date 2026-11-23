@@ -72,8 +72,8 @@ Open: F9 (HMR on an edited ejected file in a real dev server, with optimizeDeps.
 claimed here; it is recorded open for v3-spike-f3-eject. Until it passes, restart the dev server
 after editing an ejected file if the edit does not show.
 
-basalt() replaces basaltAppPlugin on basalt-ui/vite; 2.x basaltViteConfig is still exported
-until its migration row (replace with basalt()) retires it. Options type: Parameters<typeof basalt>[0].`
+basalt() replaces the 2.x basaltAppPlugin and basaltViteConfig on basalt-ui/vite.
+Options type: Parameters<typeof basalt>[0].`
 
 export function renderViteDoc(): string {
   return (
