@@ -38,5 +38,8 @@ export type Conversation = {
   messages: readonly Message[]
 }
 
-/** What the composer sends. */
-export type Outgoing = { to: string; cc: string; subject: string; body: string }
+/** What the composer holds while it is written, and keeps as a draft. */
+export type Draft = { to: string; cc: string; subject: string; body: string }
+
+/** What the composer sends: the written mail and the files attached to it. */
+export type Outgoing = Draft & { attachments: readonly File[] }

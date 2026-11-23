@@ -26,11 +26,11 @@ import {
   Star,
   Trash2,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { z } from 'zod'
 import { MAIL_FOLDERS, MAIL_FOLDER_LABELS } from './model'
-import type { Conversation, MailFolder, Message, Outgoing, Person } from './model'
+import type { Conversation, Draft, MailFolder, Message, Outgoing, Person } from './model'
 
 /** The folder, the search, the open conversation and the open composer live in the address. The route wires it. */
 export const mailControls = defineControls({
@@ -64,7 +64,12 @@ const Values = z.object({
 })
 
 /** A draft is any half-written mail: the checks of `Values` apply at send, never to what is kept. */
-const Draft = z.object({ to: z.string(), cc: z.string(), subject: z.string(), body: z.string() })
+const DraftSchema = z.object({
+  to: z.string(),
+  cc: z.string(),
+  subject: z.string(),
+  body: z.string(),
+})
 
 type Patch = Partial<Pick<Conversation, 'unread' | 'starred' | 'folder'>> & { deleted?: boolean }
 
@@ -104,21 +109,23 @@ function ComposeForm({
   lead,
 }: {
   draftKey: string
-  start: Outgoing
+  start: Draft
   onSend: (mail: Outgoing) => unknown
   onDone: () => void
   lead?: ReactNode
 }): ReactElement {
   // The first values only: a fresh object each render would read to the form as new defaults and wipe a restored draft.
   const [initial] = useState(start)
+  // The files ride beside the form: a File is no form value, and a draft cannot keep one.
+  const files = useRef<readonly File[]>([])
   const form = useAppForm({
     defaultValues: initial,
     onSubmit: async ({ value }) => {
-      await onSend(value)
+      await onSend({ ...value, attachments: files.current })
       onDone()
     },
   })
-  const draft = useFormDraft(form, { key: draftKey, version: 1, owner: null, schema: Draft })
+  const draft = useFormDraft(form, { key: draftKey, version: 1, owner: null, schema: DraftSchema })
   return (
     <div data-shot="composer" className="flex flex-col gap-3">
       {lead}
@@ -162,7 +169,8 @@ function ComposeForm({
           placeholder="Write the mail. Shift and Enter start a new line."
           defaultValue={form.state.values.body}
           files={{ accept: '.pdf,.xlsx,.csv,image/*', maxSize: 20_000_000, maxFiles: 5 }}
-          onSend={async ({ text }) => {
+          onSend={async ({ text, files: attached }) => {
+            files.current = attached
             form.setFieldValue('body', text)
             await form.handleSubmit()
             if (!form.state.isSubmitSuccessful) throw new Error('The mail is not complete.')
@@ -362,7 +370,7 @@ export function Mailbox({
         : values.compose
   const other = open === undefined ? undefined : contactOf(open)
   const bare = open?.subject.replace(/^(Re|Fwd): /, '') ?? ''
-  const start: Outgoing =
+  const start: Draft =
     kind === 'reply'
       ? { to: other?.address ?? '', cc: '', subject: `Re: ${bare}`, body: '' }
       : kind === 'forward'
