@@ -6,6 +6,7 @@
   "Dock",
   "EmptyState",
   "Facts",
+  "FavouriteToggle",
   "InnerNav",
   "OverlayHost",
   "Page",
@@ -24,5 +25,6 @@
   "Toc",
   "defineOverlays",
   "mdxComponents",
+  "useFavourite",
   "useSizeClass"
 ]
