@@ -4,7 +4,7 @@ description: Design and build a page in a basalt-ui app: a dashboard, list, deta
 when_to_use: Before writing or restyling any page, card, table or chart in a basalt-ui app, and when a UI looks generic, crowded or inconsistent. Load basalt-charts as well before the first chart.
 ---
 
-This file is the order of work and a map. The law is `.claude/rules/basalt-*.md` and `./DESIGN.md`; props live in `node_modules/basalt-ui/docs/<name>.md` and the shipped `.d.ts`. Each reference below holds the rules of one kind of part with worked examples: read it before you write that part, because the reviewer scores against it.
+This file is the order of work and a map. The law is `.claude/rules/basalt-*.md` and `./DESIGN.md`; props live in `node_modules/basalt-ui/docs/<name>.md` and the shipped `.d.ts`. Each reference below holds the rules of one kind of part with worked examples: read it before you write that part, because the reviewer scores against it. A whole page copies the reference page of its archetype in `apps/playground/src/routes/ref/`, built from shipped parts with no waiver and no `c.custom`: a list page `parts.tsx`, a list of documents that opens as a panel, a window or a page `notes.tsx`, a record page `suppliers.$id.tsx`, a settings page `settings.tsx`, a create flow `-new-order.tsx`.
 
 ## Order of work
 
@@ -26,16 +26,6 @@ This file is the order of work and a map. The law is `.claude/rules/basalt-*.md`
 - **A form or a settings page:** [forms](references/forms.md).
 - **Anything that enters, leaves or moves:** [motion](references/motion.md), never a number.
 - **Model output** (chat parts, generated text): [ai](references/ai.md).
-
-## Which page to copy
-
-One reference page per archetype, built on one inventory domain from shipped parts only, with no waiver and no `c.custom`. Copy the page of your archetype, then change its domain:
-
-- **List page** (view row of saved views with counts, summary strip, grid with sticky identity, group-by, footer sums, bulk bar, board and gallery layouts): `apps/playground/src/routes/ref/parts.tsx`.
-- **List of documents** (a typed-icon title, a quiet preview, linked records, no tick column; a row opens as a side panel, a window or the page): `apps/playground/src/routes/ref/notes.tsx`.
-- **Record page** (identity, properties, tabs with counts over related lists, an activity feed): `apps/playground/src/routes/ref/suppliers.$id.tsx`.
-- **Settings page** (an inner nav of panes, bordered sections of rows, choice cards, a matrix, a tag input, a danger row): `apps/playground/src/routes/ref/settings.tsx`.
-- **Create flow** (a split wizard dialog with a live preview and a review step): `apps/playground/src/routes/ref/-new-order.tsx`.
 
 ## The rules pages break most
 
