@@ -21,6 +21,7 @@ import { defineConfig } from 'tsup'
  * - `dts: false` because tsc owns declarations (`--emitDeclarationOnly
  *   --declarationMap`); running both emitters fights (tsup #1366).
  *
+ * - `charset: 'utf8'` keeps class strings byte-identical to source (see the option below).
  * tsup is in maintenance mode (upstream points to tsdown); this unbundled +
  * manual-copy CSS path is tsup-stable, so the tsdown migration stays deferred
  * behind the pack-test.
@@ -43,4 +44,10 @@ export default defineConfig({
   clean: true,
   outDir: 'dist',
   target: 'es2022',
+  // esbuild writes non-ASCII as `\xB7` escapes by default. A class string is read twice, as a value
+  // by the browser and as text by the consumer's Tailwind scan of dist, and the escaped text names a
+  // different class (`content-['\xB7']`) than the element carries (`content-['·']`): keep the bytes.
+  esbuildOptions(options) {
+    options.charset = 'utf8'
+  },
 })
