@@ -154,6 +154,13 @@ export const KNOWN: readonly KnownFinding[] = [
       'ui/badge: a neutral DeltaBadge (muted ink on the selected fill) misses 4.5:1 in a flush StatCell',
   },
   {
+    route: '/ref/parts',
+    assertion: 'ringWalk',
+    item: /td\[table-cell\] "": outline is clipped by main/,
+    owner:
+      "table: a grid-look row's focusable cell sits flush in main at 390, which clips its ring",
+  },
+  {
     route: '/charts',
     assertion: 'ringWalk',
     item: /svg ".*outline contrast 1\.74:1/,
