@@ -43,11 +43,14 @@ export function widthStore(kind: string): Persisted<number | null> {
   return persisted(`panel:${kind}:width`, { version: 1, initial: null, schema: schema(isWidth) })
 }
 
-/** The presentation a record kind opens in; `peek` until the reader picks another. */
-export function presentationStore(kind: string): Persisted<Presentation> {
+/** The presentation a record kind opens in; `initial` (`peek`) until the reader picks another. */
+export function presentationStore(
+  kind: string,
+  initial: Presentation = 'peek',
+): Persisted<Presentation> {
   return persisted(`panel:${kind}:present`, {
     version: 1,
-    initial: 'peek',
+    initial,
     schema: schema(isPresentation),
   })
 }
