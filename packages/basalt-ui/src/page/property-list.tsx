@@ -174,7 +174,7 @@ function ValueButton({
       data-slot="property-value"
       aria-label={t('page.propertyEdit', label)}
       onClick={onOpen}
-      className="-mx-1.5 -my-0.5 block max-w-full rounded-chip px-1.5 py-0.5 text-left [overflow-wrap:anywhere] text-foreground focus-ring hover:bg-accent pointer-coarse:-my-3 pointer-coarse:py-3"
+      className="-mx-1.5 -my-0.5 block max-w-full rounded-chip px-1.5 py-0.5 text-left [overflow-wrap:anywhere] text-foreground focus-ring hover:bg-accent pointer-coarse:my-0 pointer-coarse:flex pointer-coarse:min-h-11 pointer-coarse:items-center"
     >
       {children}
     </button>
@@ -444,7 +444,14 @@ function Row({ row }: { row: PropertyRow }): ReactElement {
       data-editing={editing ? '' : undefined}
       className="contents"
     >
-      <dt className={cn(FACTS_TERM, row.kind !== undefined && 'pointer-coarse:pt-3')}>
+      <dt
+        className={cn(
+          FACTS_TERM,
+          // An editable value is a 44 px target on touch, so its label centres on it.
+          row.kind !== undefined &&
+            'pointer-coarse:flex pointer-coarse:min-h-11 pointer-coarse:items-center',
+        )}
+      >
         {row.label}
       </dt>
       <dd className={FACTS_VALUE}>{value}</dd>
