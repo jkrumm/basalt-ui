@@ -1,0 +1,23 @@
+{
+  "name": "notes-list",
+  "archetype": "record list",
+  "summary": "The notes list: type-icon titles, quiet previews, linked records and a detail panel with previous and next.",
+  "files": ["NotesList.tsx", "model.ts"],
+  "imports": [
+    "basalt-ui",
+    "basalt-ui/cards",
+    "basalt-ui/core/ports",
+    "basalt-ui/page",
+    "basalt-ui/router",
+    "basalt-ui/table",
+    "basalt-ui/ui/entity",
+    "lucide-react",
+    "react"
+  ],
+  "ports": [
+    "notes: the notes query state (data and phase), typed QueryStateLike with data?: readonly Note[]",
+    "now: the reading time in ms, for the relative times",
+    "supplierHref: (supplierId) => NavTarget, the supplier link in the list and the detail",
+    "export notesControls: the type, search and open-note URL fields; the route wires validateSearch and middlewares"
+  ]
+}

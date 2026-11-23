@@ -55,7 +55,7 @@ export const raises: Raises = {
       from: 129000,
       to: 132000,
       consumer:
-        "the reference supplier record page (Issue 3087, apps/playground/src/routes/ref/suppliers.$id.tsx): the band carries the record's face, subtitle and tag (PageBar identity), and its contact, lead time and terms edit in place (PropertyList)",
+        "the reference supplier record page (Issue 3087, packages/basalt-ui/blocks/record-page/RecordPage.tsx): the band carries the record's face, subtitle and tag (PageBar identity), and its contact, lead time and terms edit in place (PropertyList)",
       repo: 'basalt-ui',
     },
     {
@@ -140,7 +140,7 @@ export const raises: Raises = {
       from: 25,
       to: 26,
       consumer:
-        '`PropertyList` from `./page` (Issue 3087): the reference supplier record page (apps/playground/src/routes/ref/suppliers.$id.tsx) edits its contact, lead time and terms in place; the label and value rows were read-only Facts',
+        '`PropertyList` from `./page` (Issue 3087): the reference supplier record page (packages/basalt-ui/blocks/record-page/RecordPage.tsx) edits its contact, lead time and terms in place; the label and value rows were read-only Facts',
       repo: 'basalt-ui',
     },
     {

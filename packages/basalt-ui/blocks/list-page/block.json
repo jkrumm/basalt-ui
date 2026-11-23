@@ -1,0 +1,25 @@
+{
+  "name": "list-page",
+  "archetype": "list page",
+  "summary": "The parts list page: saved views with counts, a stock summary strip and a parts grid with bulk actions.",
+  "files": ["ListPage.tsx", "model.ts"],
+  "imports": [
+    "basalt-ui",
+    "basalt-ui/cards",
+    "basalt-ui/core/ports",
+    "basalt-ui/page",
+    "basalt-ui/table",
+    "basalt-ui/ui/sortable-list",
+    "lucide-react",
+    "react"
+  ],
+  "ports": [
+    "parts: the parts query state (data and phase), typed QueryStateLike with data?: readonly Part[]",
+    "viewStore: the saved views store, from createPartViews(parts)",
+    "now: the reading time in ms, for countdowns, relative times and the seven-day figure",
+    "baseline: last month's stock value and deliveries, for the summary strip deltas",
+    "supplierHref: (supplierId) => NavTarget, the supplier link in the supplier column",
+    "onReplan: (ids: ReadonlySet<string>, plan: Plan) => void, called on a replan edit or a bulk hold",
+    "export createPartViews(parts): the in-memory ViewStore the route passes as viewStore"
+  ]
+}
