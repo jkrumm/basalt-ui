@@ -146,8 +146,12 @@ layout-fast: browser-shell ## Run only the layout files the branch's changes rea
 # plus the always-on set of tests that read files. CI and `make check` run the whole suite. Its slot is `unit-fast`, not
 # `unit`: project.yaml lets the `unit` step run on the step host, whose copy of the tree has no git diff of the working
 # tree, so `--changed` would see no change there and skip tests; `unit-fast` is declared nowhere and runs on the mini.
+# The scheduler's ceiling is 1792 MiB, not the step's 2048 MiB peak budget: the estimates it sums sit under the measured
+# RSS of parallel chunks (2026-11-23: p90 2141 MiB over 560 unit-fast runs at 2048), so the same budget is kept with ~12%
+# headroom for that overshoot.
+UNIT_FAST_PEAK_MIB = 1792
 test-fast: ## Run only the unit tests the branch's changes reach (BASE=<ref>, default origin/master)
-	@$(call slot,unit-fast) bun scripts/unit-test.ts --changed --base $(or $(BASE),origin/master)
+	@$(call slot,unit-fast) env UNIT_PEAK_MIB=$(UNIT_FAST_PEAK_MIB) bun scripts/unit-test.ts --changed --base $(or $(BASE),origin/master)
 
 build: ## Build the published package (dist-first tsup + declarations)
 	@cd packages/basalt-ui && bun run build
