@@ -6,7 +6,8 @@ import { FormRow, useFormDraft } from 'basalt-ui/controls'
 import type { NavTarget } from 'basalt-ui/core/ports'
 import { useAppForm } from 'basalt-ui/form'
 import { EmptyState, Page, PageBar, Peek, SplitPage, useSizeClass } from 'basalt-ui/page'
-import { CardPhase } from 'basalt-ui/ui/card'
+import { Card } from 'basalt-ui/ui/card'
+import { Skeleton } from 'basalt-ui/ui/skeleton'
 import { defineControls, field } from 'basalt-ui/router'
 import { BulkBar } from 'basalt-ui/table'
 import { Button } from 'basalt-ui/ui/button'
@@ -33,6 +34,40 @@ import type { ReactElement, ReactNode } from 'react'
 import { z } from 'zod'
 import { MAIL_FOLDERS, MAIL_FOLDER_LABELS } from './model'
 import type { Conversation, Draft, MailFolder, Message, Outgoing, Person } from './model'
+
+/** The reader's loaded shape while the mailbox loads: the subject, the chips, three message rows. */
+function ReaderSkeleton(): ReactElement {
+  return (
+    <div aria-busy="true" className="flex flex-col gap-4 p-6">
+      <div className="flex flex-col gap-1">
+        <div className="text-lg">
+          <Skeleton className="w-96 max-w-full" />
+        </div>
+        <div className="text-xs">
+          <Skeleton className="w-48" />
+        </div>
+      </div>
+      <div className="flex gap-2 text-sm">
+        <Skeleton className="w-40" />
+        <Skeleton className="w-28" />
+      </div>
+      <Card>
+        <div className="flex flex-col gap-4 p-4">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex flex-col gap-1">
+              <div className="text-sm">
+                <Skeleton className="w-40" />
+              </div>
+              <div className="text-xs">
+                <Skeleton className="w-2/3" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  )
+}
 
 /** The folder, the search, the open conversation and the open composer live in the address. The route wires it. */
 export const mailControls = defineControls({
@@ -461,7 +496,7 @@ export function Mailbox({
       />
       <div data-shot="mailbox" className="flex min-h-0 flex-1 flex-col">
         <SplitPage
-          selected={mail.useIsSet() && query.data !== undefined}
+          selected={mail.useIsSet() && open !== undefined}
           onBack={mail.clear}
           backLabel={MAIL_FOLDER_LABELS[values.folder]}
           scroll="panes"
@@ -547,10 +582,16 @@ export function Mailbox({
           )}
           detail={() =>
             query.data === undefined ? (
-              <div className="flex flex-1 flex-col p-4">
-                <CardPhase phase={query}>{null}</CardPhase>
-              </div>
-            ) : items.length === 0 ? null : open === undefined ? (
+              query.isError ? (
+                <p className="m-auto max-w-80 p-4 text-center text-sm text-muted-foreground">
+                  The inbox did not load, so there is no conversation to read.
+                </p>
+              ) : (
+                <ReaderSkeleton />
+              )
+            ) : items.length === 0 ? (
+              <p className="m-auto p-4 text-sm text-muted-foreground">Nothing to read.</p>
+            ) : open === undefined ? (
               <div className="flex flex-1 items-center justify-center">
                 <EmptyState
                   tier="section"
