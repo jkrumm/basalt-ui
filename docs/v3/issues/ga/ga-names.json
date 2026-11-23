@@ -1,0 +1,21 @@
+{
+  "why": "Names are what a consumer types, so they freeze hardest. The tree carries 23 `@deprecated … removed in the next minor` aliases in a major nobody has installed (llms.txt even steers to the deprecated `Menu` and `Status`), British rule ids (`colour-literal`, `fixed-colour`, `app-colour`) and identifiers (`Favourite*`, `favourites`) beside American ones everywhere else, one concept under several prop names (`StatCell label, qualifier` against `StatCard title, subtitle`; `xLabels` against `axisLabels`; `RowHeight compact/default/comfortable` against density `dense/normal/comfortable`; `DatePicker` with both `onChange` and `onValueChange`; `Sparkline series` meaning points), and six `motion_*.md` doc files beside kebab-case ones. Evidence: docs/v3/evidence/readiness-2026-11-24/freeze.md rows 3, 6, 7, 11 and docs/v3/evidence/readiness-2026-11-24/api.md.",
+  "what": "One name per concept across the package, American spelling, no deprecated alias, held by a test.",
+  "owns": [
+    "the names in packages/basalt-ui/src/** and their uses in apps/**, blocks/**, agent/**, generated docs and llms.txt",
+    "src/lint rule ids and the generated presets under configs/",
+    "migrations/areas, MIGRATING.md, tools/migrate-v3 codemods for each rename"
+  ],
+  "must_not_touch": ["the exports map structure (ga-exports, which lands first)", "CHANGELOG.md"],
+  "change": "Read first: docs/v3/issues/ga/README.md, then the evidence file named in why (every finding there has path:line). Decided: (1) Delete all 23 deprecated aliases; each 2.x name gets its MIGRATING row and codemod entry. (2) Rule ids and forms become `color-*`; identifiers become `Favorite*`/`favorites`. A waiver naming an old id fails with a message that names the new one for the length of 3.x. (3) One naming pass against the glossary in docs/v3/ARCHITECTURE.md section 6: a card and a stat use `title` and `subtitle`; axis labels are `axisLabels`; a value callback is `onValueChange` only; row height reuses the density words; `Sparkline` takes `points`. Where the glossary is silent, pick the name the larger number of parts already uses and add it to the glossary. (4) Generated doc files are kebab-case. (5) A test over the generated prop lists fails when a glossary concept appears under a second name. What the code decides: the full rename list; write it into the PR as a table (old, new, why).",
+  "acceptance": [
+    "`rg \"@deprecated\"` over packages/basalt-ui/src finds none that names a removal",
+    "No `colour` or `favourite` in a public identifier, rule id, doc file name or shipped rule text",
+    "The glossary test exists and fails on a seeded second name",
+    "`tools/migrate-v3` rewrites a fixture that uses every old name; the playground, blocks and marketing build on the new names",
+    "make check passes"
+  ],
+  "out_of_scope": "New parts or options. Changing what any part renders.",
+  "proof": "The rename table and the codemod run on the fixture.",
+  "commits": "Conventional, empty scope, header at most 80 characters, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export, prop, rule id or CLI flag gets its row in migrations/areas and MIGRATING.md and regenerates the docs in the same PR."
+}

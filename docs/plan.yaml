@@ -1617,3 +1617,102 @@ rows:
     lane: browser
     checkpoint: spec
     facts: { 'brief': 'docs/v3/issues/bench/bench-shell-nav.json' }
+  - key: ga-exports
+    title: 'The exports map is an explicit, tested list: public types importable, nothing internal published'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high, why: 'a public surface redesign across every entry' }
+    facts: { 'brief': 'docs/v3/issues/ga/ga-exports.json' }
+  - key: ga-install-path
+    title: 'The playground is a real init install on basalt(), the 2.x preset is gone, CI takes the tarball through init and build'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high, why: 'first real run of the install path, defects unknown' }
+    facts: { 'brief': 'docs/v3/issues/ga/ga-install-path.json' }
+  - key: ga-cli-formats
+    title: 'What init writes is versioned, refreshed by sync and checked by doctor; the CLI runs under Node'
+    repo: basalt-ui
+    kind: chore
+    seat:
+      {
+        tier: opus,
+        effort: high,
+        why: 'on-disk formats that freeze, across init, sync, doctor and the hook',
+      }
+    facts: { 'brief': 'docs/v3/issues/ga/ga-cli-formats.json' }
+  - key: ga-peers
+    title: 'Peer ranges by coupling class, astro and oxlint declared, a newest-peers CI job'
+    repo: basalt-ui
+    kind: chore
+    seat: { role: lead, moveUp: true }
+    facts: { 'brief': 'docs/v3/issues/ga/ga-peers.json' }
+  - key: ga-agent-layer
+    title: 'Shipped skills and rules: every claim checked, every part reachable, no history, no repo-only path'
+    repo: basalt-ui
+    kind: chore
+    seat:
+      {
+        tier: opus,
+        effort: high,
+        why: 'rewrites the text every consumer agent reads, with new guards',
+      }
+    facts: { 'brief': 'docs/v3/issues/ga/ga-agent-layer.json' }
+  - key: ga-names
+    title: 'One name per concept, American spelling, no deprecated alias, held by a glossary test'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high, why: 'a package-wide rename with codemods' }
+    after: [ga-exports]
+    after_needs: shipped
+    facts: { 'brief': 'docs/v3/issues/ga/ga-names.json' }
+  - key: ga-typed-nav
+    title: 'AppShell typed by defineNav, a guarded navTarget, a page entry without the router, one series seam'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high, why: 'type-level design that cannot be narrowed after 3.0' }
+    after: [ga-exports]
+    after_needs: shipped
+    facts: { 'brief': 'docs/v3/issues/ga/ga-typed-nav.json' }
+  - key: ga-site-path
+    title: 'init --profile site leaves a building Astro site with its own agent set; a dead island fails the build'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high, why: 'a new guard and a new agent set for the site profile' }
+    after: [ga-cli-formats, ga-agent-layer, ga-install-path]
+    after_needs: shipped
+    facts: { 'brief': 'docs/v3/issues/ga/ga-site-path.json' }
+  - key: ga-site-pages
+    title: 'Guide, article, post list and changelog as recipes on shipped site parts, used by the marketing site'
+    repo: basalt-ui
+    kind: feature
+    seat: { role: lead, moveUp: true }
+    lane: browser
+    after: [ga-site-path]
+    after_needs: shipped
+    facts: { 'brief': 'docs/v3/issues/ga/ga-site-pages.json' }
+  - key: ga-playground-tour
+    title: 'The playground opens on a tour of twelve pages on current patterns; superseded pages are gone'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high, why: 'curation and rebuilds the owner judges by eye' }
+    lane: browser
+    after: [ga-install-path]
+    after_needs: shipped
+    facts: { 'brief': 'docs/v3/issues/ga/ga-playground-tour.json' }
+  - key: ga-seams
+    title: 'Typed seams: table layout specs, palette sources, record steps on a page, three column kinds, a typed chart mark'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high, why: 'extension contracts that freeze' }
+    lane: browser
+    after: [ga-names]
+    after_needs: shipped
+    facts: { 'brief': 'docs/v3/issues/ga/ga-seams.json' }
+  - key: ga-contract
+    title: 'docs/v3/CONTRACT.md states what 3.0 freezes, under 25 KB, checked from the tree'
+    repo: basalt-ui
+    kind: docs
+    seat: { role: lead, moveUp: true }
+    after: [ga-exports, ga-names, ga-typed-nav, ga-cli-formats, ga-peers, ga-site-path, ga-seams]
+    after_needs: shipped
+    facts: { 'brief': 'docs/v3/issues/ga/ga-contract.json' }

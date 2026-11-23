@@ -1,0 +1,23 @@
+{
+  "why": "The playground is what the owner opens to judge v3, and it reads as an archive: 165 nav entries in 12 sections, seven of them trial evidence, a landing page that lists 105 scenarios as links, three phone tabs. Superseded cycle builds (dogfood 1 to 4, shell 2 to 5, state 2 to 3: 20 route files, 5.7k lines) still ship in the nav and in every matrix cell. `/charts` imports the built dist by relative path and loads a second copy of the chart module; `/table`, the exemplar the table skill names, hand-builds a Sheet where the table now owns its record panel. Six public parts have no page. The owner, 2026-11-24: \"a cleaned up playground, which is adhering to modern Basalt UI patterns, modern great renderings\". Evidence: docs/v3/evidence/readiness-2026-11-24/playground.md (work items WI-2 to WI-9 and its section 4 on what tests pin).",
+  "what": "The playground opens on a tour of about twelve pages that show v3 as it is meant to be used, and nothing superseded is left.",
+  "owns": [
+    "apps/playground/src/routes/**, src/demo/nav-model.tsx, src/cycle/**, a new apps/playground/AGENTS.md",
+    "the tests and waivers that name a deleted route (page-top layout test, scripts/consumers.json, matrix waivers)"
+  ],
+  "must_not_touch": [
+    "the vite config and `.basalt/` (ga-install-path, which lands first)",
+    "packages/basalt-ui/src except a defect a tour page exposes (own commit, named in the PR)",
+    "the routes the skill tests and the matrix pin (playground.md section 4), unless the test is repointed in the same PR"
+  ],
+  "change": "Read first: docs/v3/issues/ga/README.md, then the evidence file named in why (every finding there has path:line). Decided: (1) Nav: one \"Tour\" section first, then Kit and Reference collapsed; no scenario or cycle section. Scenarios stay routable for the tests and are reached from one index page, not the nav. The landing page is the tour. (2) The tour, each a page a consumer could have built from the skills: shell, list with saved views in the grid look, a reading-look table, board, record with panels, settings, a form with a wizard dialog, dashboard, charts, content, states and overlays (new `/kit/states` using `OverlayHost`, `ConnectionIndicator`, `RefreshButton`, `Toc`, `StepRail`, `ControlView`), and the phone projection shown as a viewport. Use existing ref and kit pages where they already are that page. (3) Delete the superseded cycle generations and repoint the tests and consumers that name them. (4) `/charts` imports from `basalt-ui/charts`; `/table` uses `detail` and `detailState`. (5) apps/playground/AGENTS.md states what is tour, kit, reference and test fixture, and where the carve-outs live. (6) The four parts with no consumer anywhere (`CardMenu`, `CardChip`, `FrameHead`, `useWindowChrome`): use each on a tour page where it belongs or delete it with its migration row. What the code decides: which existing page serves each tour stop.",
+  "acceptance": [
+    "The nav has at most 40 entries; the tour pages pass `basalt-ui lint` with no waiver and no `custom` column",
+    "Frames of every tour page at 1800x1200 and 390x844, light and dark, in the PR, and the design reviewer run on them with no P1",
+    "The layout suite and the full quality matrix pass; no waiver matches nothing",
+    "make check passes"
+  ],
+  "out_of_scope": "Pruning the expression scenarios (an owner call). New kit parts.",
+  "proof": "The tour frames and the reviewer result.",
+  "commits": "Conventional, empty scope, header at most 80 characters, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export, prop, rule id or CLI flag gets its row in migrations/areas and MIGRATING.md and regenerates the docs in the same PR."
+}

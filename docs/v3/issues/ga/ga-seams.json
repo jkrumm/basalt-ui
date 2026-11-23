@@ -1,0 +1,24 @@
+{
+  "why": "The cross-check against Accordee found no missing page type and four places where a closed type would force a consumer into an escape that cannot be opened later without a break. Table layouts are a closed union (`table | list | board | gallery`) saved as a view value, so a consumer cannot add a timeline or a map. The command palette lists commands and nav only and takes no source for records. A routed record page has no previous, next and close while Peek, PageAside and Dock all take `records`. `c.custom` is the only way to draw a progress bar, an avatar stack or icon chips and cannot filter, search or aggregate. The custom chart mark hook returns `readonly unknown[]`. Evidence: docs/v3/evidence/readiness-2026-11-24/accordee.md (P2 rows, rigidity section), docs/v3/evidence/readiness-2026-11-24/api.md (P2 chart mark).",
+  "what": "A consumer extends layouts, palette sources, record navigation, column kinds and chart marks through typed seams.",
+  "owns": [
+    "packages/basalt-ui/src/table/contract.ts, layouts/**, core/kinds*.ts(x)",
+    "src/shell/commands/**, src/page/contract.ts (PageBar records)",
+    "src/charts/contract.ts (the mark hook type), generated docs, a playground page per seam"
+  ],
+  "must_not_touch": [
+    "names settled by ga-names (it lands first)",
+    "the shell nav types (ga-typed-nav)"
+  ],
+  "change": "Read first: docs/v3/issues/ga/README.md, then the evidence file named in why (every finding there has path:line). Decided: (1) `display.layout` is an id; `layouts` takes specs `{ id, label, icon, render }` and the four built-ins are ordinary specs; a saved view naming an unknown id falls back to the table and says so in dev. (2) The palette takes `sources?: PaletteSource[]`: an async search returning typed rows (kind, title, detail, actions, a `NavTarget`), with recents; the provider's palette and an app's sources compose. (3) `PageBarProps.records` gives a routed record page previous, next and close on the same `PanelSteps` the panels use, bound through `defineCommands`. (4) Kinds `progress`, `avatars` and `chips`, each with sort value, filter and a card slot like the existing kinds; `custom` accepts `search` and a text `filter`. (5) The chart mark hook's return is typed by the engine's mark type through `import type`, or the allowed constructors are re-exported. What the code decides: the PaletteSource shape and the layout render contract.",
+  "acceptance": [
+    "A playground page adds a fifth layout from app code with no cast and saves it in a view",
+    "A playground page searches records in the palette and opens one; keyboard only (test)",
+    "A routed record page steps through its list with the keyboard",
+    "Type tests for a wrong chart mark and a wrong layout spec",
+    "make check passes"
+  ],
+  "out_of_scope": "A timeline, map or forecast layout in the kit. A permissions model.",
+  "proof": "Frames of the three pages and the type fixtures.",
+  "commits": "Conventional, empty scope, header at most 80 characters, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export, prop, rule id or CLI flag gets its row in migrations/areas and MIGRATING.md and regenerates the docs in the same PR."
+}

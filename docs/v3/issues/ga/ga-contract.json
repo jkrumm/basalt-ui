@@ -1,0 +1,23 @@
+{
+  "why": "After the freeze rows the binding description of v3 has to match the tree and be readable. `docs/v3/ARCHITECTURE.md` is 183 KB and code parses tables out of its prose (src/vite/allotment.ts, scripts/check-rule-tags.ts, scripts/check-contract-frozen.ts). Root AGENTS.md says `./data` was dropped while it is a live export; MAINTAINING.md puts three exports in the wrong entries; the llms.txt header calls the root barrel \"the 2.x root, import nothing from it\"; docs/v3/BENCHMARK-ACCORDEE-BLUEPRINT.md lists calendar, chat and the flow canvas as not built; `examples/react` is red and last touched in March. Evidence: docs/v3/evidence/readiness-2026-11-24/freeze.md (section 8 rows), docs/v3/evidence/readiness-2026-11-24/api.md (docs rows), docs/v3/evidence/readiness-2026-11-24/accordee.md (P3).",
+  "what": "`docs/v3/CONTRACT.md` states what 3.0 freezes, under 25 KB, generated or checked from the tree.",
+  "owns": [
+    "docs/v3/CONTRACT.md (new), the data files that replace prose tables read by code, root AGENTS.md, packages/basalt-ui/MAINTAINING.md",
+    "scripts/gen-llms.ts header, docs/v3/BENCHMARK-ACCORDEE-BLUEPRINT.md status lines, docs/v3/STOCKTAKE.md (a closing status per row)",
+    "examples/react (delete)"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src except the three readers of ARCHITECTURE prose",
+    "CHANGELOG.md"
+  ],
+  "change": "Read first: docs/v3/issues/ga/README.md, then the evidence file named in why (every finding there has path:line). Decided: (1) CONTRACT.md holds: layers, subpaths with their peers (generated from src/surfaces.ts), token names, rule ids, the manifest and budget schema with their format numbers, CLI verbs and flags (generated from help), managed paths, and the list of what 3.0 does not freeze (rendering, skill and rule text, the eject format, `./ai`). A test regenerates the generated sections and fails on drift. (2) The tables code reads move from ARCHITECTURE prose into data files; ARCHITECTURE.md becomes history and says so in its first line. (3) Fix the stale lines named in why. (4) STOCKTAKE.md gets one status line per freeze row with the PR that closed it, and a short section listing what is still open. (5) Delete examples/react. What the code decides: which sections are generated and which are checked.",
+  "acceptance": [
+    "CONTRACT.md is under 25 KB and its generated sections fail a test on drift",
+    "No script or source file reads docs/v3/ARCHITECTURE.md",
+    "Every STOCKTAKE freeze row has a status with a PR or an open reason",
+    "make check passes"
+  ],
+  "out_of_scope": "Rewriting ARCHITECTURE.md or DIRECTION.md. Any code change beyond the three readers.",
+  "proof": "The drift test and the STOCKTAKE status table.",
+  "commits": "Conventional, empty scope, header at most 80 characters, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export, prop, rule id or CLI flag gets its row in migrations/areas and MIGRATING.md and regenerates the docs in the same PR."
+}

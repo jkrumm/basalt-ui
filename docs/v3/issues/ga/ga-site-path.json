@@ -1,0 +1,25 @@
+{
+  "why": "Content pages on Astro are a stated use of v3 (one token set for app and site) and the path to them is not first-class. The agent layer teaches apps only: a `site` root is synced the app rules and skills, `basalt-ui.md` says to import `basalt-ui/ui/*` and use `Page` while `doctor` fails a site root that does, and its lint tags name rules that are off in the site preset. `init --profile site` writes no layout, no config line and no sources sheet. The island guard is a written decision, not code: a part that needs hydration renders dead without a directive and the build stays green. Option shapes that freeze are narrow (`basaltAstro({ fonts })` is a boolean with fixed subsets). Evidence: docs/v3/evidence/readiness-2026-11-24/site.md.",
+  "what": "`init --profile site` leaves a building Astro site with its own agent set, and a dead island fails the build.",
+  "owns": [
+    "packages/basalt-ui/src/astro/**, src/static/site-script.ts, src/cli/init (site steps), src/cli/doctor (site checks), configs/oxlint-site.json through its generator",
+    "packages/basalt-ui/agent: a new `basalt-site` skill and rule, and the per-profile set `sync` places",
+    "apps/playground-astro and apps/marketing where they prove the above"
+  ],
+  "must_not_touch": [
+    "the app profile and its skills",
+    "what the Astro matrix measures",
+    "page-type parts (ga-site-pages)"
+  ],
+  "change": "Read first: docs/v3/issues/ga/README.md, then the evidence file named in why (every finding there has path:line). Decided: (1) A `site` root gets its own agent set: the tokens rule, a new `basalt-site` rule and a `basalt-site` skill (page types, the island ladder, labels as props, the head); app-only rules and skills are not placed, and no placed text cites a lint id that is off in the site preset; a test checks the placed set per profile. (2) `init --profile site` patches the stock astro.config (`basaltAstro()` after `react()`), writes a layout and the sources sheet including the `basalt-ui/static.css` import, or `basaltAstro({ islands })` produces the sources so none is hand-written. `doctor` checks `basaltAstro()` is wired. (3) The package ships the part table (which part is static, which needs an island); `basaltAstro()` fails `astro:build:done` when a part that needs hydration sits outside an island, and `doctor` reads the same table. (4) Option shapes before they freeze: `fonts?: boolean | { subsets }`; the MDX island tags take `locale` and messages. (5) Tab keys follow direction. State the RTL position once in the contract: logical properties throughout, RTL supported for static parts, named gaps listed. (6) `siteScript` and `themeScript` are exported from `basalt-ui/static` for a non-Astro content site. (7) The restyle rules match the bare `basalt-ui/static` specifier; a site fixture proves a class rule fires on `class=\"…\"` in an `.astro` file, or a scanner is added. (8) One statement on Starlight in MAINTAINING.md and docs/astro.md: Starlight is the docs engine through the bridge sheet, `SiteArticle` is for guides and articles; the line that forbids Starlight compat goes. What the code decides: (2) patch against generate, and the island check's mechanism.",
+  "acceptance": [
+    "The tarball site consumer of ga-install-path (extend it here if that row left it minimal) builds after `init --profile site` with no hand edit and `doctor` is green",
+    "A fixture with a Dialog outside an island fails the build with a message that names the part and the fix",
+    "The placed agent set of a site root contains no app-only rule and resolves every tag (test)",
+    "A static page still ships no module script; the Astro matrix budgets hold",
+    "make check passes"
+  ],
+  "out_of_scope": "New page-type parts. Search. A Starlight plugin.",
+  "proof": "The failing dead-island fixture and the site consumer run.",
+  "commits": "Conventional, empty scope, header at most 80 characters, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export, prop, rule id or CLI flag gets its row in migrations/areas and MIGRATING.md and regenerates the docs in the same PR."
+}

@@ -1,0 +1,24 @@
+{
+  "why": "The owner wants docs, guides and articles from the kit as readily as apps. The static parts are sound and measured, and the page types around them are partial: the article head (canonical, Open Graph, JSON-LD) lives only in apps/marketing's own layout; guides are one `.astro` file per MDX file with a hard-coded date and reading time; there is no post list, changelog, breadcrumb or sidebar part outside Starlight; a plain Astro site gets code blocks in fixed colours that ignore the scheme. Evidence: docs/v3/evidence/readiness-2026-11-24/site.md (P2 rows on page types, guides, Shiki).",
+  "what": "A guide, an article, a post list and a changelog are each one documented recipe on shipped parts, used by the marketing site.",
+  "owns": [
+    "packages/basalt-ui/src/static/** and src/astro/** (new parts only), the prose sheet for Shiki output",
+    "apps/marketing guides and their collection, apps/playground-astro pages that prove each type",
+    "the `basalt-site` skill references for page types, docs/recipes"
+  ],
+  "must_not_touch": [
+    "the option shapes and guards of ga-site-path",
+    "the Starlight docs pages of apps/marketing beyond what the bridge needs"
+  ],
+  "change": "Read first: docs/v3/issues/ga/README.md, then the evidence file named in why (every finding there has path:line). Decided: (1) `SiteHead.astro`: title, description, canonical, Open Graph, article JSON-LD, from typed props. (2) `SiteNav`: a sidebar tree part for a docs or guide section outside Starlight, taking the same shape of data a content collection yields. (3) Guides in apps/marketing become a collection with one `[...slug].astro`; date, reading time and the pager come from frontmatter and the collection. (4) Recipes with a page in apps/playground-astro: guide, article, post list, changelog. (5) Code highlighting: the dual-theme `shikiConfig` keyed on the scheme attribute and the CSS for it ship and are documented. Every visible string is a prop with an English default. What the code decides: part boundaries and prop names, following the glossary.",
+  "acceptance": [
+    "Each of the four page types builds in apps/playground-astro with no module script on the page, light and dark, at 1440 and 390 (shots in the PR)",
+    "apps/marketing guides come from the collection; adding a guide is one MDX file",
+    "The Astro matrix records the new parts and their budgets",
+    "axe passes on the four pages",
+    "make check passes"
+  ],
+  "out_of_scope": "Search. Comments. An RSS generator. i18n routing.",
+  "proof": "Frames of the four page types and the diff of apps/marketing guides.",
+  "commits": "Conventional, empty scope, header at most 80 characters, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export, prop, rule id or CLI flag gets its row in migrations/areas and MIGRATING.md and regenerates the docs in the same PR."
+}

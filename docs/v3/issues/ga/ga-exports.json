@@ -1,0 +1,25 @@
+{
+  "why": "3.0 freezes what a consumer can import, and today that set is wrong in both directions. Too much: `./core/*` publishes about 75 internal modules and apps already import `core/ports`, `core/scheme` and `core/provider-props` for types with no other home; `./ui/*` publishes 49 `.guard` modules and test helpers that import undeclared packages. Too little: 26 of the 54 `[type:X]` names the shipped rules cite cannot be imported from any entry, `basalt-ui/shell` exports no type at all, `BasaltProvider` (React only) is published only from `./router`, and `setScheme` is missing from `.`. Evidence: docs/v3/evidence/readiness-2026-11-24/api.md and docs/v3/evidence/readiness-2026-11-24/freeze.md (rows 1 and 5).",
+  "what": "The exports map is an explicit, tested list: every public type is importable from its entry, nothing internal is published.",
+  "owns": [
+    "packages/basalt-ui/package.json (`exports` only), the entry files src/*/index.ts and src/index.ts, src/surfaces.ts",
+    "scripts/check-rule-tags.ts, scripts/surface-gates.ts and their tests; the fix texts in src/lint/rules that name `basalt-ui/core/*`",
+    "apps/playground imports that used `basalt-ui/core/*`"
+  ],
+  "must_not_touch": [
+    "peerDependencies (ga-peers)",
+    "renames of existing names and the deprecated aliases (ga-names)",
+    "src/cli (ga-cli-formats)"
+  ],
+  "change": "Read first: docs/v3/issues/ga/README.md, then the evidence file named in why (every finding there has path:line). Decided: (1) `./core/*` becomes an explicit list of exactly the modules an ejected primitive imports, held by a test that reads the eject seeds; everything else under core is unpublished. (2) Each entry exports its contract and Props types; `IconComponent`, `LinkComponent`, `NavTarget`, `DetailHost`, `DetailEntry`, `IntlScope` and the other port types get a home in the entry a consumer would look in (root for cross-cutting types). (3) `BasaltProvider`, `setScheme` and `setAppearance` are exported from `.`; `./router` keeps re-exporting the provider it wraps. (4) `./ui/*` no longer resolves a `.guard`, test-helper or stub module. (5) check-rule-tags verifies that every `[type:X]` in agent/rules is exported from a published entry (read the built or source entry graph, not a grep over src). (6) One definition for each of `SizeClass`, `SidebarBlock`, `ViewTabsProps`, `NavConfig`, `NavBadges`, `defineSeries`; the five unreachable modules api.md lists are deleted. (7) src/surfaces.ts lists the real rule files and subpaths (no `controls`, no `batteries`, with `page`), and a test derives each subpath's peer list from its import graph so llms.txt and `info` cannot drift. What the code decides: which entry each type lands in, and whether (1) is a list in exports or one curated barrel.",
+  "acceptance": [
+    "A type test imports every `[type:X]` name of agent/rules from a published entry and compiles",
+    "`attw` and `publint` on the packed tarball pass; the pack-test asserts that `basalt-ui/core/<an internal module>` and `basalt-ui/ui/<x>.guard` do not resolve",
+    "The playground and the marketing site import nothing from `basalt-ui/core/*` except the listed eject modules",
+    "llms.txt and the generated docs name the new homes; migrations/areas maps each moved specifier",
+    "make check passes"
+  ],
+  "out_of_scope": "Renaming anything. Typing AppShell against defineNav (ga-typed-nav).",
+  "proof": "The before and after count of published specifiers, and the type test.",
+  "commits": "Conventional, empty scope, header at most 80 characters, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export, prop, rule id or CLI flag gets its row in migrations/areas and MIGRATING.md and regenerates the docs in the same PR."
+}
