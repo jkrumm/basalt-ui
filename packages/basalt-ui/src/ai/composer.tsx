@@ -218,6 +218,7 @@ export function Composer<Value = unknown>({
     setDraft({ text: '', tokens: [] })
     setFiles([])
     setCaret(0)
+    setDismissed(undefined)
     // A newer edit wins over the stale restore.
     const restore = (): void => {
       setDraft((now) => (now.text === '' ? kept.draft : now))
@@ -339,11 +340,7 @@ export function Composer<Value = unknown>({
       />
       <div data-slot="composer-footer" className="flex min-h-8 items-center gap-1">
         {hasAdd && (
-          <AddMenu
-            items={add ?? []}
-            files={fileRules}
-            onFiles={(next) => setFiles((now) => [...now, ...next])}
-          />
+          <AddMenu items={add ?? []} files={fileRules} attached={files} onFiles={setFiles} />
         )}
         {mentions !== undefined && (
           <Button
@@ -486,10 +483,13 @@ function MentionRows<Value>({
 function AddMenu({
   items,
   files,
+  attached,
   onFiles,
 }: {
   items: readonly ComposerAddItem[]
   files: ComposerFiles | undefined
+  /** The files already attached: `FileUpload` checks the count and duplicates against them. */
+  attached: readonly File[]
   onFiles: (files: readonly File[]) => void
 }): ReactElement {
   const t = useMessages(ai)
@@ -527,14 +527,14 @@ function AddMenu({
           <FileUpload
             aria-label={t('ai.composerAttach')}
             multiple
-            value={[]}
+            value={attached}
             {...(files.accept !== undefined && { accept: files.accept })}
             {...(files.maxSize !== undefined && { maxSize: files.maxSize })}
             {...(files.maxFiles !== undefined && { maxFiles: files.maxFiles })}
             onValueChange={(next) => {
-              if (next.length === 0) return
+              const added = next.length > attached.length
               onFiles(next)
-              setOpen(false)
+              if (added) setOpen(false)
             }}
           />
         )}
