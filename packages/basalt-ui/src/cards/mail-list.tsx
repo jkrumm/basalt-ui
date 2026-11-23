@@ -87,7 +87,8 @@ export type MailListProps = FrameState & {
   /**
    * The window the rows render through: `VirtualList` from `basalt-ui/ui/virtual-list`, passed in so
    * `./cards` needs no virtual peer. It keeps every period header mounted, so the one above the top
-   * edge still sticks.
+   * edge still sticks: the list passes `keepIndex` as an array, which `VirtualList` takes and a
+   * stand-in written to the port's single index must take too.
    */
   virtual: VirtualLike
   /** What the selection can do, drawn floating at the list's foot while any row is selected: a `BulkBar` from `basalt-ui/table` in its list form. */
