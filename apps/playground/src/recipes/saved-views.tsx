@@ -16,7 +16,6 @@ const runs = defineControls({
   },
 })
 
-/** A list page: the view row holds the saved views, the panel edits the applied one. */
 export function Runs({ data }: { data: readonly Run[] }) {
   const [applied, setApplied] = runs.field.view.use()
   const t = useDataTable({
@@ -36,7 +35,13 @@ export function Runs({ data }: { data: readonly Run[] }) {
   })
   return (
     <Page area="runs" fill>
-      <PageBar tabs={views.tabs} settings={views.settings} />
+      <PageBar
+        tabs={views.tabs}
+        search={views.search}
+        controls={views.controls}
+        settings={views.settings}
+      />
+      {views.chips}
       <DataTable table={t} />
       {views.panel}
     </Page>

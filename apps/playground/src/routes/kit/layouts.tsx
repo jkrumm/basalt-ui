@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Page, PageBar } from 'basalt-ui/page'
-import { col, DataTable, TableToolbar, useDataTable, useTableViews } from 'basalt-ui/table'
+import { col, DataTable, useDataTable, useTableViews } from 'basalt-ui/table'
 import { drag } from 'basalt-ui/ui/sortable-list'
 import { useState } from 'react'
 import type { ReactElement } from 'react'
@@ -99,8 +99,15 @@ function LayoutsRoute(): ReactElement {
   const views = useTableViews(t)
   return (
     <Page area="kit-layouts">
-      <PageBar title="Accounts" tabs={views.tabs} layout={views.layout} settings={views.settings} />
-      <TableToolbar table={t} views={false} />
+      <PageBar
+        title="Accounts"
+        tabs={views.tabs}
+        search={views.search}
+        controls={views.controls}
+        layout={views.layout}
+        settings={views.settings}
+      />
+      {views.chips}
       <div data-shot="accounts">
         <DataTable table={t} drag={drag} />
       </div>
