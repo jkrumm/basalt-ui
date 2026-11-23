@@ -20,7 +20,8 @@ stop in source order. Edges are elbows with rounded turns and an arrowhead, re-m
 resize, a fold and a zoom; one into a target with an issue takes the issue's tone. An issue marks
 its group header (a chip with the count), its row (a triangle) and its edge, and `FlowChecklist`
 lists it. Below 480 px of container the groups stack in source order, with no edges and no zoom.
-Put it in a `fill` page; a `PageAside` beside it docks and the canvas refits to the narrower frame.
+A drawing smaller than the frame sits in its middle. Put it in a `fill` page; a `PageAside` beside
+it docks and the canvas refits to the narrower frame.
 
 ## Signature
 
