@@ -109,7 +109,7 @@ async function drag(page: LayoutPage, dx: number): Promise<void> {
 const near = (actual: number, expected: number): boolean => Math.abs(actual - expected) <= TOLERANCE
 
 layout('SplitPage resize at 1440', () => {
-  test('the list column is 320 px and its separator sits on its end edge', async () => {
+  test('the list column is 320 px and its separator is centred on its end edge', async () => {
     const page = await open(DESKTOP_1440)
     expect(near(await listWidth(page), DEFAULT_PX)).toBe(true)
     const listRight = await page.raw.evaluate(
@@ -117,7 +117,7 @@ layout('SplitPage resize at 1440', () => {
       LIST,
     )
     const handle = await handleBox(page)
-    expect(near(handle.x + handle.width, listRight)).toBe(true)
+    expect(near(handle.x + handle.width / 2, listRight)).toBe(true)
   })
 
   test('a drag by +100 px widens the list by 100, and the width survives a reload', async () => {

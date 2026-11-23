@@ -7,3 +7,4 @@
 @source './split-page-resize-fixture.tsx';
 @source '../../../src/ui';
 @source '../../../src/page';
+@source '../../../src/core/panel.tsx';
