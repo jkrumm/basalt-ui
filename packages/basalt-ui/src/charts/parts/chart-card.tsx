@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { cn } from '../../core/cn'
-import { resolvePhase } from '../../core/phase'
+import { resolveFrame } from '../../core/phase'
 import type { Fact, FootFacts, ResolvedPhase } from '../../core/phase'
 import type { Box, Verdict } from '../../core/ports'
 import { DeltaBadge } from '../../ui/badge'
@@ -250,12 +250,6 @@ function withPeriodHold(
   }
 }
 
-/** A query result whose `data` is an empty array: the rows it carries beyond `QueryStateLike`. */
-const hasNoRows = (phase: object): boolean => {
-  const { data } = phase as { data?: unknown }
-  return Array.isArray(data) && data.length === 0
-}
-
 /**
  * The frame every chart sits in: a header (icon, title, definition glyph, subtitle, controls, menu),
  * an inset holding the headline figure with its delta, period and verdict over the chart box, and an
@@ -316,10 +310,8 @@ export function ChartCard(props: ChartCardProps): ReactElement {
       ? props.chart
       : (box: Box): ReactNode => <ChartPanes box={box} panes={panes} />
   const { phase } = props
-  // A query phase measures emptiness itself: `empty` applies only when its `data` is an empty array.
-  const empty =
-    typeof phase === 'object' && 'isPending' in phase && !hasNoRows(phase) ? null : props.empty
-  const resolved = resolvePhase({ phase, empty })
+  // A query phase measures emptiness itself: `empty` applies only when its settled `data` is empty.
+  const resolved = resolveFrame({ phase, empty: props.empty })
   // A Suspense fallback has no chart to call, so it can only be loading.
   const effective: ResolvedPhase = chart === undefined ? { tag: 'loading', body: false } : resolved
   // The slots the ready frame declared, held for the frames that follow it (a refetch that loads,

@@ -16,7 +16,6 @@ import { OfflineLine } from '../../core/offline-line'
 import type { Empty, Fact, FootFacts, MenuEntry, ResolvedPhase } from '../../core/phase'
 import { PhaseBoundary } from '../../core/phase-boundary'
 import { useRetryLabel } from '../../core/retry-label'
-import { useRetryOwner } from '../../core/retry-owner'
 import type { BoxSlot, ControlsSlot, IconComponent } from '../../core/ports'
 
 const NUMBER = new Intl.NumberFormat('en')
@@ -206,8 +205,9 @@ function ErrorArm({
 }): ReactElement {
   const kind = resolved?.kind
   const message = resolved?.message
+  // A card is read alone, in its own shot and in its own corner of the page: it holds its own Retry
+  // even when a group beside it runs the same `refetch`.
   const run = retry ?? resolved?.retry
-  const showRetry = useRetryOwner(run)
   const retryLabel = useRetryLabel()
   return (
     <div
@@ -223,7 +223,7 @@ function ErrorArm({
       {message !== undefined && kind === undefined && (
         <p className="text-xs text-muted-foreground">{message}</p>
       )}
-      {run !== undefined && showRetry && (
+      {run !== undefined && (
         <button type="button" className={ACTION} onClick={run}>
           {retryLabel}
         </button>

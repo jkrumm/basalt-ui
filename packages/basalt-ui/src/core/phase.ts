@@ -22,12 +22,23 @@ export type Menu = CardMenu
  * The measured-empty state. It cannot lack a cause. `filtered` is the no-results case under active
  * filters: it renders Clear filters instead of `action`.
  *
+ * `when` is the measure of emptiness for a frame given a query as its `phase` (`ChartCard`,
+ * `StatCell`): it reads the settled `data`, so a query that returns an object, not an array, can say
+ * when it is empty (`when: (data) => data.runs.length === 0`). Without it the data is empty when it is
+ * an empty array. The frame calls it only once the query settled with data, and a frame given a
+ * `Phase` ignores it: there `empty` applies whenever it is set.
+ *
  * @useWhen a frame's query settled with no rows and the card must say why and what to do next
  * @neverWhen the query is pending or failed (pass the phase) or the card is merely short of data
  * @example
  * empty={{ cause: 'No deploys in this range', action: { label: 'Widen range', onClick: widen } }}
  */
-export type Empty = { cause: string; action?: CardAction; filtered?: { reset: () => void } }
+export type Empty = {
+  cause: string
+  action?: CardAction
+  filtered?: { reset: () => void }
+  when?(data: unknown): boolean
+}
 
 /** The phase half of every frame's props; `empty` wins once the query settled. */
 export type FrameState = {
@@ -97,7 +108,15 @@ export type ResolvedPhase =
   | { tag: 'loading'; body: false }
   | { tag: 'offline'; body: false }
   | { tag: 'empty'; body: false; empty: Empty }
-  | { tag: 'error'; body: false; kind?: ErrorKind; message?: string; retry?: () => void }
+  | {
+      tag: 'error'
+      body: false
+      kind?: ErrorKind
+      message?: string
+      /** `message` is the text of a failed query's `Error`, not a sentence the page wrote: a group never prints it. */
+      raw?: true
+      retry?: () => void
+    }
 
 /**
  * A TanStack query result also carries `fetchStatus`, which `QueryStateLike` does not name (the
@@ -158,7 +177,7 @@ function resolveInput(phase: Phase | QueryStateLike | undefined): Base {
       tag: 'error',
       body: false,
       ...(kind !== undefined && { kind }),
-      ...(phase.error instanceof Error && { message: phase.error.message }),
+      ...(phase.error instanceof Error && { message: phase.error.message, raw: true as const }),
       ...(refetch !== undefined && kind !== 'forbidden' && { retry: retryOf(refetch) }),
     }
   }
@@ -174,6 +193,39 @@ function errorFields(
     ...(phase.message !== undefined && { message: phase.message }),
     ...(phase.retry !== undefined && phase.kind !== 'forbidden' && { retry: phase.retry }),
   }
+}
+
+/** A query result's `data`, the field a TanStack result carries beyond `QueryStateLike`. */
+const dataOf = (phase: QueryStateLike): unknown => (phase as { data?: unknown }).data
+
+/**
+ * The `empty` a frame given a query may act on. A frame whose `phase` is a query result measures
+ * emptiness itself, so a page passes `empty` unconditionally: it holds only when the settled data is
+ * empty (an empty array, or `empty.when(data)` for a result of another shape) and is `null` while the
+ * query loads, failed or returned rows. A `Phase` or no phase passes `empty` through unchanged.
+ */
+export function settledEmpty(
+  phase: Phase | QueryStateLike | undefined,
+  empty: Empty | null | undefined,
+): Empty | null | undefined {
+  if (empty === undefined || empty === null) return empty
+  if (phase === undefined || !isQueryState(phase)) return empty
+  const data = dataOf(phase)
+  if (phase.isPending || data === undefined || data === null) return null
+  const isEmpty =
+    empty.when !== undefined ? empty.when(data) : Array.isArray(data) && data.length === 0
+  return isEmpty ? empty : null
+}
+
+/**
+ * `resolvePhase` for a frame that measures emptiness from its query (`ChartCard`, `StatCell`): the
+ * `empty` it was given counts only when `settledEmpty` says the settled data is empty.
+ *
+ * @example
+ * resolveFrame({ phase: query, empty: { cause: 'No merges yet' } }).tag
+ */
+export function resolveFrame({ phase, empty }: FrameState): ResolvedPhase {
+  return resolvePhase({ phase, empty: settledEmpty(phase, empty) })
 }
 
 /**

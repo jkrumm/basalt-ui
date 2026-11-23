@@ -15,7 +15,12 @@ filters: it renders Clear filters instead of `action`.
 ## Signature
 
 ```ts
-type Empty = { cause: string; action?: CardAction; filtered?: { reset: () => void } }
+type Empty = {
+  cause: string
+  action?: CardAction
+  filtered?: { reset: () => void }
+  when?(data: unknown): boolean
+}
 ```
 
 `Empty`, `CardAction` import from `basalt-ui/cards`: `import type { Empty, CardAction } from 'basalt-ui/cards'`.

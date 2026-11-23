@@ -119,7 +119,7 @@ describe('one Retry across frames', () => {
     expect(buttons().length).toBe(1)
   })
 
-  test('a ChartCard, a panel and a stat cell on one retry draw one button', () => {
+  test('a ChartCard keeps its own button; a panel and a stat cell on its retry share one', () => {
     const retry = mock(() => undefined)
     const phase = failed(retry)
     render(
@@ -129,8 +129,8 @@ describe('one Retry across frames', () => {
         <StatCell label="Orders" phase={phase} />
       </>,
     )
-    expect(buttons().length).toBe(1)
-    fireEvent.click(buttons()[0] as HTMLElement)
+    expect(buttons().length).toBe(2)
+    fireEvent.click(buttons()[1] as HTMLElement)
     expect(retry).toHaveBeenCalledTimes(1)
   })
 
