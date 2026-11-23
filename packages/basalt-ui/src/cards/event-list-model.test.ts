@@ -1,5 +1,12 @@
 import { afterEach, describe, expect, spyOn, test } from 'bun:test'
-import { LARGE_FEED, groupByDay, resetLargeFeedWarning, warnLargeFeed } from './event-list-model'
+import {
+  LARGE_FEED,
+  groupByDay,
+  isLongBody,
+  periodOf,
+  resetLargeFeedWarning,
+  warnLargeFeed,
+} from './event-list-model'
 
 const utc = (y: number, m: number, d: number, h = 12, mi = 0): Date =>
   new Date(Date.UTC(y, m - 1, d, h, mi))
@@ -102,5 +109,58 @@ describe('warnLargeFeed', () => {
     warnLargeFeed(LARGE_FEED + 50)
     expect(warn).toHaveBeenCalledTimes(1)
     warn.mockRestore()
+  })
+})
+
+describe('periodOf', () => {
+  // Monday 2026-11-23: the week runs 23 Nov to 29 Nov.
+  const now = utc(2026, 11, 23, 9)
+  const keyOf = (at: Date, o?: Parameters<typeof periodOf>[2]): string => periodOf(at, now, o).key
+  const kindOf = (at: Date, o?: Parameters<typeof periodOf>[2]): string => periodOf(at, now, o).kind
+
+  test('names today and yesterday, then the week, the month, earlier months and years', () => {
+    expect(kindOf(utc(2026, 11, 23, 1))).toBe('today')
+    expect(kindOf(utc(2026, 11, 22, 23))).toBe('yesterday')
+    expect(kindOf(utc(2026, 11, 20))).toBe('month')
+    expect(kindOf(utc(2026, 11, 1))).toBe('month')
+    expect(keyOf(utc(2026, 10, 31, 23))).toBe('2026-10')
+    expect(kindOf(utc(2026, 8, 3))).toBe('monthOf')
+    expect(keyOf(utc(2025, 12, 31))).toBe('2025')
+    expect(kindOf(utc(2025, 12, 31))).toBe('year')
+  })
+
+  test('days: false folds today and yesterday into the week they fall in', () => {
+    const thursday = utc(2026, 11, 26, 9)
+    expect(periodOf(utc(2026, 11, 26, 8), thursday, { days: false }).kind).toBe('week')
+    expect(periodOf(utc(2026, 11, 25), thursday, { days: false }).kind).toBe('week')
+    expect(periodOf(utc(2026, 11, 22), thursday, { days: false }).kind).toBe('month')
+  })
+
+  test('the week starts on the day the caller names', () => {
+    const sunday = { days: false, weekStartsOn: 0 as const }
+    // Sunday 22 Nov starts the week that holds Monday 23 Nov.
+    expect(kindOf(utc(2026, 11, 22), sunday)).toBe('week')
+    expect(kindOf(utc(2026, 11, 22), { days: false })).toBe('month')
+  })
+
+  test('a moment after the week keeps its own month, a later year its number', () => {
+    expect(kindOf(utc(2026, 11, 29), { days: false })).toBe('week')
+    expect(keyOf(utc(2026, 11, 30), { days: false })).toBe('2026-11')
+    expect(keyOf(utc(2026, 12, 5), { days: false })).toBe('2026-12')
+    expect(keyOf(utc(2027, 1, 5), { days: false })).toBe('2027')
+  })
+
+  test("the calendar is the zone's: 23:30 UTC is already tomorrow in Berlin", () => {
+    const late = utc(2026, 11, 22, 23, 30)
+    expect(kindOf(late)).toBe('yesterday')
+    expect(kindOf(late, { timeZone: 'Europe/Berlin' })).toBe('today')
+  })
+})
+
+describe('isLongBody', () => {
+  test('a long or multi-line body folds, a short one does not', () => {
+    expect(isLongBody('Rolling out to 25% of traffic.')).toBe(false)
+    expect(isLongBody('x'.repeat(91))).toBe(true)
+    expect(isLongBody('one\ntwo')).toBe(true)
   })
 })

@@ -46,6 +46,108 @@ const rowIds = (root: ParentNode): string[] =>
     (el) => el.getAttribute('data-event-id') ?? '',
   )
 
+describe('EventList period groups, faces, rail and folding', () => {
+  // Monday 2026-11-23, 09:00 UTC: the week runs 23 to 29 November.
+  const TODAY = Date.UTC(2026, 10, 23, 9)
+  const at = (m: number, d: number, y = 2026): number => Date.UTC(y, m - 1, d, 10)
+  const FEED = [
+    { id: 'a', at: at(11, 23), actor: { name: 'Ada Lovelace' }, title: 'placed PO-1' },
+    {
+      id: 'b',
+      at: at(11, 22),
+      actor: { name: 'Goods in', shape: 'object' as const },
+      title: 'received PO-0',
+    },
+    { id: 'c', at: at(11, 20), actor: 'Grace', title: 'wrote a note' },
+    { id: 'd', at: at(8, 3), actor: 'Grace', title: 'rated the supplier' },
+    { id: 'e', at: at(7, 9), title: 'signed the contract' },
+    { id: 'f', at: at(12, 20, 2025), title: 'onboarded' },
+  ]
+  const headers = (root: ParentNode): (string | null)[] =>
+    [...root.querySelectorAll('[data-slot="event-list-header"]')].map((el) =>
+      (el.firstChild?.textContent ?? '').trim(),
+    )
+
+  test('group="period" heads This week, Earlier this month, month names, then years', () => {
+    const { container } = render(
+      <EventList title="Activity" items={FEED} now={TODAY} group="period" />,
+    )
+    expect(headers(container)).toEqual([
+      'This week',
+      'Earlier this month',
+      'August',
+      'July',
+      '2025',
+    ])
+    expect(
+      [...container.querySelectorAll('[data-slot="event-list-day"]')].map((s) => rowIds(s)),
+    ).toEqual([['a'], ['b', 'c'], ['d'], ['e'], ['f']])
+  })
+
+  test('the default stays one header per day', () => {
+    const { container } = render(<EventList title="Activity" items={FEED} now={TODAY} />)
+    expect(headers(container).slice(0, 2)).toEqual(['Today', 'Yesterday'])
+  })
+
+  test('an actor with a face draws an Avatar in the lead column; the name still prints', () => {
+    const { container } = render(
+      <EventList title="Activity" items={FEED} now={TODAY} group="period" />,
+    )
+    const first = container.querySelector('[data-slot="event-list-row"]')!
+    expect(first.querySelector('[data-slot="avatar"]')?.getAttribute('aria-hidden')).toBe('true')
+    expect(first.querySelector('[data-slot="event-list-line"]')?.textContent).toBe(
+      'Ada Lovelace placed PO-1',
+    )
+    const second = container.querySelectorAll('[data-slot="event-list-row"]')[1]!
+    expect(second.querySelector('[data-slot="avatar"]')?.className).toContain('rounded-chip')
+  })
+
+  test('a connector joins the rows of a group: none above the first, none below the last', () => {
+    const { container } = render(
+      <EventList title="Activity" items={FEED} now={TODAY} group="period" />,
+    )
+    const [week, month] = container.querySelectorAll('[data-slot="event-list-day"]')
+    const rails = (el: Element | undefined): number[] =>
+      [...(el?.querySelectorAll('[data-slot="event-list-row"]') ?? [])].map(
+        (row) => row.querySelectorAll('[data-slot="event-list-connector"]').length,
+      )
+    expect(rails(week)).toEqual([0])
+    expect(rails(month)).toEqual([1, 1])
+  })
+
+  test('a long body folds to a line and expands', () => {
+    const body = 'The origin timed out twice while the cache warmed. '.repeat(3)
+    const { container, getByRole } = render(
+      <EventList
+        title="Activity"
+        items={[{ id: 'x', at: TODAY, title: 'failed', body }]}
+        now={TODAY}
+      />,
+    )
+    const folded = container.querySelector('[data-slot="event-list-body"]')!
+    expect(folded.className).toContain('truncate')
+    const button = getByRole('button', { name: 'More' })
+    expect(button.getAttribute('aria-expanded')).toBe('false')
+    expect(button.getAttribute('aria-controls')).toBe(folded.id)
+    fireEvent.click(button)
+    expect(getByRole('button', { name: 'Less' }).getAttribute('aria-expanded')).toBe('true')
+    expect(container.querySelector('[data-slot="event-list-body"]')?.className).toContain(
+      'whitespace-pre-line',
+    )
+  })
+
+  test('a short body stays inline and has no expander', () => {
+    const { queryByRole } = render(
+      <EventList
+        title="Activity"
+        items={[{ id: 'x', at: TODAY, title: 't', body: 'short' }]}
+        now={TODAY}
+      />,
+    )
+    expect(queryByRole('button', { name: 'More' })).toBeNull()
+  })
+})
+
 describe('EventList', () => {
   test('groups by day with Today, Yesterday and dated headers, counts and list semantics', () => {
     const { container, getAllByRole } = draw()
