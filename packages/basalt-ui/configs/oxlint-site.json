@@ -22,6 +22,7 @@
         "AvatarStack": "div",
         "Button": "button",
         "ButtonGroup": "div",
+        "Calendar": "div",
         "Card": "div",
         "CardBand": "div",
         "CardInfo": "div",

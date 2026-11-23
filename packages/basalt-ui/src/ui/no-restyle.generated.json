@@ -65,6 +65,14 @@
       "message": "Pressable owns its height and display: use size (none, row, chip), or eject it (basalt-ui eject button)."
     },
     {
+      "module": "calendar",
+      "part": "calendar",
+      "pattern": "^Calendar$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "Calendar owns its height and display: use size (md, sm), or eject it (basalt-ui eject calendar)."
+    },
+    {
       "module": "card",
       "part": "card",
       "pattern": "^Card$",

@@ -2,15 +2,19 @@ import { cva } from 'class-variance-authority'
 import type { VariantProps } from 'class-variance-authority'
 import { useId, useState } from 'react'
 import type { ReactElement } from 'react'
-import { DayButton, DayPicker } from 'react-day-picker'
-import type { ClassNames, DateRange, DayButtonProps, DayPickerProps } from 'react-day-picker'
+import { DayPicker } from 'react-day-picker'
+import type { DateRange } from 'react-day-picker'
 import { cn } from '../core/cn'
 import { scopeClass, useControlScope } from '../core/control-scope'
 import type { CalendarDate } from '../core/format'
 import { useFormat } from '../core/format'
 import { date as dateMessages } from '../core/messages/date'
 import { useMessages } from '../core/messages/use-messages'
+import { toCalendarDate, toLocalDate, useCalendarProps } from './calendar-grid'
+import type { CalendarRange } from './calendar-grid'
 import { Popover, PopoverContent, PopoverTrigger } from './popover'
+
+export type { CalendarRange } from './calendar-grid'
 
 /** A picked day as `YYYY-MM-DD`, the type `value` and `onChange` take. Re-exported so a form types its field without `core/format`. */
 export type { CalendarDate } from '../core/format'
@@ -40,46 +44,13 @@ export const datePickerVariants = cva(
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
 export const datePickerParts = ['date-picker', 'date-range-picker'] as const
 
-/** The month grid inside the popup: day cells are 36 px (44 px on a coarse pointer) so it fits a phone at 320 px. */
+/**
+ * The month grid inside the popup: 36 px day cells (44 px on a coarse pointer), so it fits a phone at
+ * 320 px. The same cell as `Calendar`'s `md` size, written here so the picker reaches the shared grid
+ * through `calendar-grid` alone and never loads `ui/calendar`.
+ */
 const CALENDAR_ROOT =
   'relative w-fit text-sm text-foreground select-none [--cell:--spacing(9)] pointer-coarse:[--cell:--spacing(11)]'
-
-/**
- * The day colours, all tokens. A picked day (the single day, or either end of a range) is the one
- * strong fill; the middle of a range is the quiet `selected` band its ends sit on; hover is the
- * lighter `accent`; today is a neutral ring and weight, never the brand, so it never competes with
- * the pick.
- */
-const CALENDAR_CLASSES: Partial<ClassNames> = {
-  months: 'flex flex-col',
-  month: 'flex flex-col gap-1',
-  month_caption: 'flex h-(--cell) items-center justify-center',
-  caption_label: 'text-sm font-medium',
-  nav: 'absolute inset-x-0 top-0 flex h-(--cell) items-center justify-between',
-  button_previous:
-    'inline-flex size-(--cell) cursor-pointer items-center justify-center rounded-ctrl text-muted-foreground hover:bg-accent focus-ring aria-disabled:pointer-events-none aria-disabled:opacity-50',
-  button_next:
-    'inline-flex size-(--cell) cursor-pointer items-center justify-center rounded-ctrl text-muted-foreground hover:bg-accent focus-ring aria-disabled:pointer-events-none aria-disabled:opacity-50',
-  chevron: 'size-icon fill-current',
-  month_grid: 'border-collapse',
-  weekdays: '',
-  weekday: 'size-(--cell) p-0 text-center text-xs font-normal text-muted-foreground',
-  week: '',
-  day: 'group/day size-(--cell) p-0 text-center',
-  day_button:
-    'inline-flex size-(--cell) cursor-pointer items-center justify-center rounded-ctrl tabular-nums focus-ring hover:bg-accent group-data-today/day:font-semibold group-data-today/day:inset-ring group-data-today/day:inset-ring-input group-data-outside/day:text-faint group-data-disabled/day:pointer-events-none group-data-disabled/day:opacity-50 data-picked:bg-primary data-picked:text-primary-foreground data-picked:hover:bg-primary/90',
-  range_middle: 'bg-selected',
-  range_start: 'rounded-l-ctrl bg-selected',
-  range_end: 'rounded-r-ctrl bg-selected',
-}
-
-/** DayPicker's own day button (it keeps the roving focus), flagged `data-picked` on a single pick or a range end. */
-function CalendarDayButton(props: DayButtonProps): ReactElement {
-  const { selected, range_middle: middle } = props.modifiers
-  return (
-    <DayButton {...props} {...(selected === true && middle !== true && { 'data-picked': '' })} />
-  )
-}
 
 type Layout = VariantProps<typeof datePickerVariants> & {
   /** Layout only (`w-48`, `flex-1`). Height belongs to `size`. */
@@ -115,9 +86,6 @@ export type DatePickerProps = Layout &
     onBlur?: () => void
   }
 
-/** A range of days. Both ends are `YYYY-MM-DD`; a half range is only ever a value you pass in. */
-export type CalendarRange = { from: CalendarDate; to: CalendarDate }
-
 export type DateRangePickerProps = Layout &
   OpenState &
   DatePickerName & {
@@ -131,30 +99,6 @@ export type DateRangePickerProps = Layout &
     /** Called when the calendar closes, so a validator runs after the pick. */
     onBlur?: () => void
   }
-
-const ISO_DAY = /^(\d{4})-(\d{2})-(\d{2})$/
-
-/**
- * A `YYYY-MM-DD` day as the local-noon `Date` DayPicker works in. DayPicker reads dates in the
- * runtime's zone, so building the local day (never `new Date('2026-11-20')`, which is UTC midnight
- * and lands on the 19th west of UTC) keeps the day that was stored. Noon, not midnight, so no
- * daylight-saving gap can move it.
- */
-function toLocalDate(day: CalendarDate | null | undefined): Date | undefined {
-  const m = typeof day === 'string' ? ISO_DAY.exec(day) : null
-  if (m === null || typeof day !== 'string') return undefined
-  const local = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12)
-  // `2026-02-31` rolls to March in `Date`: a day that does not exist is no day.
-  return toCalendarDate(local) === day ? local : undefined
-}
-
-/** The local calendar day DayPicker hands back, as `YYYY-MM-DD`. */
-function toCalendarDate(d: Date): CalendarDate {
-  const year = String(d.getFullYear()).padStart(4, '0')
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}` as CalendarDate
-}
 
 function useOpenState({ open, defaultOpen, onOpenChange }: OpenState): {
   open: boolean
@@ -170,15 +114,6 @@ function useOpenState({ open, defaultOpen, onOpenChange }: OpenState): {
   }
 }
 
-function Chevron({ orientation }: { orientation?: string }): ReactElement {
-  const d = orientation === 'right' ? 'M6 4l4 4-4 4' : 'M10 4L6 8l4 4'
-  return (
-    <svg viewBox="0 0 16 16" className="size-icon" fill="none" aria-hidden="true">
-      <path d={d} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  )
-}
-
 function CalendarGlyph(): ReactElement {
   return (
     <svg
@@ -191,31 +126,6 @@ function CalendarGlyph(): ReactElement {
       <path d="M2.5 6.5h11M5.5 2v3M10.5 2v3" stroke="currentColor" strokeLinecap="round" />
     </svg>
   )
-}
-
-/** The props both calendars share: the token classes, the app's month-button names, no CSS file. */
-function useCalendarProps(): Pick<
-  DayPickerProps,
-  'classNames' | 'labels' | 'components' | 'showOutsideDays'
-> {
-  const t = useMessages(dateMessages)
-  const format = useFormat()
-  const previous = t('date.previousMonth')
-  const next = t('date.nextMonth')
-  return {
-    classNames: CALENDAR_CLASSES,
-    labels: {
-      labelPrevious: () => previous,
-      labelNext: () => next,
-      // The visible text is the day number, so the name must contain it as a word ("5th" does not).
-      labelDayButton: (day) => format.date(toCalendarDate(day), 'long'),
-    },
-    components: {
-      Chevron: (p) => <Chevron {...(p.orientation && { orientation: p.orientation })} />,
-      DayButton: CalendarDayButton,
-    },
-    showOutsideDays: true,
-  }
 }
 
 /** A trigger that names itself and its value, and the named popup that holds the calendar. */
