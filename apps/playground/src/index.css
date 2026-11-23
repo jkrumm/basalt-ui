@@ -1,4 +1,5 @@
 @import 'basalt-ui/tokens.css';
+@import './accents.css';
 @import 'basalt-ui/tailwind.css';
 @import 'basalt-ui/prose.css';
 @import 'basalt-ui/table.css';

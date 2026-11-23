@@ -7,6 +7,7 @@ import remarkGfm from 'remark-gfm'
 import { fileURLToPath } from 'node:url'
 import { mergeConfig } from 'vite'
 import type { Plugin } from 'vite'
+import { themeScript } from '../../packages/basalt-ui/src/css/theme-script'
 
 // `basaltViteConfig` supplies the shared spine (React dedupe, strictPort dev
 // server, the __APP_VERSION__ define). Plugins stay app-side — the preset deliberately ships none.
@@ -28,6 +29,13 @@ const mdx = (): Plugin => ({
     const file = await compile(code, { remarkPlugins: [remarkGfm] })
     return { code: String(file), map: null }
   },
+})
+
+// The pre-paint script an app gets from `basalt()`: the stored scheme and appearance land on <html>
+// before the first paint, so a reload keeps the reader's accent, density and frame with no flash.
+const bootScript = (): Plugin => ({
+  name: 'playground-theme-script',
+  transformIndexHtml: () => [{ tag: 'script', children: themeScript(), injectTo: 'head-prepend' }],
 })
 
 export default mergeConfig(
@@ -61,6 +69,7 @@ export default mergeConfig(
     // tanstackRouter must precede the React plugin — it generates `src/routeTree.gen.ts` from the
     // `src/routes/` tree and rewrites route files for code-splitting before React's transform runs.
     plugins: [
+      bootScript(),
       mdx(),
       tanstackRouter({ target: 'react', autoCodeSplitting: true }),
       react(),
