@@ -29,6 +29,7 @@ const REFERENCE = [
   'assistant',
   'create-flow',
   'list-page',
+  'mailbox',
   'notes-list',
   'record-page',
   'settings-page',
