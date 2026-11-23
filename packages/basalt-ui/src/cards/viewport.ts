@@ -1,7 +1,7 @@
 /**
- * The chain's viewport: a native scroller (pan by wheel, trackpad, one finger, the arrow keys and a
- * mouse drag on empty canvas) over a graph drawn at a scale. It opens fitted to the frame's width,
- * never below `FIT_FLOOR`, and follows the width until the reader zooms. Ctrl or Cmd with the wheel
+ * A viewport over a drawing at a scale, shared by `ChainView` and `FlowCanvas`: a native scroller (pan by wheel, trackpad, one finger, the arrow keys and a
+ * mouse drag where `grabs` allows it) over content drawn at a scale. It opens fitted to the frame's
+ * width, never below the floor, and follows the width until the reader zooms. Ctrl or Cmd with the wheel
  * (a trackpad pinch arrives so), a two-finger pinch and the zoom steps keep the point under the
  * pointer (or the centre) where it was. The frame is never taller than the page's visible scroll
  * area, so its scrollbars and controls are on screen whenever its top is.
@@ -12,26 +12,38 @@ import { scrollParentOf } from '../common/scroll-parent'
 
 /** Below half size a 14 px title is 7 px: the shape, not the text. A larger graph is panned. */
 export const FIT_FLOOR = 0.5
-export const ZOOM_MIN = 0.25
-export const ZOOM_MAX = 2
 /** One zoom step of the controls and the keys. */
 export const ZOOM_STEP = 1.25
+
+export type ViewportOptions = {
+  /** The zoom range. */
+  min: number
+  max: number
+  /** The fit never draws below this scale; a larger drawing is panned. */
+  floor: number
+  /** Whether a mouse drag that starts on `target` pans. */
+  grabs: (target: Element) => boolean
+}
 /** Wheel delta to zoom: a mouse notch (100) is about one step, a trackpad pinch a smooth ramp. */
 const WHEEL_RATE = 0.0022
 /** A box zoomed to keeps this much room to the frame's edge. */
 const INSET = 16
 
-export type ChainBox = { x: number; y: number; width: number; height: number }
+export type ViewportBox = { x: number; y: number; width: number; height: number }
 
-const clamp = (value: number): number => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, value))
+const clamp = (value: number, min: number, max: number): number =>
+  Math.min(max, Math.max(min, value))
 
 /** Where a graph point (unscaled) should sit in the frame after the next scale is drawn. */
 type Anchor = { gx: number; gy: number; fx: number; fy: number }
 
-export type ChainViewport = {
+export type Viewport = {
   /** Attach to the scroll element (a callback ref). */
   frame: (node: HTMLDivElement | null) => void
   scale: number
+  /** The frame's inner size in px, 0 before it is measured. */
+  width: number
+  height: number
   /** True while the scale follows the frame's width. */
   fitted: boolean
   /** The frame's height cap in px, or undefined before it is measured. */
@@ -41,7 +53,7 @@ export type ChainViewport = {
   zoomBy: (factor: number, at?: { x: number; y: number }) => void
   fit: () => void
   /** Zooms (never past 1) so the box fills the frame, its top left corner in view. */
-  zoomTo: (box: ChainBox) => void
+  zoomTo: (box: ViewportBox) => void
   drag: {
     onPointerDown: (event: ReactPointerEvent<HTMLElement>) => void
     onPointerMove: (event: ReactPointerEvent<HTMLElement>) => void
@@ -50,7 +62,11 @@ export type ChainViewport = {
   }
 }
 
-export function useChainViewport(graph: { width: number; height: number }): ChainViewport {
+export function useViewport(
+  graph: { width: number; height: number },
+  options: ViewportOptions,
+): Viewport {
+  const { min, max, floor, grabs } = options
   // The element for writes (a ref: the compiler forbids writing through state), the state for effects.
   const el = useRef<HTMLDivElement | null>(null)
   const [frame, setFrame] = useState<HTMLDivElement | null>(null)
@@ -94,7 +110,7 @@ export function useChainViewport(graph: { width: number; height: number }): Chai
   const fitScale =
     graph.width === 0 || size.width === 0
       ? 1
-      : Math.min(1, Math.max(FIT_FLOOR, size.width / graph.width))
+      : Math.min(1, Math.max(floor, size.width / graph.width))
   const scale = zoom ?? fitScale
   const scaleRef = useRef(scale)
 
@@ -111,7 +127,7 @@ export function useChainViewport(graph: { width: number; height: number }): Chai
     (factor: number, at?: { x: number; y: number }) => {
       if (frame === null) return
       const now = scaleRef.current
-      const next = clamp(now * factor)
+      const next = clamp(now * factor, min, max)
       if (next === now) return
       const fx = at?.x ?? frame.clientWidth / 2
       const fy = at?.y ?? frame.clientHeight / 2
@@ -123,7 +139,7 @@ export function useChainViewport(graph: { width: number; height: number }): Chai
       }
       setZoom(next)
     },
-    [frame],
+    [frame, min, max],
   )
 
   const fit = useCallback(() => {
@@ -138,7 +154,7 @@ export function useChainViewport(graph: { width: number; height: number }): Chai
   }, [zoom, scrollTo])
 
   const zoomTo = useCallback(
-    (box: ChainBox) => {
+    (box: ViewportBox) => {
       if (frame === null) return
       const room = Math.max(size.room, frame.clientHeight)
       const next = clamp(
@@ -147,6 +163,8 @@ export function useChainViewport(graph: { width: number; height: number }): Chai
           (frame.clientWidth - 2 * INSET) / Math.max(1, box.width),
           (room - 2 * INSET) / Math.max(1, box.height),
         ),
+        min,
+        max,
       )
       anchor.current = { gx: box.x, gy: box.y, fx: INSET, fy: INSET }
       setZoom(next)
@@ -156,7 +174,7 @@ export function useChainViewport(graph: { width: number; height: number }): Chai
         scrollTo(box.x * next - INSET, box.y * next - INSET)
       }
     },
-    [frame, size.room, scrollTo],
+    [frame, size.room, scrollTo, min, max],
   )
 
   // Ctrl or Cmd with the wheel zooms; the plain wheel is the page's and the frame's own scroll.
@@ -226,6 +244,8 @@ export function useChainViewport(graph: { width: number; height: number }): Chai
   return {
     frame: frameRef,
     scale,
+    width: size.width,
+    height: size.height,
     fitted: zoom === null,
     room: size.room === 0 ? undefined : size.room,
     pans,
@@ -235,8 +255,7 @@ export function useChainViewport(graph: { width: number; height: number }): Chai
     drag: {
       onPointerDown: (event) => {
         if (frame === null || event.pointerType !== 'mouse' || event.button !== 0) return
-        // A node is a target of its own: the drag starts on empty canvas only.
-        if ((event.target as Element).closest('[data-slot="chain-node"]') !== null) return
+        if (!grabs(event.target as Element)) return
         dragFrom.current = {
           id: event.pointerId,
           x: event.clientX,

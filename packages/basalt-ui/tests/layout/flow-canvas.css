@@ -1,0 +1,9 @@
+/*
+ * The `flow-canvas` fixture's Tailwind v4 entry, compiled WITH preflight. `flow-canvas.layout.test.ts`
+ * compiles it into a temp directory.
+ */
+@import '../../src/css/tailwind.css' source(none);
+@source './flow-canvas-fixture.tsx';
+@source '../../src/ui';
+@source '../../src/core/card-menu.tsx';
+@source '../../src/cards';

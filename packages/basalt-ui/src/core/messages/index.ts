@@ -27,6 +27,8 @@ import type { DateMessages } from './date'
 import { dialogs } from './dialogs'
 import type { DialogsMessages } from './dialogs'
 import { filters } from './filters'
+import { flow } from './flow'
+import type { FlowMessages } from './flow'
 import type { FiltersMessages } from './filters'
 import { home } from './home'
 import type { HomeMessages } from './home'
@@ -52,6 +54,7 @@ export type BasaltMessages = SelectMessages &
   CardsMessages &
   ListsMessages &
   ChainMessages &
+  FlowMessages &
   KanbanMessages &
   SortableMessages &
   ControlsMessages &
@@ -72,6 +75,7 @@ export const en: BasaltMessages = {
   ...cards,
   ...lists,
   ...chain,
+  ...flow,
   ...kanban,
   ...sortable,
   ...controls,

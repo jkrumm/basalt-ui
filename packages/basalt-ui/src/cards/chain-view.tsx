@@ -11,8 +11,8 @@ import { ScrollArea } from '../ui/scroll-area'
 import { Status } from '../ui/status'
 import { CHAIN_SIZE, chainLayout } from './chain-layout'
 import { listFocus, rowFocus } from './list-focus'
-import type { ChainBox } from './chain-viewport'
-import { useChainViewport, ZOOM_STEP } from './chain-viewport'
+import type { ViewportBox, ViewportOptions } from './viewport'
+import { FIT_FLOOR, useViewport, ZOOM_STEP } from './viewport'
 
 /**
  * What a node shows: the kit draws the card, so a node is data. The type is declared here because
@@ -140,6 +140,14 @@ function traceOf(
   return seen
 }
 
+/** The chain zooms from a quarter to twice its size; a drag pans from empty canvas only, a node being a target of its own. */
+const CHAIN_VIEW: ViewportOptions = {
+  min: 0.25,
+  max: 2,
+  floor: FIT_FLOOR,
+  grabs: (target) => target.closest('[data-slot="chain-node"]') === null,
+}
+
 const STEP_ICON = { in: 'M3 8h10M8 3v10', out: 'M3 8h10' } as const
 
 function StepIcon({ d }: { d: string }): ReactElement {
@@ -195,7 +203,7 @@ export function ChainView<T>({
     waitsOn: waitsOn(node).filter((id) => ids.has(id)),
   }))
   const geometry = chainLayout(inputs)
-  const { frame, ...view } = useChainViewport(geometry)
+  const { frame, ...view } = useViewport(geometry, CHAIN_VIEW)
   const faces = new Map(nodes.map((node) => [getId(node), face(node)]))
   const titleOf = (id: string): string => faces.get(id)?.title ?? id
   const blockersOf = new Map(inputs.map((input) => [input.id, input.waitsOn]))
@@ -228,7 +236,7 @@ export function ChainView<T>({
   const tracing = pinned ?? current
   const trace = tracing === undefined ? undefined : traceOf(tracing, blockersOf, waitersOf)
 
-  const box = (members: ReadonlySet<string>): ChainBox | undefined => {
+  const box = (members: ReadonlySet<string>): ViewportBox | undefined => {
     const placed = [...members].flatMap((id) => {
       const at = geometry.nodes.get(id)
       return at === undefined ? [] : [at]

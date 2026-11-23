@@ -1,4 +1,4 @@
-/** `basalt-ui/cards` — the card composites (`StatCard`, `StatGroup`, `StatCell`, `DataPanel`, `BarList`, `EventList`, `RowList`, `StepRail`, `KanbanCard`, `Board`, `ChainView`). Peers: react, `@base-ui/react` (via `ui/card`). */
+/** `basalt-ui/cards` — the card composites (`StatCard`, `StatGroup`, `StatCell`, `DataPanel`, `BarList`, `EventList`, `RowList`, `StepRail`, `KanbanCard`, `Board`, `ChainView`, `FlowCanvas`, `FlowChecklist`). Peers: react, `@base-ui/react` (via `ui/card`). */
 
 export { StatCard } from './stat-card'
 export { StatGroup } from './stat-group'
@@ -11,6 +11,9 @@ export { StepRail } from './step-rail'
 export { KanbanCard } from './kanban-card'
 export { Board, applyMove } from './board'
 export { ChainView } from './chain-view'
+export { FlowCanvas } from './flow-canvas'
+export { FlowChecklist } from './flow-checklist'
+export { useFlow } from './flow'
 export type {
   StatCardProps,
   DataPanelProps,
@@ -33,4 +36,15 @@ export type { EventListProps } from './event-list'
 export type { RowListProps } from './row-list'
 export type { StepRailProps, StepRailRow } from './step-rail'
 export type { ChainViewProps, ChainFace } from './chain-view'
+export type { FlowCanvasProps } from './flow-canvas'
+export type { FlowChecklistProps } from './flow-checklist'
+export type {
+  FlowColumn,
+  FlowEdge,
+  FlowGroup,
+  FlowHandle,
+  FlowIssue,
+  FlowRow,
+  FlowTool,
+} from './flow'
 export type { BoardProps } from './board'
