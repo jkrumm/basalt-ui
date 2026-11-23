@@ -667,11 +667,18 @@ export function useTableViews<T>(
   const layouts = useLayoutOptions(model)
   const layoutLabel = useLayoutLabel()
   const searchLabel = t('table.searchIn', model.label)
-  const write = useDebouncedCallback(
-    (q: string) => model.state.setRequest({ q }),
-    SEARCH_DEBOUNCE_MS,
-  )
   const q = model.state.request.q
+  const written = useRef(q)
+  const write = useDebouncedCallback((next: string) => {
+    written.current = next
+    model.state.setRequest({ q: next })
+  }, SEARCH_DEBOUNCE_MS)
+  // A `q` this box did not write (a view applied, a reset, a link) drops the phrase still waiting.
+  useEffect(() => {
+    if (q === written.current) return
+    write.cancel()
+    written.current = q
+  }, [q, write])
   const searchHandle: ControlHandle<string> = {
     key: `${model.id}.q`,
     kind: 'string',
@@ -679,6 +686,7 @@ export function useTableViews<T>(
     useSource: () => ({ source: 'own', inherited: undefined }),
     clear() {
       write.cancel()
+      written.current = ''
       model.state.setRequest({ q: '' })
     },
     isDefault: q === '',

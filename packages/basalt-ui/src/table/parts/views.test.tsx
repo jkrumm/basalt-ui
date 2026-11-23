@@ -730,6 +730,19 @@ describe('the PageBar view row', () => {
     expect(model().state.request.q).toBe('')
   })
 
+  test('a phrase waiting in the debounce is dropped when the table takes another q', async () => {
+    render(<BarSubject />)
+    await settled()
+    const [box] = screen.getAllByRole('searchbox', { name: 'Search rows' }) as HTMLInputElement[]
+    fireEvent.change(box!, { target: { value: 'ac' } })
+    act(() => model().state.setRequest({ q: 'view' }))
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 400))
+    })
+    expect(model().state.request.q).toBe('view')
+    expect(box!.value).toBe('view')
+  })
+
   test('an active filter draws its chip under the bar', async () => {
     render(<BarSubject />)
     await settled()
