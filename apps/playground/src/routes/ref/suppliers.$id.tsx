@@ -348,11 +348,9 @@ function Overview({
       </div>
       <Section
         title="Parts supplied"
-        summary={
-          records.data === undefined
-            ? undefined
-            : `${Math.min(4, records.data.parts.length)} of ${records.data.parts.length} by stock value`
-        }
+        {...(records.data !== undefined && {
+          summary: `${Math.min(4, records.data.parts.length)} of ${records.data.parts.length} by stock value`,
+        })}
       >
         <RelatedParts parts={records.data?.parts} />
       </Section>
