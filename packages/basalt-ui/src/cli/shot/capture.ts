@@ -225,14 +225,21 @@ export function tagAutoAnchors(): void {
 export function readFactsInPage(slots: string[]): PageFacts {
   const words = (el: Element | null, attr: string): string[] =>
     (el?.getAttribute(attr) ?? '').split(/\s+/).filter(Boolean)
-  const nest = `[data-shot], ${slots.map((s) => `[data-slot="${s}"]`).join(', ')}`
+  const overlay = (slot: string): boolean => slot === 'peek' || slot.endsWith('-content')
+  const selector = (list: string[]): string[] => list.map((s) => `[data-slot="${s}"]`)
+  // An overlay is outermost among overlays only: the cards inside it stay anchors of their own.
+  const nest = ['[data-shot]', ...selector(slots.filter((s) => !overlay(s)))].join(', ')
+  const nestOverlay = selector(slots.filter(overlay)).join(', ')
+  const all = [nest, nestOverlay].filter(Boolean).join(', ')
   const counts: Record<string, number> = {}
   const facts: PageFacts = { anchors: [], states: {}, absent: {}, content: '', overflowX: 0 }
-  for (const el of Array.from(document.querySelectorAll(nest))) {
+  for (const el of Array.from(document.querySelectorAll(all))) {
     let name = el.getAttribute('data-shot')
     if (!name) {
       const slot = el.getAttribute('data-slot') ?? ''
-      if (!slots.includes(slot) || el.parentElement?.closest(nest)) continue
+      if (!slots.includes(slot)) continue
+      const outer = overlay(slot) ? nestOverlay : nest
+      if (el.parentElement?.closest(outer)) continue
       counts[slot] = (counts[slot] ?? 0) + 1
       name = `${slot}-${counts[slot]}`
     }
@@ -318,6 +325,25 @@ export function revealInPage(el: Element): string {
   return ''
 }
 
+/**
+ * Runs in the page: what covers the anchor's centre, or '' when nothing does. Only an open overlay counts (a dialog, a sheet
+ * or a peek panel the anchor is not part of): Playwright's hover would wait out its timeout on the pointer it intercepts.
+ */
+export function coveredInPage(el: Element): string {
+  const open = Array.from(
+    document.querySelectorAll(
+      '[data-slot="dialog-content"], [data-slot="alert-dialog-content"], [data-slot="sheet-content"], [data-slot="peek"]',
+    ),
+  ).find((o) => o.getBoundingClientRect().width > 0)
+  if (!open) return ''
+  const rect = el.getBoundingClientRect()
+  const x = Math.min(Math.max(rect.left + rect.width / 2, 0), window.innerWidth - 1)
+  const y = Math.min(Math.max(rect.top + rect.height / 2, 0), window.innerHeight - 1)
+  const hit = document.elementFromPoint(x, y)
+  if (!hit || el.contains(hit) || hit.contains(el)) return ''
+  return `covered by an open overlay (${open.getAttribute('data-slot') ?? 'overlay'})`
+}
+
 /** Runs in the page: hides every fixed or sticky element that is not (in, around) the anchor or an open popup. */
 export function hideChrome(name: string): void {
   const anchor = document.querySelector(`[data-shot-anchor=${JSON.stringify(name)}]`)
@@ -371,16 +397,23 @@ async function frame(c: Ctx, name: string): Promise<() => Promise<void>> {
   return undo
 }
 
+/** The states that need the pointer or the keyboard to reach the anchor. */
+const INTERACTIVE: readonly ShotState[] = ['hover', 'focus', 'keys', 'tooltip']
+
 /** Scrolls the anchor into view. Hidden is `absent` where hiding is expected (pointer, focus, a declared state), else a defect. */
 async function reveal(c: Ctx, name: string, state: ShotState): Promise<void> {
   const verdict = await within('revealing the anchor', anchorOf(c, name).evaluate(revealInPage))
   if (typeof verdict === 'string' && verdict !== '') {
     const note = `not visible at this viewport: ${verdict}`
-    const expected =
-      ['hover', 'focus', 'keys', 'tooltip'].includes(state) || c.facts.absent[name]?.includes(state)
+    const expected = INTERACTIVE.includes(state) || c.facts.absent[name]?.includes(state)
     throw expected ? new Absent(note) : new Error(note)
   }
   await sleep(SETTLE_MS)
+  // The pointer and the keyboard never reach an anchor an open overlay sits on: absent, not a failed step.
+  if (INTERACTIVE.includes(state)) {
+    const covered = await within('probing the anchor', anchorOf(c, name).evaluate(coveredInPage))
+    if (typeof covered === 'string' && covered !== '') throw new Absent(covered)
+  }
 }
 
 /** `read()` once two reads in a row agree: an animating card never shifts the clip. */

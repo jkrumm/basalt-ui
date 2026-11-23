@@ -12,8 +12,23 @@ export const STATES = [
 /** The states a page reaches with `?shot-state=<phase>`: an anchor declares them with `data-phase` or `data-shot-states`, and the page obeys through `shotState` (`basalt-ui/data`) on its query result. */
 export const URL_STATES = ['empty', 'loading', 'error'] as const
 
+/**
+ * The open-overlay `data-slot`s (a dialog, an alert dialog, a sheet, a peek panel): each is a component of its own, and a
+ * card inside one stays an anchor too. `readFactsInPage` tells them from the rest by the shape of the name (`peek`, or
+ * `*-content`), because it runs in the page and cannot read this list.
+ */
+export const OVERLAY_SLOTS = ['dialog-content', 'alert-dialog-content', 'sheet-content', 'peek']
+
 /** The public `data-slot`s that are anchors on their own: no consumer attribute needed. */
-export const ANCHOR_SLOTS = ['stat-card', 'chart-card', 'data-table', 'section', 'card', 'board']
+export const ANCHOR_SLOTS = [
+  'stat-card',
+  'chart-card',
+  'data-table',
+  'section',
+  'card',
+  'board',
+  ...OVERLAY_SLOTS,
+]
 
 /** What the manifest declares nothing for: a wide desktop and a phone. */
 export const DEFAULT_VIEWPORTS = ['1800x1200', '390x844']
