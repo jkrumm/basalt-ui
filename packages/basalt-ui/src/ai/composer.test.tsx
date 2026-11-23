@@ -94,6 +94,28 @@ describe('Composer — sending', () => {
   })
 })
 
+describe('Composer — files', () => {
+  test('the add menu counts and dedupes against the files already attached', async () => {
+    const { getByRole, sent, box } = setup({ files: { maxFiles: 2 } })
+    fireEvent.click(getByRole('button', { name: 'Add' }))
+    const input = await waitFor(() => {
+      const found = document.querySelector('input[type="file"]')
+      expect(found).not.toBeNull()
+      return found as HTMLInputElement
+    })
+    const file = (name: string) => new File(['x'], name, { type: 'text/plain' })
+    fireEvent.change(input, { target: { files: [file('a.txt'), file('b.txt')] } })
+    fireEvent.click(getByRole('button', { name: 'Add' }))
+    const again = await waitFor(
+      () => document.querySelector('input[type="file"]') as HTMLInputElement,
+    )
+    fireEvent.change(again, { target: { files: [file('c.txt')] } })
+    fireEvent.change(box, { target: { value: 'see attached' } })
+    fireEvent.keyDown(box, { key: 'Enter' })
+    expect(sent[0]?.files.map((f) => f.name)).toEqual(['a.txt', 'b.txt'])
+  })
+})
+
 describe('Composer — mentions', () => {
   const people: ListItems<string> = [
     {
@@ -178,5 +200,16 @@ describe('Composer — mentions', () => {
     type('@Acme Bxarings ')
     fireEvent.keyDown(box, { key: 'Enter' })
     expect(sent[0]?.mentions).toEqual([])
+  })
+
+  test('a send forgets a dismissed list, so the next draft opens it at the same place', async () => {
+    const { box, type } = setup({ mentions: { source: people } })
+    type('@nor')
+    await waitFor(() => expect(box.getAttribute('aria-controls')).not.toBeNull())
+    fireEvent.keyDown(box, { key: 'Escape' })
+    type('@nor x')
+    fireEvent.keyDown(box, { key: 'Enter' })
+    type('@')
+    await waitFor(() => expect(box.getAttribute('aria-controls')).not.toBeNull())
   })
 })
