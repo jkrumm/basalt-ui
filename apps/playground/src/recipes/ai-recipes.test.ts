@@ -47,7 +47,7 @@ describe('approvals', () => {
   test('a settled tool shows no buttons', () => {
     mount(() => {}, [{ ...pending[0], state: 'output-denied' }] as never)
     expect(screen.queryByText('Approve')).toBeNull()
-    fireEvent.click(screen.getByText('1 step'))
+    fireEvent.click(screen.getByText('1 tool used'))
     expect(screen.getByText('rm: denied')).toBeTruthy()
   })
 })
