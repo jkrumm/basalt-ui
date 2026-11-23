@@ -18,7 +18,7 @@ import {
 } from './capture'
 import type { CaptureInput } from './capture'
 import { manifestViewports, parseShotArgs, planOut, sanitizeBase, shot } from './index'
-import { finishMeasurement, radiusReading } from './measure'
+import { finishMeasurement, measureAnchor, radiusReading } from './measure'
 import { INSTALL_LINE, ShotError, isPlaywright, withBrowser } from './playwright'
 import type { Playwright } from './playwright'
 import { seedScript } from './real-data'
@@ -1185,6 +1185,23 @@ describe('radiusReading', () => {
     expect(out.nested[0]?.radius).toBe(6)
     expect(out.small).toEqual(['button 20x20'])
     expect(out.overlaps).toEqual(['a × b'])
+  })
+  test('measureAnchor indexes each nested surface by its nearest nested ancestor, not a path-equal sibling', () => {
+    const root = document.createElement('div')
+    root.innerHTML =
+      '<div class="k" style="border-width: 1px"></div>' +
+      '<div class="m" style="border-width: 1px"><div class="n" style="border-width: 1px"></div></div>'
+    document.body.append(root)
+    const original = Element.prototype.getBoundingClientRect
+    Element.prototype.getBoundingClientRect = () =>
+      ({ width: 100, height: 40, top: 0, bottom: 40, left: 0, right: 100 }) as DOMRect
+    try {
+      const m = measureAnchor(root)
+      expect(m.nested.map((n) => n.path)).toHaveLength(3)
+      expect(m.nested.map((n) => n.parent)).toEqual([null, null, 1])
+    } finally {
+      Element.prototype.getBoundingClientRect = original
+    }
   })
 })
 
