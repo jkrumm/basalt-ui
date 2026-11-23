@@ -50,7 +50,8 @@ export const countBadgeVariants = cva(
 /**
  * The `DeltaBadge` cva table: a 24 px pill. `tone` is the verdict, resolved from `polarity` and the
  * direction of the value, never passed in; the text is the tone's own ink on its tint, gated at
- * 4.5:1 (`badge.contrast.test.ts` names the measured ratios).
+ * 4.5:1 (`badge.contrast.test.ts` names the measured ratios). `neutral` takes the primary ink on the
+ * selected fill, so it clears 4.5:1 on every card ground.
  *
  * @example
  * deltaBadgeVariants({ tone: 'bad' })
@@ -62,7 +63,7 @@ export const deltaBadgeVariants = cva(
       tone: {
         good: 'bg-good-tint text-good',
         bad: 'bg-bad-tint text-bad',
-        neutral: 'bg-selected text-muted-foreground',
+        neutral: 'bg-selected text-foreground',
       },
     },
     defaultVariants: { tone: 'neutral' },
