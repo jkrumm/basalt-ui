@@ -455,9 +455,8 @@ describe('projector-owned rows and badges', () => {
       false,
       undefined,
     ])
-    expect(
-      phoneExtraRows({ workspace: { ...workspace, manage: undefined } }).map((r) => r.id),
-    ).not.toContain('workspace:manage')
+    const { manage: _manage, ...bare } = workspace
+    expect(phoneExtraRows({ workspace: bare }).map((r) => r.id)).not.toContain('workspace:manage')
   })
 
   test('workspace rows come before the account rows', () => {
