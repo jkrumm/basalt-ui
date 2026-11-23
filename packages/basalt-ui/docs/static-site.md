@@ -60,8 +60,9 @@ Add `--check` to either command in CI: it writes nothing and exits 1 when the co
 
 `auto` needs no JavaScript: `tokens.css` follows `prefers-color-scheme` while `<html>` carries no
 `data-theme`. The script adds the stored choice before first paint. Copy it into `<head>` verbatim,
-or call `themeScript()` from `basalt-ui/theme-script` at build time. The literal below is the
-default output; a test keeps it byte-equal to `themeScript()`.
+or call `themeScript({ appearance: false })` from `basalt-ui/theme-script` at build time. A static page
+has no appearance setter, so the literal below is the scheme half only; a test keeps it byte-equal to
+`themeScript({ appearance: false })`.
 
 <!-- prettier-ignore -->
 ```html

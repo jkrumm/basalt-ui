@@ -47,7 +47,8 @@ describe('tokens fixture (static, framework-free)', () => {
 
   test('exactly one script: the boot script, byte for byte', () => {
     expect(scripts).toHaveLength(1)
-    expect(scripts[0]?.[1]).toBe(themeScript())
+    // A static page has no appearance setter: it carries the scheme half (docs/static-site.md).
+    expect(scripts[0]?.[1]).toBe(themeScript({ appearance: false }))
   })
 
   test('no react or tailwind in the fixture', () => {
