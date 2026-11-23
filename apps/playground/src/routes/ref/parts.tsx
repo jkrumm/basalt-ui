@@ -105,8 +105,9 @@ function inventoryViews(): ViewStore {
 const store = inventoryViews()
 
 /**
- * The reference list page: a view row of saved views with counts, a summary strip, and one grid of
- * parts edge to edge on the work surface; the same set as a board by replenishment and as a gallery.
+ * The reference list page: a view row of saved views with counts, a summary strip and one grid of
+ * parts; the same set as a board by replenishment and as a gallery. It keeps the page gutter while the
+ * table's search and filters sit in their own toolbar row: at the surface edge their focus rings clip.
  */
 function PartsRoute(): ReactElement {
   const f = useFormat()
@@ -199,7 +200,7 @@ function PartsRoute(): ReactElement {
   const ready = parts !== undefined
 
   return (
-    <Page area="ref-parts" fill>
+    <Page area="ref-parts">
       <PageBar
         tabs={views.tabs}
         layout={views.layout}
@@ -281,7 +282,7 @@ function PartsRoute(): ReactElement {
           />
         </StatGroup>
       </div>
-      <div data-shot="parts" className="flex min-h-0 flex-1 flex-col">
+      <div data-shot="parts" className="flex flex-col">
         <TableToolbar table={t} views={false} />
         <DataTable table={t} drag={drag} />
       </div>
