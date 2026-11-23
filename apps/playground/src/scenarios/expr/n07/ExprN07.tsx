@@ -132,6 +132,7 @@ export function ExprN07Scenario({ shotState, fixture }: ScenarioProps): ReactEle
           phase={phase}
           empty={shotState === 'empty' ? EMPTY : null}
           figure={{
+            // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n07, kept as its builder left it: its figure follows focus, built before figure-readout
             value: focus.readout(
               shotState === 'empty' ? null : (best?.label ?? 'None'),
               (n) => n.label,

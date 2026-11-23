@@ -155,6 +155,7 @@ export function ExprC16Scenario({ shotState, fixture }: ScenarioProps): ReactEle
         subtitle={`Needs vision and ${k(chatTokens(chat))} of context for ${chat.images} images`}
         phase={phase}
         figure={{
+          // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle c16, kept as its builder left it: its figure follows focus, built before figure-readout
           value: focus.readout(picked?.name ?? '—', (m) => m.name),
           period: focus.readout(
             picked && saved !== null

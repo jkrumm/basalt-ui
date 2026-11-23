@@ -1,0 +1,8 @@
+/* @generated basalt-ui — do not edit; regenerate with the command on the next line */
+/* basalt-ui 2.29.0 — `basalt-ui tokens:css --extra src/basalt.tokens.ts --out src/basalt.tokens.css` */
+export {}
+
+declare module 'basalt-ui' {
+  interface BasaltRegister {
+  }
+}

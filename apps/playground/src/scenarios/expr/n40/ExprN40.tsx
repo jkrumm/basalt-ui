@@ -284,6 +284,7 @@ function Board({ model, phase }: { model: Model; phase: Phase }) {
           // cycle-expression-10: a DataPanel body is a fixed box and cannot follow the card beside it, so this card fills the row the panel's rows set.
           height="fill"
           figure={{
+            // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n40, kept as its builder left it: its figure follows focus, built before figure-readout
             value: focus.readout(String(summary.nextWeek), dueWord),
             unit: focus.readout<string | undefined>('due in 7 days', (t) => t.list),
             // cycle-expression-10: the loading skeleton always draws a period row (18 px at 390), so every card fills its period slot at rest.
@@ -373,8 +374,10 @@ function Board({ model, phase }: { model: Model; phase: Phase }) {
           subtitle="Open tasks by the day each was added"
           height="short"
           figure={{
+            // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n40, kept as its builder left it: its figure follows focus, built before figure-readout
             value: weekFocus.readout(String(leader.now), (w) => String(w.counts[leader.list])),
             unit: `in ${leader.list}`,
+            // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n40, kept as its builder left it: its figure follows focus, built before figure-readout
             delta: weekFocus.readout<Delta | undefined>(growthNow, gainAt),
             period: weekFocus.readout<string | undefined>(
               `by ${day(TODAY)}`,
@@ -408,8 +411,10 @@ function Board({ model, phase }: { model: Model; phase: Phase }) {
           subtitle="Tasks completed, to yesterday"
           height="short"
           figure={{
+            // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n40, kept as its builder left it: its figure follows focus, built before figure-readout
             value: doneFocus.readout(one(PACE.perDay), (d) => String(d.done)),
             unit: doneFocus.readout('a day', () => 'done'),
+            // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n40, kept as its builder left it: its figure follows focus, built before figure-readout
             delta: doneFocus.readout<Delta>(
               {
                 value: signed(PACE.change),

@@ -39,8 +39,10 @@ export function WaveCard({
       empty={rows.length === 0 ? { cause: EMPTY_CAUSE } : null}
       height="tall"
       figure={{
+        // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n56, kept as its builder left it: its figure follows focus, built before figure-readout
         value: focus.readout(peak?.hs ?? null, (d) => d.hs),
         unit: 'm',
+        // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n56, kept as its builder left it: its figure follows focus, built before figure-readout
         delta: {
           value: focus.readout(peak === null ? '' : distance(peak.hs), (d) => distance(d.hs)),
           polarity: 'up-bad',

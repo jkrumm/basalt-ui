@@ -209,10 +209,12 @@ export function ExprN41Scenario({ shotState, fixture }: ScenarioProps) {
         figure={
           ready
             ? {
+                // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n41, kept as its builder left it: its figure follows focus, built before figure-readout
                 value: hourFocus.readout(s.fallbacks === 0 ? '0%' : pct(s.rate), (h) =>
                   pct(hourRate(h), 0),
                 ),
                 unit: 'fell back',
+                // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n41, kept as its builder left it: its figure follows focus, built before figure-readout
                 delta: hourFocus.readout(restDelta, hourDelta),
                 period: hourFocus.readout(
                   `of ${f.number(s.requests)} requests`,

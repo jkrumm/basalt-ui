@@ -122,8 +122,10 @@ export function DirectionCard({ direction, month, focus, loading }: Props) {
         loading
           ? { value: null, unit: 'Mbit/s' }
           : {
+              // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n46, kept as its builder left it: its figure follows focus, built before figure-readout
               value: focus.readout<number | null>(rest, speed),
               unit: 'Mbit/s',
+              // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n46, kept as its builder left it: its figure follows focus, built before figure-readout
               delta: focus.readout<Delta | undefined>(vsNormal(rest), (d) => vsNormal(speed(d))),
               period: focus.readout('April, median of all tests', (d) =>
                 d.tests === 0 ? `${d.label}, no tests` : d.label,

@@ -116,7 +116,9 @@ export function ExprC12Scenario({ shotState, fixture }: ScenarioProps) {
             figure={
               ready
                 ? {
+                    // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle c12, kept as its builder left it: its figure follows focus, built before figure-readout
                     value: usd(focus.readout(today?.total ?? 0, (d) => d.total)),
+                    // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle c12, kept as its builder left it: its figure follows focus, built before figure-readout
                     delta: focus.readout(today ? dayDelta(today) : undefined, dayDelta),
                     period: focus.readout(
                       `Today until ${hour(spend.hoursElapsed)}`,

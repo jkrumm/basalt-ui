@@ -97,6 +97,7 @@ export function ExprN19Scenario({ shotState, fixture }: ScenarioProps): ReactEle
       phase={cardPhase}
       empty={empty}
       figure={{
+        // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n19, kept as its builder left it: its figure follows focus, built before figure-readout
         value: ready
           ? focus.readout(sum?.latest.signal == null ? null : dbm(sum.latest.signal), (h) =>
               h.signal === null ? null : dbm(h.signal),
@@ -187,6 +188,7 @@ export function ExprN19Scenario({ shotState, fixture }: ScenarioProps): ReactEle
         },
       ]}
       figure={{
+        // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n19, kept as its builder left it: its figure follows focus, built before figure-readout
         value: ready
           ? focus.readout(sum?.wifiMedianRtt ?? null, (h) =>
               h.wifiRtt === null ? null : Math.round(h.wifiRtt * 10) / 10,

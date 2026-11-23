@@ -134,6 +134,7 @@ export function ExprN34Scenario({ shotState, fixture }: ScenarioProps) {
         figure={
           ready
             ? {
+                // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n34, kept as its builder left it: its figure follows focus, built before figure-readout
                 value: focus.readout(rest, (d) =>
                   d.go ? `Go ${stamp(d.at)}` : `Hold ${stamp(d.at)}`,
                 ),

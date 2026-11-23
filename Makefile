@@ -90,7 +90,13 @@ check-post:
 	@bun packages/basalt-ui/src/ui/guard-completeness.ts
 	@bun test ./packages/basalt-ui/src/ui/primitive.contract.test.tsx ./packages/basalt-ui/tests/ui/contract
 	@bun packages/basalt-ui/scripts/check-test-ledger.ts
+	@$(MAKE) --no-print-directory playground-doctor
 	@cd packages/basalt-ui && bun run pack-test
+
+# apps/playground is a sibling `init --profile app` install: sync places its gitignored root copies and must leave every
+# committed file in it as it is (a stale preset or AGENTS block fails here), then doctor passes all twelve checks.
+playground-doctor: ## The playground's install: basalt-ui sync changes no committed file, then basalt-ui doctor passes
+	@cd apps/playground && ./node_modules/.bin/basalt-ui sync > /dev/null && git diff --exit-code -- . && ./node_modules/.bin/basalt-ui doctor
 
 # Production probe, NOT the local gate (`make check`). `curl -fsS` exits non-zero on any 4xx/5xx or
 # connection failure, so a green run means basalt-ui.com answered 2xx. The site is a static nginx
@@ -254,9 +260,10 @@ release-dry: ## Preview the next release — dry run only, publishes nothing
 release: ## Dry run, show the version bump, confirm, then publish to npm
 	@scripts/release.sh
 
-sync-self: ## Link basalt-ui's own shipped rules + skills into this repo's /.claude/ (dogfood), then resync apps/marketing's site install
+sync-self: ## Link basalt-ui's own shipped rules + skills into this repo's /.claude/ (dogfood), then resync the two sibling installs (apps/marketing, apps/playground)
 	@bun packages/basalt-ui/scripts/sync-self.ts
 	@cd apps/marketing && ./node_modules/.bin/basalt-ui sync
+	@cd apps/playground && ./node_modules/.bin/basalt-ui sync
 
 # The one command after a rebase (docs/factory-leads.md): every committed file a script derives from the tree, written
 # again. No slot, no browser: the dogfood links, the marketing install's manifest digests, the Astro matrix's .md and
@@ -268,7 +275,7 @@ regen: ## After a rebase: rewrite every generated file (sync-self, the marketing
 	@bun apps/playground-astro/scripts/matrix.ts --render
 	@bun packages/basalt-ui/scripts/gen-oxlint.ts
 	@bun packages/basalt-ui/scripts/gen-parts.ts
-	@bun packages/basalt-ui/bin/basalt-ui.mjs tokens:css --accents violet,rose,orange,green,teal --out apps/playground/src/accents.css > /dev/null
+	@cd apps/playground && ./node_modules/.bin/basalt-ui tokens:css --accents violet,rose,orange,green,teal --out src/accents.css > /dev/null
 	@git status --short
 
 # A lead runs this right before it merges its pull request: PR CI green for the exact HEAD, generated files in sync, master not moved under it.

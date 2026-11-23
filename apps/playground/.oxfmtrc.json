@@ -1,0 +1,15 @@
+{
+  "printWidth": 100,
+  "tabWidth": 2,
+  "useTabs": false,
+  "singleQuote": true,
+  "trailingComma": "all",
+  "semi": false,
+  "ignorePatterns": [
+    ".basalt/**",
+    ".claude/**",
+    ".oxlintrc.basalt.json",
+    ".stylelintrc.basalt.json",
+    "src/routeTree.gen.ts"
+  ]
+}

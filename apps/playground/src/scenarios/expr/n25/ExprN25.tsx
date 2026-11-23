@@ -191,8 +191,10 @@ export function ExprN25Scenario({ shotState, fixture }: ScenarioProps): ReactEle
               !(ready || shotState === 'loading') || !hasBooks
                 ? undefined
                 : {
+                    // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n25, kept as its builder left it: its figure follows focus, built before figure-readout
                     value: focus.readout(finished, (p) => p.finished ?? '—'),
                     unit: `of ${log.goal} books`,
+                    // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n25, kept as its builder left it: its figure follows focus, built before figure-readout
                     delta: focus.readout(deltaOf(gap), (p) =>
                       p.finished === null ? undefined : deltaOf(p.finished - Math.round(p.pace)),
                     ),

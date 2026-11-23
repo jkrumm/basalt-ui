@@ -98,9 +98,11 @@ export function ExprN28Scenario({ shotState, fixture }: ScenarioProps) {
                 ]
           }
           figure={{
+            // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n28, kept as its builder left it: its figure follows focus, built before figure-readout
             value: focus.readout(mover === undefined ? null : signed(mover.delta), (c) =>
               signed(c.delta),
             ),
+            // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n28, kept as its builder left it: its figure follows focus, built before figure-readout
             delta: focus.readout(mover === undefined ? undefined : deltaOf(mover), deltaOf),
             period: focus.readout(
               mover === undefined ? undefined : `${mover.name} moved most`,

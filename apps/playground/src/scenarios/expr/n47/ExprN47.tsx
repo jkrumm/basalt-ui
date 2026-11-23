@@ -144,9 +144,11 @@ export function ExprN47Scenario({ shotState, fixture }: ScenarioProps) {
             figure={
               ready
                 ? {
+                    // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n47, kept as its builder left it: its figure follows focus, built before figure-readout
                     value: focus.readout(span(totalMs), (r) =>
                       r.minutes === null ? clock(r.start) : span(r.minutes * MINUTE_MS),
                     ),
+                    // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n47, kept as its builder left it: its figure follows focus, built before figure-readout
                     delta: focus.readout<Delta>(restDelta, share),
                     period: focus.readout(
                       issue.shippedAt === null ? 'filed, not shipped' : 'filed to shipped',

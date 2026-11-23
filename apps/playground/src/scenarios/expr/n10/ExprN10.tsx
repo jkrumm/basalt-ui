@@ -82,6 +82,7 @@ export function ExprN10Scenario({ shotState, fixture }: ScenarioProps): ReactEle
       figure={
         shotState === undefined
           ? {
+              // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n10, kept as its builder left it: its figure follows focus, built before figure-readout
               value: focus.readout(rest.value, (d) => `${kt(d.spread)} kt apart`),
               period: focus.readout(rest.period, (d) => dayTime(d.t)),
             }

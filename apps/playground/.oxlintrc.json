@@ -1,5 +1,5 @@
 {
-  "extends": ["./node_modules/basalt-ui/configs/oxlint-app.json"],
+  "extends": ["./.oxlintrc.basalt.json"],
   "rules": {
     "react/globals": "error",
     "react/immutability": "error",
@@ -9,20 +9,5 @@
     "react/set-state-in-effect": "error",
     "no-constant-binary-expression": "error"
   },
-  "overrides": [
-    {
-      "files": ["src/scenarios/expr/**", "src/cycle/**"],
-      "rules": { "basalt/primitive-bypass": ["error", { "formsOff": ["figure-readout"] }] }
-    },
-    {
-      "files": ["src/scenarios/expr/c10/**"],
-      "rules": {
-        "basalt/primitive-bypass": ["error", { "formsOff": ["list-rows", "figure-readout"] }]
-      }
-    },
-    {
-      "files": ["src/scenarios/expr/n04/**", "src/cycle/shell-6/**"],
-      "rules": { "basalt/primitive-bypass": ["error", { "formsOff": [] }] }
-    }
-  ]
+  "ignorePatterns": ["src/routeTree.gen.ts"]
 }

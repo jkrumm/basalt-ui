@@ -67,6 +67,7 @@ export function ExprC10Scenario({ shotState, fixture }: ScenarioProps) {
         <ScrollArea aria-label="Resources by hop" className="max-h-full">
           <ol className="m-0 flex list-none flex-col p-0">
             {rows.map((r, i) => (
+              // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle c10, kept as its builder left it: its rows predate RowList
               <li
                 key={r.id}
                 {...focus.item(i)}
@@ -123,6 +124,7 @@ export function ExprC10Scenario({ shotState, fixture }: ScenarioProps) {
           : null
       }
       figure={{
+        // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle c10, kept as its builder left it: its figure follows focus, built before figure-readout
         value: focus.readout(String(reached.length), (r) => (r.hop === null ? '–' : String(r.hop))),
         unit: focus.readout('resources in reach', (r) => (r.hop === 1 ? 'hop' : 'hops')),
         period: focus.readout(`${affected} affected`, (r) => `${r.id}, ${reachLine(r)}`),

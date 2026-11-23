@@ -151,6 +151,7 @@ export function ExprN09Scenario({ shotState, fixture }: ScenarioProps) {
           empty={empty}
           height="fill"
           figure={{
+            // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n09, kept as its builder left it: its figure follows focus, built before figure-readout
             value: focus.readout(known && next !== undefined ? next.name : null, (job) => job.name),
             period: focus.readout(known && next !== undefined ? when(next, format) : '', (job) =>
               when(job, format),

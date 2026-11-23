@@ -111,10 +111,12 @@ export function ExprN52Scenario({ shotState, fixture }: ScenarioProps) {
             figure={
               ready
                 ? {
+                    // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n52, kept as its builder left it: its figure follows focus, built before figure-readout
                     value: focus.readout(eur(s.left), (d) => eur(leftAt(d))),
                     unit: focus.readout('left after bills', (d) =>
                       d.day <= TODAY ? 'remaining so far' : 'remaining after due dates',
                     ),
+                    // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n52, kept as its builder left it: its figure follows focus, built before figure-readout
                     delta: focus.readout<Delta>(restDelta, (d) =>
                       d.spent === null ? restDelta : deltaOf(d.usual - d.spent),
                     ),
@@ -283,8 +285,10 @@ export function ExprN52Scenario({ shotState, fixture }: ScenarioProps) {
             figure={
               ready
                 ? {
+                    // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n52, kept as its builder left it: its figure follows focus, built before figure-readout
                     value: focus.readout(eur(s.perDay), (d) => eur(d.daily ?? 0)),
                     unit: focus.readout('a day', () => 'that day'),
+                    // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n52, kept as its builder left it: its figure follows focus, built before figure-readout
                     delta: focus.readout<Delta>(dayDelta(s.perDay - s.usualPerDay), (d) =>
                       dayDelta(
                         d.daily === null ? s.perDay - s.usualPerDay : d.daily - d.usualDaily,

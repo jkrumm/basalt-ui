@@ -131,6 +131,7 @@ export function ExprN45Scenario({ shotState, fixture }: ScenarioProps) {
           figure={
             ready
               ? {
+                  // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n45, kept as its builder left it: its figure follows focus, built before figure-readout
                   value: focus.readout(f.number(s.loops), (d) => f.number(d.restarts)),
                   unit: focus.readout(
                     s.loops === 1 ? 'container in a restart loop' : 'containers in a restart loop',
