@@ -22,7 +22,6 @@ import { Sheet, SheetContent } from '../ui/sheet'
 import { PRESENTATIONS, presentationStore, widthStore } from './core/panel-store'
 import type { Presentation } from './core/panel-store'
 import type { FavouriteInput } from './contract'
-import { FavouriteToggle } from './favourites'
 import { PageHostContext, ShellOverlayContext } from './page'
 import { PeekChip, PeekWindow } from './peek-window'
 import type { WindowRect } from './peek-window'
@@ -215,7 +214,6 @@ function PeekSheet({
   title,
   tag,
   fullPage,
-  favourite,
   records,
   actions,
   footer,
@@ -236,12 +234,8 @@ function PeekSheet({
         footer={footer}
         data-present="sheet"
         actions={
-          records === undefined &&
-          fullPage === undefined &&
-          favourite === undefined &&
-          actions === undefined ? undefined : (
+          records === undefined && fullPage === undefined && actions === undefined ? undefined : (
             <>
-              {favourite !== undefined && <FavouriteToggle {...favourite} />}
               {records !== undefined && <PanelSteps records={records} />}
               {actions !== undefined && <PanelActionBar actions={actions} />}
               {fullPage !== undefined && <FullPageLink href={fullPage} />}

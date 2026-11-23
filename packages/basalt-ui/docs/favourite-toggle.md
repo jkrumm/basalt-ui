@@ -12,8 +12,8 @@ slots: []
 The star button that adds a record to the rail's Favourites section and takes it off again. It is
 a toggle (`aria-pressed`) named by the action it would do, and draws nothing outside an `AppShell`
 or on a phone, where the rail that lists favourites is not drawn.
-Drop it in a `PageBar`'s `actions`; a `Peek`, `Dock` or `PageAside` header draws it from its
-`favourite` prop.
+A `PageBar`, a `Peek` and a `Dock` draw it from their `favourite` prop; use the component itself
+for a star of your own. `PageAside` takes no `favourite` prop.
 
 ## Signature
 

@@ -12,6 +12,7 @@ import type { ElementType, MouseEvent, ReactNode } from 'react'
 import { Link, useRouter } from '@tanstack/react-router'
 import type { AnyRouter, RegisteredRouter, ValidateLinkOptions } from '@tanstack/react-router'
 import type { LinkComponent, NavTarget } from '../core/ports'
+import { isInAppPath } from '../core/url'
 
 export type { NavTarget }
 
@@ -51,7 +52,7 @@ function isNavTarget(value: unknown): value is NavTarget {
  * favourites). `undefined` for a path that leaves the app or a target this router cannot build.
  */
 export function targetHref(router: AnyRouter, target: string | NavTarget): string | undefined {
-  if (typeof target === 'string') return isInApp(target) ? target : undefined
+  if (typeof target === 'string') return isInAppPath(target) ? target : undefined
   const options = opened.get(target)
   if (options === undefined) return undefined
   try {
@@ -65,11 +66,6 @@ export function targetHref(router: AnyRouter, target: string | NavTarget): strin
 export type RouterLinkComponent = LinkComponent
 
 type LinkProps = Parameters<LinkComponent>[0]
-
-/** A path inside the app: one leading slash, so not `//host`, a scheme, a hash or a relative path. */
-function isInApp(href: string): boolean {
-  return href.startsWith('/') && !href.startsWith('//')
-}
 
 /** The click the browser would follow itself: another button, a modifier or a new-tab link is left alone. */
 function isPlainClick(event: MouseEvent<HTMLAnchorElement>): boolean {
@@ -113,6 +109,6 @@ export function RouterLinkAdapter({ href, ...rest }: LinkProps): ReactNode {
       ...rest,
     })
   }
-  if (isInApp(href)) return createElement(InAppLink, { href, ...rest })
+  if (isInAppPath(href)) return createElement(InAppLink, { href, ...rest })
   return createElement('a', { href, ...rest })
 }
