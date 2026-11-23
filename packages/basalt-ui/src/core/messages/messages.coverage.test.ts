@@ -16,6 +16,7 @@ const AREAS = [
   'cards',
   'lists',
   'chain',
+  'flow',
   'kanban',
   'controls',
   'home',

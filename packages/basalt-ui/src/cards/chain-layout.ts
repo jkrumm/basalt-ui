@@ -16,6 +16,8 @@
  *    point; each column gap is one cubic curve and a crossed column is a straight run in its lane.
  */
 
+import { hop } from './edge-path'
+
 export type ChainSize = { width: number; height: number; gapX: number; gapY: number }
 
 /** A node card is 200 x 64 px: a title line and a muted line with the status; six ranks fit 1600 px. */
@@ -268,16 +270,8 @@ export function chainLayout(
     for (let i = 1; i < chain.length; i++) {
       const a = chain[i - 1] ?? edge.from
       const b = chain[i] ?? edge.to
-      const ax = right(a)
-      const ay = yOf(a)
-      const bx = xOf(rank.get(b) ?? 0)
-      const by = yOf(b)
-      const k = (bx - ax) / 2
-      path +=
-        Math.abs(ay - by) < 0.5
-          ? ` L ${bx} ${by}`
-          : ` C ${ax + k} ${ay} ${bx - k} ${by} ${bx} ${by}`
-      if (i < chain.length - 1) path += ` L ${right(b)} ${by}`
+      path += hop(right(a), yOf(a), xOf(rank.get(b) ?? 0), yOf(b))
+      if (i < chain.length - 1) path += ` L ${right(b)} ${yOf(b)}`
     }
     return {
       from: edge.from,
