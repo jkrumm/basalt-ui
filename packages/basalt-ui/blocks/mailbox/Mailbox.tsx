@@ -1,7 +1,7 @@
 import { persisted, useFormat } from 'basalt-ui'
 import { Composer } from 'basalt-ui/ai'
 import { MailList, MailThread } from 'basalt-ui/cards'
-import type { MailItem, QueryStateLike } from 'basalt-ui/cards'
+import type { MailItem, MailMessage, QueryStateLike } from 'basalt-ui/cards'
 import { FormRow, useFormDraft } from 'basalt-ui/controls'
 import type { NavTarget } from 'basalt-ui/core/ports'
 import { useAppForm } from 'basalt-ui/form'
@@ -20,6 +20,7 @@ import {
   Forward,
   Mail,
   MailOpen,
+  Maximize2,
   Reply,
   Rows3,
   SquarePen,
@@ -86,6 +87,17 @@ const snippetOf = (body: string): string =>
     .map((line) => line.trim())
     .find((line) => line !== '' && !line.endsWith(',')) ?? ''
 
+/** A message as the thread draws it; the files link nowhere in the reference. */
+const threadMessage = (m: Message): MailMessage => ({
+  id: m.id,
+  from: { name: m.from.name, address: m.from.address },
+  to: m.to,
+  at: Date.parse(m.at),
+  body: m.body,
+  preview: snippetOf(m.body),
+  attachments: m.attachments.map((a) => ({ ...a, href: '#' })),
+})
+
 const quote = (m: Message | undefined): string =>
   m === undefined ? '' : `\n\n${m.from.name} wrote:\n${m.body.replace(/^/gm, '> ')}`
 
@@ -107,12 +119,15 @@ function ComposeForm({
   onSend,
   onDone,
   lead,
+  aside,
 }: {
   draftKey: string
   start: Draft
   onSend: (mail: Outgoing) => unknown
   onDone: () => void
   lead?: ReactNode
+  /** What sits under the form on the record surface: the message replied to, or contacts that fill To. */
+  aside?: ((fillTo: (address: string) => void) => ReactNode) | undefined
 }): ReactElement {
   // The first values only: a fresh object each render would read to the form as new defaults and wipe a restored draft.
   const [initial] = useState(start)
@@ -192,6 +207,7 @@ function ComposeForm({
           Discard
         </Button>
       </div>
+      {aside?.((address) => form.setFieldValue('to', address))}
     </div>
   )
 }
@@ -274,15 +290,7 @@ function Reader({
           <MailThread
             key={c.id}
             label={c.subject}
-            messages={c.messages.map((m) => ({
-              id: m.id,
-              from: { name: m.from.name, address: m.from.address },
-              to: m.to,
-              at: Date.parse(m.at),
-              body: m.body,
-              preview: snippetOf(m.body),
-              attachments: m.attachments.map((a) => ({ ...a, href: '#' })),
-            }))}
+            messages={c.messages.map(threadMessage)}
             reply={reply}
           />
         </div>
@@ -333,6 +341,14 @@ export function Mailbox({
     )
     .toSorted((a, b) => latest(b) - latest(a))
   const open = all.find((c) => c.id === values.mail)
+  const contacts = [
+    ...new Map(
+      all
+        .flatMap((c) => c.messages.map((m) => m.from))
+        .filter((p) => p.org !== undefined)
+        .map((p) => [p.address, p]),
+    ).values(),
+  ]
   const count = (folder: MailFolder): number =>
     all.filter((c) => c.folder === folder && c.unread).length
 
@@ -362,12 +378,13 @@ export function Mailbox({
     }
   })
 
+  // A reply or a forward needs the conversation it answers: with none open (a stale link) nothing opens.
   const kind: ComposeKind | null =
-    values.compose === 'none'
+    values.compose === 'none' ||
+    query.data === undefined ||
+    (values.compose !== 'new' && open === undefined)
       ? null
-      : values.compose !== 'new' && open === undefined
-        ? 'new'
-        : values.compose
+      : values.compose
   const other = open === undefined ? undefined : contactOf(open)
   const bare = open?.subject.replace(/^(Re|Fwd): /, '') ?? ''
   const start: Draft =
@@ -393,8 +410,8 @@ export function Mailbox({
             {kind === 'reply' ? `Reply to ${other?.name ?? ''}` : 'Forward'}
           </span>
           <Button variant="ghost" size="sm" onClick={() => setHome('surface')}>
-            <Rows3 aria-hidden="true" />
-            Open in a panel
+            <Maximize2 aria-hidden="true" />
+            Pop out
           </Button>
         </div>
       }
@@ -543,6 +560,7 @@ export function Mailbox({
       {kind !== null && !inline && (
         <Peek
           kind="compose"
+          defaultPresent="window"
           title={kind === 'new' ? 'New email' : start.subject}
           icon={SquarePen}
           onClose={close}
@@ -564,6 +582,39 @@ export function Mailbox({
             start={start}
             onSend={onSend}
             onDone={close}
+            aside={(fillTo) => {
+              const replied = open?.messages.at(-1)
+              if (kind !== 'new' && replied !== undefined) {
+                return (
+                  <figure className="m-0 flex flex-col gap-2 border-s-2 border-border ps-3">
+                    <figcaption className="text-xs text-muted-foreground">
+                      {`${replied.from.name} wrote on ${f.date(Date.parse(replied.at), 'day')}`}
+                    </figcaption>
+                    <blockquote className="m-0 text-sm whitespace-pre-line text-muted-foreground">
+                      {replied.body}
+                    </blockquote>
+                  </figure>
+                )
+              }
+              return (
+                <div className="flex flex-col gap-2">
+                  <span className="text-xs text-muted-foreground">Supplier contacts</span>
+                  <div className="flex flex-wrap gap-1">
+                    {contacts.map((p) => (
+                      <Button
+                        key={p.address}
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => fillTo(p.address)}
+                      >
+                        <Factory aria-hidden="true" />
+                        {`${p.name}, ${p.org ?? ''}`}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )
+            }}
           />
         </Peek>
       )}
