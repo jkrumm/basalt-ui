@@ -12,6 +12,7 @@
 import { Outlet, createRootRouteWithContext, useNavigate } from '@tanstack/react-router'
 import type { QueryClient } from '@tanstack/react-query'
 import { AppShell, CommandPalette } from 'basalt-ui/shell'
+import { Building2, Globe, Rocket } from 'lucide-react'
 import { useState } from 'react'
 import type { ComponentProps } from 'react'
 import { COMMANDS } from '../demo/commands'
@@ -42,12 +43,21 @@ const CHROME: NonNullable<ShellProps['chrome']> =
     ? 'native-overlay'
     : 'web'
 
+/** The workspaces the switcher lists: the playground has no tenancy, so choosing one only changes the face. */
+const WORKSPACES = [
+  { id: 'basalt', label: 'Basalt', icon: Rocket },
+  { id: 'acme', label: 'Acme Corp', icon: Building2 },
+  { id: 'globex', label: 'Globex', icon: Globe },
+] as const
+
 /** The shell's account row, signed out: the playground has no auth. */
 const ACCOUNT: NonNullable<ShellProps['account']> = { status: 'signed-out', onSignIn: noop }
 
 function RootLayout() {
   const navigate = useNavigate()
   const [paletteOpen, setPaletteOpen] = useState(false)
+  const [workspaceId, setWorkspaceId] = useState<string>(WORKSPACES[0].id)
+  const current = WORKSPACES.find((w) => w.id === workspaceId) ?? WORKSPACES[0]
 
   return (
     <AppShell
@@ -72,6 +82,12 @@ function RootLayout() {
         ],
       }}
       account={ACCOUNT}
+      workspace={{
+        current,
+        options: WORKSPACES,
+        onSwitch: setWorkspaceId,
+        manage: { label: 'Manage workspaces', href: '/settings' },
+      }}
       chrome={CHROME}
     >
       <Outlet />

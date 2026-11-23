@@ -365,6 +365,12 @@ function SupplierRoute(): ReactElement {
           ),
         }}
         parent={parent}
+        favourite={{
+          id: `supplier-${id}`,
+          label: supplier.name,
+          icon: Factory,
+          target: navTarget(linkOptions({ to: '/ref/suppliers/$id', params: { id } })),
+        }}
         tabs={{
           state: store.field.tab,
           label: 'Supplier',
