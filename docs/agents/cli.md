@@ -11,6 +11,7 @@ like everything else. `init` always runs from the local bin: install `basalt-ui`
 basalt-ui --version         # one bare line, exit 0 — which CLI is actually running (also -v / version)
 basalt-ui sync              # reconcile managed files (.claude/rules/, .claude/skills/, AGENTS.md block) + delete the ones this version retired
 basalt-ui sync --check      # CI freshness gate — exits non-zero if any managed file drifted or a retired one is still present
+basalt-ui add <block>       # copy a block (a whole reference page, as source) into src/blocks/<block>/; add --list names them
 basalt-ui doctor            # integration health — SKIPPED is a third outcome and exits non-zero
 bunx basalt-ui tokens:css   # emit the --basalt-* stylesheet (no React, no bundler) — bunx ONLY if basalt is not installed
 bunx basalt-ui fonts:css    # emit the shipped --basalt-font-* stacks — same exception
