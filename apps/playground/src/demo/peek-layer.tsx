@@ -74,7 +74,15 @@ export function PeekLayer(): ReactElement | null {
           icon={ICONS[peek.open.kind]}
           title={titleOf(peek.open)}
           tag={`#${peek.open.id}`}
-          {...(peek.fullPage !== null && { fullPage: peek.fullPage })}
+          {...(peek.fullPage !== null && {
+            fullPage: peek.fullPage,
+            favourite: {
+              id: `${peek.open.kind}-${peek.open.id}`,
+              label: titleOf(peek.open),
+              icon: ICONS[peek.open.kind],
+              target: peek.fullPage,
+            },
+          })}
           records={{ ids: IDS[peek.open.kind], id: peek.open.id, onStep: peek.go }}
           actions={[
             { id: 'copy', label: 'Copy link', icon: Link, onClick: () => copyLink(peek.fullPage) },
@@ -90,7 +98,15 @@ export function PeekLayer(): ReactElement | null {
           icon={ICONS[dock.open.kind]}
           title={titleOf(dock.open)}
           tag={`#${dock.open.id}`}
-          {...(dock.fullPage !== null && { fullPage: dock.fullPage })}
+          {...(dock.fullPage !== null && {
+            fullPage: dock.fullPage,
+            favourite: {
+              id: `${dock.open.kind}-${dock.open.id}`,
+              label: titleOf(dock.open),
+              icon: ICONS[dock.open.kind],
+              target: dock.fullPage,
+            },
+          })}
           onClose={dock.close}
         >
           <Body {...dock.open} />
