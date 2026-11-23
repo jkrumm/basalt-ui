@@ -1,43 +1,34 @@
 // A recipe file the playground typecheck compiles; gen-recipes copies the region into the doc.
 // #region recipe:chat-thread-composer
-import { Button } from 'basalt-ui/ui/button'
-import { Textarea } from 'basalt-ui/ui/textarea'
-import { useState } from 'react'
+import { Composer } from 'basalt-ui/ai'
+import type { ComposerMessage, ComposerStatus } from 'basalt-ui/ai'
+import type { ListLoader } from 'basalt-ui/ui/combobox'
 
-type Props = { busy: boolean; onSend: (text: string) => Promise<void> }
+type Doc = { id: string; title: string }
+type Send = (message: { text: string; metadata: { docs: string[] } }) => Promise<void>
+type Props = { status: ComposerStatus; stop: () => void; send: Send; docs: ListLoader<Doc> }
 
-export function MessageBox({ busy, onSend }: Props) {
-  const [draft, setDraft] = useState('')
-
-  async function submit() {
-    const text = draft.trim()
-    if (!text || busy) return
-    setDraft('') // optimistic clear; a failed send puts the text back
-    await onSend(text).catch(() => setDraft((d) => d || text)) // a newer edit beats the stale restore
-  }
-
+/** The mentions travel beside the text as ids the server resolves, never parsed back out of it. */
+export function ChatComposer({ status, stop, send, docs }: Props) {
+  const onSend = ({ text, mentions }: ComposerMessage<Doc>) =>
+    send({ text, metadata: { docs: mentions.map((m) => m.value.id) } })
   return (
-    <form
-      className="flex items-end gap-2 p-3"
-      onSubmit={(e) => {
-        e.preventDefault()
-        void submit()
+    <Composer<Doc>
+      aria-label="Message"
+      status={status}
+      onStop={stop}
+      onSend={onSend}
+      mentions={{ source: docs }}
+      files={{ accept: 'image/*,.pdf', maxSize: 10_000_000 }}
+      model={{
+        'aria-label': 'Model',
+        options: [
+          { value: 'fast', label: 'Fast' },
+          { value: 'deep', label: 'Deep' },
+        ],
+        defaultValue: 'fast',
       }}
-    >
-      <Textarea
-        aria-label="Message"
-        value={draft}
-        onValueChange={setDraft}
-        onKeyDown={(e) => {
-          if (e.key !== 'Enter' || e.shiftKey || e.nativeEvent.isComposing) return
-          e.preventDefault() // Enter sends; Shift+Enter and an IME's Enter do not
-          e.currentTarget.form?.requestSubmit()
-        }}
-      />
-      <Button type="submit" disabled={busy}>
-        Send
-      </Button>
-    </form>
+    />
   )
 }
 // #endregion

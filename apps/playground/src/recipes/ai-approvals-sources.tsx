@@ -3,7 +3,6 @@
 import { partView } from 'basalt-ui/ai'
 import type { MessagePart, ToolView } from 'basalt-ui/ai'
 import { Button } from 'basalt-ui/ui/button'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from 'basalt-ui/ui/collapsible'
 
 type Part = MessagePart & { approval?: { id: string } }
 type Respond = (r: { id: string; approved: boolean }) => void // addToolApprovalResponse
@@ -21,19 +20,12 @@ const approval = (parts: readonly Part[], respond: Respond) => (v: ToolView) => 
 const host = (url: string) => (/^https?:\/\//i.test(url) ? URL.parse(url)?.hostname : undefined)
 
 export function Message(p: { parts: readonly Part[]; tools: string[]; respond: Respond }) {
-  const thoughts = p.parts.flatMap((x) => (x.type === 'reasoning' ? x.text : []))
   const urls = new Set(
     p.parts.flatMap((x) => (x.type === 'source-url' && host(x.url) ? x.url : [])),
   )
   const toolRenderers = Object.fromEntries(p.tools.map((t) => [t, approval(p.parts, p.respond)]))
   return (
     <>
-      {thoughts.map((t, i) => (
-        <Collapsible key={i}>
-          <CollapsibleTrigger>Reasoning</CollapsibleTrigger>
-          <CollapsibleContent>{t}</CollapsibleContent>
-        </Collapsible>
-      ))}
       {partView(p.parts, { toolRenderers })}
       <ol aria-label="Sources">
         {[...urls].map((u, i) => (
