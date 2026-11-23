@@ -129,6 +129,8 @@
         "TabsContent": "div",
         "TabsList": "div",
         "TabsTrigger": "div",
+        "TabsTriggerCount": "div",
+        "TabsTriggerDot": "div",
         "TagInput": "div",
         "Textarea": "textarea",
         "Toast": "div",
