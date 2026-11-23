@@ -1,0 +1,24 @@
+{
+  "why": "The nav type machinery is the best typed part of the kit and the shell does not use it. `AppShell nav` is a second, untyped `NavConfig`; the badge-key type is inferred from the `badges` object itself, so a typo'd key compiles although the shipped rule says it cannot; the nav is cast away inside the shell; `navTarget` widens to `string` without `Register`; `./page` drags TanStack Router in through `InnerNav` while the parts profile installs none. And the `BasaltRegister` series slot types nothing: chart `key`, `plot.rows` and `focusSeries` take plain `string`, while the charts skill says never to use the slot. Narrowing any of these after 3.0 is a break. Evidence: docs/v3/evidence/readiness-2026-11-24/api.md (P1 rows 1 and 5), docs/v3/evidence/readiness-2026-11-24/freeze.md rows 2 and 8.",
+  "what": "A typo in a nav key, a badge key or a route target fails to compile, and the series slot is either real or gone.",
+  "owns": [
+    "packages/basalt-ui/src/shell/contract.ts, app-shell.tsx, nav-types.ts; src/router/nav/**, nav-target.ts",
+    "src/page/parts/inner-nav.tsx and the `./page` peer row in scripts/surface-gates.ts",
+    "src/register.ts, src/charts/contract.ts (series key typing), src/cli/tokens-css-extra.ts, the charts skill line on series"
+  ],
+  "must_not_touch": [
+    "the exports map beyond the types this row adds or removes",
+    "any other chart contract field"
+  ],
+  "change": "Read first: docs/v3/issues/ga/README.md, then the evidence file named in why (every finding there has path:line). Decided: (1) `AppShell` is generic over the `defineNav` result: `nav: N`, `badges?: NavBadges<N>`; the shell's own copies of the nav types go; the `defineNav` result is branded so a hand-written object of the same shape is refused with a readable error. (2) `navTarget` gets the same `Register` guard `defineNav` has. (3) `./page` drops the router peer: `InnerNav` builds its href through the handle that `field` returns in `./router`; if that cannot hold, `InnerNav` moves to `./router` and `./page` stays peer-free. (4) Series: one seam. The route Issue 2831 settled (the generated pair for a chart, the variable for an HTML mark) is the one the skill teaches; if that route can type `key` by the registered series at no cost to an app that registers none, do it and drop the \"never\" from the skill; otherwise delete `BasaltRegister`'s series slot, `defineSeries` and the CLI augmentation. State the choice and its reason in the PR. What the code decides: the brand mechanism and which arm of (4).",
+  "acceptance": [
+    "Type tests (expect-error fixtures): a badge key not in the nav, a `to` not in the route tree, a hand-written nav object, and a documented `mobile: true` item that must compile",
+    "No `as` cast of the nav inside src/shell",
+    "An app on the `parts` profile type-checks and builds `basalt-ui/page` with no router installed (pack-test scratch consumer)",
+    "The charts skill, the generated docs and src agree on the one series seam",
+    "make check passes"
+  ],
+  "out_of_scope": "New nav features. Changing what the shell renders.",
+  "proof": "The type fixtures and the scratch consumer without a router.",
+  "commits": "Conventional, empty scope, header at most 80 characters, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export, prop, rule id or CLI flag gets its row in migrations/areas and MIGRATING.md and regenerates the docs in the same PR."
+}

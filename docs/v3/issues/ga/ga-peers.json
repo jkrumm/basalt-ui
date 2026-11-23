@@ -1,0 +1,19 @@
+{
+  "why": "Eleven optional peers are pinned exactly (`tailwindcss` and `@tailwindcss/vite` 4.3.5, `d3-scale`, `stylelint`, `remend`, `react-day-picker` and more) with no stated reason; `doctor` treats a full triple as exact, so a consumer one Tailwind patch ahead has a red check until basalt releases. `astro` and `@astrojs/react` are in no peer list while the package ships `.astro` files; `oxlint` is pinned only inside the generated preset; `@tanstack/react-query-devtools` is a declared peer nothing imports. Peer ranges are part of the 3.0 contract. Evidence: docs/v3/evidence/readiness-2026-11-24/freeze.md (row 12, section 5), docs/v3/evidence/readiness-2026-11-24/guards.md P2-3, docs/v3/evidence/readiness-2026-11-24/site.md, docs/v3/evidence/readiness-2026-11-24/api.md.",
+  "what": "Every peer has a range that matches how tightly basalt is coupled to it, declared in package.json and checked by `doctor` and CI.",
+  "owns": [
+    "packages/basalt-ui/package.json (`peerDependencies`, `peerDependenciesMeta`), src/cli/peers.ts, src/cli/doctor/install.ts (the range check only)",
+    "a CI job on the newest in-range peers; the peers section of MAINTAINING.md and the generated install docs"
+  ],
+  "must_not_touch": ["the `exports` map (ga-exports)", "any other doctor check (ga-cli-formats)"],
+  "change": "Read first: docs/v3/issues/ga/README.md, then the evidence file named in why (every finding there has path:line). Decided, the class table of STOCKTAKE section 5: stable majors used through public API only take a caret from the tested floor (`tailwindcss`, `@tailwindcss/vite`, `d3-scale`, `react-day-picker`, `react-resizable-panels`, `stylelint`, `postcss-html`, `remend`, `@axe-core/playwright`); peers coupled to internals take a tilde (`@base-ui/react`, `@tanstack/react-table`, `@tanstack/charts`); 0.x and alpha tooling stays exact (`@shadcn/lint`, `oxlint`) with the reason written beside it. Add `astro` and `@astrojs/react` as optional peers with a caret on the tested major and put them in `RUNTIME_PEERS.site`; declare `oxlint` as an optional peer with the pin the preset uses and make the preset read that one source. Drop any declared peer nothing imports. `doctor` checks the declared range, not equality. One scheduled CI job installs the newest in-range version of every peer and runs the unit and pack tests; it reports, it does not gate a PR. What the code decides: each floor.",
+  "acceptance": [
+    "A table in MAINTAINING.md lists every peer with its class, range and reason, generated from or checked against package.json by a test",
+    "A scratch consumer one patch ahead on tailwindcss installs without a peer warning and `doctor` is green",
+    "The newest-peers job exists and has run once; its result is in the PR",
+    "make check passes"
+  ],
+  "out_of_scope": "Upgrading a peer. Replacing oxlint.",
+  "proof": "The peer table and the first run of the newest-peers job.",
+  "commits": "Conventional, empty scope, header at most 80 characters, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export, prop, rule id or CLI flag gets its row in migrations/areas and MIGRATING.md and regenerates the docs in the same PR."
+}

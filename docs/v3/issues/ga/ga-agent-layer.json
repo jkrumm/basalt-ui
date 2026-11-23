@@ -1,0 +1,24 @@
+{
+  "why": "The shipped skills, rules and reviewer are how a consumer's agent learns the kit, and the owner names them as part of the foundation that must be sound. The audit verified that every lint id, type tag and docs link resolves, and found what the guards cannot see: the managed AGENTS block (the only always-loaded text) omits `/basalt-charts`, which is why a trial never loaded it; the table reference gives a wrong bulk-action shape and wrong tier numbers; the DESIGN.md seed names `basalt()` options that do not exist; forms.md forbids what the shipped `WizardDialog` does; `LucideProvider` is required by a rule and written by no template; about ten references point at apps/playground files a consumer cannot open; the references carry 45 or more audit anecdotes, MR ids and cycle numbers; a page build reads about 125 KB of references; and the parts added since 2026-11-21 (WizardDialog, ChoiceCard, Peek and record panels, Dock, FlowCanvas, Schedule, MailList, BulkBar, workspace switcher) have no route from any skill. Evidence: docs/v3/evidence/readiness-2026-11-24/agent.md, docs/v3/evidence/readiness-2026-11-24/accordee.md (P2 row 2), docs/v3/evidence/readiness-2026-11-24/guards.md P2-7.",
+  "what": "A fresh agent that reads only the AGENTS block and follows the skills reaches every shipped part, and no claim it reads is wrong.",
+  "owns": [
+    "packages/basalt-ui/agent/** (skills, references, rules text, reviewer rubric, templates)",
+    "scripts and tests that guard the agent layer (check-coverage, tests/agent/**), the docs generator output the skills link to",
+    "scripts/gen-llms.ts header text"
+  ],
+  "must_not_touch": [
+    "CLI behaviour (ga-cli-formats): where a skill names a flag that row changes, leave the line to it",
+    "the lint rules",
+    "a `site` agent set (ga-site-path)"
+  ],
+  "change": "Read first: docs/v3/issues/ga/README.md, then the evidence file named in why (every finding there has path:line). Decided: (1) The AGENTS block names every skill directory, with one line on when to load it; a test fails when a skill has no line. It also states that the hook runs in Claude Code only and that any other agent runs `basalt-ui lint --changed` before reporting done. (2) Fix every wrong claim agent.md lists, from the code. (3) A generated `references/parts.md` built from the `use when` frontmatter of packages/basalt-ui/docs: one line per shipped part and block, grouped by the question it answers; basalt-design routes to it before a page is laid out; the question-to-form table is extended from it. (4) No path under `apps/` in agent/**: cite a block, a recipe doc, or inline the region; a test holds it. Flow and schedule become blocks on the `basalt-ui add` tier if a consumer is told to copy them. (5) Scrub: keep each rule, delete the story (trial names, cycle numbers, MR ids, owner quotes, dates); a lint over agent/** holds the patterns. (6) Size: the fact count moves out of copy.md into `shot detect` (or a CLI check) so the skill names a command, not a one-liner; charts.md splits by branch so one chart reads one part of it; one home per claim. Byte ceilings in check-coverage follow the landed sizes downwards. (7) Icons: the root templates `init` writes mount the icon defaults the rule requires, and `init` installs `lucide-react` when it writes them. (8) A claim check: a test extracts every backticked import specifier, export name and CLI flag from agent/** and resolves it against the built package and `--help`. What the code decides: the grouping of parts.md and the split of charts.md.",
+  "acceptance": [
+    "The skill-listing test, the no-apps-path test, the history-pattern lint and the claim check exist and pass; each fails on a seeded offender",
+    "Every part exported from a published entry is named in parts.md or in a skill (coverage test)",
+    "The bytes a page build reads (SKILL.md plus the references its route names for a table page with one chart) are stated before and after in the PR and are lower",
+    "make check passes"
+  ],
+  "out_of_scope": "New design doctrine. The reviewer rubric scoring. Site and content pages.",
+  "proof": "The before and after bytes, and the four new guards failing on their seeds.",
+  "commits": "Conventional, empty scope, header at most 80 characters, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export, prop, rule id or CLI flag gets its row in migrations/areas and MIGRATING.md and regenerates the docs in the same PR."
+}
