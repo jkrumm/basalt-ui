@@ -3,7 +3,7 @@
  * Model text always renders as untrusted markdown (the trust level is pinned); reasoning and tool
  * calls fold into one `ReasoningTrace`. `Composer` writes a message (with mentions and files),
  * `ModelPicker` chooses who answers, `Message` and `MessageActions` draw a turn. No runtime: the
- * app owns its `Chat` and passes `status` and `stop` in.
+ * app owns its chat object and passes its status and stop function in.
  * Needs the four peers of basalt-ui/content (react-markdown, remark-gfm, rehype-sanitize, remend);
  * the AI SDK packages are never imported, the part types are structural. The wire-to-ToolView
  * mapping stays internal.
