@@ -49,7 +49,7 @@ Columns: `No directive` is the static HTML: `clean`, `differs` from the client:o
 | bar-list | BarList | clean | no directive | 94.1 kB | 22.9 kB | 31.3 kB | The static HTML is the whole part, 0 bytes of JavaScript: the ranked bars are the picture; rows are plain text without a link. |
 | chain-view | ChainView | clean | client:visible | 95.0 kB | 23.8 kB | 31.3 kB | Static picture first, the island adds behaviour: pan, zoom and trace focus need JS; the laid-out graph is the static picture. client:visible, up to 23.8 kB further (client:idle above the fold). |
 | data-panel | DataPanel | clean | no directive | 89.7 kB | 18.5 kB | 31.3 kB | The static HTML is the whole part, 0 bytes of JavaScript: the card frame and its body list are drawn at rest. |
-| event-list | EventList | clean | client:visible | 88.3 kB | 17.1 kB | 31.3 kB | Static picture first, the island adds behaviour: "Show more" pages the feed; the first page is the static picture. client:visible, up to 17.1 kB further (client:idle above the fold). |
+| event-list | EventList | clean | client:visible | 90.8 kB | 19.6 kB | 31.3 kB | Static picture first, the island adds behaviour: "Show more" pages the feed; the first page is the static picture. client:visible, up to 19.6 kB further (client:idle above the fold). |
 | kanban-card | KanbanCard | clean | client:visible | 91.4 kB | 20.2 kB | 31.3 kB | Static picture first, the island adds behaviour: the move menu and drag need JS; the card is drawn at rest. client:visible, up to 20.2 kB further (client:idle above the fold). |
 | row-list | RowList | clean | client:visible | 89.6 kB | 18.4 kB | 31.3 kB | Static picture first, the island adds behaviour: a row shares focus with its chart mark; hover and focus highlight need JS. client:visible, up to 18.4 kB further (client:idle above the fold). |
 | step-rail | StepRail | clean | no directive | 81.2 kB | 10.0 kB | 31.3 kB | The static HTML is the whole part, 0 bytes of JavaScript: bars scaled to the longest step are drawn at rest; it never animates. |
@@ -115,7 +115,7 @@ Every part of a family on one page, each its own island, in one mode: the JavaSc
 | Family | Parts | no directive | client:visible | client:idle | client:load | client:only |
 |-|-|-|-|-|-|-|
 | ui | 27 | 0 | 131.4 kB | 244.2 kB | 244.1 kB | 244.1 kB |
-| cards | 9 | 0 | 129.2 kB | 139.5 kB | 139.4 kB | 139.4 kB |
+| cards | 9 | 0 | 129.2 kB | 142.7 kB | 142.6 kB | 142.6 kB |
 | charts | 8 | 0 | 205.7 kB | 223.6 kB | 223.5 kB | 223.5 kB |
 | table | 4 | 0 | 326.8 kB | 340.2 kB | 340.2 kB | 340.2 kB |
 | content | 5 | 0 | 271.7 kB | 272.9 kB | 272.9 kB | 272.9 kB |
@@ -171,7 +171,7 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 - bar-list: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - chain-view: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - data-panel: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
-- event-list: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
+- event-list: event list period headings, avatar actors, connector rail and folded bodies (Issue 3109, plan row bench-record-parts): the Avatar primitive joins the part
 - kanban-card: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - row-list: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - step-rail: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
@@ -230,6 +230,7 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 - form-layout: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - stepper: the view layouts (Issue 3065): the list layout's rules in table.css and the board and gallery utilities in the shared stylesheet
 - family ui: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
+- family cards: event list period headings, avatar actors, connector rail and folded bodies (Issue 3109, plan row bench-record-parts): the Avatar primitive joins the part
 - family table: Issue 3106 (shell nav): the page barrel gains the favourite star, its context and default store; every part that bundles the page barrel or the shell grows by the same few KB gzip
 - family page: Issue 3106 (shell nav): the page barrel gains the favourite star, its context and default store; every part that bundles the page barrel or the shell grows by the same few KB gzip
 - family forms: choice cards and the form parts (plan row bench-form-parts, Issue 2996): the checkbox and radio modules gain the card variant and the tile grid keys on size containers, a few dozen bytes of CSS in every part and a few hundred of JavaScript in the table and forms
