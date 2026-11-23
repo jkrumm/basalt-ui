@@ -9,13 +9,17 @@ import {
   setAppearance,
   subscribeAppearance,
 } from '../core/appearance'
-import type { AppearanceDensity, AppearanceFrame, AppearanceState } from '../core/appearance'
+import type {
+  AccentName,
+  AppearanceDensity,
+  AppearanceFrame,
+  AppearanceState,
+} from '../core/appearance'
 import { cn } from '../core/cn'
 import { controls as controlsMessages } from '../core/messages/controls'
 import { useMessages } from '../core/messages/use-messages'
 import { setScheme } from '../core/scheme'
 import type { Scheme } from '../core/scheme'
-import type { AccentName } from '../tokens/accents'
 import { Button } from '../ui/button'
 import { RadioGroup } from '../ui/radio-group'
 import { SwatchPicker } from '../ui/swatch-picker'
@@ -54,6 +58,18 @@ export type AppearanceSwitcherProps = {
 }
 
 const ROWS: readonly AppearanceRow[] = ['scheme', 'accent', 'density', 'frame']
+
+/** Each option's message keys, written out so every key is one literal reference. */
+const DENSITY_COPY = {
+  dense: ['controls.appearance.dense', 'controls.appearance.denseHelp'],
+  normal: ['controls.appearance.normal', 'controls.appearance.normalHelp'],
+  comfortable: ['controls.appearance.comfortable', 'controls.appearance.comfortableHelp'],
+} as const satisfies Record<AppearanceDensity, readonly [string, string]>
+
+const FRAME_COPY = {
+  panel: ['controls.appearance.panel', 'controls.appearance.panelHelp'],
+  flush: ['controls.appearance.flush', 'controls.appearance.flushHelp'],
+} as const satisfies Record<AppearanceFrame, readonly [string, string]>
 const SCHEMES: readonly Scheme[] = ['light', 'dark', 'auto']
 
 /** A frame's miniature: the rail on the frame's ground and the work surface, inset or flush. */
@@ -207,8 +223,8 @@ export function AppearanceSwitcher({
                 }
                 options={DENSITIES.map((density) => ({
                   value: density,
-                  label: t(`controls.appearance.${density}`),
-                  description: t(`controls.appearance.${density}Help`),
+                  label: t(DENSITY_COPY[density][0]),
+                  description: t(DENSITY_COPY[density][1]),
                   preview: <DensityPreview density={density} />,
                 }))}
               />
@@ -226,8 +242,8 @@ export function AppearanceSwitcher({
                 onValueChange={(frame) => setAppearance({ frame })}
                 options={FRAMES.map((frame) => ({
                   value: frame,
-                  label: t(`controls.appearance.${frame}`),
-                  description: t(`controls.appearance.${frame}Help`),
+                  label: t(FRAME_COPY[frame][0]),
+                  description: t(FRAME_COPY[frame][1]),
                   preview: <FramePreview frame={frame} />,
                 }))}
               />

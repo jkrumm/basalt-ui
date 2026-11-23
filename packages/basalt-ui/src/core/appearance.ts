@@ -7,6 +7,10 @@
  */
 import { isAccentName } from '../tokens/accents'
 import type { AccentName } from '../tokens/accents'
+
+// The accent set, re-exported so a part (and its ejected copy) reaches it through a published path.
+export { ACCENT_FILLS, ACCENT_NAMES, isAccentName } from '../tokens/accents'
+export type { AccentName } from '../tokens/accents'
 import { SCHEME_ATTRIBUTE, SCHEME_KEY, parseScheme, setScheme } from './scheme'
 import type { Scheme } from './scheme'
 
