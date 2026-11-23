@@ -3,7 +3,7 @@ import { useFormat } from 'basalt-ui'
 import { StatCell, StatGroup } from 'basalt-ui/cards'
 import { Page, PageBar } from 'basalt-ui/page'
 import { navTarget } from 'basalt-ui/router'
-import { col, DataTable, TableToolbar, useDataTable, useTableViews } from 'basalt-ui/table'
+import { col, DataTable, useDataTable, useTableViews } from 'basalt-ui/table'
 import type { TableState, View, ViewStore } from 'basalt-ui/table'
 import { drag } from 'basalt-ui/ui/sortable-list'
 import { PackagePlus, Upload } from 'lucide-react'
@@ -105,9 +105,9 @@ function inventoryViews(): ViewStore {
 const store = inventoryViews()
 
 /**
- * The reference list page: a view row of saved views with counts, a summary strip and one grid of
- * parts; the same set as a board by replenishment and as a gallery. It keeps the page gutter while the
- * table's search and filters sit in their own toolbar row: at the surface edge their focus rings clip.
+ * The reference list page: one view row (saved views with counts; the table's search, filters, layout,
+ * view settings and the one primary), a summary strip, and one grid of parts edge to edge on the work
+ * surface; the same set as a board by replenishment and as a gallery.
  */
 function PartsRoute(): ReactElement {
   const f = useFormat()
@@ -200,10 +200,12 @@ function PartsRoute(): ReactElement {
   const ready = parts !== undefined
 
   return (
-    <Page area="ref-parts">
+    <Page area="ref-parts" fill>
       <PageBar
         tabs={views.tabs}
         layout={views.layout}
+        search={views.search}
+        controls={views.controls}
         settings={views.settings}
         actions={[
           { id: 'import', label: 'Import', icon: Upload, onClick: () => setLast('Import opened') },
@@ -282,8 +284,8 @@ function PartsRoute(): ReactElement {
           />
         </StatGroup>
       </div>
-      <div data-shot="parts" className="flex flex-col">
-        <TableToolbar table={t} views={false} />
+      {views.chips}
+      <div data-shot="parts" className="flex min-h-0 flex-1 flex-col">
         <DataTable table={t} drag={drag} />
       </div>
       {last !== null && <output className="sr-only">{last}</output>}
