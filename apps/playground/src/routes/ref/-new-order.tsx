@@ -121,7 +121,7 @@ export function NewOrderDialog({
         { label: 'Reference', value: v.reference === '' ? 'No reference' : v.reference },
       ],
       render: () => (
-        <div data-shot="order-step" className="flex flex-col gap-4">
+        <>
           <form.AppField name="supplierId" validators={{ onBlur: Values.shape.supplierId }}>
             {(f) => (
               <f.FormField label="Supplier" required>
@@ -139,7 +139,7 @@ export function NewOrderDialog({
               </f.FormField>
             )}
           </form.AppField>
-        </div>
+        </>
       ),
     },
     {
@@ -215,6 +215,7 @@ export function NewOrderDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
+        data-shot="new-order"
         size="split"
         title="New purchase order"
         description="Three steps: supplier, line and delivery, then a review."
