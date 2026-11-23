@@ -46,8 +46,11 @@ export type VirtualListProps = Omit<ComponentProps<'div'>, 'className' | 'childr
   estimateSize(index: number): number
   /** The stable id of row `index` (its record id), never the index: a prepend keeps every row. */
   getItemKey(index: number): string | number
-  /** A row that stays rendered however far it scrolls (the focused one). */
-  keepIndex?: number | undefined
+  /**
+   * A row that stays rendered however far it scrolls (the focused one), or several: a list of
+   * sticky group headers keeps every header mounted, so the one above the viewport still sticks.
+   */
+  keepIndex?: number | readonly number[] | undefined
   /**
    * A row scrolled into view (nearest edge) whenever this index changes: the row a key moved to.
    * Pair it with `keepIndex` so the row is mounted while it is out of view.
@@ -85,12 +88,14 @@ export type VirtualListProps = Omit<ComponentProps<'div'>, 'className' | 'childr
 
 /** The rendered range plus the kept row, in index order. */
 const withKept =
-  (keepIndex: number | undefined, count: number) =>
+  (keepIndex: number | readonly number[] | undefined, count: number) =>
   (range: Range): number[] => {
     const indexes = defaultRangeExtractor(range)
-    if (keepIndex === undefined || keepIndex < 0 || keepIndex >= count) return indexes
-    if (indexes.includes(keepIndex)) return indexes
-    return [...indexes, keepIndex].toSorted((a, b) => a - b)
+    const kept = (typeof keepIndex === 'number' ? [keepIndex] : (keepIndex ?? [])).filter(
+      (i) => i >= 0 && i < count && !indexes.includes(i),
+    )
+    if (kept.length === 0) return indexes
+    return [...new Set([...indexes, ...kept])].toSorted((a, b) => a - b)
   }
 
 /**

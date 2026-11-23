@@ -35,7 +35,7 @@ VirtualList({ className, count, estimateSize, getItemKey, keepIndex, revealIndex
   count: number  // How many rows there are, windowed or not
   estimateSize: (index: number) => number  // The height of row `index` in px
   getItemKey: (index: number) => string | number  // The stable id of row `index` (its record id), never the index: a prepend keeps every row
-  keepIndex?: number  // A row that stays rendered however far it scrolls (the focused one)
+  keepIndex?: number | readonly number[]  // A row that stays rendered however far it scrolls (the focused one), or several: a list of sticky group headers keeps every header mounted, so the one above the viewport still sticks
   revealIndex?: number  // A row scrolled into view (nearest edge) whenever this index changes: the row a key moved to
   overscan?: number  // Rows rendered beyond the viewport on each side
   initialHeight?: number  // The scroller's height in px until it is measured: the server render and the first client render window the rows for this height, so a static page carries the first rows
