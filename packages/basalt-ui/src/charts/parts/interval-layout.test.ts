@@ -1,7 +1,8 @@
 /** The pure lane and label geometry of `IntervalTrack` (Issue 2306): lanes for overlaps, and the label pass. */
 import { describe, expect, test } from 'bun:test'
 import { chartLabels } from '../chart-labels'
-import { LABEL_SLACK, assignLanes, cutToFit, placeLaneLabels } from './interval-layout'
+import { assignLanes } from '../../core/lanes'
+import { LABEL_SLACK, cutToFit, placeLaneLabels } from './interval-layout'
 
 const SIZE = 11
 const OPTS = { width: 600, size: SIZE, gap: 4 }
