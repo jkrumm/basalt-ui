@@ -132,9 +132,9 @@ export const rows: readonly RowDef[] = [
     id: 'ui-value-exports',
     order: 350,
     label: 'ui value exports, every src/ui .tsx module (exact; SLOTS is pinned)',
-    // 275 measured. Exact: a new value export is a row here and a consumer named for it; a lower
+    // 279 measured. Exact: a new value export is a row here and a consumer named for it; a lower
     // number ratchets the ceiling down in the same commit.
-    ceiling: 276,
+    ceiling: 279,
     measure: valueExports,
   },
 ]
@@ -225,6 +225,13 @@ export const raises: Raises = {
     },
   ],
   'ui-value-exports': [
+    {
+      from: 276,
+      to: 279,
+      consumer:
+        "`Calendar` with `calendarVariants` and `calendarParts` from `basalt-ui/ui/calendar`: the owner's 2026-11-21 benchmark found no calendar (plan row bench-calendar, Issue 3103); the reference schedule's rail draws it as the mini month and `DatePicker` shares its grid",
+      repo: 'basalt-ui',
+    },
     {
       from: 275,
       to: 276,
