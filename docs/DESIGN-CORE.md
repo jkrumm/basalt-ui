@@ -159,6 +159,25 @@ Worked rule: a multi-toggle bar chart colours bars `isMulti ? series.x : BASALT.
   chart legend caps the block axis at its 4px row gap (`--basalt-hit-gap-block`), so a wrapped legend's
   rows never overlap; its coarse hit target is about 29px tall, above the 24px floor.
 
+## Runtime attributes (the reader's appearance)
+
+Four attributes on `<html>` carry the reader's choice, each written by one setter and stamped before paint by
+`basalt-ui/theme-script`, so a reload never flashes:
+
+- `data-theme`: `light` or `dark`, absent for the system scheme. `setScheme`, key `basalt:scheme`.
+- `data-density`: `dense` (the default, no attribute), `normal` or `comfortable`. It works on any subtree, and
+  a table view's row height sits nearer the rows, so it wins inside the table.
+- `data-frame`: `panel` or `flush`. It overrides `AppShell frame`, the app's default, from `md` up; compact
+  is always flush.
+- `data-accent`: one of six names (`ACCENTS`, basalt-ui/tokens): `blue` (the `#0077bd` default), `violet`,
+  `rose`, `orange`, `green`, `teal`. Each is a seed derived at build time through the same gates. An app
+  ships the ones it offers with `tokens:css --accents` (a `tokens` output of `.basalt/manifest.json`), one
+  `:root[data-accent]` block each, so an app that offers none pays no byte. It sits on `<html>` only, because the Tailwind bridge resolves at `:root`.
+
+`setAppearance` (basalt-ui/core/appearance) writes the last three and stores them under `basalt:appearance`;
+`AppearanceSwitcher` (basalt-ui/controls) is the one part that offers all four. There is no runtime derive and no
+custom accent: a colour outside the set is a retune of the app's base (`tokens:css --accent`).
+
 ## Scales (decided values)
 
 Every change goes through the derive config and `src/tokens/` constants, never a hand-edited value;
