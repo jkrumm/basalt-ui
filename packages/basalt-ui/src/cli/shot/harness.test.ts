@@ -143,6 +143,16 @@ describe('an anchor under an open overlay', () => {
     expect(strip.filter((s) => s.state === 'rest').every((s) => s.status === 'ok')).toBe(true)
     expect(out.shots.some((s) => s.status === 'error')).toBe(false)
   }, 8_000)
+
+  test('a URL state (empty) the overlay covers is absent with the reason, rest still shoots', async () => {
+    const out = await capture(input(fakePage(['empty'], covered), ['rest', 'empty']))
+    const empty = out.shots.filter((s) => s.name === 'strip' && s.state === 'empty')
+    expect(empty.length).toBeGreaterThan(0)
+    expect(empty.every((s) => s.status === 'absent' && s.file === null)).toBe(true)
+    expect(empty.every((s) => /covered by an open overlay/.test(s.note ?? ''))).toBe(true)
+    const rest = out.shots.filter((s) => s.name === 'strip' && s.state === 'rest')
+    expect(rest.every((s) => s.status === 'ok')).toBe(true)
+  }, 8_000)
 })
 
 describe('framing an anchor', () => {

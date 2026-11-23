@@ -409,8 +409,8 @@ async function reveal(c: Ctx, name: string, state: ShotState): Promise<void> {
     throw expected ? new Absent(note) : new Error(note)
   }
   await sleep(SETTLE_MS)
-  // The pointer and the keyboard never reach an anchor an open overlay sits on: absent, not a failed step.
-  if (INTERACTIVE.includes(state)) {
+  // The pointer, the keyboard and a URL-state reload never reach an anchor an open overlay sits on: absent, not a failed step.
+  if (state !== 'rest') {
     const covered = await within('probing the anchor', anchorOf(c, name).evaluate(coveredInPage))
     if (typeof covered === 'string' && covered !== '') throw new Absent(covered)
   }
