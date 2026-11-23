@@ -88,7 +88,7 @@
   "PageAside": "argo:apps/dashboard/src/features/astro-window/components/site-map.tsx",
   "PageBar": "argo:apps/dashboard/src/routes/agents.tsx",
   "PageSummary": "argo:apps/dashboard/src/components/upstream/page-summary.tsx",
-  "periodOf": "basalt-ui:apps/playground/src/routes/ref/suppliers.$id.tsx",
+  "periodOf": "basalt-ui:packages/basalt-ui/src/cards/event-list.tsx",
   "partView": "software-factory:apps/console/src/components/artifact-content.tsx",
   "Peek": "software-factory:apps/console/src/components/kit/peek.tsx",
   "persisted": "argo:apps/dashboard/src/lib/window-stores.ts",
