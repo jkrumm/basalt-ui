@@ -14,7 +14,7 @@ A page is composed from the shipped frame; each bullet names what holds it.
 - Declare the whole navigation once with `defineNav` and pass it to `AppShell`; a link to an unregistered route, an unknown badge key or a second badge on a row does not compile. [type:NavConfig] [type:NavBadges]
 - Shell extensions are typed data (`GlobalAction`, `SidebarBlock`), never a node. [type:GlobalAction] [type:SidebarBlock]
 - A route's page returns `Page` as its root, or `SplitPage` with `list` and `detail` as render functions; never a `div`, a fragment or a wrapper: `Page` owns the gutter and the top inset, so a page sets no padding or gap of its own. [lint:page-root] [type:SplitPageProps]
-- A page is named once: by its nav label, or by `PageBar` `title` where there is no shell; never a raw heading, an in-body `h1` included. [lint:primitive-bypass] [type:PageBarProps]
+- A page is named once: by its nav label, or by `PageBar` `title` where there is no shell; never a raw heading, an in-body `h1` included. A record page gives `PageBar` an `identity` (face, subtitle, tags) and never repeats its name in an `EntityTitle` below. [lint:primitive-bypass] [type:PageBarProps]
 - A nav or link `search` keeps the keys its route owns; never a literal search object or a store's link search. [lint:router-search]
 
 ## Controls
@@ -52,6 +52,7 @@ A page is composed from the shipped frame; each bullet names what holds it.
 
 not guarded:
 
+- A record's properties are `PropertyList` when the reader edits them in place (a row per `kind`, a read-only row beside), `Facts` when none is editable.
 - A section, card or table title is its frame's `title`; never an in-body heading. A page of rows leads with a card of figure, context line and footer; every headline names its base as a signed delta.
 - Date range navigation sits in the `controls` slot, not in `actions`; count and reset active filters with the store.
 - `CardGrid` takes a `min` tier (`narrow`, `regular`, `wide`), never a column count or a width.
