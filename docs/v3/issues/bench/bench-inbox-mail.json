@@ -1,0 +1,29 @@
+{
+  "why": "Inbox, mail and messages are \"Partly\" buildable and were left out of the reference pages (benchmark section 11). What exists: `SplitPage` (basalt-ui/page, src/page/parts/split-page.tsx: a list column and a detail, one pane by `selected` on narrow, no resize), `Resizable` (basalt-ui/ui/resizable: `ResizablePanelGroup`, `ResizablePanel`, `ResizableHandle`; it persists nothing, the app passes `defaultLayout`), `RowList` (basalt-ui/cards, a verdict dot, no avatar or checkbox), `Avatar` and `AvatarStack` (basalt-ui/ui/avatar), `EntityChip` (basalt-ui/ui/entity), `VirtualList`, the record surface `Peek` with presentations peek, window and page (src/page/peek.tsx, src/page/core/panel-store.ts), `BulkBar` (basalt-ui/table, it reads the table's selection only). The composer comes from bench-chat-parts, the period buckets from bench-record-parts.",
+  "what": "A mail row, day groups over a list, a remembered split, a message thread and a composer that opens as panel, window or page.",
+  "owns": [
+    "packages/basalt-ui/src/page/parts/split-page.tsx (a resizable, remembered split)",
+    "new modules under packages/basalt-ui/src/cards for the mail row, the grouped list and the thread",
+    "packages/basalt-ui/src/table/parts/bulk-bar.tsx only to give it a list-neutral form",
+    "apps/playground/src/routes/ref/ (a new mail page)",
+    "generated docs"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/ai/** (Composer is bench-chat-parts'; use it)",
+    "packages/basalt-ui/src/page/{peek.tsx,peek-window.tsx,record-panel.tsx} beyond registering a compose kind"
+  ],
+  "change": "Read first: docs/v3/issues/bench/README.md (owner direction, decisions, how to use the reference) and docs/v3/BENCHMARK-ACCORDEE-BLUEPRINT.md, sections 2 and 11. Decided: (1) `SplitPage` gains a resizable split: pointer and keyboard separator with a value, double-click resets, a minimum and maximum width, the width remembered per page through `persisted` (root export basalt-ui). Narrow keeps one pane at a time. (2) A mail row: avatar (a corner badge for the organisation where given), sender, subject, snippet, time, an unread dot with heavier sender text, a star, an entity chip, and hover and focus actions; the avatar swaps to a checkbox on hover, on focus and whenever any row is selected. Rows virtualise through `VirtualList`. (3) Day groups as sticky headers (Today, Yesterday, Last 7 days, Earlier this month, then months), using the period bucketing bench-record-parts shipped beside `EventList`, not a second copy. (4) A thread: collapsed message rows that expand one at a time, the latest open, attachments as file cards, inline reply at the bottom. (5) The composer is bench-chat-parts' `Composer` with mail fields (to, cc, subject); it opens inline, as a panel, as a window or as the page, through the record surface with a compose kind, so the presentation persists like a record's and the draft is kept with `useFormDraft` (basalt-ui/controls). (6) Selection shows a bulk bar: `BulkBar` gains a form that takes a count and typed actions without a table; it must not clip inside a narrow list. (7) Phone: list, then reader as its own pane, composer as a bottom sheet. The proof page sits on the parts-inventory domain of the reference pages (apps/playground/src/routes/ref/, its fixtures and fixed today) and compiles on the playground's app lint preset with zero basalt waivers; if packages/basalt-ui/blocks/ exists when you start (bench-blocks landed), ship the page as a block instead of a route. The domain's mail is supplier correspondence about purchase orders.",
+  "reference": "comms.md 2.1 to 2.3: emails list 440 default, clamped 320 to 640, saved in localStorage; rows 113 (87 without the company chip); 32 avatar swapping to a 16 checkbox on hover; star 14; unread dot 8 and weight 440; reading pane max 760, thread card 696, collapsed message rows 48, expand 0.3 s; attachment card 288x59.5; popup composer 600x640, radius 16, bottom right, its presentation saved (`email-composer-mode`); bulk bar at the bottom, radius 16, 407 wide inside the 440 list, where it clips: do not copy that. Messages: list 360 fixed, rows 87, 28 avatar with a 14 logo bottom right, sticky 11 px uppercase day headers, thread aside 400, composer 978x106. Inbox: one column, rows 53, groups Today, Yesterday, Last 7 days, Earlier this month. Shots: comms/21-emails-resting.png, comms/23-emails-bulk-selection-bar.png, comms/26-emails-inline-reply.png, comms/28-emails-composer-popup.png, comms/08-messages-resting.png, comms/01-inbox-resting.png.",
+  "acceptance": [
+    "The split width survives a reload and resets on double-click; the separator works by keyboard (test)",
+    "A row shows the checkbox on hover, on focus and while any row is selected; selection shows the bulk bar, which stays inside the list (layout test)",
+    "Day groups stick while the virtual list scrolls",
+    "The composer opens inline, as panel, window or page; the choice persists and a draft survives closing it (tests)",
+    "At 390 px list and reader are separate panes and the composer is a bottom sheet",
+    "The mail page shows the frames with no design-reviewer P1",
+    "make check passes"
+  ],
+  "out_of_scope": "A mail transport, threading by headers, rich text. Chat messages as a channel view (the chat parts row covers messages). A snooze or rules engine.",
+  "proof": "Frames from `basalt-ui shot` at 1800x1200 and 390x844, light and dark, attached to the PR, and the design reviewer run on them.",
+  "commits": "Conventional, empty scope, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export updates migrations/areas and the generated docs in the same PR."
+}

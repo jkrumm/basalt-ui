@@ -1,0 +1,27 @@
+{
+  "why": "The record page is \"Mostly\" buildable (benchmark section 11). Issue 3087 (row bench-record-identity) gives `PageBar` an identity with a face and makes the property list edit in place. What stays missing after it: `EventList` (basalt-ui/cards, src/cards/event-list.tsx) groups by day only (`groupByDay`, internal, src/cards/event-list-model.ts), its actor is a string and it has no connector; `TabsTrigger` (basalt-ui/ui/tabs) has no count, so a tab bar inside the page cannot match PageBar's counted tabs (`PageTabBadge`, src/page/contract.ts, drawn by `TabBadge` in src/page/page-tabs.tsx); nothing draws a relationship card (a grep for \"relationship\" in src finds none).",
+  "what": "An activity timeline with period groups, counted tabs on the tabs primitive, relationship cards, and the supplier reference page on them.",
+  "owns": [
+    "packages/basalt-ui/src/cards/{event-list.tsx,event-list-model.ts}",
+    "packages/basalt-ui/src/ui/tabs.tsx (a count on a trigger, sharing PageBar's badge)",
+    "a new relationship card module under packages/basalt-ui/src/cards",
+    "apps/playground/src/routes/ref/suppliers.$id.tsx",
+    "generated docs"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/page/{page-bar.tsx,facts.tsx} and the property list Issue 3087 shipped, beyond adopting it",
+    "packages/basalt-ui/src/page/{peek.tsx,record-panel.tsx}"
+  ],
+  "change": "Read first: docs/v3/issues/bench/README.md (owner direction, decisions, how to use the reference) and docs/v3/BENCHMARK-ACCORDEE-BLUEPRINT.md, sections 2 and 11. Decided: (1) `EventList` gains period grouping beside day grouping: This week, Earlier this month, then month names, then years, relative to `useNow`; the bucketing is one exported pure function that bench-inbox-mail reuses for its day groups. (2) An entry can carry an `Avatar` actor (basalt-ui/ui/avatar) and a connector rail joins the entries of a group; a long body folds to a line and expands. (3) `TabsTrigger` takes a count and an attention tone through the same badge PageBar's tabs draw, so one look serves both. (4) A relationship card on basalt-ui/cards: a linked record with its face (`EntityTitle`, basalt-ui/ui/entity), a role or a strength, two or three facts and a link that opens the record surface; a section of them lays out on `CardGrid` (basalt-ui/page). (5) The supplier page (`/ref/suppliers/$id`) adopts all three: an activity tab on the period timeline, counted tabs, a related-records section of relationship cards, on the identity and editable properties 3087 shipped.",
+  "reference": "records.md 2.3, 2.4 and 4: record page header 44, a 391 left column and a right tabbed workspace; property rows min 36, label column 120, hover fill with radius 6, a 26 hover options button; tab bars 48 with a 22 gap, right tabs with counts (Contracts, Emails, Tasks; Invoices (3), Documents (6)); activity entries 40, avatar 20, a 1 px connector at 9.5, relative time 12, period headings This week, Earlier this month, August, July; overview card grid gap 14, cells 474x144, card radius 8, padding 12, 1 px border, metric 20/32; network person: a strength card (\"Strong\", a score) beside \"Who knows them\" and \"Linked records\" chips; phone single column, cards about 358x160. Shots: records/12-customers-row-opened.png, records/14-customer-page-activities-tab.png, records/24-network-record-page.png, records/63-network-row-opened.png, records/19-contract-page-signers-tab.png.",
+  "acceptance": [
+    "EventList groups by period with a connector and avatar actors (tests with a fixed today)",
+    "TabsTrigger shows a count with the same badge as PageBar tabs (test)",
+    "A relationship card is exported with docs and opens its record in the record surface",
+    "The supplier page uses all three and names the supplier once; frames show no design-reviewer P1",
+    "make check passes"
+  ],
+  "out_of_scope": "The property list and the PageBar identity (Issue 3087). A record overview dashboard. Stage steppers. Relationship scoring.",
+  "proof": "Frames from `basalt-ui shot` at 1800x1200 and 390x844, light and dark, attached to the PR, and the design reviewer run on them.",
+  "commits": "Conventional, empty scope, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export updates migrations/areas and the generated docs in the same PR."
+}
