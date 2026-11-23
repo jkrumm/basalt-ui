@@ -6,7 +6,7 @@ import type { BasaltMessages } from './index'
  * the button that opens it below 1200px, and
  * `page.kind*` name a title-less callout's kind for assistive tech, and `page.moreActions`
  * `page.closeAside` and `page.backToList` name the page bar's overflow button, `page.recordActions` a panel header's, the aside's close button, `page.closePeek` a `Peek`'s or `Dock`'s, `page.pinPanel` a `Peek`'s dock button, `page.resizePeek` the label of its width handle, and a split page's way back to its list, `page.openFullPage` names a `Peek`'s link to the record's own page, `page.previousRecord` and `page.nextRecord` a panel's steps through its opener's records, `page.openAs` and `page.present*` the presentation menu, `page.minimise` and `page.restore` a window's, and `page.itemAttention` and `page.itemActions` name an `InnerNav` item's dot
- * and its actions menu, and `page.propertyEdit`, `page.propertyEmpty`, `page.propertyInvalid` and `page.propertyRange` name
+ * and its actions menu, `page.favourite` and `page.unfavourite` the favourite star's action, and `page.propertyEdit`, `page.propertyEmpty`, `page.propertyInvalid` and `page.propertyRange` name
  * a `PropertyList` row's edit button, its unset value and its two validation errors.
  */
 export type PageMessages = Record<
