@@ -31,6 +31,7 @@ import { modelOf } from '../use-data-table'
 import type { TableModel } from '../use-data-table'
 import { AddFilter } from './add-filter'
 import { ChipList } from './chips'
+import { useSearchLabel } from './search-label'
 import { filterableSpecs } from './toolbar-filters'
 import { setDoor, useDoor, useMountDoor } from './view-door'
 import type { TabMenuProps } from './view-tab-menu'
@@ -666,7 +667,7 @@ export function useTableViews<T>(
   const t = useMessages(table)
   const layouts = useLayoutOptions(model)
   const layoutLabel = useLayoutLabel()
-  const searchLabel = t('table.searchIn', model.label)
+  const searchLabel = useSearchLabel(model.label)
   const q = model.state.request.q
   const written = useRef(q)
   const write = useDebouncedCallback((next: string) => {
@@ -692,7 +693,7 @@ export function useTableViews<T>(
     isDefault: q === '',
   }
   return {
-    search: { state: searchHandle, label: t('table.search'), placeholder: searchLabel },
+    search: { state: searchHandle, label: searchLabel.name, placeholder: searchLabel.placeholder },
     controls: {
       kind: 'controls-slot',
       count: filterableSpecs(model.specs).length > 0 ? 1 : 0,
