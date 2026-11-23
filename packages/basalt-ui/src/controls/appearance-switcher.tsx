@@ -196,7 +196,7 @@ export function AppearanceSwitcher({
             {(id) => (
               <SwatchPicker
                 aria-labelledby={id}
-                className="grid-cols-6 pointer-coarse:grid-cols-4"
+                className="grid-cols-6"
                 value={`accent-${state.accent ?? base}` as SwatchToken}
                 onValueChange={(value) => {
                   const accent = value.slice('accent-'.length) as AccentName

@@ -13,11 +13,8 @@ export interface ThemeScriptOptions {
   attribute?: string | undefined
   default?: Scheme | undefined
   cookie?: string | undefined
-  /**
-   * The stored appearance (`setAppearance`): its storage key, or `false` to stamp only the scheme.
-   * Default `{ key: 'basalt:appearance' }`.
-   */
-  appearance?: { key?: string | undefined } | false | undefined
+  /** `false` stamps only the scheme; by default the appearance `setAppearance` stored is stamped too. */
+  appearance?: false | undefined
 }
 
 /**
@@ -39,16 +36,16 @@ export function themeScript(options: ThemeScriptOptions = {}): string {
     `v=s(${key})||t(function(){return c&&document.cookie.split(/;\\s*/).reduce(function(r,p){`,
     `return r||(p.indexOf(c+"=")===0?p.slice(c.length+1):r)},"")})||${fallback}`,
     `if(v==="light"||v==="dark")d.setAttribute(a,v)})()`,
-    ...(options.appearance === false ? [] : [appearanceStatement(options.appearance?.key)]),
+    ...(options.appearance === false ? [] : [appearanceStatement()]),
   ].join('\n')
 }
 
 /** The appearance half: stamps each stored, valid attribute the page does not have yet. */
-function appearanceStatement(key: string | undefined): string {
+function appearanceStatement(): string {
   const lists = JSON.stringify({ density: DENSITIES, frame: FRAMES, accent: ACCENT_NAMES })
   return (
     `;(function(){var d=document.documentElement,l=${lists},o,k,v;` +
-    `try{o=JSON.parse(localStorage.getItem(${JSON.stringify(key ?? APPEARANCE_KEY)}))}catch(e){}` +
+    `try{o=JSON.parse(localStorage.getItem(${JSON.stringify(APPEARANCE_KEY)}))}catch(e){}` +
     `if(o&&typeof o==="object")for(k in l){v=o[k];` +
     `if(l[k].indexOf(v)>-1&&!d.hasAttribute("data-"+k))d.setAttribute("data-"+k,v)}})()`
   )

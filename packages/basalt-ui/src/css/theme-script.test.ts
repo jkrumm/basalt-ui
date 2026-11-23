@@ -227,12 +227,9 @@ describe('themeScript stamps the stored appearance before paint', () => {
     }
   })
 
-  test('appearance: false leaves the attributes alone; a custom key is read', () => {
+  test('appearance: false leaves the attributes alone', () => {
     localStorage.setItem(APPEARANCE_KEY, JSON.stringify({ frame: 'flush' }))
     run({ appearance: false })
     expect(attrs()).toEqual([null, null, null])
-    localStorage.setItem('app:look', JSON.stringify({ frame: 'flush' }))
-    run({ appearance: { key: 'app:look' } })
-    expect(attrs()).toEqual([null, 'flush', null])
   })
 })
