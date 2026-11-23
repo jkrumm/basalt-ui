@@ -159,7 +159,9 @@ export function MailThread({ label, messages, defaultOpen, reply }: MailThreadPr
                   <span className="flex min-w-0 flex-1 items-center gap-3">
                     <Avatar {...faceOf(m.from)} size="md" aria-hidden="true" />
                     <span className="flex min-w-0 flex-1 flex-col">
-                      <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
+                      <span
+                        className={cn('flex min-w-0 items-baseline gap-x-2', isOpen && 'flex-wrap')}
+                      >
                         <span className="truncate text-sm font-medium text-foreground">
                           {m.from.name}
                         </span>
@@ -170,20 +172,22 @@ export function MailThread({ label, messages, defaultOpen, reply }: MailThreadPr
                         )}
                       </span>
                       {isOpen ? (
-                        m.to !== undefined && (
-                          <span className="truncate text-xs font-normal text-muted-foreground">
-                            {m.to}
-                          </span>
-                        )
+                        <span className="truncate text-xs font-normal text-muted-foreground tabular-nums">
+                          {[m.to, `${f.date(m.at, 'day')}, ${f.time(m.at)}`]
+                            .filter((part) => part !== undefined)
+                            .join(' · ')}
+                        </span>
                       ) : (
                         <span className="truncate text-xs font-normal text-muted-foreground">
                           {m.preview ?? m.body.split('\n').find((line) => line.trim() !== '') ?? ''}
                         </span>
                       )}
                     </span>
-                    <span className="shrink-0 text-xs font-normal text-muted-foreground tabular-nums">
-                      {isOpen ? `${f.date(m.at, 'day')}, ${f.time(m.at)}` : f.date(m.at, 'day')}
-                    </span>
+                    {!isOpen && (
+                      <span className="shrink-0 text-xs font-normal text-muted-foreground tabular-nums">
+                        {f.date(m.at, 'day')}
+                      </span>
+                    )}
                   </span>
                 </AccordionTrigger>
                 <AccordionContent>
