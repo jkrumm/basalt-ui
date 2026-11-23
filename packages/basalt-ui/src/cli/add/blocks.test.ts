@@ -25,7 +25,14 @@ const pkg = JSON.parse(readFileSync(join(PKG_ROOT, 'package.json'), 'utf8')) as 
 const APP_DEPS = new Set(['lucide-react', 'zod'])
 
 /** The reference pages, one block per archetype (docs/v3/BENCHMARK-ACCORDEE-BLUEPRINT.md 7). */
-const REFERENCE = ['create-flow', 'list-page', 'notes-list', 'record-page', 'settings-page']
+const REFERENCE = [
+  'assistant',
+  'create-flow',
+  'list-page',
+  'notes-list',
+  'record-page',
+  'settings-page',
+]
 
 /** Static imports and re-exports at the start of a statement, side-effect imports and `import()`. */
 const SPECIFIER =
@@ -55,7 +62,7 @@ const blocks = blockNames(PKG_ROOT).map((name) => {
 })
 
 describe('shipped blocks', () => {
-  it('ship the five reference pages', () => {
+  it('ship the reference pages', () => {
     expect(blocks.map((b) => b.name)).toEqual(REFERENCE)
   })
 

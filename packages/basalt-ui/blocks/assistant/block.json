@@ -1,0 +1,22 @@
+{
+  "name": "assistant",
+  "archetype": "assistant",
+  "summary": "An assistant thread: user bubbles, answers with a folded reasoning trace and actions, and a composer with mentions, attachments and a model picker.",
+  "files": ["Assistant.tsx", "model.ts"],
+  "imports": [
+    "basalt-ui/ai",
+    "basalt-ui/page",
+    "basalt-ui/ui/button",
+    "basalt-ui/ui/scroll-area",
+    "lucide-react",
+    "react"
+  ],
+  "ports": [
+    "turns: the conversation as Turn[] (id, from, parts), oldest first; map useChat messages onto it",
+    "status, onStop: useChat status and stop; the composer turns send into stop while a reply streams",
+    "onSend: (message) => sendMessage, with the mentions and files beside the text; a rejection restores the draft",
+    "onRegenerate, onDecide, onNew: regenerate a turn, answer a tool approval, start an empty chat",
+    "mentions: the suppliers and parts @ lists, grouped options or a loader",
+    "models: the grouped models the picker offers"
+  ]
+}
