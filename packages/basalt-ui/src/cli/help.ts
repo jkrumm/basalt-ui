@@ -51,6 +51,7 @@ export const COMMAND_OPTIONS: Record<
     neutral: { type: 'string' },
     vibrancy: { type: 'string' },
     selector: { type: 'string' },
+    accents: { type: 'string' },
     extra: { type: 'string' },
     format: { type: 'string' },
     // The 2.x flags stay PARSEABLE so `tokensCss` can exit 1 naming `--selector`, their successor,
@@ -103,10 +104,12 @@ export const USAGE =
   '                  eject <name | --all | --adopt <path>> --reason <why> | add <block>… [--dir <path>] | add --list |\n' +
   '                  shot <route…> | shot detect | help>\n\n' +
   'tokens:css [--accent <#hex>] [--neutral <zinc|neutral|stone|slate>] [--vibrancy <-4..5>]\n' +
-  '           [--selector <:root[attr]>] [--extra <file>] [--format <css|json>] [--out <path>] [--check]\n' +
+  '           [--selector <:root[attr]> | --accents <name,…>] [--extra <file>] [--format <css|json>] [--out <path>] [--check]\n' +
   '  Emit the --basalt-* stylesheet (stdout unless --out). Defaults emit the stock identity; commit the output as your tokens file.\n' +
   '  --format json emits the resolved #hex per opaque role and scheme, for manifests, theme-color metas and email.\n' +
   '  --selector scopes a tenant sheet (only the roles that differ from the default) to a `:root[…]` selector.\n' +
+  '  --accents emits the accent sheet instead: one :root[data-accent=<name>] block per named accent (blue, violet, rose,\n' +
+  '    orange, green, teal) against the base the other flags set; import it after tokens.css. Without it no accent ships.\n' +
   '  --extra emits your app-owned tokens (src/basalt.tokens.ts) to --out, plus a sibling <out>.d.ts.\n' +
   '  --check writes nothing and exits 1 when --out (and the .d.ts) differ from what would be emitted (a CI gate).\n' +
   '  Negative values take the = form: --vibrancy=-2.\n' +
