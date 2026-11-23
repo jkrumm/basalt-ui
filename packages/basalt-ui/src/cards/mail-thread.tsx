@@ -159,7 +159,7 @@ export function MailThread({ label, messages, defaultOpen, reply }: MailThreadPr
                   <span className="flex min-w-0 flex-1 items-center gap-3">
                     <Avatar {...faceOf(m.from)} size="md" aria-hidden="true" />
                     <span className="flex min-w-0 flex-1 flex-col">
-                      <span className="flex min-w-0 items-baseline gap-2">
+                      <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
                         <span className="truncate text-sm font-medium text-foreground">
                           {m.from.name}
                         </span>
