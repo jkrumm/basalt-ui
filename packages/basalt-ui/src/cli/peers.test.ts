@@ -19,6 +19,13 @@ describe('satisfiesRange', () => {
     ['0.3.0', '^0.2.0', false],
     ['1.169.0', '^1.168.40', true],
     ['1.168.39', '^1.168.40', false],
+    // a stable peer one patch or minor ahead of the tested floor is met; the next major is not
+    ['4.3.6', '^4.3.5', true],
+    ['4.4.0', '^4.3.5', true],
+    ['5.0.0', '^4.3.5', false],
+    ['1.5.9', '~1.5.0', true],
+    ['1.6.0', '~1.5.0', false],
+    ['1.93.1', '1.93.0', false],
   ])('%s against %s is %p', (version, range, met) => {
     expect(satisfiesRange(version, range)).toBe(met)
   })

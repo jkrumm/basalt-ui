@@ -185,13 +185,39 @@ describe('check 3: peers and ai-major-parity', () => {
   it('fails a profile peer installed outside its range and prints the declared spec', async () => {
     const r = await runCheck(
       makeTree('app', {
-        'node_modules/tailwindcss/package.json': JSON.stringify({ version: '4.9.0' }),
+        'node_modules/tailwindcss/package.json': JSON.stringify({ version: '5.0.0' }),
       }),
       3,
     )
     expect(r.status).toBe('fail')
-    expect(r.detail).toContain('tailwindcss 4.9.0')
-    expect(r.detail).toContain('npm install --save --save-exact tailwindcss@4.3.5')
+    expect(r.detail).toContain('tailwindcss 5.0.0')
+    expect(r.detail).toContain('npm install --save --save-exact tailwindcss@^4.3.5')
+  })
+
+  it('passes a stable peer ahead of the tested floor but inside its caret range', async () => {
+    const r = await runCheck(
+      makeTree('app', {
+        'node_modules/tailwindcss/package.json': JSON.stringify({ version: '4.3.6' }),
+        'node_modules/@tailwindcss/vite/package.json': JSON.stringify({ version: '4.3.6' }),
+      }),
+      3,
+    )
+    expect(r.status).toBe('pass')
+  })
+
+  it('asks the site profile for astro and @astrojs/react', async () => {
+    const r = await runCheck(makeTree('site', {}), 3)
+    expect(r.status).toBe('pass')
+    const base = JSON.parse(readFileSync(`${makeTree('site')}/package.json`, 'utf8')) as {
+      dependencies: Record<string, string>
+    }
+    const { astro: _astro, ...rest } = base.dependencies
+    const missing = await runCheck(
+      makeTree('site', { 'package.json': JSON.stringify({ name: 'app', dependencies: rest }) }),
+      3,
+    )
+    expect(missing.status).toBe('fail')
+    expect(missing.detail).toContain('astro is not declared')
   })
 
   it('fails when a declared peer is not installed', async () => {

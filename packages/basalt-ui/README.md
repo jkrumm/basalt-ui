@@ -43,7 +43,7 @@ surfaces as an unresolved import at build time, not as an install warning. Exact
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | App              | `react`, `react-dom`, `@tanstack/react-router`, `@tanstack/react-query`, `@base-ui/react`, `tailwindcss`, `@tailwindcss/vite`; dev: `vite`, `@tanstack/router-plugin` | `init` installs all but `react`, `react-dom` and `vite`, the app's own                                   |
 | Subpath-required | `./charts`: `@tanstack/charts`, `d3-scale` · `./table`: `@tanstack/react-table` · `./content`, `./ai`: `react-markdown`, `remark-gfm`, `rehype-sanitize`, `remend`    | needed only by consumers of that subpath; declared `optional` in `peerDependenciesMeta`                  |
-| Optional         | `shiki`, `@shikijs/*`, `pele`, `@tanstack/react-query-devtools`, `@tanstack/react-router-devtools`, `vite-plugin-pwa`                                                 | reached through `import()` only; absent, the feature degrades (dev devtools panels, plain-text markdown) |
+| Optional         | `shiki`, `@shikijs/*`, `pele`, `@tanstack/react-router-devtools`, `vite-plugin-pwa`                                                                                   | reached through `import()` only; absent, the feature degrades (dev devtools panels, plain-text markdown) |
 
 No peer is required: every peer above is optional, `react` included, so an install pulls in only what the
 subpaths you import need. The three `@fontsource-variable/*` faces are regular dependencies.

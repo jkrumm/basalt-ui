@@ -3,7 +3,7 @@ name: basaltAstro
 use when: 'an Astro site renders `basalt-ui/static` parts and wants basalt''s CSS, fonts and head scripts'
 never when: 'the site is a Vite or TanStack Start app (use `basalt()` from `basalt-ui/vite`)'
 subpath: basalt-ui/astro
-peers: ['@tailwindcss/vite', tailwindcss]
+peers: ['@astrojs/react', '@tailwindcss/vite', astro, tailwindcss]
 slots: []
 ---
 
