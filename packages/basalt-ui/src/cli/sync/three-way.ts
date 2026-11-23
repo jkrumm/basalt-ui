@@ -18,7 +18,7 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, relative, resolve } from 'node:path'
 
-import { basePath, readRow } from '../eject/ledger'
+import { basePath, isBlockRow, readRow } from '../eject/ledger'
 import type { EjectedRow } from '../eject/ledger'
 import { formatText, resolveFormatter } from '../merge/formatter'
 import type { Formatter } from '../merge/formatter'
@@ -48,7 +48,7 @@ type Input = { root: string; manifest: Manifest; pkgRoot: string; version: strin
 
 const guardPathOf = (tsxPath: string): string => tsxPath.replace(/\.tsx$/, '.guard.ts')
 
-const read = (root: string, rel: string): string | null => {
+export const read = (root: string, rel: string): string | null => {
   const path = resolve(root, rel)
   return existsSync(path) ? readFileSync(path, 'utf8') : null
 }
@@ -78,10 +78,10 @@ function guardWrite(root: string, path: string, guard: string | null): EjectedWr
   return { path: at, content: guard }
 }
 
-type Merged = { text: string; conflicts: number; raw: boolean } | { error: string }
+export type Merged = { text: string; conflicts: number; raw: boolean } | { error: string }
 
 /** Steps 2-3 on a header-less body. The formatter runs only when the copy really diverged. */
-function merge(
+export function merge(
   body: string,
   base: string,
   shipped: string,
@@ -125,6 +125,8 @@ export function planEjected({ root, manifest, pkgRoot, version }: Input): Ejecte
   }
 
   for (const key of Object.keys(manifest.ejected).toSorted()) {
+    // A block row (`basalt-ui add`) is merged per file by `planBlocks` (`blocks.ts`).
+    if (isBlockRow(manifest.ejected[key] ?? {})) continue
     const hash = key.lastIndexOf('#')
     const row = readRow(manifest.ejected[key] ?? {})
     if (hash === -1 || row === null) {

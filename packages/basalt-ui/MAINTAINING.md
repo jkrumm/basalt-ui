@@ -233,6 +233,13 @@ belongs here is the properties that are easy to break:
 4. **Every invocation the CLI EMITS goes through `basaltBinCommand()`** — the resolved local bin,
    falling back to `bunx` only when nothing resolves. `bunx` does not re-resolve a cached package,
    which is how a consumer filed a P0 against a 1.20.0 cache while pinned to 1.22.0.
+5. **A block is copied once and merged after.** `add` installs `blocks/<name>/` into the app and
+   records an `origin: 'block'` row beside the eject rows; `sync` merges each file three ways
+   (`src/cli/sync/blocks.ts`). `add` never overwrites a file: the shadcn registry's
+   `add --overwrite` lost four of four edits (primitives-distribution section 8). A block imports
+   only published specifiers, so the installed bytes are the shipped bytes; `src/cli/add/blocks.test.ts`
+   holds that. **Promotion rule:** a block that two consumers run unchanged is promoted to a
+   composite on an npm subpath, and the block is retired.
 
 ## Guards — shipping a stricter one
 

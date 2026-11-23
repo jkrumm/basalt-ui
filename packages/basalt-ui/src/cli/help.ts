@@ -100,7 +100,8 @@ export const USAGE =
   'Usage: basalt-ui <--version | init --profile <tokens|site|bridge|parts|app> [--root <path>]… [--no-install] |\n' +
   '                  sync [--check] [--force] |\n' +
   '                  doctor [--from <x.y.z>] | lint [--file <p>… | --changed | --stats | --raise <field> --consumer <who>] | tokens:css | fonts:css |\n' +
-  '                  eject <name | --all | --adopt <path>> --reason <why> | shot <route…> | shot detect | help>\n\n' +
+  '                  eject <name | --all | --adopt <path>> --reason <why> | add <block>… [--dir <path>] | add --list |\n' +
+  '                  shot <route…> | shot detect | help>\n\n' +
   'tokens:css [--accent <#hex>] [--neutral <zinc|neutral|stone|slate>] [--vibrancy <-4..5>]\n' +
   '           [--selector <:root[attr]>] [--extra <file>] [--format <css|json>] [--out <path>] [--check]\n' +
   '  Emit the --basalt-* stylesheet (stdout unless --out). Defaults emit the stock identity; commit the output as your tokens file.\n' +
@@ -192,12 +193,14 @@ export const USAGE =
   '  is init). --check writes nothing and exits 1 on any difference. A managed file you edited is\n' +
   '  left and reported; --force overwrites it. A retired file is deleted if untouched, else left.\n' +
   '  An ejected primitive is three-way merged with the new seed (adopted: base advanced, file kept);\n' +
-  '  a conflict leaves diff3 markers, advances the base and exits 1.\n\n' +
+  '  a conflict leaves diff3 markers, advances the base and exits 1. An added block (add) is merged\n' +
+  '  the same way, file by file.\n\n' +
   'doctor / sync / lint all resolve their project the same way: BASALT_CWD, else the\n' +
   'invocation cwd — nothing inferred, nothing descended into (sync alone looks UP for the manifest\n' +
   'that declares the directory).\n' +
   '\n' +
-  'Every subcommand accepts --help / -h to print this message and exit without running; `eject --help` prints the eject flags and exit codes.\n' +
+  'Every subcommand accepts --help / -h to print this message and exit without running; `eject --help` and `add --help`\n' +
+  'print their own flags and exit codes.\n' +
   '--version / -v prints the resolved package version and exits 0 — the one command that proves\n' +
   'WHICH basalt-ui ran, which a `bunx` cache can otherwise make a lie. An unknown command or an\n' +
   'unrecognized flag exits 1 and names what it did not understand; neither is ever ignored.'

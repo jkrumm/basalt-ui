@@ -18,6 +18,7 @@ import { coveredByRoots, undeclaredInstall } from '../resolver'
 import { renderBlock, renderManaged } from './render'
 import type { PresetFiles } from './render'
 import { siblingOf } from './sibling'
+import { planBlocks } from './blocks'
 import { applyEjected, planEjected } from './three-way'
 
 export type SyncOptions = {
@@ -88,6 +89,7 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   }
   if ('error' in plan.block) return fail(plan.block.error)
   const ejects = planEjected({ root, manifest, pkgRoot, version })
+  planBlocks({ root, manifest, pkgRoot, version }, ejects)
 
   if (opts.check === true) {
     const diff = differences(plan)
