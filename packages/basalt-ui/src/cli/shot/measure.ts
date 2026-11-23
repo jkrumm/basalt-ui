@@ -118,9 +118,14 @@ export function measureAnchor(root: Element): Reading {
     if (el.matches(control) && s.display !== 'inline' && !clipped && !el.closest('label')) {
       // WCAG 2.5.8: a control is at least 24 px each way. Its target is its box unioned with the invisible `::after`
       // overlay the parts draw to reach the floor (checkbox, radio, switch, stepper), centred on the box and so
-      // only ever larger; a fold or a hidden overlay (`display: none`) leaves the box itself.
+      // only ever larger, when the control is positioned (its own containing block); a hidden overlay (`display: none`)
+      // or one anchored to an ancestor leaves the box itself.
       const after = getComputedStyle(el, '::after')
-      const overlay = after.content !== 'none' && shown(after) && after.position === 'absolute'
+      const overlay =
+        after.content !== 'none' &&
+        shown(after) &&
+        after.position === 'absolute' &&
+        s.position !== 'static'
       const [w, h] = [
         Math.max(r.width, overlay ? px(after.width) || 0 : 0),
         Math.max(r.height, overlay ? px(after.height) || 0 : 0),

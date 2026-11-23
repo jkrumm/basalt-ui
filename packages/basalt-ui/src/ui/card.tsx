@@ -238,7 +238,7 @@ const ACTION =
 const ERROR_TEXT: Record<ErrorKind | 'default', string> = {
   forbidden: 'You do not have access to this.',
   'not-found': 'This no longer exists.',
-  default: 'Could not load this.',
+  default: 'Could not load this. The request failed.',
 }
 
 /** `stack` centres an arm in a box at least 96 px tall; `line` draws it as one row on the edge. */

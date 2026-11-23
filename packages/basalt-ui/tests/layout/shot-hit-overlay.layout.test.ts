@@ -1,7 +1,7 @@
 /**
  * `shot detect`'s hit floor reads a control's target as its box unioned with the invisible `::after`
  * overlay the parts draw (checkbox, radio, switch, stepper), so a 16 px box with a 24 px overlay is clean
- * and a 20 px control with none, or with the overlay hidden, is `craft-6/hit-floor`.
+ * and a 20 px control with none, with the overlay hidden, or with one anchored to an ancestor is `craft-6/hit-floor`.
  */
 import { afterAll, describe, expect, test } from 'bun:test'
 import { CLOSE_BUDGET_MS, closeLayoutSuite, initLayoutSuite, openDocument } from './harness'
@@ -20,12 +20,15 @@ const HTML = `<!doctype html><meta charset="utf-8"><style>
   .box.hit::after { content: ''; position: absolute; top: 50%; left: 50%; width: 24px; height: 24px; translate: -50% -50%; }
   .box.hidden::after { content: ''; display: none; }
   .bar { display: block; width: 100px; height: 20px; }
+  .far { display: block; width: 20px; height: 20px; }
+  .far::after { content: ''; position: absolute; width: 200px; height: 200px; }
 </style>
 <div id="root">
   <span role="checkbox" aria-label="a" class="box hit"></span>
   <span role="checkbox" aria-label="b" class="box"></span>
   <button class="box hidden" aria-label="c"></button>
   <button class="bar" aria-label="d"></button>
+  <button class="far" aria-label="e"></button>
 </div>`
 
 layout('the hit floor of the in-page measurer', () => {
@@ -37,6 +40,7 @@ layout('the hit floor of the in-page measurer', () => {
       'span.box 16x16',
       'button.box 16x16',
       'button.bar 100x20',
+      'button.far 20x20',
     ])
   })
 })

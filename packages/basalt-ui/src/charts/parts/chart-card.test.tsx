@@ -278,7 +278,9 @@ describe('anatomy', () => {
     const kpi = html(<ChartCard title="MRR" chart={() => null} phase={{ tag: 'error' }} />)
     expect(kpi.querySelector('[role="alert"] p')?.textContent).toBe('Could not load MRR.')
     const bare = html(<ChartCard title=" " chart={() => null} phase={{ tag: 'error' }} />)
-    expect(bare.querySelector('[role="alert"] p')?.textContent).toBe('Could not load this.')
+    expect(bare.querySelector('[role="alert"] p')?.textContent).toBe(
+      'Could not load this. The request failed.',
+    )
     const denied = html(
       <ChartCard title="Revenue" chart={() => null} phase={{ tag: 'error', kind: 'forbidden' }} />,
     )
