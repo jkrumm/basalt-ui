@@ -94,10 +94,31 @@ export function measureAnchor(root: Element): Reading {
     return null
   }
   const small: string[] = []
-  const words: { el: Element; r: DOMRect }[] = []
+  const words: { el: Element; r: { left: number; top: number; right: number; bottom: number } }[] =
+    []
   const control =
     'a[href], button, input:not([type="hidden"]), select, textarea, summary, [role="button"], [role="tab"], [role="switch"], [role="checkbox"], [role="radio"], [role="menuitem"]'
   const range = document.createRange()
+  // The box a text node can show in: every ancestor that clips (overflow hidden, clip, auto or scroll) cuts it to its
+  // padding box, and an element with text-overflow: ellipsis cuts its own text there. Infinite edges: nothing clips it.
+  const CLIPPING = /^(hidden|clip|auto|scroll)$/
+  const clipChain = (el: Element): { left: number; top: number; right: number; bottom: number } => {
+    const box = { left: -Infinity, top: -Infinity, right: Infinity, bottom: Infinity }
+    for (let n: Element | null = el; n; n = n.parentElement) {
+      const s = getComputedStyle(n)
+      const clips =
+        CLIPPING.test(s.overflowX) ||
+        CLIPPING.test(s.overflowY) ||
+        (n === el && s.textOverflow === 'ellipsis')
+      if (!clips) continue
+      const r = n.getBoundingClientRect()
+      box.left = Math.max(box.left, r.left + (px(s.borderLeftWidth) || 0))
+      box.top = Math.max(box.top, r.top + (px(s.borderTopWidth) || 0))
+      box.right = Math.min(box.right, r.right - (px(s.borderRightWidth) || 0))
+      box.bottom = Math.min(box.bottom, r.bottom - (px(s.borderBottomWidth) || 0))
+    }
+    return box
+  }
   for (const el of [root, ...Array.from(root.querySelectorAll('*'))]) {
     const s = getComputedStyle(el)
     const r = el.getBoundingClientRect()
@@ -158,11 +179,19 @@ export function measureAnchor(root: Element): Reading {
     const chart = el.closest('[data-basalt-chart]')
     if (!clipped && !(chart !== null && chart !== root && root.contains(chart)))
       fontSizes.add(px(s.fontSize))
+    const chain = clipChain(el)
     for (const node of text) {
       range.selectNodeContents(node)
       const tr = range.getBoundingClientRect()
       painted.push([tr.top, tr.bottom])
-      if (words.length < 150 && !clipped) words.push({ el, r: tr })
+      const visible = {
+        left: Math.max(tr.left, chain.left),
+        top: Math.max(tr.top, chain.top),
+        right: Math.min(tr.right, chain.right),
+        bottom: Math.min(tr.bottom, chain.bottom),
+      }
+      const seen = visible.right > visible.left && visible.bottom > visible.top
+      if (words.length < 150 && !clipped && seen) words.push({ el, r: visible })
     }
   }
 
