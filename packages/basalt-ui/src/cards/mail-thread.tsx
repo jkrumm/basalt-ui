@@ -1,7 +1,7 @@
 /**
  * `MailThread`: one conversation in a mailbox's reader. Every message but the open one is a single
  * row (face, sender, preview, day); one opens at a time, the latest at first; an open message shows
- * its body and its attachments as file cards, and the reply sits at the foot.
+ * its body and its attachments as file cards, and the reply sits under the thread.
  */
 import { useState } from 'react'
 import type { ReactElement, ReactNode } from 'react'
@@ -51,7 +51,7 @@ export type MailThreadProps = {
   messages: readonly MailMessage[]
   /** The message open at first. Default the latest. */
   defaultOpen?: string | undefined
-  /** The reply at the thread's foot: the reply buttons, or an open composer. */
+  /** The reply under the thread's card: the reply buttons, or an open composer. */
   reply?: ReactNode
 }
 
@@ -74,14 +74,21 @@ function FileCard({ file }: { file: MailAttachment }): ReactElement {
   return (
     <li
       data-slot="mail-attachment"
-      className="flex h-15 w-72 max-w-full min-w-0 items-center gap-3 rounded-ctrl border border-border bg-card px-3"
+      className="flex h-15 w-72 max-w-full min-w-0 items-center gap-3 rounded-chip border border-border bg-card px-3"
     >
-      <span
+      <svg
+        viewBox="0 0 16 16"
+        className="size-icon shrink-0 text-muted-foreground"
+        fill="none"
         aria-hidden="true"
-        className="flex size-9 shrink-0 items-center justify-center rounded-ctrl bg-muted font-mono text-micro font-medium text-muted-foreground"
       >
-        {file.kind.slice(0, 4)}
-      </span>
+        <path
+          d="M9.5 1.75H4.25a1 1 0 00-1 1v10.5a1 1 0 001 1h7.5a1 1 0 001-1V4.75l-3.25-3zM9.5 1.75v3h3.25"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        />
+      </svg>
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="truncate text-sm text-foreground">{file.name}</span>
         <span className="text-xs text-muted-foreground tabular-nums">
@@ -115,7 +122,7 @@ function FileCard({ file }: { file: MailAttachment }): ReactElement {
  * open is one row of face, sender, a line of its text and its day; opening one closes the one that
  * was open, and the latest is open at first. The open message shows the sender's address, who it
  * went to, the full time, the body with its line breaks and the attachments as file cards with a
- * download. `reply` sits at the foot, under the last message: the reply buttons, or an inline
+ * download. `reply` sits under the thread's card: the reply buttons, or an inline
  * composer once the reader replies.
  *
  * @useWhen a reader shows one mail conversation, or any thread of long messages where one is read at a time
@@ -132,74 +139,71 @@ export function MailThread({ label, messages, defaultOpen, reply }: MailThreadPr
     return first === undefined ? [] : [first]
   })
   return (
-    <section
-      aria-label={label}
-      data-slot="mail-thread"
-      className="flex min-w-0 flex-col overflow-clip rounded-card border border-border bg-card"
-    >
-      <Accordion
-        value={open}
-        onValueChange={(next) => setOpen(next.map(String))}
-        className="min-w-0"
-      >
-        {messages.map((m) => {
-          const isOpen = open.includes(m.id)
-          return (
-            <AccordionItem key={m.id} value={m.id} data-slot="mail-message">
-              <AccordionTrigger
-                className={cn('min-h-12 w-full min-w-0 gap-3 rounded-none px-4', isOpen && 'py-3')}
-              >
-                <span className="flex min-w-0 flex-1 items-center gap-3">
-                  <Avatar {...faceOf(m.from)} size={isOpen ? 'md' : 'sm'} aria-hidden="true" />
-                  <span className="flex min-w-0 flex-1 flex-col">
-                    <span className="flex min-w-0 items-baseline gap-2">
-                      <span className="truncate text-sm font-medium text-foreground">
-                        {m.from.name}
+    <section aria-label={label} data-slot="mail-thread" className="flex min-w-0 flex-col gap-3">
+      <div className="min-w-0 overflow-clip rounded-card border border-border bg-card">
+        <Accordion
+          value={open}
+          onValueChange={(next) => setOpen(next.map(String))}
+          className="min-w-0"
+        >
+          {messages.map((m) => {
+            const isOpen = open.includes(m.id)
+            return (
+              <AccordionItem key={m.id} value={m.id} data-slot="mail-message">
+                <AccordionTrigger
+                  className={cn(
+                    'min-h-12 w-full min-w-0 gap-3 rounded-none px-4',
+                    isOpen && 'py-3',
+                  )}
+                >
+                  <span className="flex min-w-0 flex-1 items-center gap-3">
+                    <Avatar {...faceOf(m.from)} size="md" aria-hidden="true" />
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="flex min-w-0 items-baseline gap-2">
+                        <span className="truncate text-sm font-medium text-foreground">
+                          {m.from.name}
+                        </span>
+                        {isOpen && m.from.address !== undefined && (
+                          <span className="truncate text-xs font-normal text-muted-foreground">
+                            {m.from.address}
+                          </span>
+                        )}
                       </span>
-                      {isOpen && m.from.address !== undefined && (
+                      {isOpen ? (
+                        m.to !== undefined && (
+                          <span className="truncate text-xs font-normal text-muted-foreground">
+                            {m.to}
+                          </span>
+                        )
+                      ) : (
                         <span className="truncate text-xs font-normal text-muted-foreground">
-                          {m.from.address}
+                          {m.preview ?? m.body.split('\n').find((line) => line.trim() !== '') ?? ''}
                         </span>
                       )}
                     </span>
-                    {isOpen ? (
-                      m.to !== undefined && (
-                        <span className="truncate text-xs font-normal text-muted-foreground">
-                          {m.to}
-                        </span>
-                      )
-                    ) : (
-                      <span className="truncate text-xs font-normal text-muted-foreground">
-                        {m.preview ?? m.body.split('\n').find((line) => line.trim() !== '') ?? ''}
-                      </span>
+                    <span className="shrink-0 text-xs font-normal text-muted-foreground tabular-nums">
+                      {isOpen ? `${f.date(m.at, 'day')}, ${f.time(m.at)}` : f.date(m.at, 'day')}
+                    </span>
+                  </span>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="flex flex-col gap-4 ps-12 pe-2 pt-1 pb-3">
+                    <p className="m-0 text-sm/6 whitespace-pre-line text-foreground">{m.body}</p>
+                    {m.attachments !== undefined && m.attachments.length > 0 && (
+                      <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
+                        {m.attachments.map((file) => (
+                          <FileCard key={file.name} file={file} />
+                        ))}
+                      </ul>
                     )}
-                  </span>
-                  <span className="shrink-0 text-xs font-normal text-muted-foreground tabular-nums">
-                    {isOpen ? `${f.date(m.at, 'day')}, ${f.time(m.at)}` : f.date(m.at, 'day')}
-                  </span>
-                </span>
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="flex flex-col gap-4 ps-12 pe-2 pt-1 pb-3">
-                  <p className="m-0 text-sm/6 whitespace-pre-line text-foreground">{m.body}</p>
-                  {m.attachments !== undefined && m.attachments.length > 0 && (
-                    <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
-                      {m.attachments.map((file) => (
-                        <FileCard key={file.name} file={file} />
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          )
-        })}
-      </Accordion>
-      {reply !== undefined && (
-        <div data-slot="mail-thread-reply" className="border-t border-border p-3">
-          {reply}
-        </div>
-      )}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            )
+          })}
+        </Accordion>
+      </div>
+      {reply !== undefined && <div data-slot="mail-thread-reply">{reply}</div>}
     </section>
   )
 }
