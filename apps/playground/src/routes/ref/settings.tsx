@@ -57,7 +57,13 @@ const DOMAIN = /^[a-z0-9-]+(\.[a-z0-9-]+)+$/
 
 const Reordering = z.object({
   policy: z.enum(['point', 'minmax', 'manual']),
-  safetyDays: z.number().int().min(0, 'Zero or more days.').max(60, 'At most 60 days.').nullable(),
+  safetyDays: z
+    .number()
+    .int()
+    .min(0, 'Zero or more days.')
+    .max(60, 'At most 60 days.')
+    .nullable()
+    .refine((days) => days !== null, 'Enter the days of safety stock.'),
   warehouse: z.string(),
   packRound: z.boolean(),
   domains: z.array(z.string()),
@@ -71,7 +77,7 @@ function ReorderingPane(): ReactElement {
       warehouse: 'main',
       packRound: true,
       domains: ['brenner-vt.example', 'nordlager.example', 'atlasseal.example'],
-    } as z.infer<typeof Reordering>,
+    } as z.input<typeof Reordering>,
     validators: { onDynamic: Reordering },
     onSubmit: async ({ value, formApi }) => {
       await later(400)

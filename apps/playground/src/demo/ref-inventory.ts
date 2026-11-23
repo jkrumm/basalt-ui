@@ -13,10 +13,6 @@ const DAY = 86_400_000
 /** The calendar day `offset` days from today, as `YYYY-MM-DD`. */
 const dayAt = (offset: number): string => new Date(TODAY + offset * DAY).toISOString().slice(0, 10)
 
-/** The instant `offset` days and `hours` from today, as an ISO string. */
-const instantAt = (offset: number, hours = 0): string =>
-  new Date(TODAY + offset * DAY + hours * 3_600_000).toISOString()
-
 export const CATEGORIES = ['fasteners', 'bearings', 'seals', 'hydraulics', 'electrical'] as const
 export type Category = (typeof CATEGORIES)[number]
 export const CATEGORY_LABELS: Record<Category, string> = {
@@ -737,11 +733,6 @@ export const NOTES: readonly Note[] = NOTE_SEEDS.map(
     updated: new Date(TODAY - hoursAgo * 3_600_000).toISOString(),
   }),
 )
-
-export const noteOf = (id: string): Note | undefined => NOTES.find((n) => n.id === id)
-
-/** The day offset of a past instant, for the record page's activity feed. */
-export { instantAt }
 
 /** The parts list as the app reads it: a query, so a page shows its loading, empty and error frames. */
 export const partsQuery = queryOptions({
