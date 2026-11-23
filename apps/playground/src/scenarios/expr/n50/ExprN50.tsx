@@ -156,10 +156,12 @@ export function ExprN50Scenario({ shotState, fixture }: ScenarioProps) {
           figure={
             ready && top
               ? {
+                  // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n50, kept as its builder left it: its figure follows focus, built before figure-readout
                   value: focus.readout(top.shipped, (p) => p.shipped),
                   unit: 'Issues shipped',
                   period: shipping ? focus.readout(top.name, (p) => p.name) : undefined,
                   periodMono: shipping,
+                  // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n50, kept as its builder left it: its figure follows focus, built before figure-readout
                   delta: shipping
                     ? focus.readout(
                         {
@@ -217,12 +219,14 @@ export function ExprN50Scenario({ shotState, fixture }: ScenarioProps) {
           figure={
             ready && priciest
               ? {
+                  // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n50, kept as its builder left it: its figure follows focus, built before figure-readout
                   value: focus.readout<string | null>(usd(priciest.perIssue ?? 0), (p) =>
                     p.perIssue === undefined ? null : usd(p.perIssue),
                   ),
                   unit: 'per Issue',
                   period: focus.readout(priciest.name, (p) => p.name),
                   periodMono: true,
+                  // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n50, kept as its builder left it: its figure follows focus, built before figure-readout
                   delta: focus.readout(
                     {
                       value: signed(1, usd((priciest.perIssue ?? 0) - medianPerIssue)),

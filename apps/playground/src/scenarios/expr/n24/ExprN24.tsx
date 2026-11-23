@@ -98,6 +98,7 @@ function Spend({ rows, phase }: { rows: readonly Workflow[]; phase: Phase }): Re
         figure={
           showing
             ? {
+                // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n24, kept as its builder left it: its figure follows focus, built before figure-readout
                 value: focus.readout(f.percent(restShare, { maximumFractionDigits: 0 }), (w) =>
                   f.percent(w.share / 100, { maximumFractionDigits: 0 }),
                 ),

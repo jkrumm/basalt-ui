@@ -1,19 +1,9 @@
-@import 'basalt-ui/tokens.css';
-@import './accents.css';
 @import 'basalt-ui/tailwind.css';
+@import './tokens.css';
+@import './accents.css';
+@import './basalt.tokens.css';
 @import 'basalt-ui/prose.css';
-@import 'basalt-ui/table.css';
-@source '../../../packages/basalt-ui/src/ui';
-@source '../../../packages/basalt-ui/src/ai';
+@import '../.basalt/sources.css';
+/* The reference pages import the blocks in place from the package; an app gets its copy in src from
+ * `basalt-ui add`, where its own sources already reach it. */
 @source '../../../packages/basalt-ui/blocks';
-@source not '../../../packages/basalt-ui/src/ai/**/*.test.*';
-@source '../../../packages/basalt-ui/src/cards';
-@source '../../../packages/basalt-ui/src/charts';
-@source not '../../../packages/basalt-ui/src/charts/**/*.test.*';
-@source '../../../packages/basalt-ui/src/content';
-@source '../../../packages/basalt-ui/src/core';
-@source not '../../../packages/basalt-ui/src/core/**/*.test.*';
-@source '../../../packages/basalt-ui/src/controls';
-@source '../../../packages/basalt-ui/src/page';
-@source '../../../packages/basalt-ui/src/shell';
-@source '../../../packages/basalt-ui/src/table';

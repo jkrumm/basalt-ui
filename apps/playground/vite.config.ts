@@ -2,22 +2,20 @@ import tailwindcss from '@tailwindcss/vite'
 import { tanstackRouter } from '@tanstack/router-plugin/vite'
 import react from '@vitejs/plugin-react'
 import { compile } from '@mdx-js/mdx'
-import { basaltViteConfig } from 'basalt-ui/vite'
+import { basalt } from 'basalt-ui/vite'
 import remarkGfm from 'remark-gfm'
 import { fileURLToPath } from 'node:url'
-import { mergeConfig } from 'vite'
+import { defineConfig } from 'vite'
 import type { Plugin } from 'vite'
-import { themeScript } from '../../packages/basalt-ui/src/css/theme-script'
 
-// `basaltViteConfig` supplies the shared spine (React dedupe, strictPort dev
-// server, the __APP_VERSION__ define). Plugins stay app-side — the preset deliberately ships none.
-//
-// `basaltSrc` aliases the `basalt-ui` import to the package's `src/`, so the playground exercises
-// source directly (instant HMR, exact types) rather than the built `dist/`, per the repo contract
-// that the playground is the everyday iteration surface on source.
+// The plugin list `basalt-ui init --profile app` writes (router first, then react, tailwindcss,
+// basalt), plus the MDX compile below. The one workspace difference from a consumer: `basalt-ui`'s
+// script subpaths resolve to the package's `src/`, so a source edit reloads without a build. Its
+// stylesheets (`basalt-ui/*.css`) resolve through the package exports to `dist/`, as in a consumer,
+// and so does the graph `basalt()` reads for the peer gate and `.basalt/sources.css`: after a
+// change to a package stylesheet or to the classes a part writes, run `bun run build` in
+// packages/basalt-ui.
 const basaltSrc = fileURLToPath(new URL('../../packages/basalt-ui/src', import.meta.url))
-const css = (file: string) =>
-  fileURLToPath(new URL(`../../packages/basalt-ui/src/css/${file}`, import.meta.url))
 
 // Authored `.mdx` is compiled here, at build time, into a module; MDX text is never evaluated at
 // runtime. The output calls `react/jsx-runtime` directly, so it needs no JSX transform.
@@ -31,49 +29,27 @@ const mdx = (): Plugin => ({
   },
 })
 
-// The pre-paint script an app gets from `basalt()`: the stored scheme and appearance land on <html>
-// before the first paint, so a reload keeps the reader's accent, density and frame with no flash.
-const bootScript = (): Plugin => ({
-  name: 'playground-theme-script',
-  transformIndexHtml: () => [{ tag: 'script', children: themeScript(), injectTo: 'head-prepend' }],
-})
-
-export default mergeConfig(
-  basaltViteConfig({
-    port: 7710,
-    version: '1.0.0',
-    basaltSrc,
-    allowedHosts: ['basalt-playground.test', 'basalt-playground.mini.jkrumm.com'],
-  }),
-  {
-    // `mergeConfig` puts the override's aliases BEFORE the preset's, which is what these two need:
-    // the preset's `basalt-ui` -> `src/` alias is a prefix match that would otherwise shadow them
-    // (`src/tailwind.css` does not exist — the sheets live in `src/css/` and ship as `dist/css/*`,
-    // the paths a consumer's `@import 'basalt-ui/tailwind.css'` reaches).
-    resolve: {
-      alias: [
-        {
-          find: /^basalt-ui\/tailwind\.css$/,
-          replacement: css('tailwind.css'),
-        },
-        { find: /^basalt-ui\/prose\.css$/, replacement: css('prose.css') },
-        {
-          find: /^basalt-ui\/table\.css$/,
-          replacement: fileURLToPath(
-            new URL('../../packages/basalt-ui/src/table/table.css', import.meta.url),
-          ),
-        },
-        { find: /^basalt-ui\/tokens\.css$/, replacement: css('tokens.css') },
-      ],
-    },
-    // tanstackRouter must precede the React plugin — it generates `src/routeTree.gen.ts` from the
-    // `src/routes/` tree and rewrites route files for code-splitting before React's transform runs.
-    plugins: [
-      bootScript(),
-      mdx(),
-      tanstackRouter({ target: 'react', autoCodeSplitting: true }),
-      react(),
-      tailwindcss(),
-    ],
+export default defineConfig({
+  define: {
+    // Package source reads `process.env.NODE_ENV` to fold its dev-only code; a consumer's dep
+    // optimizer replaces it in dist, the source served here needs the define.
+    'process.env.NODE_ENV': JSON.stringify(process.env['NODE_ENV'] ?? 'development'),
   },
-)
+  resolve: {
+    alias: [{ find: /^basalt-ui(?=\/|$)(?!.*\.css$)/, replacement: basaltSrc }],
+    // One React: the package's own dev install must not hand its source a second copy.
+    dedupe: ['react', 'react-dom'],
+  },
+  server: {
+    port: 7710,
+    strictPort: true,
+    allowedHosts: ['basalt-playground.test', 'basalt-playground.mini.jkrumm.com'],
+  },
+  plugins: [
+    mdx(),
+    tanstackRouter({ target: 'react', autoCodeSplitting: true }),
+    react(),
+    tailwindcss(),
+    basalt(),
+  ],
+})

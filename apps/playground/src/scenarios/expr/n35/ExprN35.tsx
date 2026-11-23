@@ -82,6 +82,7 @@ export function ExprN35Scenario({ shotState, fixture }: ScenarioProps) {
             phase={typeof phase === 'object' ? { ...phase, retry } : phase}
             empty={empty}
             figure={{
+              // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n35, kept as its builder left it: its figure follows focus, built before figure-readout
               value: ready ? focus.readout(a.longest?.length ?? '0 min', (s) => s.length) : null,
               period: ready
                 ? focus.readout(

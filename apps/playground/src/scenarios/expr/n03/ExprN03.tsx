@@ -220,11 +220,13 @@ export function ExprN03Scenario({ shotState, fixture }: ScenarioProps): ReactEle
             blank
               ? { value: null, unit: 'AU' }
               : {
+                  // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n03, kept as its builder left it: its figure follows focus, built before figure-readout
                   value: weekFocus.readout(current.total, (w) => w.total),
                   unit: 'AU',
                   status: weekFocus.readout(statusOf(current.total, true), (w) =>
                     statusOf(w.total, w.current),
                   ),
+                  // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n03, kept as its builder left it: its figure follows focus, built before figure-readout
                   delta: weekFocus.readout(deltaOf(current.total), (w) => deltaOf(w.total)),
                   period: weekFocus.readout(`planned, ${distance(current.total)}`, (w) =>
                     w.current
@@ -286,6 +288,7 @@ export function ExprN03Scenario({ shotState, fixture }: ScenarioProps): ReactEle
             blank
               ? { value: null, unit: 'AU' }
               : {
+                  // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n03, kept as its builder left it: its figure follows focus, built before figure-readout
                   value: dayFocus.readout(heaviest.load, (d) => d.load),
                   unit: 'AU',
                   period: dayFocus.readout(

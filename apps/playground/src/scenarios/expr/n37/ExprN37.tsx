@@ -96,10 +96,12 @@ export function ExprN37Scenario({ shotState, fixture }: ScenarioProps) {
               phase={phase}
               empty={shotState === 'empty' ? NO_TICKETS : null}
               figure={{
+                // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n37, kept as its builder left it: its figure follows focus, built before figure-readout
                 value: ready
                   ? focus.readout<string | number>(`${done} of ${total}`, (t) => t.points ?? '–')
                   : null,
                 unit: 'pts',
+                // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n37, kept as its builder left it: its figure follows focus, built before figure-readout
                 delta: ready
                   ? focus.readout<Delta>(
                       { value: signed(done - pace), polarity: 'up-good', label: 'vs pace' },

@@ -7,11 +7,14 @@
     "dev": "npx kill-port 7710 && vite --strictPort --port 7710",
     "build": "vite build",
     "preview": "vite preview",
-    "typecheck": "tsr generate && tsc -p tsconfig.json && tsc -p tsconfig.test.json"
+    "typecheck": "tsr generate && tsc -p tsconfig.json && tsc -p tsconfig.test.json",
+    "lint": "basalt-ui lint"
   },
   "dependencies": {
+    "@atlaskit/pragmatic-drag-and-drop": "^4.0.0",
     "@base-ui/react": "~1.9.0",
     "@tanstack/charts": "1.5.0",
+    "@tanstack/react-hotkeys": "0.27.1",
     "@tanstack/react-router": "1.170.38",
     "basalt-ui": "workspace:*",
     "d3-scale": "4.0.2",
@@ -23,6 +26,7 @@
   "devDependencies": {
     "@ai-sdk/react": "4.0.170",
     "@mdx-js/mdx": "3.1.1",
+    "@shadcn/lint": "0.2.5",
     "@tailwindcss/vite": "4.3.5",
     "@tanstack/react-form": "1.33.5",
     "@tanstack/react-query": "^5.104.0",
@@ -37,13 +41,17 @@
     "@vitejs/plugin-react": "^6.1.1",
     "ai": "7.0.166",
     "motion": "14.1.0",
+    "oxfmt": "0.72.0",
+    "oxlint": "1.93.0",
     "pele": "1.13.0",
+    "postcss-html": "2.0.0",
     "react-day-picker": "10.0.2",
     "react-markdown": "^10.1.0",
     "rehype-sanitize": "6.0.0",
     "remark-gfm": "^4.0.1",
     "remend": "1.4.0",
     "shiki": "^4.5.0",
+    "stylelint": "18.0.0",
     "typescript": "^6.0.3",
     "vite": "^8.3.0",
     "zod": "4.6.7"
@@ -51,6 +59,7 @@
   "basalt": {
     "roots": [
       "src"
-    ]
+    ],
+    "sibling": true
   }
 }

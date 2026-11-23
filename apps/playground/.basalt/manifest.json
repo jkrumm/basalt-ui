@@ -1,0 +1,67 @@
+{
+  "profile": "app",
+  "version": "2.29.0",
+  "roots": {
+    "src": "app"
+  },
+  "ejected": {},
+  "managed": {
+    ".claude/agents/basalt-design-reviewer.md": "5334e1c4a9c6d1125f1e381b02db27310106f6e8a51172917b71935db366094e",
+    "repo:.claude/rules/basalt-v3-playground-charts.md": "373af03132299d1b92116e922458fbcd8f41aea0fba148b5768004fb94ad09f8",
+    "repo:.claude/rules/basalt-v3-playground-page.md": "302faf99909e94899b79f2fd6126126c8728673350334adff9c185356815dae6",
+    "repo:.claude/rules/basalt-v3-playground-state.md": "81729292edb7022ad79cf84336216a3600dca167352fe25f7fd82bd5e4889fe9",
+    "repo:.claude/rules/basalt-v3-playground-tokens.md": "89668e3372b0a60e52ee80b83fb804725fc4ae5a6f23877cb664ea9a00acf610",
+    "repo:.claude/rules/basalt-v3-playground-ui.md": "92d5fcb687b4a7edeac4d195a906392043aae76ceb3bd287390c2917ae58d44f",
+    "repo:.claude/skills/basalt-v3-playground-app/references/live.md": "ca6d8624a0473ddddfb458282fad6bd52faab391552fef9555017abf9ab3135c",
+    "repo:.claude/skills/basalt-v3-playground-app/references/migrate.md": "164826138518c52e06692ad251b831992158de7b0c9eeac8a0668ec11fae9864",
+    "repo:.claude/skills/basalt-v3-playground-app/references/performance.md": "e6930ff6a2b7c389d152b80a417012fa7b7703db64ffa07356b57b15a83aeade",
+    "repo:.claude/skills/basalt-v3-playground-app/references/recipes.md": "4a46678a444a1e52de4ff673efe8588623807247a3022d29c5a5a8ed481fefb4",
+    "repo:.claude/skills/basalt-v3-playground-app/references/testing.md": "925ac4088d6b8ba8d853059d27aba543aade7f807d55d3d923ca230d1158a8e4",
+    "repo:.claude/skills/basalt-v3-playground-app/SKILL.md": "ef8353191ac59cefa6c95f2e204afc16e9da7c6818e9dde355a1256128cf459b",
+    "repo:.claude/skills/basalt-v3-playground-charts/references/custom-marks.md": "65c7af1788ad13de6cdc808e382cf93d1e73be5ec2a1914d9e97926e0d3c347a",
+    "repo:.claude/skills/basalt-v3-playground-charts/references/linked-parts.md": "4b07ff302d53983c59120623382b1276e112b843d31cf7790f9ef208d22bc57f",
+    "repo:.claude/skills/basalt-v3-playground-charts/SKILL.md": "dfeb0382eb43bd1fadcc4b6f24298667ce1056fc50a1251c2cef1857de7d3000",
+    "repo:.claude/skills/basalt-v3-playground-design/references/ai.md": "b721eeb4bd573b0300812fb43ea635720b7c932164fa3566756a865ad39ce798",
+    "repo:.claude/skills/basalt-v3-playground-design/references/anti-defaults.md": "682ac509b99e938bd84b9980f76ad24f83d400ef8dba99e9f4a0773e6f41cfc2",
+    "repo:.claude/skills/basalt-v3-playground-design/references/cards.md": "fbe100cd529af3c3b4909d700c5476eb36d2cbc21a5112b632e49b137665f6d8",
+    "repo:.claude/skills/basalt-v3-playground-design/references/charts.md": "5fc5f4dde0439eadc227349e44f286ef696d666e4d9c9ad4f28451cb0481b10d",
+    "repo:.claude/skills/basalt-v3-playground-design/references/concept.md": "6c40d17f30b739f35310896ff0529246085501c167c80edb80c8cf118123971e",
+    "repo:.claude/skills/basalt-v3-playground-design/references/controls.md": "cabb0c2657b7a5221f55f81742120e3cf54dc8f0d5398455f028980013e9255c",
+    "repo:.claude/skills/basalt-v3-playground-design/references/copy.md": "dc9cc6b8c9cadbff939d2e68f2a135488b5e87b1d51bd18482310434c42f8930",
+    "repo:.claude/skills/basalt-v3-playground-design/references/encoding.md": "2f36807a79d81de3f6a37ea09a4de572008fcf926e2c00f7476c3dbdd665bc40",
+    "repo:.claude/skills/basalt-v3-playground-design/references/forms.md": "951cd2759bcd7c084aa435cf964a3359e104bc9c61036925ee909444c489c2b0",
+    "repo:.claude/skills/basalt-v3-playground-design/references/motion.md": "519022fe01efc554c65e9ec81cdfbd29aaf8563496cce8deca995f064c482a62",
+    "repo:.claude/skills/basalt-v3-playground-design/references/state.md": "234561d6a986805a0de347ca26a49c9a061baaa289187729ba75dbcb2961d732",
+    "repo:.claude/skills/basalt-v3-playground-design/references/states.md": "88d5b282454e7a45248d33fdfde8983603194a4631c5cc666c03ed4b86c6b9b7",
+    "repo:.claude/skills/basalt-v3-playground-design/references/table.md": "641b8bb867964c4367fce340d3afacc9b7568c53738db4475958a48c79647b67",
+    "repo:.claude/skills/basalt-v3-playground-design/SKILL.md": "695685efcc92e86a6f3ce3633fa4e8b8a0a209ab22a8d05404995ee89f075122"
+  },
+  "deepRender": [],
+  "authoredContent": [],
+  "viewports": [],
+  "tokens": [
+    {
+      "out": "src/tokens.css",
+      "format": "css",
+      "flags": []
+    },
+    {
+      "out": "src/basalt.tokens.css",
+      "format": "css",
+      "flags": [
+        "--extra",
+        "src/basalt.tokens.ts"
+      ]
+    },
+    {
+      "out": "src/accents.css",
+      "format": "css",
+      "flags": [
+        "--accents",
+        "violet,rose,orange,green,teal"
+      ]
+    }
+  ],
+  "extra": "src/basalt.tokens.ts",
+  "sibling": "basalt-v3-playground-"
+}

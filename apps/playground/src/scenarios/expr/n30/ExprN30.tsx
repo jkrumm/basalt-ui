@@ -95,7 +95,9 @@ function DirectionCard(props: {
       phase={phase}
       empty={empty}
       figure={{
+        // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n30, kept as its builder left it: its figure follows focus, built before figure-readout
         value: focus.readout(share(peakPct), (d) => share(pctOf(d, dir))),
+        // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n30, kept as its builder left it: its figure follows focus, built before figure-readout
         delta: focus.readout(deltaOf(f, peakPct), (d) => deltaOf(f, pctOf(d, dir))),
         period: focus.readout(restWhen, (d) => whenOf(d, dir)),
         periodMono: true,

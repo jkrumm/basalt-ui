@@ -151,8 +151,10 @@ export function ExprN15Scenario({ shotState, fixture }: ScenarioProps) {
           figure={
             ready && current
               ? {
+                  // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n15, kept as its builder left it: its figure follows focus, built before figure-readout
                   value: weekFocus.readout(current.minutes, (w) => w.minutes),
                   unit: 'min',
+                  // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n15, kept as its builder left it: its figure follows focus, built before figure-readout
                   delta: weekFocus.readout(minutesDelta(current), minutesDelta),
                   period: weekFocus.readout(`${current.key} so far`, (w) =>
                     w.partial ? `${w.key} so far` : w.key,
@@ -209,8 +211,10 @@ export function ExprN15Scenario({ shotState, fixture }: ScenarioProps) {
           figure={
             ready && recentPace !== null
               ? {
+                  // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n15, kept as its builder left it: its figure follows focus, built before figure-readout
                   value: paceFocus.readout(pace(recentPace), (w) => pace(w.paceSec)),
                   unit: '/km',
+                  // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n15, kept as its builder left it: its figure follows focus, built before figure-readout
                   delta: paceFocus.readout(paceDelta, sessionDelta),
                   period: paceFocus.readout(
                     'last 4 weeks',

@@ -1,5 +1,5 @@
 /* @generated basalt-ui — do not edit; regenerate with the command on the next line */
-/* basalt-ui 2.29.0 — `basalt-ui tokens:css --accents violet,rose,orange,green,teal --out apps/playground/src/accents.css` */
+/* basalt-ui 2.29.0 — `basalt-ui tokens:css --accents violet,rose,orange,green,teal --out src/accents.css` */
 :root[data-accent='violet']:not([data-theme]),
 :root[data-accent='violet'][data-theme='light'] {
   --basalt-brand: #8452cf;

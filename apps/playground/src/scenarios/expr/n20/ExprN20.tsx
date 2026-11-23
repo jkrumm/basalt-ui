@@ -95,11 +95,13 @@ function LiftCard({ lift, loading }: { lift: Lift; loading: boolean }): ReactEle
         loading
           ? { value: null, unit: 't' }
           : {
+              // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n20, kept as its builder left it: its figure follows focus, built before figure-readout
               value: focus.readout(tonnes(standing.last.total), (d) => tonnes(d.total)),
               unit: 't',
               period: focus.readout(`${standing.last.week}, last full week`, (d) =>
                 d.partial ? `${d.week}, so far` : d.week,
               ),
+              // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n20, kept as its builder left it: its figure follows focus, built before figure-readout
               delta: focus.readout<Delta>(deltaOf(lift, standing.last.total), (d) =>
                 d.partial ? PARTIAL_DELTA : deltaOf(lift, d.total),
               ),

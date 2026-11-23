@@ -160,6 +160,7 @@ export function ExprN29Scenario({ shotState, fixture }: ScenarioProps) {
             figure={
               ready
                 ? {
+                    // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n29, kept as its builder left it: its figure follows focus, built before figure-readout
                     value: tagFocus.readout(percent(share), (key) => percent(shown[key] / whole)),
                     period: tagFocus.readout(
                       `tagged, ${money(tagged)} of ${money(whole)} ${subject}`,

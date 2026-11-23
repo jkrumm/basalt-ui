@@ -46,3 +46,7 @@ packages/basalt-ui/docs/*.md
 # .md from it; `make astro-matrix` fails when the .md is not that rendering, so a formatter pass would fail it.
 docs/v3/verdicts/astro-matrix.json
 docs/v3/verdicts/astro-matrix.md
+
+# The playground's `basalt-ui init` token outputs: doctor check 10 holds them byte for byte to `tokens:css`.
+apps/playground/src/tokens.css
+apps/playground/src/basalt.tokens.css.d.ts

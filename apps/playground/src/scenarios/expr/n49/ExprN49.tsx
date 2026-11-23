@@ -127,6 +127,7 @@ export function ExprN49Scenario({ shotState, fixture }: ScenarioProps) {
             figure={
               ready
                 ? {
+                    // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n49, kept as its builder left it: its figure follows focus, built before figure-readout
                     value: focus.readout<string | number>(stillRead.length, (p) => p.views),
                     unit: focus.readout('stale pages still read', () => 'views in 30 days'),
                     period: focus.readout(

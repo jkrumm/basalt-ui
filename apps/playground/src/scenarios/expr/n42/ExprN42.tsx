@@ -173,12 +173,14 @@ export function ExprN42Scenario({ shotState, fixture }: ScenarioProps) {
           phase={phase}
           empty={noReadings ? EMPTY_READINGS : null}
           figure={{
+            // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n42, kept as its builder left it: its figure follows focus, built before figure-readout
             value: focus.readout<string | number | null>(restValue, (d) => `${d.mem} %`),
             unit: focus.readout<string | undefined>(
               last === null ? 'drops' : undefined,
               () => 'memory',
             ),
             // cycle-expression-10: a focused minute has no delta, and readout needs its type spelled to return an absent one
+            // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n42, kept as its builder left it: its figure follows focus, built before figure-readout
             delta: focus.readout<Delta | undefined>(restDelta, () => undefined),
             period: focus.readout(restPeriod, (d) => `${clock(d.at)}, CPU ${d.cpu} %`),
             periodMono: focus.readout(false, () => true),

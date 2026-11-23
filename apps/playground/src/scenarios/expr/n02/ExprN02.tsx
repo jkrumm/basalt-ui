@@ -98,12 +98,14 @@ export function ExprN02Scenario({ shotState, fixture }: ScenarioProps) {
           phase={phase}
           empty={all.length === 0 ? { cause: 'No Issues are open, so none can be stuck.' } : null}
           figure={{
+            // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n02, kept as its builder left it: its figure follows focus, built before figure-readout
             value: ready
               ? focus.readout(String(stuck.length), (d) =>
                   f.number(d.hours, { maximumFractionDigits: 1 }),
                 )
               : null,
             unit: ready ? focus.readout('stuck', () => 'h in stage') : undefined,
+            // oxlint-disable-next-line basalt/primitive-bypass -- trial evidence of expression cycle n02, kept as its builder left it: its figure follows focus, built before figure-readout
             delta: ready
               ? focus.readout<Delta>(
                   { value: `of ${all.length} open`, polarity: 'neutral' as const },
