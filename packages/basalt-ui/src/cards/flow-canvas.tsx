@@ -199,14 +199,17 @@ function GroupView({
       aria-labelledby={`${id}-title`}
       className="relative flex min-w-0 flex-col rounded-card border bg-background p-1 in-data-[tool=pointer]:cursor-auto"
     >
-      <div data-flow-anchor={group.id} className="flex h-9 min-w-0 items-center gap-1">
+      <div
+        data-flow-anchor={group.id}
+        className="flex h-9 min-w-0 items-center gap-1 pointer-coarse:h-11"
+      >
         <button
           type="button"
           data-slot="flow-group-header"
           aria-expanded={!folded}
           aria-controls={`${id}-body`}
           onClick={onFold}
-          className="flex h-9 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-inset border-0 bg-transparent px-2.5 text-left text-foreground hover:bg-accent focus-ring focus-visible:-outline-offset-2"
+          className="flex h-9 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-inset pointer-coarse:h-11 border-0 bg-transparent px-2.5 text-left text-foreground hover:bg-accent focus-ring focus-visible:-outline-offset-2"
         >
           <Glyph
             d={GLYPH.chevron}
@@ -221,7 +224,15 @@ function GroupView({
           <span id={`${id}-title`} className="min-w-0 truncate text-sm font-medium">
             {group.title}
           </span>
-          {group.chip !== undefined && <Lozenge>{group.chip.label}</Lozenge>}
+          {group.chip !== undefined && (
+            // Outlined, not the neutral lozenge: its wash over the grey tray drops the ink under 4.5:1.
+            <span
+              data-slot="flow-group-chip"
+              className="inline-flex h-5 shrink-0 items-center rounded-chip border px-1.5 text-xs font-medium whitespace-nowrap text-muted-foreground"
+            >
+              {group.chip.label}
+            </span>
+          )}
           {tone !== undefined && issues !== undefined && (
             <Lozenge tone={tone} data-flow-issues="">
               {t('flow.issues', issues.length)}
