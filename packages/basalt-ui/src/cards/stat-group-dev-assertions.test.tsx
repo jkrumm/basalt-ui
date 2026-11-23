@@ -4,7 +4,6 @@ import type { ReactElement } from 'react'
 import type { ControlsSlot } from '../core/ports'
 import { DataPanel } from './data-panel'
 import { StatCell } from './stat-cell'
-import type { StatCellProps } from './stat-cell'
 import { StatGroup } from './stat-group'
 import { resetCardWarnings } from './stat-group-shared'
 
@@ -72,7 +71,7 @@ describe('dev assertions', () => {
   })
 
   test('more than four rows warn once and draw the first four', () => {
-    const rows = ['a', 'b', 'c', 'd', 'e'].map(row) as unknown as NonNullable<StatCellProps['rows']>
+    const rows = ['a', 'b', 'c', 'd', 'e'].map(row)
     const { container } = render(<StatCell label="Recovery" rows={rows} />)
     render(<StatCell label="Sleep" rows={rows} />)
     expect(warn).toHaveBeenCalledTimes(1)

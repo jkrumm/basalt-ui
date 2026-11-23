@@ -74,9 +74,9 @@ export const cellTone: ReactElement = (
   <StatCell label="Recovery" tone="good" />
 )
 
-export const cellFifthRow: ReactElement = (
-  // @ts-expect-error a cell holds at most four rows
-  <StatCell label="Recovery" rows={[row, row, row, row, row]} />
+/** A list the page maps from data is a plain readonly array: at most four draw, a fifth warns in development. */
+export const cellMappedRows: ReactElement = (
+  <StatCell label="Recovery" rows={[row, row, row].map((r) => r)} />
 )
 
 export const cellLinkAndButton: ReactElement = (

@@ -3,7 +3,7 @@ import type { ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
 import { AppLink } from '../core/link'
 import { OfflineLine } from '../core/offline-line'
-import { resolvePhase } from '../core/phase'
+import { resolveFrame } from '../core/phase'
 import type { Empty, ErrorKind, ResolvedPhase } from '../core/phase'
 import { PhaseBoundary } from '../core/phase-boundary'
 import { useRetryOwner } from '../core/retry-owner'
@@ -25,13 +25,10 @@ import {
 } from './stat-group-shared'
 
 /**
- * The contract's `StatCellProps` with `rows` also held to a tuple of at most four, so a fifth row is a
- * type error and not only a dev warning. A dynamic array is sliced by the caller. (An intersection,
- * not an `Omit`: `Omit` would flatten the link-or-button union of `CardTarget`.)
+ * The contract's `StatCellProps`. `rows` is a readonly array, so a list the page maps from data
+ * passes as it is; at most four draw, and a fifth warns in development.
  */
-export type StatCellProps = ContractProps & {
-  rows?: readonly [StatRow?, StatRow?, StatRow?, StatRow?] | undefined
-}
+export type StatCellProps = ContractProps
 
 /** The chart box: the one track a cell gives a trend. */
 const CHART_HEIGHT = 28
@@ -72,6 +69,24 @@ const BAR = 'animate-pulse rounded-chip bg-foreground/10 motion-reduce:animate-n
 const ACTION =
   'relative z-10 inline-flex h-6 shrink-0 cursor-pointer items-center rounded-ctrl border-0 bg-secondary px-2 text-xs font-medium text-foreground shadow-raised hover:bg-accent focus-ring pointer-coarse:min-h-11'
 
+/**
+ * How a meter in a cell prints its numbers when it names no `format` of its own: with the figure's
+ * unit and as many fraction digits as the figure shows (two at most when the figure is no number), so
+ * the meter never prints a raw float beside a rounded headline.
+ */
+const meterFormatOf = (
+  value: StatCellProps['value'],
+  unit: string | undefined,
+): ((v: number) => string) => {
+  const shown = typeof value === 'number' ? formatValue(value) : null
+  const digits = shown === null ? undefined : (/\.(\d+)/.exec(shown)?.[1]?.length ?? 0)
+  const numbers = new Intl.NumberFormat('en', {
+    minimumFractionDigits: digits ?? 0,
+    maximumFractionDigits: digits ?? 2,
+  })
+  return (v) => (unit === undefined ? numbers.format(v) : `${numbers.format(v)} ${unit}`)
+}
+
 const rowsOf = (rows: StatCellProps['rows']): StatRow[] => {
   const shown: StatRow[] = []
   for (const row of rows ?? []) if (row) shown.push(row)
@@ -92,6 +107,11 @@ const rowsOf = (rows: StatCellProps['rows']): StatRow[] => {
  * not declare is left empty, and one nobody declares collapses. It owns its height at every phase
  * and its loading skeleton draws the declared shape; `chart` is called only in `ready` and `stale`,
  * in a 28 px box.
+ *
+ * `empty` follows `ChartCard`: with a query as `phase` it takes effect only once the settled `data` is empty
+ * (an empty array, or where `empty.when(data)` says so for an object result), so it is passed unconditionally;
+ * with a `Phase` it applies whenever it is set. A `meter` without a `format` prints with the cell's unit and
+ * as many digits as its figure shows.
  *
  * @useWhen a status bar or KPI row shows one figure with its qualifier, meter, trend and a few rows
  * @neverWhen the figure stands alone as a card (use a stat card) or the rows are the content (use a list)
@@ -127,7 +147,7 @@ export function StatCell(props: StatCellProps): ReactElement {
   const variant = useContext(StatGroupContext)
   const collapsed = useContext(StatGroupCollapsedContext)
   const about = useAboutLabel()
-  const resolved = resolvePhase({ phase, empty })
+  const resolved = resolveFrame({ phase, empty })
   const staleText = useStaleText(resolved.tag === 'stale' && resolved.refreshFailed)
   const rows = rowsOf(props.rows)
   const figure = formatValue(value ?? null)
@@ -188,6 +208,7 @@ export function StatCell(props: StatCellProps): ReactElement {
         solo={!spans}
         label={label}
         empty={resolved.tag === 'empty' ? resolved.empty : undefined}
+        grouped={variant !== null}
         collapsed={collapsed}
       />
       {delta !== undefined && (
@@ -210,7 +231,11 @@ export function StatCell(props: StatCellProps): ReactElement {
       )}
       {meter !== undefined && (
         <div data-slot="stat-meter" aria-hidden={hidden} className={T_METER}>
-          {resolved.tag === 'loading' ? <MeterSkeleton /> : body && <Meter {...meter} />}
+          {resolved.tag === 'loading' ? (
+            <MeterSkeleton />
+          ) : (
+            body && <Meter {...meter} format={meter.format ?? meterFormatOf(value, unit)} />
+          )}
         </div>
       )}
       {chart !== undefined && (
@@ -296,6 +321,8 @@ type FigureProps = {
   /** The cell's label: the default error text names it, as a card's title does. */
   label: string
   empty: Empty | undefined
+  /** The cell sits in a `StatGroup`: a failed cell names itself and never prints a raw error text. */
+  grouped: boolean
   /** The group draws one message for every cell: this figure track holds its height and says nothing. */
   collapsed: boolean
 }
@@ -309,6 +336,7 @@ function Figure({
   solo,
   label,
   empty,
+  grouped,
   collapsed,
 }: FigureProps): ReactElement {
   if (collapsed && (resolved.tag === 'error' || resolved.tag === 'empty')) {
@@ -333,7 +361,7 @@ function Figure({
       <div data-slot="stat-figure" className={T_FIGURE_WRAP}>
         <ErrorLine
           kind={resolved.kind}
-          message={resolved.message}
+          message={grouped && resolved.raw ? undefined : resolved.message}
           retry={resolved.retry}
           label={label}
         />

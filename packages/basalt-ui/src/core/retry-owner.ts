@@ -6,7 +6,8 @@ import { useLayoutEffect, useState } from 'react'
  * The shared source is the `retry` function itself (the one `Phase` object a page hands to every
  * frame, or the stable wrapper `resolvePhase` makes per query `refetch`). Of the frames whose error
  * arm shows the same `retry`, the first to mount draws the button and the rest draw their message
- * alone; when the owner unmounts the next one takes over.
+ * alone; when the owner unmounts the next one takes over. A `ChartCard` takes no part: a card holding a
+ * query is read alone (its own shot, its own corner of the page), so its error arm always draws Retry.
  */
 type Member = (owner: boolean) => void
 

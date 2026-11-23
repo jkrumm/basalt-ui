@@ -40,7 +40,7 @@ StatCell(props: StatCellProps): ReactElement
   srText?: string
   meter?: MeterSpec
   chart?: BoxSlot  // Called in a 28 px box
-  rows?: (readonly StatRow[] & readonly [StatRow?, StatRow?, StatRow?, StatRow?])
+  rows?: readonly StatRow[]
 ```
 
 `Phase`, `QueryStateLike`, `Empty`, `Delta`, `Verdict` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike, Empty, Delta, Verdict } from 'basalt-ui/cards'`.

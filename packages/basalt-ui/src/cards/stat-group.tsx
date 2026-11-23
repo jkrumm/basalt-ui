@@ -1,7 +1,7 @@
 import { Children, isValidElement, useContext } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
-import { resolvePhase } from '../core/phase'
+import { resolveFrame } from '../core/phase'
 import type { Empty, ErrorKind } from '../core/phase'
 import { Card, cardVariants } from '../ui/card'
 import { EmptyLine, ErrorLine } from './stat-cell'
@@ -138,7 +138,7 @@ const DRAWS_ITS_STATE: ReadonlySet<string> = new Set(['loading', 'empty', 'error
  * its slot. A ready or stale cell shows a figure, so it needs the context.
  */
 function hasContext(cell: StatCellProps): boolean {
-  if (DRAWS_ITS_STATE.has(resolvePhase(cell).tag)) return true
+  if (DRAWS_ITS_STATE.has(resolveFrame(cell).tag)) return true
   return (
     (cell.sub !== undefined && cell.sub !== '') ||
     cell.delta !== undefined ||
@@ -210,22 +210,25 @@ type SharedFailure =
  */
 function sharedFailure(children: ReactNode): SharedFailure | null {
   const cells = Children.toArray(children).flatMap((child) =>
-    isValidElement<StatCellProps>(child) ? [resolvePhase(child.props)] : [],
+    isValidElement<StatCellProps>(child) ? [resolveFrame(child.props)] : [],
   )
   if (cells.length < 2 || cells.length !== Children.count(children)) return null
   const [first] = cells
   if (first?.tag === 'error') {
     const errors = cells.flatMap((cell) => (cell.tag === 'error' ? [cell] : []))
+    // A failed query's own error text is no sentence of the page's: it never tells two failures apart and
+    // is never printed, so cells that differ only in it fail together and the group says it once.
+    const said = (e: (typeof errors)[number]): string | undefined => (e.raw ? undefined : e.message)
     if (
       errors.length !== cells.length ||
-      errors.some((e) => e.kind !== first.kind || e.message !== first.message)
+      errors.some((e) => e.kind !== first.kind || said(e) !== said(first))
     )
       return null
     const retries = [...new Set(errors.flatMap((e) => (e.retry === undefined ? [] : [e.retry])))]
     return {
       tag: 'error',
       kind: first.kind,
-      message: first.message,
+      message: said(first),
       // One shared retry passes through unwrapped, so a frame beside the group recognises it.
       retry:
         retries.length <= 1
