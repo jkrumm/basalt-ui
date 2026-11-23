@@ -15,6 +15,7 @@ import type { IconComponent, NavTarget, VirtualLike } from '../core/ports'
 import { Avatar } from '../ui/avatar'
 import type { AvatarEntry } from '../ui/avatar'
 import { Button } from '../ui/button'
+import { HostTitleContext } from '../core/could-not-load'
 import { CardPhase } from '../ui/card'
 import { Checkbox } from '../ui/checkbox'
 import { EntityChip } from '../ui/entity'
@@ -472,72 +473,74 @@ export function MailList({
       data-selecting={selecting ? '' : undefined}
       className="group/mail relative flex min-h-0 min-w-0 flex-1 flex-col"
     >
-      <CardPhase
-        phase={phase}
-        empty={resolvedEmpty}
-        skeleton={<MailSkeleton />}
-        className="flex min-h-0 flex-1 flex-col"
-      >
-        {() => (
-          <div ref={scroller} className="flex min-h-0 flex-1 flex-col">
-            <List
-              // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- the window's rows sit beside spacer divs, which a ul cannot hold
-              role="list"
-              aria-labelledby={labelId}
-              className="flex-1"
-              count={entries.length}
-              estimateSize={(i) => {
-                const e = entries[i]
-                if (e === undefined || e.kind === 'header') return HEADER_H
-                return e.item.entity === undefined ? ROW_H : ROW_CHIP_H
-              }}
-              getItemKey={(i) => {
-                const e = entries[i]
-                if (e === undefined) return i
-                return e.kind === 'header' ? `h:${e.id}` : e.item.id
-              }}
-              keepIndex={keep}
-              revealIndex={reveal}
-              onKeyDown={onKeyDown}
-              onFocus={(event) => {
-                const id = (event.target as HTMLElement).dataset['mailOpen']
-                if (id === undefined) return
-                const at = entries.findIndex((e) => e.kind === 'row' && e.item.id === id)
-                if (at !== cursor) setCursor(at)
-              }}
-            >
-              {([virtual]) => {
-                const e = virtual === undefined ? undefined : entries[virtual.index]
-                if (e === undefined) return null
-                if (e.kind === 'header') {
+      <HostTitleContext.Provider value={label}>
+        <CardPhase
+          phase={phase}
+          empty={resolvedEmpty}
+          skeleton={<MailSkeleton />}
+          className="flex min-h-0 flex-1 flex-col"
+        >
+          {() => (
+            <div ref={scroller} className="flex min-h-0 flex-1 flex-col">
+              <List
+                // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- the window's rows sit beside spacer divs, which a ul cannot hold
+                role="list"
+                aria-labelledby={labelId}
+                className="flex-1"
+                count={entries.length}
+                estimateSize={(i) => {
+                  const e = entries[i]
+                  if (e === undefined || e.kind === 'header') return HEADER_H
+                  return e.item.entity === undefined ? ROW_H : ROW_CHIP_H
+                }}
+                getItemKey={(i) => {
+                  const e = entries[i]
+                  if (e === undefined) return i
+                  return e.kind === 'header' ? `h:${e.id}` : e.item.id
+                }}
+                keepIndex={keep}
+                revealIndex={reveal}
+                onKeyDown={onKeyDown}
+                onFocus={(event) => {
+                  const id = (event.target as HTMLElement).dataset['mailOpen']
+                  if (id === undefined) return
+                  const at = entries.findIndex((e) => e.kind === 'row' && e.item.id === id)
+                  if (at !== cursor) setCursor(at)
+                }}
+              >
+                {([virtual]) => {
+                  const e = virtual === undefined ? undefined : entries[virtual.index]
+                  if (e === undefined) return null
+                  if (e.kind === 'header') {
+                    return (
+                      <div
+                        role="presentation"
+                        data-slot="mail-list-header"
+                        className="sticky top-0 z-20 flex h-8 items-center gap-1 border-b border-border bg-card px-4 text-xs font-medium text-muted-foreground"
+                      >
+                        {e.label}
+                        <span className="font-normal tabular-nums">· {f.number(e.count)}</span>
+                      </div>
+                    )
+                  }
                   return (
-                    <div
-                      role="presentation"
-                      data-slot="mail-list-header"
-                      className="sticky top-0 z-20 flex h-8 items-center gap-1 border-b border-border bg-card px-4 text-xs font-medium text-muted-foreground"
-                    >
-                      {e.label}
-                      <span className="font-normal tabular-nums">· {f.number(e.count)}</span>
-                    </div>
+                    <MailRow
+                      item={e.item}
+                      current={open === e.item.id}
+                      checked={picked.has(e.item.id)}
+                      time={stamp(e.item.at)}
+                      onOpen={onOpen}
+                      onToggle={toggle}
+                      onStar={onStar}
+                      actions={actions}
+                    />
                   )
-                }
-                return (
-                  <MailRow
-                    item={e.item}
-                    current={open === e.item.id}
-                    checked={picked.has(e.item.id)}
-                    time={stamp(e.item.at)}
-                    onOpen={onOpen}
-                    onToggle={toggle}
-                    onStar={onStar}
-                    actions={actions}
-                  />
-                )
-              }}
-            </List>
-          </div>
-        )}
-      </CardPhase>
+                }}
+              </List>
+            </div>
+          )}
+        </CardPhase>
+      </HostTitleContext.Provider>
       <span id={labelId} hidden>
         {label}
       </span>
