@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -234,5 +234,70 @@ describe('select no-restyle contract', () => {
         expect(denied(component, bad)).toBe(true)
       }
     }
+  })
+})
+
+describe('Select on the list engine', () => {
+  const GROUPED = [
+    {
+      label: 'Europe',
+      options: [
+        { value: 'de', label: 'Germany' },
+        { value: 'fr', label: 'France' },
+      ],
+    },
+    { label: 'Asia', options: [{ value: 'jp', label: 'Japan', description: 'Tokyo' }] },
+  ]
+  const rows = (): string[] =>
+    [
+      ...document.querySelectorAll('[data-slot="option-group-label"], [data-slot="option-row"]'),
+    ].map((el) =>
+      el.getAttribute('data-slot') === 'option-group-label'
+        ? `# ${el.textContent ?? ''}`
+        : (el.querySelector('[data-slot="option-label"]')?.textContent ?? ''),
+    )
+
+  test('groups render as headers over the shared option row', async () => {
+    await act(async () => {
+      render(<Select aria-label="Country" options={GROUPED} defaultOpen />)
+    })
+    expect(rows()).toEqual(['# Europe', 'Germany', 'France', '# Asia', 'Japan'])
+    expect(document.querySelector('[data-slot="option-description"]')?.textContent).toBe('Tokyo')
+  })
+
+  test('searchable adds a search field that ranks across the groups', async () => {
+    await act(async () => {
+      render(<Select aria-label="Country" options={GROUPED} searchable defaultOpen />)
+    })
+    const search = document.querySelector('[data-slot="select-search"]') as HTMLInputElement
+    expect(search).not.toBeNull()
+    await act(async () => {
+      fireEvent.change(search, { target: { value: 'jap' } })
+    })
+    expect(rows()).toEqual(['# Asia', 'Japan'])
+    await act(async () => {
+      fireEvent.click(document.querySelector('[data-slot="option-row"]') as Element)
+    })
+    expect(document.querySelector('[data-slot="select-trigger"]')?.textContent).toContain('Japan')
+    expect(search.value).toBe('')
+  })
+
+  test('a loader makes it searchable and asks it for the text', async () => {
+    const queries: string[] = []
+    const load = async (query: string) => {
+      queries.push(query)
+      return [{ value: query, label: `Result for ${query || 'nothing'}` }]
+    }
+    await act(async () => {
+      render(<Select aria-label="Repo" options={load} defaultOpen />)
+    })
+    await waitFor(() => expect(rows()).toEqual(['Result for nothing']))
+    await act(async () => {
+      fireEvent.change(document.querySelector('[data-slot="select-search"]') as Element, {
+        target: { value: 'ui' },
+      })
+    })
+    await waitFor(() => expect(rows()).toEqual(['Result for ui']))
+    expect(queries).toEqual(['', 'ui'])
   })
 })

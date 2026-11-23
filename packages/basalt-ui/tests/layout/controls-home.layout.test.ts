@@ -238,8 +238,8 @@ layout('ControlHome', () => {
 
         // A nested portal must not read as an outside click: pick an option, the popover stays.
         await page.raw.click('[data-slot="popover-content"] [data-slot="select-trigger"]')
-        await page.raw.waitForSelector('[data-slot="select-item"]')
-        await page.raw.click('[data-slot="select-item"]:nth-child(2)')
+        await page.raw.waitForSelector('[data-slot="option-row"]')
+        await page.raw.click('[data-slot="option-row"]:nth-child(2)')
         await page.settle()
         const after = await page.raw.evaluate(() => ({
           popup: document.querySelector('[data-slot="popover-content"]') !== null,
@@ -304,7 +304,7 @@ layout('ControlHome', () => {
         test(`axe finds nothing serious or critical with a pill's select open${scheme ? ` in ${scheme}` : ''}`, async () => {
           const page = await open(viewport, scheme)
           await page.raw.click('[data-testid="ch-page-bound"] [data-slot="select-trigger"]')
-          await page.raw.waitForSelector('[data-slot="select-item"]')
+          await page.raw.waitForSelector('[data-slot="option-row"]')
           await page.raw.addScriptTag({ content: axeSource })
           const violations = await page.raw.evaluate(async (machinery) => {
             const axe = (

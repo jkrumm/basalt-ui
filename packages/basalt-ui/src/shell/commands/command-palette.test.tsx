@@ -16,7 +16,10 @@ import { afterEach, describe, expect, mock, test } from 'bun:test'
 import { useState } from 'react'
 import type { ReactElement } from 'react'
 import { Page } from '../../page/page'
+import { Combobox } from '../../ui/combobox'
+import type { ListItems } from '../../ui/combobox'
 import { Dialog, DialogContent } from '../../ui/dialog'
+import { Select } from '../../ui/select'
 import { AppShell } from '../app-shell'
 import type { AppShellProps } from '../contract'
 import { isApplePlatform } from './chord'
@@ -95,8 +98,8 @@ async function mountShell({ commands, rank, body, area, onOpenChange }: Mount) {
 }
 
 const labels = (): string[] =>
-  [...document.querySelectorAll('[data-slot="autocomplete-item"]')].map(
-    (el) => el.querySelector('span')?.textContent ?? '',
+  [...document.querySelectorAll('[data-slot="option-row"]')].map(
+    (el) => el.querySelector('[data-slot="option-label"]')?.textContent ?? '',
   )
 
 describe('chords', () => {
@@ -449,10 +452,76 @@ describe('sequences', () => {
     await mountShell({ commands: go() })
     press('k', { mod: true })
     await waitFor(() => expect(labels()).toContain('Next'))
-    const row = screen.getByText('Next').closest('[data-slot="autocomplete-item"]')
+    const row = screen.getByText('Next').closest('[data-slot="option-row"]')
     expect(row?.textContent).toContain('then')
     expect(
       [...(row?.querySelectorAll('[data-slot="kbd"]') ?? [])].map((k) => k.textContent),
     ).toEqual(['G', 'N'])
+  })
+})
+
+function Rocket(props: { className?: string }): ReactElement {
+  return <svg {...props} data-icon="rocket" viewBox="0 0 16 16" />
+}
+const OPS: ListItems = [
+  {
+    label: 'Ops',
+    options: [
+      { value: 'deploy', label: 'Deploy now', icon: Rocket },
+      { value: 'rollback', label: 'Roll back', icon: Rocket },
+    ],
+  },
+]
+const COMMANDS = defineCommands({
+  deploy: { label: 'Deploy now', group: 'Ops', icon: Rocket, run: () => {} },
+  rollback: { label: 'Roll back', group: 'Ops', icon: Rocket, run: () => {} },
+})
+
+/** The Ops group as drawn: its header, then each row's label and the slots inside it. */
+const anatomy = (): string[] => {
+  const header = [...document.querySelectorAll('[data-slot="option-group-label"]')].find(
+    (el) => el.textContent === 'Ops',
+  )
+  const group = header?.closest('[data-slot="option-group"]')
+  const rows = [...(group?.querySelectorAll('[data-slot="option-row"]') ?? [])]
+  return [
+    `header ${header?.textContent ?? 'missing'}`,
+    ...rows.map((row) =>
+      [
+        row.querySelector('[data-slot="option-label"]')?.textContent,
+        row.querySelector('[data-icon="rocket"]') === null ? 'no icon' : 'icon',
+        // The palette selects nothing, so it draws no check slot; the rest of the row is shared.
+        ...[...row.querySelectorAll('[data-slot]')]
+          .map((el) => el.getAttribute('data-slot'))
+          .filter((slot) => slot !== 'option-check'),
+      ].join(' '),
+    ),
+  ]
+}
+
+describe('one list engine', () => {
+  test('Select, Combobox and the palette draw the same rows and group header from the same data', async () => {
+    await act(async () => {
+      render(<Select aria-label="Action" options={OPS} defaultOpen />)
+    })
+    const select = anatomy()
+    cleanup()
+    await act(async () => {
+      render(<Combobox aria-label="Action" options={OPS} defaultOpen />)
+    })
+    const combobox = anatomy()
+    cleanup()
+    await mountShell({ commands: COMMANDS })
+    press('k', { mod: true })
+    await waitFor(() => expect(anatomy().length).toBe(3))
+    const palette = anatomy()
+
+    expect(select).toEqual([
+      'header Ops',
+      'Deploy now icon option-text option-label',
+      'Roll back icon option-text option-label',
+    ])
+    expect(combobox).toEqual(select)
+    expect(palette).toEqual(select)
   })
 })

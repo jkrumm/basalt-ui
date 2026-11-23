@@ -1,10 +1,31 @@
+import { Combobox as BaseCombobox } from '@base-ui/react/combobox'
 import { Select as BaseSelect } from '@base-ui/react/select'
 import { cva } from 'class-variance-authority'
 import type { VariantProps } from 'class-variance-authority'
 import type { ComponentPropsWithoutRef, ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
+import { select } from '../core/messages/select'
+import { useMessages } from '../core/messages/use-messages'
 import { scopeClass, useControlScope, ControlScopeProvider } from '../core/control-scope'
-import type { IconComponent } from '../core/ports'
+import { OptionListBody, VIRTUAL_THRESHOLD, useListRoot } from '../core/list/engine'
+import { CheckMark, OptionRowBody, groupLabelVariants } from '../core/list/option-row'
+import type { RowSize } from '../core/list/option-row'
+import { flatOptions, isGroup } from '../core/list/options'
+import type { ListVirtual } from '../core/list/engine'
+import type { ListItems, ListOption, ListSource } from '../core/list/options'
+import { defaultRank } from '../core/list/rank'
+import type { RankFn } from '../core/list/rank'
+
+export type {
+  ListAvatar,
+  ListGroup,
+  ListItems,
+  ListLoader,
+  ListOption,
+  ListSource,
+} from '../core/list/options'
+export type { RankFn, Rankable } from '../core/list/rank'
+export type { ListVirtual } from '../core/list/engine'
 
 /**
  * The `Select` cva table: the box a trigger fills. A width class on `Select` sizes the box and the
@@ -47,13 +68,23 @@ export const selectContentVariants = cva(
 )
 
 /**
- * The `SelectItem` cva table: one option row. A coarse pointer lifts it to the 44 px floor.
+ * The `SelectItem` cva table: one option row, the same row `Combobox` and the command palette draw,
+ * at the control's height. A coarse pointer lifts it to the 44 px floor.
  *
  * @example
- * selectItemVariants()
+ * selectItemVariants({ size: 'sm' })
  */
 export const selectItemVariants = cva(
-  'relative flex w-full cursor-default items-center justify-between gap-2 rounded-chip px-2 py-1.5 text-sm outline-none select-none data-highlighted:bg-accent data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base',
+  'relative flex w-full cursor-default items-center rounded-chip text-left outline-none select-none data-highlighted:bg-accent data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base',
+  {
+    variants: {
+      size: {
+        sm: 'min-h-6 gap-1.5 px-1.5 py-0.5 text-xs',
+        md: 'min-h-ctl gap-2 px-2 py-1 text-sm',
+      },
+    },
+    defaultVariants: { size: 'md' },
+  },
 )
 
 /**
@@ -77,7 +108,12 @@ export const nativeSelectVariants = cva(
   },
 )
 
-/** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
+/**
+ * Every `data-slot` the parts form renders, in export order. Read by the generator for `SLOTS`. The
+ * `options` form draws the list engine's slots for its rows instead (`option-row`, `option-group`,
+ * `option-group-label`, `option-status`) and, when it searches, `select-search`; those are not
+ * parts.
+ */
 export const selectParts = [
   'select',
   'select-trigger',
@@ -96,15 +132,8 @@ type Layout = {
 /** The accessible name a select trigger must carry: a label, or the id of one. */
 export type SelectName = { 'aria-label': string } | { 'aria-labelledby': string }
 
-export type SelectOption<Value = string> = {
-  value: Value
-  label: ReactNode
-  disabled?: boolean
-  /** A second line under the label, in the open list only; the trigger shows the label. */
-  description?: string
-  /** Drawn before the label, in the list and in the trigger. */
-  icon?: IconComponent
-}
+/** One choice: the shared `ListOption` (value, label, description, icon or avatar, keywords, hint). */
+export type SelectOption<Value = string> = ListOption<Value>
 
 type SelectRootProps<Value> = Omit<
   BaseSelect.Root.Props<Value, false>,
@@ -122,44 +151,51 @@ type SelectShared<Value> = SelectRootProps<Value> &
 export type SelectProps<Value = string> =
   | (SelectShared<Value> &
       SelectName & {
-        options: readonly SelectOption<Value>[]
+        /**
+         * Options and groups (`{ label, options }`). A loader `(query, { signal }) => Promise<...>`
+         * makes the select searchable and asks it for every query.
+         */
+        options: ListSource<Value>
         /** Shown in the trigger while no value is selected. */
         placeholder?: string
+        /**
+         * A search field at the top of the open list, ranked with `rank`. On by itself for a loader
+         * or more than 100 options, which also window the list.
+         */
+        searchable?: boolean
+        /** Orders and filters the options for the search text. Default `defaultRank`. */
+        rank?: RankFn<ListOption<Value>> | undefined
+        /** Shown when the search matches nothing. Default the message key `select.empty`. */
+        empty?: ReactNode
+        /**
+         * The windowing port of a searchable list: pass `VirtualList` from
+         * `basalt-ui/ui/virtual-list` and past 100 rows only the rows in view mount.
+         */
+        virtual?: ListVirtual | undefined
         items?: never
         children?: never
       })
   | (SelectShared<Value> & {
       options?: never
       placeholder?: never
+      searchable?: never
+      rank?: never
+      empty?: never
+      virtual?: never
       /** Label lookup for `SelectValue`, so the closed trigger shows a label before the popup has mounted. */
       items?: BaseSelect.Root.Props<Value, false>['items']
       children: ReactNode
     })
 
-/** The part of an option that shows its icon and label; its description joins only in the open list. */
-type OptionDisplay = Pick<SelectOption, 'label' | 'icon' | 'description'>
-
-function OptionContent({
-  option,
-  described,
-}: {
-  option: OptionDisplay
-  described: boolean
-}): ReactElement {
-  const { icon: Icon, label, description } = option
+/** The trigger's view of an option: its icon and label, never the description. */
+function TriggerLabel({ option }: { option: Pick<SelectOption, 'label' | 'icon'> }): ReactElement {
+  const { icon: Icon, label } = option
   return (
     <span className="flex min-w-0 items-center gap-2">
       {Icon !== undefined && (
         <Icon className="size-icon shrink-0 text-muted-foreground" aria-hidden="true" />
       )}
-      {described && description !== undefined ? (
-        <span className="flex min-w-0 flex-col">
-          <span>{label}</span>
-          <span className="text-xs text-muted-foreground">{description}</span>
-        </span>
-      ) : (
-        label
-      )}
+      <span className="truncate">{label}</span>
     </span>
   )
 }
@@ -184,9 +220,34 @@ function Chevron(): ReactElement {
 }
 
 /** The trigger's label for an option: its icon and label, never the description. */
-function triggerItem<Value>(option: SelectOption<Value>): SelectOption<Value> {
-  if (option.icon === undefined) return option
-  return { ...option, label: <OptionContent option={option} described={false} /> }
+function triggerItem<Value>(option: SelectOption<Value>): { value: Value; label: ReactNode } {
+  if (option.icon === undefined) return { value: option.value, label: option.label }
+  return { value: option.value, label: <TriggerLabel option={option} /> }
+}
+
+/** One option of the options form: the shared row, its label as the item text. */
+function SelectRow<Value>({
+  option,
+  size,
+}: {
+  option: SelectOption<Value>
+  size: RowSize
+}): ReactElement {
+  return (
+    <BaseSelect.Item
+      value={option.value}
+      disabled={option.disabled ?? false}
+      data-slot="option-row"
+      className={selectItemVariants({ size: size === 'sm' ? 'sm' : 'md' })}
+    >
+      <OptionRowBody
+        option={option}
+        size={size}
+        Text={BaseSelect.ItemText}
+        check={<BaseSelect.ItemIndicator render={<CheckMark />} />}
+      />
+    </BaseSelect.Item>
+  )
 }
 
 /**
@@ -205,46 +266,217 @@ function triggerItem<Value>(option: SelectOption<Value>): SelectOption<Value> {
  * <Select aria-label="Stage" options={[{ value: 'a', label: 'Alpha' }, { value: 'b', label: 'Beta' }]} value={v} onValueChange={setV} />
  */
 export function Select<Value = string>(props: SelectProps<Value>): ReactElement {
-  const { className, size, options, placeholder, children, items, ...rest } = props
+  const {
+    className,
+    size,
+    options,
+    placeholder,
+    children,
+    items,
+    searchable,
+    rank,
+    empty,
+    virtual,
+    ...rest
+  } = props
   const scope = useControlScope()
   const {
     'aria-label': label,
     'aria-labelledby': labelledBy,
     ...root
   } = rest as SelectRootProps<Value> & Partial<{ 'aria-label': string; 'aria-labelledby': string }>
+  const name =
+    label !== undefined ? { 'aria-label': label } : { 'aria-labelledby': labelledBy ?? '' }
+  const rowSize: RowSize = size ?? scope?.size ?? 'md'
+  const searches =
+    options !== undefined &&
+    (searchable === true ||
+      typeof options === 'function' ||
+      flatOptions(options).length > VIRTUAL_THRESHOLD)
+
+  if (options !== undefined && searches) {
+    return (
+      <div data-slot="select" className={cn(selectVariants(), scopeClass(scope), className)}>
+        <SearchableSelect
+          {...(root as SearchRootProps)}
+          naming={name}
+          options={options as ListSource<unknown>}
+          rank={(rank ?? defaultRank) as RankFn<ListOption<unknown>>}
+          size={size ?? scope?.size}
+          rowSize={rowSize}
+          placeholder={placeholder}
+          empty={empty}
+          port={virtual}
+        />
+      </div>
+    )
+  }
+  const flat = options === undefined ? undefined : flatOptions(options as ListItems<Value>)
   return (
     <div data-slot="select" className={cn(selectVariants(), scopeClass(scope), className)}>
       <BaseSelect.Root<Value, false>
         {...root}
-        items={options === undefined ? items : options.map(triggerItem)}
+        items={flat === undefined ? items : flat.map(triggerItem)}
       >
-        {options === undefined ? (
+        {options === undefined || typeof options === 'function' ? (
           children
         ) : (
           <>
-            <SelectTrigger
-              size={size}
-              {...(label !== undefined
-                ? { 'aria-label': label }
-                : { 'aria-labelledby': labelledBy ?? '' })}
-            >
+            <SelectTrigger size={size} {...name}>
               <SelectValue {...(placeholder !== undefined && { placeholder })} />
             </SelectTrigger>
             <SelectContent>
-              {options.map((o) => (
-                <SelectItem key={String(o.value)} value={o.value} disabled={o.disabled ?? false}>
-                  {o.icon === undefined && o.description === undefined ? (
-                    o.label
-                  ) : (
-                    <OptionContent option={o} described />
-                  )}
-                </SelectItem>
-              ))}
+              {options.map((entry, at) =>
+                isGroup(entry) ? (
+                  <BaseSelect.Group key={`group:${at}`} data-slot="option-group">
+                    <BaseSelect.GroupLabel
+                      data-slot="option-group-label"
+                      className={groupLabelVariants({ size: rowSize })}
+                    >
+                      {entry.label}
+                    </BaseSelect.GroupLabel>
+                    {entry.options.map((option) => (
+                      <SelectRow key={String(option.value)} option={option} size={rowSize} />
+                    ))}
+                  </BaseSelect.Group>
+                ) : (
+                  <SelectRow key={String(entry.value)} option={entry} size={rowSize} />
+                ),
+              )}
             </SelectContent>
           </>
         )}
       </BaseSelect.Root>
     </div>
+  )
+}
+
+/** The root props a searchable select forwards to Base UI's Combobox. */
+type SearchRootProps = Pick<
+  BaseSelect.Root.Props<unknown, false>,
+  | 'value'
+  | 'defaultValue'
+  | 'onValueChange'
+  | 'open'
+  | 'defaultOpen'
+  | 'onOpenChange'
+  | 'disabled'
+  | 'readOnly'
+  | 'required'
+  | 'name'
+  | 'id'
+  | 'isItemEqualToValue'
+>
+
+/**
+ * A select with a search field: Base UI's Combobox with the input inside the popup, a trigger drawn
+ * as the select's own, and the engine's rows (windowed past 100 when `virtual` is given).
+ */
+function SearchableSelect({
+  naming: label,
+  options,
+  rank,
+  size,
+  rowSize,
+  placeholder,
+  empty,
+  port,
+  value,
+  defaultValue,
+  onValueChange,
+  open,
+  defaultOpen,
+  onOpenChange,
+  ...root
+}: SearchRootProps & {
+  port: ListVirtual | undefined
+  naming: { 'aria-label': string } | { 'aria-labelledby': string }
+  options: ListSource<unknown>
+  rank: RankFn<ListOption<unknown>>
+  size: 'md' | 'sm' | null | undefined
+  rowSize: RowSize
+  placeholder: string | undefined
+  empty: ReactNode
+}): ReactElement {
+  const t = useMessages(select)
+  const {
+    list,
+    highlight,
+    selectedIndex,
+    virtual,
+    root: engine,
+  } = useListRoot({
+    options,
+    rank,
+    value,
+    defaultValue,
+    onValueChange,
+    open,
+    defaultOpen,
+    onOpenChange,
+    searchInPopup: true,
+    virtual: port,
+  })
+  const inputName = 'aria-label' in label ? label['aria-label'] : undefined
+  return (
+    <BaseCombobox.Root<unknown, false>
+      {...(root as Omit<BaseCombobox.Root.Props<unknown, false>, 'items'>)}
+      {...(engine as Omit<typeof engine, 'multiple'>)}
+      autoHighlight
+    >
+      <BaseCombobox.Trigger
+        {...label}
+        data-slot="select-trigger"
+        className={selectTriggerVariants({ size })}
+      >
+        <BaseCombobox.Value>
+          {(selected: unknown) =>
+            selected === null || selected === undefined ? (
+              <span className="truncate text-faint">{placeholder}</span>
+            ) : (
+              <TriggerLabel option={list.find(selected) ?? { label: list.textOf(selected) }} />
+            )
+          }
+        </BaseCombobox.Value>
+        <Chevron />
+      </BaseCombobox.Trigger>
+      <ControlScopeProvider value={null}>
+        <BaseCombobox.Portal>
+          <BaseCombobox.Positioner sideOffset={4} className="z-50 outline-none">
+            <BaseCombobox.Popup
+              data-slot="select-content"
+              className={cn(
+                selectContentVariants(),
+                'relative',
+                virtual !== undefined && 'overflow-hidden',
+              )}
+            >
+              <BaseCombobox.Input
+                {...(inputName !== undefined
+                  ? { 'aria-label': inputName }
+                  : {
+                      'aria-labelledby': (label as { 'aria-labelledby': string })[
+                        'aria-labelledby'
+                      ],
+                    })}
+                data-slot="select-search"
+                placeholder={t('select.search')}
+                className="mb-1 h-ctl w-full rounded-chip border border-input bg-background px-2 text-sm text-foreground focus-ring placeholder:text-faint pointer-coarse:min-h-11 pointer-coarse:text-base"
+              />
+              <OptionListBody
+                list={list}
+                size={rowSize}
+                kind="combobox"
+                highlight={highlight}
+                virtual={virtual}
+                empty={empty}
+                selectedIndex={selectedIndex}
+              />
+            </BaseCombobox.Popup>
+          </BaseCombobox.Positioner>
+        </BaseCombobox.Portal>
+      </ControlScopeProvider>
+    </BaseCombobox.Root>
   )
 }
 
@@ -331,7 +563,9 @@ export function SelectContent({
   )
 }
 
-export type SelectItemProps = Omit<BaseSelect.Item.Props, 'className'> & Layout
+export type SelectItemProps = Omit<BaseSelect.Item.Props, 'className'> &
+  Layout &
+  VariantProps<typeof selectItemVariants>
 
 /**
  * One option. The selected one carries a check.
@@ -339,25 +573,15 @@ export type SelectItemProps = Omit<BaseSelect.Item.Props, 'className'> & Layout
  * @example
  * <SelectItem value="a">Alpha</SelectItem>
  */
-export function SelectItem({ className, children, ...props }: SelectItemProps): ReactElement {
+export function SelectItem({ size, className, children, ...props }: SelectItemProps): ReactElement {
   return (
     <BaseSelect.Item
       {...props}
       data-slot="select-item"
-      className={cn(selectItemVariants(), className)}
+      className={cn(selectItemVariants({ size }), className)}
     >
-      <BaseSelect.ItemText className="truncate">{children}</BaseSelect.ItemText>
-      <BaseSelect.ItemIndicator>
-        <svg viewBox="0 0 16 16" className="size-icon" fill="none" aria-hidden="true">
-          <path
-            d="M3.5 8.5l3 3 6-7"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </BaseSelect.ItemIndicator>
+      <BaseSelect.ItemText className="min-w-0 flex-1 truncate">{children}</BaseSelect.ItemText>
+      <BaseSelect.ItemIndicator render={<CheckMark />} />
     </BaseSelect.Item>
   )
 }
@@ -382,7 +606,7 @@ export function SelectGroup({
 }: SelectGroupProps): ReactElement {
   return (
     <BaseSelect.Group {...props} data-slot="select-group" className={className}>
-      <BaseSelect.GroupLabel className="px-2 py-1.5 text-xs text-muted-foreground">
+      <BaseSelect.GroupLabel className={groupLabelVariants({ size: 'md' })}>
         {label}
       </BaseSelect.GroupLabel>
       {children}

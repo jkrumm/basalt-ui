@@ -75,7 +75,8 @@ export const rows: readonly RowDef[] = [
     // 143900 -> 144400 (Issue 2940): 144069 B measured; the Dialog sizes, header actions and wash backdrop.
     // 144400 -> 146600 (Issue 2939): 146457 B measured; the panel anatomy the Dock and the aside draw and the Dock's dragged width.
     // 146600 -> 161800 (Issue 3106): 161405 B measured; the workspace switcher (menu radios, avatar), the Favourites section (`SortableList`) and the rail's width handle.
-    ceiling: 161800,
+    // 161800 -> 169000 (Issue 3102): 168504 B measured; the palette draws its rows and group headers through the list engine.
+    ceiling: 169000,
     measure: () => measureSource(reExportAll({ shell: 'shell/index' })),
   },
   {
@@ -87,7 +88,8 @@ export const rows: readonly RowDef[] = [
     // this build does not, so the seed is the measurement and the 2.0 KB is the target it ratchets toward.
     // 30983 B with the hotkeys library, which only the palette binds through (Issue 2570).
     // 31500 -> 31700 (Issue 3106): 31514 B measured; the shell it is measured over grew.
-    ceiling: 31700,
+    // 31700 -> 39200 (Issue 3102): 38670 B measured; the list engine's rows, group headers and state rows.
+    ceiling: 39200,
     measure: async () =>
       (await measureSource(`${SHELL_WITHOUT_PALETTE}\n${PALETTE}`)) -
       (await measureSource(SHELL_WITHOUT_PALETTE)),
@@ -105,6 +107,13 @@ export const rows: readonly RowDef[] = [
 
 export const raises: Raises = {
   'shell-subpath': [
+    {
+      from: 161800,
+      to: 169000,
+      consumer:
+        'one list engine behind Select, Combobox and the command palette (plan row bench-list-engine, Issue 3102): groups as data, the rich option row with an avatar, a loader with loading, empty and error rows, a create row, and a searchable Select on Base UI Combobox; the mention list and the model picker of bench-chat-parts draw it',
+      repo: 'basalt-ui',
+    },
     {
       from: 146600,
       to: 161800,
@@ -149,6 +158,13 @@ export const raises: Raises = {
     },
   ],
   'shell-palette-marginal': [
+    {
+      from: 31700,
+      to: 39200,
+      consumer:
+        'one list engine behind Select, Combobox and the command palette (plan row bench-list-engine, Issue 3102): groups as data, the rich option row with an avatar, a loader with loading, empty and error rows, a create row, and a searchable Select on Base UI Combobox; the mention list and the model picker of bench-chat-parts draw it',
+      repo: 'basalt-ui',
+    },
     {
       from: 31500,
       to: 31700,

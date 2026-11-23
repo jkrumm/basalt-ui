@@ -30,12 +30,13 @@ out is a spacer, a `div` or (with `spacer="tr"`) a table row, so the rows stay r
 the `VirtualLike` port of `src/core/ports.ts`.
 
 ```ts
-VirtualList({ className, count, estimateSize, getItemKey, keepIndex, overscan, initialHeight, spacer, columns, head, tableProps, bodyProps, children, ...props }: VirtualListProps): ReactElement
+VirtualList({ className, count, estimateSize, getItemKey, keepIndex, revealIndex, overscan, initialHeight, spacer, columns, head, tableProps, bodyProps, children, ...props }: VirtualListProps): ReactElement
   className?: string  // Layout and the bound that makes it scroll (`max-h-96`, `flex-1`)
   count: number  // How many rows there are, windowed or not
   estimateSize: (index: number) => number  // The height of row `index` in px
   getItemKey: (index: number) => string | number  // The stable id of row `index` (its record id), never the index: a prepend keeps every row
   keepIndex?: number  // A row that stays rendered however far it scrolls (the focused one)
+  revealIndex?: number  // A row scrolled into view (nearest edge) whenever this index changes: the row a key moved to
   overscan?: number  // Rows rendered beyond the viewport on each side
   initialHeight?: number  // The scroller's height in px until it is measured: the server render and the first client render window the rows for this height, so a static page carries the first rows
   spacer?: "div" | "tr"  // What fills the space of the rows that are not rendered: `div` (the default) for a list of blocks, `tr` for table rows, which wraps the rows in a `<table><tbody>` (`tableProps` and `bodyProps` set their attributes)

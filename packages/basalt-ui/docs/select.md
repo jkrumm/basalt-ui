@@ -27,8 +27,12 @@ Select<Value = string>(props: SelectProps<Value>): ReactElement
   className?: string  // Layout only (`w-full`, `w-40`, `flex-1`)
   size?: "sm" | "md" | null
   aria-label: string
-  options?: readonly SelectOption<Value>[]  [with aria-label | aria-labelledby]
+  options?: ListSource<Value>  [with aria-label | aria-labelledby]  // Options and groups (`{ label, options }`)
   placeholder?: string  [with aria-label | aria-labelledby]  // Shown in the trigger while no value is selected
+  searchable?: boolean  [with aria-label | aria-labelledby]  // A search field at the top of the open list, ranked with `rank`
+  rank?: RankFn<ListOption<Value>>  [with aria-label | aria-labelledby]  // Orders and filters the options for the search text
+  empty?: ReactNode  [with aria-label | aria-labelledby]  // Shown when the search matches nothing
+  virtual?: ListVirtual  [with aria-label | aria-labelledby]  // The windowing port of a searchable list: pass `VirtualList` from `basalt-ui/ui/virtual-list` and past 100 rows only the rows in view mount
   items?: Record<string, ReactNode> | readonly { label: React.ReactNode; value: any; }[] | readonly Group<any>[]  [with children]  // Label lookup for `SelectValue`, so the closed trigger shows a label before the popup has mounted
   children?: ReactNode
   aria-labelledby: string
@@ -73,8 +77,9 @@ SelectContent({ className, container, children, ...props }: SelectContentProps):
 One option. The selected one carries a check.
 
 ```ts
-SelectItem({ className, children, ...props }: SelectItemProps): ReactElement
+SelectItem({ size, className, children, ...props }: SelectItemProps): ReactElement
   className?: string  // Layout only (`w-full`, `w-40`, `flex-1`)
+  size?: "sm" | "md" | null
 ```
 
 ### `SelectGroup`
@@ -123,7 +128,7 @@ No variant axes.
 
 Part `select-item`.
 
-No variant axes.
+- `size`: `sm`, `md` (default `md`)
 
 ## `nativeSelectVariants`
 

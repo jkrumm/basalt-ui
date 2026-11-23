@@ -96,6 +96,10 @@ props extend and `src/surfaces.ts` stays the SSOT for real subpaths.
 - **The root barrel does not re-export `./tokens` / `./charts`.** It keeps the arrow pointing one
   way, and it means a charts-only consumer never pulls the app layer in by importing the root.
 - `motion` is framework-agnostic, so `src/motion` is importable from both halves.
+- `src/core/list` is the one part of `src/core` on Base UI: the list engine `Select`, `Combobox` and the
+  palette share imports `@base-ui/react`, cva and `ui/avatar`, because an ejected seed reaches
+  shared code only through `../core/<path>`. The exception is declared in `docs/v3/ARCHITECTURE.md`
+  § 1; no other `src/core` module takes a peer but react.
 - `./controls` resolves with only its own peers: `check-dist-layering.mjs` walks the built graph and
   `pack-test.sh` renders one with every other peer absent.
 

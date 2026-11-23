@@ -1,7 +1,7 @@
 import { defaultRangeExtractor, useVirtualizer } from '@tanstack/react-virtual'
 import type { Range } from '@tanstack/react-virtual'
 import { cva } from 'class-variance-authority'
-import { Fragment, useRef } from 'react'
+import { Fragment, useEffect, useRef } from 'react'
 import type { ComponentProps, ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
 import type { VirtualItem } from '../core/ports'
@@ -48,6 +48,11 @@ export type VirtualListProps = Omit<ComponentProps<'div'>, 'className' | 'childr
   getItemKey(index: number): string | number
   /** A row that stays rendered however far it scrolls (the focused one). */
   keepIndex?: number | undefined
+  /**
+   * A row scrolled into view (nearest edge) whenever this index changes: the row a key moved to.
+   * Pair it with `keepIndex` so the row is mounted while it is out of view.
+   */
+  revealIndex?: number | undefined
   /** Rows rendered beyond the viewport on each side. Defaults to 6. */
   overscan?: number | undefined
   /**
@@ -111,6 +116,7 @@ export function VirtualList({
   estimateSize,
   getItemKey,
   keepIndex,
+  revealIndex,
   overscan = DEFAULT_OVERSCAN,
   initialHeight = DEFAULT_INITIAL_HEIGHT,
   spacer = 'div',
@@ -133,6 +139,10 @@ export function VirtualList({
     initialRect: { width: 0, height: initialHeight },
     rangeExtractor: withKept(keepIndex, count),
   })
+  useEffect(() => {
+    if (revealIndex === undefined || revealIndex < 0 || revealIndex >= count) return
+    virtualizer.scrollToIndex(revealIndex, { align: 'auto' })
+  }, [revealIndex, count, virtualizer])
   const total = virtualizer.getTotalSize()
   const items: VirtualItem[] = virtualizer.getVirtualItems().map(({ index, key, start, size }) => ({
     index,

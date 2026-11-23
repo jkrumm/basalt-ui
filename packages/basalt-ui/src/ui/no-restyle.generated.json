@@ -134,7 +134,7 @@
       "pattern": "^ComboboxItem$",
       "allow": ["layout"],
       "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
-      "message": "ComboboxItem owns its height and display: eject it (basalt-ui eject combobox) to change them."
+      "message": "ComboboxItem owns its height and display: use size (sm, md, lg), or eject it (basalt-ui eject combobox)."
     },
     {
       "module": "combobox",
@@ -454,7 +454,7 @@
       "pattern": "^SelectItem$",
       "allow": ["layout"],
       "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
-      "message": "SelectItem owns its height and display: eject it (basalt-ui eject select) to change them."
+      "message": "SelectItem owns its height and display: use size (sm, md), or eject it (basalt-ui eject select)."
     },
     {
       "module": "select",

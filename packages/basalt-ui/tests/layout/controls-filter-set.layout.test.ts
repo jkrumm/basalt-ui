@@ -285,9 +285,9 @@ layout('FilterSet', () => {
         await page.raw.click(
           '[data-slot="sheet-content"] [data-slot="select-trigger"][aria-label="Subscription tier"], [data-slot="popover-content"] [data-slot="select-trigger"][aria-label="Subscription tier"]',
         )
-        await page.raw.waitForSelector('[data-slot="select-item"]')
+        await page.raw.waitForSelector('[data-slot="option-row"]')
         const items = await page.raw.evaluate(() =>
-          [...document.querySelectorAll<HTMLElement>('[data-slot="select-item"]')].map((el) => ({
+          [...document.querySelectorAll<HTMLElement>('[data-slot="option-row"]')].map((el) => ({
             text: el.textContent,
             disabled: el.hasAttribute('data-disabled'),
           })),
@@ -394,8 +394,8 @@ layout('FilterSet', () => {
 
         // A nested portal must not read as an outside click: pick an option, the panel stays.
         await page.raw.click('[data-slot="filter-fold"] [data-slot="select-trigger"]')
-        await page.raw.waitForSelector('[data-slot="select-item"]')
-        await page.raw.click('[data-slot="select-item"]:nth-child(2)')
+        await page.raw.waitForSelector('[data-slot="option-row"]')
+        await page.raw.click('[data-slot="option-row"]:nth-child(2)')
         await page.settle()
         expect(await page.count('[data-slot="filter-fold"]')).toBe(1)
       })
