@@ -202,6 +202,22 @@ describe('detectFindings', () => {
     })
     expect(rules(ok)).toEqual([])
   })
+  test('craft-1/nested-radius-step: a path-equal sibling is not the parent; the DOM index decides', () => {
+    const sibling = { path: 'div.x', radius: 8, padding: SIDES, parent: null }
+    const child = { path: 'div.x > div.y', radius: 8, padding: SIDES, parent: null }
+    expect(rules(metrics({ anchors: [anchor({ radius: 12, nested: [sibling, child] })] }))).toEqual(
+      [],
+    )
+  })
+  test('craft-1/nested-radius-step: a nested surface is checked against the parent its DOM index names', () => {
+    const nested = [
+      { path: 'div.a', radius: 8, padding: SIDES, parent: null },
+      { path: 'div.b > div.c', radius: 8, padding: SIDES, parent: 0 },
+    ]
+    expect(rules(metrics({ anchors: [anchor({ radius: 12, nested })] }))).toEqual([
+      'craft-1/nested-radius-step',
+    ])
+  })
   test('craft-1/scale-error when the theme scale was not read', () => {
     expect(rules(metrics({ scaleError: 'no styles' }))).toEqual(['craft-1/scale-error'])
     expect(rules(metrics({ scale: [] }))).toEqual(['craft-1/scale-error'])

@@ -9,7 +9,12 @@ import type { Measurement } from './types'
 export type RawRadius = { value: string; width: number; height: number }
 export type Reading = Omit<Measurement, 'radius' | 'nested'> & {
   radius: RawRadius
-  nested: { path: string; radius: RawRadius; padding: Measurement['padding'] }[]
+  nested: {
+    path: string
+    parent: number | null
+    radius: RawRadius
+    padding: Measurement['padding']
+  }[]
 }
 
 /**
@@ -78,6 +83,16 @@ export function measureAnchor(root: Element): Reading {
   const fontSizes = new Set<number>()
   const painted: [number, number][] = []
   const nested: Reading['nested'] = []
+  // A nested surface's index in `nested`, by element: its ancestors come first in document order.
+  const at = new Map<Element, number>()
+  // The nearest ancestor that is itself a nested surface (null: it sits on the anchor).
+  const parentOf = (el: Element): number | null => {
+    for (let n = el.parentElement; n && n !== root; n = n.parentElement) {
+      const i = at.get(n)
+      if (i !== undefined) return i
+    }
+    return null
+  }
   const small: string[] = []
   const words: { el: Element; r: DOMRect }[] = []
   const control =
@@ -93,8 +108,10 @@ export function measureAnchor(root: Element): Reading {
     // is the mark's own shape, so it is neither stepped against its parent nor held to the radius scale.
     const mark = r.width < 16 && r.height < 16
     if (el !== root && (hasBg || hasBorder) && !mark && nested.length < 60) {
+      at.set(el, nested.length)
       nested.push({
         path: pathOf(el),
+        parent: parentOf(el),
         radius: { value: s.borderTopLeftRadius, width: px(r.width), height: px(r.height) },
         padding: sides(s),
       })

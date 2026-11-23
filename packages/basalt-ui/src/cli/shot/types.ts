@@ -67,7 +67,8 @@ export type Measurement = {
   radius: number | 'full'
   borderWidth: number
   fontSizes: number[]
-  nested: { path: string; radius: number | 'full'; padding: Sides }[]
+  /** Each nested surface; `parent` is the index of its nearest nested ancestor (null: it sits on the anchor). Absent in metrics written before the index. */
+  nested: { path: string; radius: number | 'full'; padding: Sides; parent?: number | null }[]
   emptyRatio: number
   /** Controls under the hit floor, as `path WxH`. */
   small?: string[]

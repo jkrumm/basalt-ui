@@ -94,6 +94,18 @@ function offScale(value: number | 'full', steps: readonly number[]): number | nu
 const stepsText = (steps: Record<string, number>): string =>
   [...new Set(Object.values(steps))].sort((a, b) => a - b).join(', ')
 
+/** A nested surface's nearest nested ancestor: by its DOM index, or (metrics without the index) the longest path prefix. */
+function nestedParent(
+  nested: AnchorMetrics['nested'],
+  child: AnchorMetrics['nested'][number],
+): AnchorMetrics['nested'][number] | undefined {
+  if (child.parent === null) return undefined
+  if (child.parent !== undefined) return nested[child.parent]
+  return nested
+    .filter((n) => n !== child && child.path.startsWith(`${n.path} > `))
+    .sort((x, y) => y.path.length - x.path.length)[0]
+}
+
 /** The findings of one measured anchor in one scheme × viewport. */
 function anchorFindings(
   a: AnchorMetrics,
@@ -138,11 +150,9 @@ function anchorFindings(
       )
     }
   }
-  // Each nested surface against its nearest painted ancestor (the longest path prefix), else the anchor.
+  // Each nested surface against its nearest painted ancestor (by DOM index), else the anchor.
   for (const child of a.nested) {
-    const parent = a.nested
-      .filter((n) => n !== child && child.path.startsWith(`${n.path} > `))
-      .sort((x, y) => y.path.length - x.path.length)[0]
+    const parent = nestedParent(a.nested, child)
     const parentRadius = parent ? parent.radius : a.radius
     if (typeof parentRadius !== 'number' || typeof child.radius !== 'number') continue
     if (parentRadius === 0 || child.radius === 0) continue
