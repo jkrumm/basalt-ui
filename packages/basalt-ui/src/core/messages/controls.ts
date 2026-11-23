@@ -85,5 +85,6 @@ export const controls = {
   'controls.appearance.flush': 'Edge to edge',
   'controls.appearance.flushHelp': 'The page meets the window. Phones always do.',
   'controls.appearance.reset': 'Reset appearance',
-  'controls.appearance.accentName': (_f, name) => name.charAt(0).toUpperCase() + name.slice(1),
+  'controls.appearance.accentName': (_f, name) =>
+    String(name).charAt(0).toUpperCase() + String(name).slice(1),
 } satisfies Partial<BasaltMessages>
