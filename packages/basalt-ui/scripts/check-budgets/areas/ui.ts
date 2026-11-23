@@ -115,7 +115,8 @@ export const rows: readonly RowDef[] = [
     // 149718 B measured. Informative target 118 KB.
     // 157500 -> 157700 (Issue 2939): 157574 B measured; the Sheet draws the panel header, its footer band and width handle.
     // 157700 -> 158600 (Issue 2996): 158482 B measured; the page's Checkbox and RadioGroup also hold the card variant over `ChoiceCard`.
-    ceiling: 158600,
+    // 158600 -> 158800 (Issue 3109): 158756 B measured; the Tabs trigger draws a count, an attention tone and a tone dot, which the page's Tabs carry.
+    ceiling: 158800,
     measure: () => measureSource(page([...TEN, ...REST_OF_25])),
   },
   ...Object.entries(PER_PRIMITIVE).map(([name, ceiling], i): RowDef => ({
@@ -138,6 +139,13 @@ export const rows: readonly RowDef[] = [
 
 export const raises: Raises = {
   'ui-page-25': [
+    {
+      from: 158600,
+      to: 158800,
+      consumer:
+        'counted tabs (plan row bench-record-parts, Issue 3109): `TabsTrigger` takes a count, an attention tone and a tone dot, the badge PageBar tabs draw, which the 25-part page bundles',
+      repo: 'basalt-ui',
+    },
     {
       from: 157700,
       to: 158600,

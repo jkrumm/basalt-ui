@@ -34,15 +34,9 @@ export type { Delta, Phase, QueryStateLike, Status, Tone, Verdict } from '../cor
 export type { StatGroupProps } from './stat-group'
 export type { StatCellProps } from './stat-cell'
 export type { BarListProps } from './bar-list'
-export type { EventListProps, EventListItem, EventActor } from './event-list'
-export type { Period, PeriodKind, PeriodOptions } from './event-list-model'
+export type { EventListProps } from './event-list'
 export type { RowListProps } from './row-list'
-export type {
-  RelationshipCardProps,
-  RelationshipFact,
-  RelationshipFacts,
-  RelationshipStrength,
-} from './relationship-card'
+export type { RelationshipCardProps } from './relationship-card'
 export type { StepRailProps, StepRailRow } from './step-rail'
 export type { ChainViewProps, ChainFace } from './chain-view'
 export type { FlowCanvasProps } from './flow-canvas'
