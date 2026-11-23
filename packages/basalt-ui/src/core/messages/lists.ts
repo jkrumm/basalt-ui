@@ -11,6 +11,10 @@ export type ListsMessages = Record<
   | 'lists.noEvents'
   | 'lists.today'
   | 'lists.yesterday'
+  | 'lists.thisWeek'
+  | 'lists.earlierThisMonth'
+  | 'lists.expandBody'
+  | 'lists.collapseBody'
   | 'lists.stepFailed'
   | 'lists.stepColumn'
   | 'lists.durationColumn'
@@ -46,6 +50,10 @@ export const lists = {
   'lists.noEvents': 'Nothing has happened yet',
   'lists.today': 'Today',
   'lists.yesterday': 'Yesterday',
+  'lists.thisWeek': 'This week',
+  'lists.earlierThisMonth': 'Earlier this month',
+  'lists.expandBody': 'More',
+  'lists.collapseBody': 'Less',
   'lists.showMore': (f, n) => `Show more (${f.number(n)})`,
   'lists.rowsShown': (f, shown, total) => `${f.number(shown)} of ${f.number(total)} shown`,
   'lists.eventCount': (f, n) => `${f.number(n)} ${f.plural(n) === 'one' ? 'event' : 'events'}`,
