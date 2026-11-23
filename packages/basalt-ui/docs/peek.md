@@ -24,6 +24,7 @@ Peek(props: PeekProps): ReactElement | null
   icon?: IconComponent  // A glyph before the title, for what kind of record it is
   avatar?: AvatarEntry  // A face before the title, for a person or an object; wins over `icon`
   kind?: string  // The record kind (`issue`): its presentation, its side width and its window's size are remembered on the device per kind
+  defaultPresent?: "page" | "peek" | "window"  // How a kind opens until the reader picks another in `Open as`: a form that is written in one go (a mail composer) opens as a `window`
   fullPage?: string | NavTarget  // The record's own page
   favourite?: FavouriteInput  // Draws a star in the header that adds the record to the shell rail's Favourites; nothing outside an `AppShell` or on a phone, where the rail is not drawn
   onClose: () => void  // Escape, the close button and Back: the caller decides how the address changes (`usePeek().close`)

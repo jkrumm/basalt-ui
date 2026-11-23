@@ -13,7 +13,7 @@ A conversation in a reader: one bordered column of messages, oldest first. A mes
 open is one row of face, sender, a line of its text and its day; opening one closes the one that
 was open, and the latest is open at first. The open message shows the sender's address, who it
 went to, the full time, the body with its line breaks and the attachments as file cards with a
-download. `reply` sits at the foot, under the last message: the reply buttons, or an inline
+download. `reply` sits under the thread's card: the reply buttons, or an inline
 composer once the reader replies.
 
 ## Signature
@@ -23,7 +23,7 @@ MailThread({ label, messages, defaultOpen, reply }: MailThreadProps): ReactEleme
   label: string  // Names the thread for assistive tech: the subject
   messages: readonly MailMessage[]  // Oldest first
   defaultOpen?: string  // The message open at first
-  reply?: ReactNode  // The reply at the thread's foot: the reply buttons, or an open composer
+  reply?: ReactNode  // The reply under the thread's card: the reply buttons, or an open composer
 ```
 
 ## Example
