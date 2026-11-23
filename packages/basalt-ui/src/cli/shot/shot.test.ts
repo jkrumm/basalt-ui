@@ -1175,6 +1175,7 @@ describe('radiusReading', () => {
       nested: [
         {
           path: 'span',
+          parent: null,
           radius: { value: '6px', width: 100, height: 40 },
           padding: { top: 0, right: 0, bottom: 0, left: 0 },
         },
