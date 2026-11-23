@@ -14,7 +14,10 @@
 import { linkOptions } from '@tanstack/react-router'
 import { defineNav } from 'basalt-ui/router'
 import {
+  Boxes,
   ChartColumn as Chart,
+  Factory,
+  Notebook,
   FlaskConical as Flask,
   Image,
   LayoutDashboard as Dashboard,
@@ -66,6 +69,41 @@ export const NAV = defineNav({
           icon: Dashboard,
           mobile: 'more',
           link: linkOptions({ to: '/overview' }),
+        },
+      ],
+    },
+    // The reference pages: one inventory domain built only from shipped parts, one page per archetype.
+    {
+      id: 'reference',
+      label: 'Reference',
+      items: [
+        {
+          id: 'ref-parts',
+          label: 'Parts',
+          icon: Boxes,
+          mobile: 'more',
+          link: linkOptions({ to: '/ref/parts' }),
+        },
+        {
+          id: 'ref-notes',
+          label: 'Notes',
+          icon: Notebook,
+          mobile: 'more',
+          link: linkOptions({ to: '/ref/notes' }),
+        },
+        {
+          id: 'ref-supplier',
+          label: 'Supplier',
+          icon: Factory,
+          mobile: 'more',
+          link: linkOptions({ to: '/ref/suppliers/$id', params: { id: 'sup-1' } }),
+        },
+        {
+          id: 'ref-settings',
+          label: 'Inventory settings',
+          icon: Sliders,
+          mobile: 'more',
+          link: linkOptions({ to: '/ref/settings' }),
         },
       ],
     },

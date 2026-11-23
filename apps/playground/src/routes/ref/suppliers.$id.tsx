@@ -1,0 +1,336 @@
+import { createFileRoute, linkOptions } from '@tanstack/react-router'
+import { useFormat } from 'basalt-ui'
+import type { Format } from 'basalt-ui'
+import { useQuery } from '@tanstack/react-query'
+import { EventList } from 'basalt-ui/cards'
+import type { QueryStateLike } from 'basalt-ui/cards'
+import { shotState } from 'basalt-ui/data'
+import { EmptyState, Facts, Page, PageBar, Section } from 'basalt-ui/page'
+import { defineControls, field, navTarget } from 'basalt-ui/router'
+import { col, DataTable, useDataTable } from 'basalt-ui/table'
+import { Lozenge } from 'basalt-ui/ui/badge'
+import { Card } from 'basalt-ui/ui/card'
+import { EntityTitle } from 'basalt-ui/ui/entity'
+import {
+  Factory,
+  Mail,
+  Pencil,
+  Phone,
+  Plus,
+  StickyNote,
+  TriangleAlert,
+  Truck,
+  Users,
+} from 'lucide-react'
+import type { ReactElement } from 'react'
+import {
+  NOTE_TYPE_LABELS,
+  ORDER_LABELS,
+  ORDER_STATES,
+  ORDER_TONE,
+  RATING_LABELS,
+  RATING_TONE,
+  STOCK,
+  STOCK_LABELS,
+  STOCK_TONE,
+  TODAY,
+  supplierOf,
+  supplierRecordsQuery,
+} from '../../demo/ref-inventory'
+import type {
+  Note,
+  NoteType,
+  Order,
+  Part,
+  Supplier,
+  SupplierRecords,
+} from '../../demo/ref-inventory'
+import { NewOrderDialog } from './-new-order'
+
+const TABS = ['overview', 'orders', 'parts', 'notes'] as const
+
+/** The record's tab and the create flow are fields: a link opens either, Back walks the tabs. */
+const store = defineControls({
+  id: 'ref-supplier',
+  scope: 'page',
+  fields: {
+    tab: field
+      .enum(TABS, 'overview', { history: 'push' })
+      .labels({ overview: 'Overview', orders: 'Orders', parts: 'Parts', notes: 'Notes' }),
+    order: field.boolean(false),
+  },
+})
+
+export const Route = createFileRoute('/ref/suppliers/$id')({
+  staticData: { title: 'Supplier' },
+  validateSearch: store.validateSearch,
+  search: { middlewares: store.middlewares },
+  component: SupplierRoute,
+})
+
+const NOTE_ICONS: Record<NoteType, typeof Phone> = {
+  call: Phone,
+  meeting: Users,
+  quality: TriangleAlert,
+  email: Mail,
+  memo: StickyNote,
+}
+
+const percent = (share: number): string => `${Math.round(share * 100)} %`
+const isOpen = (o: Order): boolean => o.state !== 'received'
+
+const oc = col<Order>()
+const pc = col<Part>()
+const nc = col<Note>()
+
+type Related<T> = { rows: readonly T[] | undefined; phase: QueryStateLike }
+
+function OrdersTable({
+  rows,
+  phase,
+  id,
+  compact = false,
+}: Related<Order> & { id: string; compact?: boolean }): ReactElement {
+  const t = useDataTable<Order>({
+    id,
+    label: 'Purchase orders',
+    columns: [
+      oc.entity('number', { header: 'Order', mono: true }),
+      oc.status('state', {
+        header: 'State',
+        options: ORDER_STATES,
+        labels: ORDER_LABELS,
+        tone: (s) => ORDER_TONE[s],
+      }),
+      oc.countdown('due', { header: 'Due' }),
+      ...(compact
+        ? []
+        : [
+            oc.person('buyer', { header: 'Buyer' }),
+            oc.date('ordered', { header: 'Ordered', priority: 2 }),
+            oc.number('lines', { header: 'Lines', priority: 3 }),
+          ]),
+      oc.money('total', {
+        header: 'Total',
+        currency: 'EUR',
+        ...(compact ? {} : { footer: 'sum' as const }),
+      }),
+    ],
+    data: rows,
+    phase,
+    getRowId: (o) => o.id,
+    mode: { kind: 'client' },
+    now: TODAY,
+    empty: { cause: 'No open orders with this supplier. New order starts one.' },
+  })
+  return <DataTable table={t} />
+}
+
+function PartsTable({ rows, phase }: Related<Part>): ReactElement {
+  const t = useDataTable<Part>({
+    id: 'ref-supplier-parts',
+    label: 'Parts supplied',
+    columns: [
+      pc.entity('name', { header: 'Part', ref: (p) => p.sku }),
+      pc.status('stock', {
+        header: 'Stock',
+        options: STOCK,
+        labels: STOCK_LABELS,
+        tone: (s) => STOCK_TONE[s],
+      }),
+      pc.number('onHand', { header: 'On hand', unit: 'pcs' }),
+      pc.countdown('nextDelivery', { header: 'Next delivery' }),
+      pc.money('value', { header: 'Stock value', currency: 'EUR', footer: 'sum' }),
+    ],
+    data: rows,
+    phase,
+    getRowId: (p) => p.id,
+    mode: { kind: 'client' },
+    now: TODAY,
+  })
+  return <DataTable table={t} />
+}
+
+function NotesTable({ rows, phase }: Related<Note>): ReactElement {
+  const t = useDataTable<Note>({
+    id: 'ref-supplier-notes',
+    label: 'Notes',
+    columns: [
+      nc.title('title', { header: 'Note', type: (n) => n.type, icons: NOTE_ICONS }),
+      nc.text('body', { header: 'Preview', quiet: true }),
+      nc.person('author', { header: 'Author' }),
+      nc.relativeTime('updated', { header: 'Updated' }),
+    ],
+    data: rows,
+    phase,
+    getRowId: (n) => n.id,
+    mode: { kind: 'client' },
+    now: TODAY,
+  })
+  return <DataTable table={t} />
+}
+
+/** What happened with the supplier, newest first: orders placed and received, and notes written. */
+function activityOf(
+  f: Format,
+  supplier: Supplier,
+  orders: readonly Order[],
+  notes: readonly Note[],
+) {
+  const placed = orders.map((o) => ({
+    id: `${o.id}-placed`,
+    at: Date.parse(o.ordered) + 10 * 3_600_000,
+    actor: o.buyer,
+    title: `placed ${o.number}`,
+    body: `${o.lines} ${o.lines === 1 ? 'line' : 'lines'}, due ${f.date(Date.parse(o.due))}`,
+    icon: Plus,
+  }))
+  const received = orders
+    .filter((o) => o.state === 'received')
+    .map((o) => ({
+      id: `${o.id}-received`,
+      at: Date.parse(o.due) + 14 * 3_600_000,
+      actor: 'Goods in',
+      title: `received ${o.number}`,
+      icon: Truck,
+    }))
+  const written = notes.map((n) => ({
+    id: n.id,
+    at: Date.parse(n.updated),
+    actor: n.author,
+    title: n.title,
+    chips: [NOTE_TYPE_LABELS[n.type], n.part],
+    icon: NOTE_ICONS[n.type],
+  }))
+  return [...placed, ...received, ...written]
+    .filter((e) => e.at <= TODAY && e.id !== supplier.id)
+    .toSorted((a, b) => b.at - a.at)
+}
+
+function Overview({
+  supplier,
+  records,
+}: {
+  supplier: Supplier
+  records: QueryStateLike & { data?: SupplierRecords | undefined }
+}): ReactElement {
+  const f = useFormat()
+  const open = records.data?.orders.filter(isOpen)
+  return (
+    <div className="grid gap-4 @wide:grid-cols-3">
+      <div className="flex min-w-0 flex-col gap-4 @wide:col-span-2">
+        <Card>
+          <div className="flex flex-col gap-4">
+            <EntityTitle
+              size="lg"
+              title={supplier.name}
+              subtitle={`${supplier.city}, ${supplier.country} · ${supplier.domain}`}
+              avatar={{ shape: 'object', icon: Factory }}
+              tags={
+                <Lozenge tone={RATING_TONE[supplier.rating]}>
+                  {RATING_LABELS[supplier.rating]}
+                </Lozenge>
+              }
+            />
+            <Facts
+              rows={[
+                { label: 'Contact', value: `${supplier.contact}, ${supplier.contactRole}` },
+                { label: 'Email', value: supplier.email },
+                { label: 'Phone', value: supplier.phone },
+                { label: 'Quoted lead time', value: `${supplier.leadDays} days` },
+                { label: 'On time, 12 months', value: percent(supplier.onTime) },
+                { label: 'Payment terms', value: supplier.terms },
+                { label: 'Supplier since', value: f.date(Date.parse(supplier.since)) },
+                { label: 'Quoted currency', value: 'EUR' },
+              ]}
+            />
+          </div>
+        </Card>
+        <Section title="Open orders" summary="Placed and not yet received in full">
+          <OrdersTable rows={open} phase={records} id="ref-supplier-open" compact />
+        </Section>
+      </div>
+      <EventList
+        title="Activity"
+        phase={records}
+        items={
+          records.data === undefined
+            ? []
+            : activityOf(f, supplier, records.data.orders, records.data.notes)
+        }
+        bodyRows={10}
+        pageSize={12}
+        now={TODAY}
+      />
+    </div>
+  )
+}
+
+/**
+ * The reference record page: the supplier's identity and properties, tabs with counts over its
+ * related records, an activity feed, and New order, which opens the create flow over the page.
+ */
+function SupplierRoute(): ReactElement {
+  const { id } = Route.useParams()
+  const supplier = supplierOf(id)
+  const [tab] = store.field.tab.use()
+  const [ordering, setOrdering] = store.field.order.use()
+  const records = shotState(useQuery(supplierRecordsQuery(id)), {
+    empty: { orders: [], parts: [], notes: [] },
+  })
+  const related = records.data
+  const parent = { label: 'Parts', href: navTarget(linkOptions({ to: '/ref/parts' })) }
+  if (supplier === undefined) {
+    return (
+      <Page area="ref-supplier">
+        <PageBar title="Supplier" parent={parent} />
+        <EmptyState cause={`No supplier has the id ${id}.`} />
+      </Page>
+    )
+  }
+  return (
+    <Page area="ref-supplier">
+      <PageBar
+        title={supplier.name}
+        parent={parent}
+        tabs={{
+          state: store.field.tab,
+          label: 'Supplier',
+          badges:
+            related === undefined
+              ? {}
+              : {
+                  orders: { count: related.orders.length },
+                  parts: {
+                    count: related.parts.length,
+                    attention: related.parts.some((p) => p.stock === 'out'),
+                  },
+                  notes: { count: related.notes.length },
+                },
+        }}
+        actions={[
+          { id: 'email', label: 'Email contact', icon: Mail, onClick: () => undefined },
+          { id: 'edit', label: 'Edit', icon: Pencil, onClick: () => undefined },
+          {
+            id: 'order',
+            label: 'New order',
+            icon: Plus,
+            primary: true,
+            onClick: () => setOrdering(true),
+          },
+        ]}
+      />
+      {tab === 'overview' && <Overview supplier={supplier} records={records} />}
+      {tab === 'orders' && (
+        <OrdersTable rows={related?.orders} phase={records} id="ref-supplier-orders" />
+      )}
+      {tab === 'parts' && <PartsTable rows={related?.parts} phase={records} />}
+      {tab === 'notes' && <NotesTable rows={related?.notes} phase={records} />}
+      <NewOrderDialog
+        supplier={supplier}
+        open={ordering}
+        onOpenChange={(next) => (next ? setOrdering(true) : store.field.order.clear())}
+      />
+    </Page>
+  )
+}

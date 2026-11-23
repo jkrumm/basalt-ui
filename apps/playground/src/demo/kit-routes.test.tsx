@@ -241,3 +241,47 @@ describe('the routed recipes', () => {
     expect(screen.getByRole('img', { name: 'Momentum' })).toBeDefined()
   })
 })
+
+describe('the reference pages', () => {
+  test('the nav names one page per archetype, the record by its first supplier', () => {
+    expect(navPaths('reference')).toEqual([
+      '/ref/parts',
+      '/ref/notes',
+      '/ref/suppliers/$id',
+      '/ref/settings',
+    ])
+  })
+
+  test('list: the parts load into the grid under the saved views', async () => {
+    mount('/ref/parts')
+    expect(await screen.findByText('Hex bolt M8 x 40, A2 stainless')).toBeDefined()
+    expect(await screen.findByText('To reorder')).toBeDefined()
+  })
+
+  test('notes: a note named in the address opens beside the list', async () => {
+    mount('/ref/notes?note=note-3')
+    const titles = await screen.findAllByText('Shaft seals leaking at 3 bar')
+    expect(titles.length).toBeGreaterThan(1)
+  })
+
+  test('record: the overview shows the contact and the orders tab lists the orders', async () => {
+    mount('/ref/suppliers/sup-4')
+    expect(await screen.findByText('Lukas Gruber, Account manager')).toBeDefined()
+    cleanup()
+    mount('/ref/suppliers/sup-4?tab=orders')
+    expect((await screen.findAllByText(/^PO-2026-/)).length).toBeGreaterThan(0)
+  })
+
+  test('create flow: the new-order wizard opens on its first step', async () => {
+    mount('/ref/suppliers/sup-4?order=true')
+    expect(await screen.findByText('Who is the order for?')).toBeDefined()
+  })
+
+  test('settings: the matrix and the danger row sit in their sections', async () => {
+    mount('/ref/settings?section=notifications')
+    expect((await screen.findAllByText('Events and channels')).length).toBeGreaterThan(0)
+    cleanup()
+    mount('/ref/settings?section=workspace')
+    expect((await screen.findAllByText('Delete inventory')).length).toBeGreaterThan(0)
+  })
+})
