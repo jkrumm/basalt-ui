@@ -14,7 +14,7 @@ export const rows: readonly RowDef[] = [
     id: 'page-symbols',
     order: 440,
     label: 'public value symbols, ./page (exact, export-surface shard)',
-    ceiling: 25, // Issue 2995 (settings grammar): `SettingsLayout`; v3 dock: `Dock`; v3 peek: `Peek`
+    ceiling: 26, // Issue 2995 (settings grammar): `SettingsLayout`; v3 dock: `Dock`; v3 peek: `Peek`; Issue 3087: `PropertyList`
     measure: () => readSurface()['./page']?.length ?? 0,
   },
   {
@@ -35,13 +35,21 @@ export const rows: readonly RowDef[] = [
     // avatar lead), Peek's window (drag, eight edges, the minimised chip), its page presentation and Open as menu, the
     // width stores and the phone's bottom sheet.
     // 125700 -> 129000 (Issue 2938): 128756 B measured; the PageBar view row: the search box (`ui/input`), counted pill tabs, the layout toggle and the settings button.
-    ceiling: 129000,
+    // 129000 -> 132000 (Issue 3087): 131625 B measured; PageBar draws a record identity (`EntityTitle`, `Avatar`) and `PropertyList` edits a row in place (`Input`, `NativeSelect`).
+    ceiling: 132000,
     measure: () => measureSource(reExportAll({ page: 'page/index' })),
   },
 ]
 
 export const raises: Raises = {
   'page-subpath': [
+    {
+      from: 129000,
+      to: 132000,
+      consumer:
+        "the reference supplier record page (Issue 3087, apps/playground/src/routes/ref/suppliers.$id.tsx): the band carries the record's face, subtitle and tag (PageBar identity), and its contact, lead time and terms edit in place (PropertyList)",
+      repo: 'basalt-ui',
+    },
     {
       from: 125700,
       to: 129000,
@@ -114,6 +122,13 @@ export const raises: Raises = {
     },
   ],
   'page-symbols': [
+    {
+      from: 25,
+      to: 26,
+      consumer:
+        '`PropertyList` from `./page` (Issue 3087): the reference supplier record page (apps/playground/src/routes/ref/suppliers.$id.tsx) edits its contact, lead time and terms in place; the label and value rows were read-only Facts',
+      repo: 'basalt-ui',
+    },
     {
       from: 24,
       to: 25,
