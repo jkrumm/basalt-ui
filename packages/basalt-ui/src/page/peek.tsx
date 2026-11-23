@@ -58,7 +58,7 @@ export type PeekProps = {
   kind?: string
   /** The record's own page. Draws an `Open full page` link in the header; a plain click leaves the peek. */
   fullPage?: string | NavTarget
-  /** Draws a star in the header that adds the record to the shell rail's Favourites; nothing outside an `AppShell`. */
+  /** Draws a star in the header that adds the record to the shell rail's Favourites; nothing outside an `AppShell` or on a phone, where the rail is not drawn. */
   favourite?: FavouriteInput
   /** Escape, the close button and Back: the caller decides how the address changes (`usePeek().close`). */
   onClose: () => void

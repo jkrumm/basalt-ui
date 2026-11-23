@@ -31,7 +31,7 @@ export type DockProps = {
   tag?: string
   /** The record's own page. Draws an `Open full page` link in the header. */
   fullPage?: string | NavTarget
-  /** Draws a star in the header that adds the record to the shell rail's Favourites; nothing outside an `AppShell`. */
+  /** Draws a star in the header that adds the record to the shell rail's Favourites; nothing outside an `AppShell` or on a phone, where the rail is not drawn. */
   favourite?: FavouriteInput
   /** The close button and Escape inside the panel: the caller decides how the address changes (`usePeek().dock.close`). */
   onClose: () => void

@@ -95,9 +95,9 @@ function InAppLink({ href, onClick, ...rest }: LinkProps & { href: string }): Re
 }
 
 /**
- * The router `Link` as a `LinkComponent`: a `NavTarget` becomes a typed router link, a root-relative
- * string navigates through the router, any other string (an external URL, a mailto, a hash) stays a
- * plain anchor. The one cast to `ElementType` lives here: `Link` is generic over the registered route
+ * The router `Link` as a `LinkComponent`: a `NavTarget` becomes a typed router link, an in-app path
+ * (`isInAppPath`: root-relative, no backslash) navigates through the router, any other string (an
+ * external URL, a mailto, a hash) stays a plain anchor. The one cast to `ElementType` lives here: `Link` is generic over the registered route
  * tree, and a runtime `to` cannot be checked against it, because `navTarget` already did.
  */
 export function RouterLinkAdapter({ href, ...rest }: LinkProps): ReactNode {

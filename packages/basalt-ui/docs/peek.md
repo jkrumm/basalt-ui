@@ -25,7 +25,7 @@ Peek(props: PeekProps): ReactElement | null
   avatar?: AvatarEntry  // A face before the title, for a person or an object; wins over `icon`
   kind?: string  // The record kind (`issue`): its presentation, its side width and its window's size are remembered on the device per kind
   fullPage?: string | NavTarget  // The record's own page
-  favourite?: FavouriteInput  // Draws a star in the header that adds the record to the shell rail's Favourites; nothing outside an `AppShell`
+  favourite?: FavouriteInput  // Draws a star in the header that adds the record to the shell rail's Favourites; nothing outside an `AppShell` or on a phone, where the rail is not drawn
   onClose: () => void  // Escape, the close button and Back: the caller decides how the address changes (`usePeek().close`)
   onPin?: () => void  // Draws a button that moves the record into the shell's `Dock` (`usePeek().pin`)
   actions?: PanelActions  // The record's own actions, data like `PageBar` actions: the first two in the header, the rest in its More menu (a third alone stays inline)
