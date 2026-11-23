@@ -56,6 +56,11 @@ export type PeekProps = {
    * remembered on the device per kind. Default `record`.
    */
   kind?: string
+  /**
+   * How a kind opens until the reader picks another in `Open as`: a form that is written in one go
+   * (a mail composer) opens as a `window`. Default `peek`. The first `Peek` of a kind sets it.
+   */
+  defaultPresent?: 'peek' | 'window' | 'page'
   /** The record's own page. Draws an `Open full page` link in the header; a plain click leaves the peek. */
   fullPage?: string | NavTarget
   /** Draws a star in the header that adds the record to the shell rail's Favourites; nothing outside an `AppShell` or on a phone, where the rail is not drawn. */
@@ -255,6 +260,7 @@ function PeekPanel({
   icon,
   avatar,
   kind = 'record',
+  defaultPresent = 'peek',
   fullPage,
   favourite,
   onClose,
@@ -270,7 +276,7 @@ function PeekPanel({
   const labels = usePanelLabels()
   const slot = useContext(ShellOverlayContext)
   const node = useRef<HTMLElement | null>(null)
-  const [stored, setPresent] = presentationStore(kind).use()
+  const [stored, setPresent] = presentationStore(kind, defaultPresent).use()
   const [minimised, setMinimised] = useState(false)
   // Where the window was dragged to, so a restore from the chip brings it back there.
   const [placedAt, setPlacedAt] = useState<WindowRect | null>(null)

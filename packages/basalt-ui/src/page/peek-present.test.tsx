@@ -81,6 +81,29 @@ function opener(): HTMLButtonElement {
 }
 
 describe('Peek presentations', () => {
+  test('a kind with defaultPresent opens in it until the reader picks another', async () => {
+    const { region } = shell()
+    const { host } = fakeHost()
+    const Compose = (): ReactElement => (
+      <PageHostContext value={host}>
+        <ShellOverlayContext value={region}>
+          <Peek kind="compose-test" defaultPresent="window" title="New email" onClose={() => {}}>
+            <input aria-label="to" />
+          </Peek>
+        </ShellOverlayContext>
+      </PageHostContext>
+    )
+    const { unmount } = render(<Compose />)
+    expect(peek()?.dataset['present']).toBe('window')
+    fireEvent.click(screen.getByRole('button', { name: 'Open as' }))
+    fireEvent.click(await screen.findByRole('menuitemradio', { name: 'Side panel' }))
+    expect(peek()?.dataset['present']).toBe('peek')
+    unmount()
+    render(<Compose />)
+    expect(peek()?.dataset['present']).toBe('peek')
+    presentationStore('compose-test').reset()
+  })
+
   test('opens as a side panel by default, with the Open as menu in its header', () => {
     const { region } = shell()
     render(<Shelled region={region} onClose={() => {}} />)
