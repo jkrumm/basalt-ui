@@ -105,7 +105,8 @@ function weight(kind: string): number {
 /**
  * `<col>` widths of the plan, one set at every phase. A figure, a date or a mark keeps its planned px.
  * A flexible (text-like) column takes its floor plus its share of the free width (the scroller's
- * width less every floor), up to its kind's cap; a pinned column of the grid keeps its px, so the
+ * width less every floor), up to its kind's cap in the grid look and without one in the reading look, so the
+ * table fills its container; a pinned column of the grid keeps its px, so the
  * offsets of the pinned columns stay sums of known widths. The filler is the one `<col>` without a
  * width: under `table-layout: fixed` it takes exactly what is left at every tier, so the head
  * surface, the hairlines, a group row and the footer run to the scroller's edge (`table.css`).
@@ -249,11 +250,11 @@ function FramedArm<T>({
  * `basalt-ui/tailwind.css`, or a phone table stays a table.
  *
  * A column's `priority` is decided against the table's container, not the viewport; the rule, with the
- * column widths it adds, is in `useDataTable`'s doc. The text-like columns (the title, text, links,
- * people, tags) share the free width up to a cap per kind (the title 40 characters, 80 with a `sub`
- * line) while figures and dates keep theirs; what is left is a filler at the end of the table, so the
- * figures stay beside the title and the head, the hairlines, the row tint, a group row and the
- * footer still span the surface. In the grid look every column is drawn roomier and the table
+ * column widths it adds, is in `useDataTable`'s doc. In the reading look the text-like columns (the title, text,
+ * links, people, tags) share the free width, so the table fills its container and the last column ends at its
+ * edge, while figures and dates keep their fitted width; a header keeps to its label, with no kind icon. In the
+ * grid look every column is drawn roomier, the text-like ones grow up to a cap per kind (the title 40
+ * characters, 80 with a `sub` line), headers carry their kind icon, and the table
  * scrolls sideways under its pinned columns instead of shrinking them.
  *
  * The view is the reader's: a header's end edge resizes its column (drag, arrow keys, double-click

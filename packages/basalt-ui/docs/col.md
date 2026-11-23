@@ -190,6 +190,7 @@ col<T>(): Col<T>
     filter?: "range"
     bounds?: readonly [number, number]
     currency: string
+    digits?: number  // Fraction digits of the figure (`0` writes whole euros); default: the currency's own (2 for EUR, 0 for JPY)
 
   DateOptions<T>:
     // either filter + picker or neither
@@ -204,7 +205,7 @@ col<T>(): Col<T>
     picker?: DateRangeLike
     icon?: (row: T) => IconComponent  // The cell's icon for this row: a status icon replaces the dot, a boolean icon the check or cross
     style?: DateStyle
-    mono?: boolean  // The date is a time: drawn in the mono face with tabular numerals, in the cell and on its phone card line
+    mono?: boolean  // The date is an id-like time: drawn in the mono face with tabular numerals, in the cell and on its phone card line
 
   RelativeTimeOptions<T>:
     // either filter + picker or neither

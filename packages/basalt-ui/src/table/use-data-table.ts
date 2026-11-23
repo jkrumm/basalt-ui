@@ -161,7 +161,7 @@ export type TableModel<T> = {
   pager: 'pages' | 'more' | 'none'
   /** How the table draws its rules; `grid` keeps every column and scrolls sideways. */
   look: 'reading' | 'grid'
-  /** Whether the headers draw their column icons (`headerIcons`, default on). */
+  /** Whether the headers draw their column icons (`headerIcons`: on in the grid look, off in the reading look). */
   headerIcons: boolean
   /** What a narrow table becomes (default `cards`, `scroll` for a grid) and the width it does so below. */
   phone: 'cards' | 'scroll' | 'columns'
@@ -929,7 +929,7 @@ export function useDataTable<
     count: server ? countOf(mode) : matching,
     pager,
     look,
-    headerIcons: options.headerIcons !== false,
+    headerIcons: options.headerIcons ?? look === 'grid',
     phone: options.phone ?? (look === 'grid' ? 'scroll' : 'cards'),
     cardsBelow: options.cardsBelow ?? 'regular',
     cursor: server && 'cursor' in mode ? mode.cursor : undefined,

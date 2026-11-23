@@ -178,8 +178,9 @@ export type KindDefaults = {
    */
   gridCh: number | null
   /**
-   * A text-like column (title, text, link, person, tags) shares the free width of its table up to this
-   * many `ch`; the rest goes to the filler. `null`: figures, dates and marks keep their width.
+   * A text-like column (title, text, link, person, tags) of the grid look shares the free width of its table
+   * up to this many `ch`; the reading look has no cap and fills its container. `null`: figures, dates and
+   * marks keep their width.
    */
   capCh: number | null
 }
@@ -348,7 +349,7 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     wrap: false,
     width: { ch: 14, flex: false },
     sort: 'basic',
-    card: ['detail'],
+    card: ['meta'],
     priority: 3,
     groupable: false,
     minCh: 8,

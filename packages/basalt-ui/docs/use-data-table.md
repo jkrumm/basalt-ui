@@ -38,7 +38,7 @@ useDataTable<T, const F extends readonly unknown[] = readonly any[]>(options: Us
   resetOn?: readonly unknown[]
   phone?: "cards" | "scroll" | "columns"  // What a narrow table becomes: `cards`; `scroll`, the table scrolling sideways with its first column pinned; or `columns`, the table keeping its header and three columns (the name, the column placed in the card's `value` and the first placed in its `meta`) while the rest move to the row's details: a long numeric table that must keep its answer in view at 390; default 'cards'
   look?: "reading" | "grid"  // How the table draws its rules; default 'reading'
-  headerIcons?: boolean  // `false` draws no column icon in any header: each kind's default and every `headerIcon` a column names; default true
+  headerIcons?: boolean  // Whether a header draws its column icon (each kind's default or the `headerIcon` a column names); default false in the reading look, true in the grid look
   cardsBelow?: "regular" | "wide" | "always"  // The width below which the table becomes cards (`regular` is 480 px, `wide` 800 px, `always` never a table); default 'regular'
   pager?: "none" | "pages" | "more"  // The pager: `pages` steps through numbered pages, `more` is a Load more button, `none` shows every row; default 'none' on a client table, 'more' on a cursor table, 'pages' on any other server table
   rowHeight?: RowHeight  // The body's row height until a reader picks one in a view: the density row of `dense` (2rem), `normal` (2.5rem) or `comfortable` (3rem); the head keeps its height
