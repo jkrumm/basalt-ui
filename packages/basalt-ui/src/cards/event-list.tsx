@@ -21,6 +21,7 @@ import {
   warnLargeFeed,
 } from './event-list-model'
 import type { Period } from './event-list-model'
+import { usePeriodLabel } from './period-label'
 
 /** Who did it, with a face: the name prints beside it, the face is drawn in the lead column. */
 export type EventActor = {
@@ -137,6 +138,7 @@ export function EventList(props: EventListProps): ReactElement {
   const f = useFormat()
   const { timeZone } = useIntl()
   const t = useMessages(lists)
+  const label = usePeriodLabel()
   const labelId = useId()
   const clock = useClientClock()
   const [pages, setPages] = useState(1)
@@ -158,17 +160,12 @@ export function EventList(props: EventListProps): ReactElement {
   const headed = groups.some((g) => isInstant(g.day))
   const lead = items.some((item) => item.icon !== undefined || faceOf(item.actor) !== undefined)
   const yesterday = today === null ? null : new Date(today.getTime() - 86_400_000)
-  const periodHeading = (day: Date): string => {
-    const period = periodFor(day)
-    if (period.kind === 'week') return t('lists.thisWeek')
-    if (period.kind === 'month') return t('lists.earlierThisMonth')
-    if (period.kind === 'monthOf') return f.date(day, 'month', { year: undefined })
-    return String(period.year)
-  }
   const heading = (day: Date): string => {
-    if (byPeriod) return periodHeading(day)
-    if (today !== null && dayOf(day) === dayOf(today)) return t('lists.today')
-    if (yesterday !== null && dayOf(day) === dayOf(yesterday)) return t('lists.yesterday')
+    if (byPeriod) return label(periodFor(day), day)
+    if (today !== null && dayOf(day) === dayOf(today)) return label(periodOf(day, day), day)
+    if (yesterday !== null && dayOf(day) === dayOf(yesterday)) {
+      return label(periodOf(day, new Date(day.getTime() + 86_400_000)), day)
+    }
     return `${f.date(day, 'weekday')}, ${f.date(day, 'short')}`
   }
   const emptyState = empty ?? (items.length === 0 ? { cause: t('lists.noEvents') } : null)

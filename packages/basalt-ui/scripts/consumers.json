@@ -97,6 +97,8 @@
   "quality": "shutterflow:e2e/desktop/a11y/keyboard.spec.ts",
   "recordAt": "software-factory:apps/console/src/components/peek/host.tsx",
   "QueryState": "argo:apps/dashboard/src/features/m365-explorer/explorer-page.tsx",
+  "MailList": "basalt-ui:packages/basalt-ui/blocks/mailbox/Mailbox.tsx",
+  "MailThread": "basalt-ui:packages/basalt-ui/blocks/mailbox/Mailbox.tsx",
   "RelationshipCard": "basalt-ui:packages/basalt-ui/blocks/record-page/RecordPage.tsx",
   "RefreshButton": "argo:apps/dashboard/src/routes/__root.tsx",
   "RowList": "basalt-ui:apps/playground/src/scenarios/row-list/RowListScenario.tsx",

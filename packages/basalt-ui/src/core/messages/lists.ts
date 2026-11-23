@@ -2,7 +2,7 @@ import type { Format } from '../format'
 import type { BasaltMessages } from './index'
 
 /**
- * The strings of `BarList`, `EventList`, `RowList` and `StepRail`. Keys carry the area prefix (`lists.`),
+ * The strings of `BarList`, `EventList`, `RowList`, `StepRail`, `MailList` and `MailThread`. Keys carry the area prefix (`lists.`),
  * which the coverage test holds; the brief's `card.*` prefix would fail it.
  */
 export type ListsMessages = Record<
@@ -19,14 +19,21 @@ export type ListsMessages = Record<
   | 'lists.stepColumn'
   | 'lists.durationColumn'
   | 'lists.timeColumn'
-  | 'lists.detailColumn',
+  | 'lists.detailColumn'
+  | 'lists.noMail'
+  | 'lists.mailUnread'
+  | 'lists.mailStar'
+  | 'lists.mailUnstar'
+  | 'lists.mailActions'
+  | 'lists.mailAttachment',
   string
 > &
   Record<
     'lists.showMore' | 'lists.eventCount' | 'lists.stepDuration' | 'lists.stepScale',
     (f: Format, n: number) => string
   > &
-  Record<'lists.rowsShown', (f: Format, shown: number, total: number) => string>
+  Record<'lists.rowsShown', (f: Format, shown: number, total: number) => string> &
+  Record<'lists.mailSelect' | 'lists.mailDownload', (f: Format, name: string) => string>
 
 /** A step's working time, not the clock form of `Format.duration`: sub-second steps read in ms. */
 function stepDuration(f: Format, ms: number): string {
@@ -62,6 +69,14 @@ export const lists = {
   'lists.durationColumn': 'Duration',
   'lists.timeColumn': 'Time',
   'lists.detailColumn': 'Detail',
+  'lists.noMail': 'No mail here',
+  'lists.mailUnread': 'Unread',
+  'lists.mailStar': 'Star',
+  'lists.mailUnstar': 'Remove star',
+  'lists.mailActions': 'Mail actions',
+  'lists.mailAttachment': 'Has attachments',
+  'lists.mailSelect': (_f, name) => `Select ${name}`,
+  'lists.mailDownload': (_f, name) => `Download ${name}`,
   'lists.stepDuration': stepDuration,
   'lists.stepScale': (f, longest) =>
     `Bars are scaled to the longest step, ${stepDuration(f, longest)}`,

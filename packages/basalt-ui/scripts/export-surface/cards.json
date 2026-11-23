@@ -7,6 +7,8 @@
   "FlowCanvas",
   "FlowChecklist",
   "KanbanCard",
+  "MailList",
+  "MailThread",
   "RelationshipCard",
   "RowList",
   "Schedule",
