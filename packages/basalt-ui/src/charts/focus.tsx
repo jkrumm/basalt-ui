@@ -373,6 +373,9 @@ function scrollNodeIntoView(node: Element | undefined): void {
   node.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' })
 }
 
+/** The items of a focus whose data has not arrived: one array, so the handle keeps its identity while it waits. */
+const NO_ITEMS: readonly never[] = []
+
 /**
  * The focus handle for `items`, in reading order (the order arrow keys step).
  *
@@ -381,6 +384,10 @@ function scrollNodeIntoView(node: Element | undefined): void {
  * <ChartCard title="Pace" footer={[{ label: 'Behind best', value: focus.readout(total, (d) => d.behind) }]}
  *   chart={<CartesianChart … focus={focus} />} />
  * ```
+ *
+ * `items` is `undefined` until the query settles: `useChartFocus(query.data, …)` is the one loading shape, so
+ * no fallback array stands in for data that is not there (a `phase` on the card says it is loading).
+ * With no items nothing is focused and a held index reads as none.
  *
  * A mark spreading `focus.item(i)` is dimmed by the kit while another is focused, at the opacity
  * the kit's own marks use; a page sets no opacity of its own. With `group`, PageUp and PageDown step
@@ -398,9 +405,10 @@ function scrollNodeIntoView(node: Element | undefined): void {
  * @neverWhen only a tooltip is wanted (the hosts draw one already)
  */
 export function useChartFocus<D>(
-  items: readonly D[],
+  settled: readonly D[] | undefined,
   options: ChartFocusOptions<D>,
 ): ChartFocus<D> {
+  const items: readonly D[] = settled ?? (NO_ITEMS as readonly D[])
   const { announce, announceSpan, columns, group } = options
   // `entered`: the focus came into its group from outside it, so the announcement names the group.
   // `span`: every index `hold` set, in item order, when it held more than one.

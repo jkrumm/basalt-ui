@@ -14,7 +14,7 @@ The focus handle for `items`, in reading order (the order arrow keys step).
 ## Signature
 
 ```ts
-useChartFocus<D>(items: readonly D[], options: ChartFocusOptions<D>): ChartFocus<D>
+useChartFocus<D>(settled: readonly D[] | undefined, options: ChartFocusOptions<D>): ChartFocus<D>
 ```
 
 ## Example

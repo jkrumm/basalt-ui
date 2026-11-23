@@ -935,6 +935,22 @@ function roomForDots(
   return { ...axis, domain: axis.domain[0] <= axis.domain[1] ? [from, to] : [to, from] }
 }
 
+/**
+ * `axis` with its floor lowered so the value label of its most negative bar fits under the bar's end:
+ * a negative bar's label stands outside it, below, as a positive one stands above, so the plot keeps
+ * the label's line and its air (`VALUE_HEAD_PX`) under the longest bar. The room is a share of the grown
+ * span, found by settling. A floor already further down is kept.
+ */
+function roomForValues(axis: YAxis, floor: number | null, plotHeight: number): YAxis {
+  const [lo, hi] = [Math.min(...axis.domain), Math.max(...axis.domain)]
+  if (floor === null || floor >= 0 || plotHeight <= 0 || hi === lo) return axis
+  let from = lo
+  for (let i = 0; i < 4; i++)
+    from = Math.min(lo, floor - (VALUE_ROOM_PX * (hi - from)) / plotHeight)
+  if (from === lo) return axis
+  return { ...axis, domain: axis.domain[0] <= axis.domain[1] ? [from, hi] : [hi, from] }
+}
+
 /** Only a dot within a tenth of the span of an end can touch the plot's edge: the rest never read the size. */
 const nearEnd = (axis: YAxis, dots: readonly { y: number }[]): boolean => {
   const [lo, hi] = [Math.min(...axis.domain), Math.max(...axis.domain)]
@@ -1200,6 +1216,10 @@ export const zoneSideSpotsFit = (plotWidth: number, captionPx: number): boolean 
 const MAX_ZONE_EDGE_ROWS = 3
 /** The room a bar's value label takes above its end (below a negative bar's), px: its line and the air under it. */
 const VALUE_HEAD_PX = lineHeight(BASALT.text.micro) + 3
+/** The room kept under the longest negative bar for its value label, px: the label's line, its gap to the bar and the air the placer keeps round it. */
+const VALUE_ROOM_PX = VALUE_HEAD_PX + 6
+/** The px an x axis takes off the frame, until the plot is measured: a first pass reads the plot's height as the frame's less this. */
+const X_AXIS_PX = 40
 /** The share of a bar slot kept between two grouped bars (`group({ padding })` in `bars-marks`). */
 const GROUP_PADDING = 0.1
 
@@ -2263,6 +2283,30 @@ export function compileCartesian<T, X extends ChartX>(
     }
   }
 
+  // The axes with room under the most negative bar of a series that prints its values. A domain the page
+  // fixed as a tuple is the page's; a log axis has no bars.
+  const valueRoomAxes = (base: Axes<T>, access: PlotAccess, frameHeight: number): Axes<T> => {
+    if (input.y?.scale === 'log' || input.stack === 'normalized') return base
+    const floorOn = (side: 'left' | 'right'): number | null => {
+      const fixed = side === 'left' ? input.y?.domain : input.y2?.domain
+      if (Array.isArray(fixed)) return null
+      const onSide = visible.filter(
+        (s) => shared.onRight(s) === (side === 'right' && shared.right !== null),
+      )
+      if (!onSide.some((s) => isBar(s) && s.values !== undefined && s.values !== false)) return null
+      const low = Math.min(0, ...marksOn(side).bars.map((b) => b.y0))
+      return low < 0 ? low : null
+    }
+    const [onLeft, onRight] = [floorOn('left'), base.right === null ? null : floorOn('right')]
+    if (onLeft === null && onRight === null) return base
+    access.read()
+    const plotHeight = access.size()?.height ?? Math.max(frameHeight - X_AXIS_PX, 1)
+    const left = roomForValues(base.left, onLeft, plotHeight)
+    const right = base.right && roomForValues(base.right, onRight, plotHeight)
+    if (left === base.left && right === base.right) return base
+    return { ...base, left, right, axisOf: (side) => (side === 'right' && right ? right : left) }
+  }
+
   const definition: CartesianDefinition = {
     chart: ({ width, height }: ChartBuildContext): StoredChartSpec => {
       const cls = resolveContainerClass(width)
@@ -2277,8 +2321,7 @@ export function compileCartesian<T, X extends ChartX>(
           plotWidth: access.size()?.width ?? Math.max(width - Y_GUTTER, 0),
         })
       const capped = axesAt(cls)
-      const axes = dotRoomAxes(capped, access, height)
-      // A spread reads the plot's size: dots move apart in pixels, so it recompiles once measured.
+      const axes = valueRoomAxes(dotRoomAxes(capped, access, height), access, height) // A spread reads the plot's size: dots move apart in pixels, so it recompiles once measured.
       const spreads = visible.some((s) => input.dotSpread?.has(s.key) === true)
       if (spreads) access.read()
       const plot = plotContext(
