@@ -27,6 +27,7 @@ const AREAS = [
   'ai',
   'page',
   'sortable',
+  'schedule',
 ]
 
 /** An area whose keys carry component prefixes (`dialog.close`, `combobox.dismiss`) rather than the area's own name. */

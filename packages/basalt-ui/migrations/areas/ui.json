@@ -659,7 +659,7 @@
       "kind": "manual",
       "from": "@mantine/schedule#WeekView",
       "manual": true,
-      "note": "no answer in basalt (CE6, DPO 10): the consumer writes a read-only week view on ui/* in app code, or keeps @mantine/schedule in a scoped MantineProvider"
+      "note": "basalt-ui/cards#Schedule with view week: events as { id, title, start, end }, view and date as field handles, a record link per event (Issue 3103); the props differ, so the call is rewritten by hand"
     },
     {
       "profiles": ["parts", "app"],
@@ -667,7 +667,7 @@
       "kind": "manual",
       "from": "@mantine/schedule#MonthView",
       "manual": true,
-      "note": "no answer in basalt (CE6, DPO 10): see mantine-WeekView"
+      "note": "basalt-ui/cards#Schedule with view month: see mantine-WeekView"
     },
     {
       "profiles": ["parts", "app"],

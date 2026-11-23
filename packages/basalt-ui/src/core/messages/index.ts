@@ -40,6 +40,8 @@ import { live } from './live'
 import type { LiveMessages } from './live'
 import { page } from './page'
 import type { PageMessages } from './page'
+import { schedule } from './schedule'
+import type { ScheduleMessages } from './schedule'
 import { select } from './select'
 import type { SelectMessages } from './select'
 import { sortable } from './sortable'
@@ -64,7 +66,8 @@ export type BasaltMessages = SelectMessages &
   LiveMessages &
   ChartsMessages &
   AiMessages &
-  PageMessages
+  PageMessages &
+  ScheduleMessages
 
 /** The English defaults of every area, merged. Typed as the full interface: a missing key is a type error. */
 export const en: BasaltMessages = {
@@ -86,4 +89,5 @@ export const en: BasaltMessages = {
   ...charts,
   ...ai,
   ...page,
+  ...schedule,
 }
