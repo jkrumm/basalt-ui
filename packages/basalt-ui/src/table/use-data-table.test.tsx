@@ -223,7 +223,7 @@ describe('client filter and paging', () => {
   test('with no `empty` the default line does not claim the data is new', () => {
     render(<Subject options={{ data: [] }} />)
     const text = document.querySelector('[data-slot="table-empty"]')?.textContent
-    expect(text).toContain('No rows to show')
+    expect(text).toContain('The source returned no rows.')
     expect(text).not.toContain('yet')
   })
 

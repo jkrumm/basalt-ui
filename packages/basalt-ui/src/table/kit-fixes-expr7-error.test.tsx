@@ -39,7 +39,7 @@ describe('table error title', () => {
 
   test('a blank label keeps the bare sentence', () => {
     const { container } = render(<Table label="  " />)
-    expect(alert(container)).toBe('Could not load this.')
+    expect(alert(container)).toBe('Could not load this. The request failed.')
   })
 
   test('a table inside a panel names the panel title over its own label', () => {

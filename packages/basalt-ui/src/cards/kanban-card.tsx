@@ -42,7 +42,7 @@ function assertMovable(card: HTMLElement | null, isStatic: boolean): void {
 }
 
 const BUTTON =
-  'relative inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-ctrl border-0 bg-secondary p-0 text-muted-foreground no-underline shadow-raised hover:text-foreground focus-ring after:absolute after:inset-0 pointer-coarse:size-11 forced-colors:border forced-colors:border-current'
+  'relative inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-chip border-0 bg-secondary p-0 text-muted-foreground no-underline shadow-raised hover:text-foreground focus-ring after:absolute after:inset-0 pointer-coarse:size-11 forced-colors:border forced-colors:border-current'
 
 /**
  * The card's one menu control. A single action is a plain button or link and never loads the

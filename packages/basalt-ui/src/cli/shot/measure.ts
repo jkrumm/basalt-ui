@@ -116,8 +116,16 @@ export function measureAnchor(root: Element): Reading {
     }
     const clipped = r.width <= 1 || r.height <= 1
     if (el.matches(control) && s.display !== 'inline' && !clipped && !el.closest('label')) {
-      // WCAG 2.5.8: a control is at least 24 px each way.
-      if (r.width < 24 || r.height < 24) small.push(`${pathOf(el)} ${px(r.width)}x${px(r.height)}`)
+      // WCAG 2.5.8: a control is at least 24 px each way. Its target is its box unioned with the invisible `::after`
+      // overlay the parts draw to reach the floor (checkbox, radio, switch, stepper), centred on the box and so
+      // only ever larger; a fold or a hidden overlay (`display: none`) leaves the box itself.
+      const after = getComputedStyle(el, '::after')
+      const overlay = after.content !== 'none' && shown(after) && after.position === 'absolute'
+      const [w, h] = [
+        Math.max(r.width, overlay ? px(after.width) || 0 : 0),
+        Math.max(r.height, overlay ? px(after.height) || 0 : 0),
+      ]
+      if (w < 24 || h < 24) small.push(`${pathOf(el)} ${px(w)}x${px(h)}`)
     }
     const text = Array.from(el.childNodes).filter(
       (n) => n.nodeType === Node.TEXT_NODE && n.textContent?.trim(),

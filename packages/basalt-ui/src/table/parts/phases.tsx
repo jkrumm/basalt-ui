@@ -111,6 +111,7 @@ function MessageRow<T>({
       <TableCell
         role="cell"
         aria-colindex={1}
+        data-message=""
         colSpan={span(model)}
         style={
           fit === undefined
@@ -142,17 +143,18 @@ function MessageRow<T>({
   )
 }
 
-export function ErrorRow<T>({
+type ErrorPhase = Extract<ResolvedPhase, { tag: 'error' }>
+
+/** The error arm's words and its Retry, drawn alike inside the table's row and a board or gallery's own frame. */
+export function ErrorContent<T>({
   model,
   phase,
   retry,
-  fit,
 }: {
   model: TableModel<T>
-  phase?: Extract<ResolvedPhase, { tag: 'error' }>
+  phase?: ErrorPhase
   /** A caught render error resets through here when the phase has no retry of its own. */
   retry?: () => void
-  fit?: number
 }): ReactElement {
   const t = useMessages(table)
   const run = phase?.retry ?? retry
@@ -168,7 +170,7 @@ export function ErrorRow<T>({
           ? t('table.errorNamed', name)
           : t('table.error')
   return (
-    <MessageRow model={model} slot="table-error" fit={fit}>
+    <>
       <span className="text-foreground">{text}</span>
       {phase?.message !== undefined && phase.kind === undefined && <span>{phase.message}</span>}
       {run !== undefined && showRetry && (
@@ -176,6 +178,28 @@ export function ErrorRow<T>({
           {t('table.retry')}
         </Button>
       )}
+    </>
+  )
+}
+
+export function ErrorRow<T>({
+  model,
+  phase,
+  retry,
+  fit,
+}: {
+  model: TableModel<T>
+  phase?: ErrorPhase
+  retry?: () => void
+  fit?: number
+}): ReactElement {
+  return (
+    <MessageRow model={model} slot="table-error" fit={fit}>
+      <ErrorContent
+        model={model}
+        {...(phase !== undefined && { phase })}
+        {...(retry !== undefined && { retry })}
+      />
     </MessageRow>
   )
 }
@@ -189,22 +213,19 @@ export function OfflineRow<T>({ model }: { model: TableModel<T> }): ReactElement
   )
 }
 
-export function EmptyRow<T>({
-  model,
+/** The empty arm's cause and its one action, drawn alike inside the table's row and a board or gallery's own frame. */
+export function EmptyContent({
   cause,
   action,
   reset,
-  fit,
 }: {
-  model: TableModel<T>
   cause: string
   action?: CardAction
   reset?: () => void
-  fit?: number
 }): ReactElement {
   const t = useMessages(table)
   return (
-    <MessageRow model={model} slot="table-empty" fit={fit}>
+    <>
       <span>{cause}</span>
       {reset !== undefined && (
         <Button size="sm" onClick={reset}>
@@ -225,6 +246,30 @@ export function EmptyRow<T>({
             {action.label}
           </Button>
         ))}
+    </>
+  )
+}
+
+export function EmptyRow<T>({
+  model,
+  cause,
+  action,
+  reset,
+  fit,
+}: {
+  model: TableModel<T>
+  cause: string
+  action?: CardAction
+  reset?: () => void
+  fit?: number
+}): ReactElement {
+  return (
+    <MessageRow model={model} slot="table-empty" fit={fit}>
+      <EmptyContent
+        cause={cause}
+        {...(action !== undefined && { action })}
+        {...(reset !== undefined && { reset })}
+      />
     </MessageRow>
   )
 }

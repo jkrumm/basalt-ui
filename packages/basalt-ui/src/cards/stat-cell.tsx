@@ -36,14 +36,14 @@ export type StatCellProps = ContractProps & {
 /** The chart box: the one track a cell gives a trend. */
 const CHART_HEIGHT = 28
 
-// One class string per track, written out so the scanner sees each. A track holds one fixed height
+// One class string per track, written out so the scanner sees each. The figure's 4 px top padding keeps its text box (taller than its line at the display size) clear of the caption above. A track holds one fixed height
 // whatever the phase, so a loading, empty or error cell is exactly as tall as a ready one. The figure
 // is the card hero's size from `@regular` and a step down in a narrow container, where two cells
 // share a line.
 const T_CAPTION = 'row-start-1 flex h-4 min-w-0 items-center gap-1'
-const T_FIGURE = 'row-start-2 flex h-8 min-w-0 items-center gap-2 @regular:h-9'
+const T_FIGURE = 'row-start-2 flex h-8 pt-1 min-w-0 items-center gap-2 @regular:h-9'
 // A solo empty cause or an error cause may wrap to more lines than the figure track is tall: the track grows with it.
-const T_FIGURE_WRAP = 'row-start-2 flex min-h-8 min-w-0 items-center gap-2 @regular:min-h-9'
+const T_FIGURE_WRAP = 'row-start-2 flex min-h-8 pt-1 min-w-0 items-center gap-2 @regular:min-h-9'
 // The pill and its base label share a line while they fit; a base label too wide for the cell moves whole under the pill and the track grows with it.
 const T_BASE = 'row-start-3 flex min-h-6 min-w-0 flex-wrap items-center gap-x-1.5'
 const T_METER = 'row-start-4 mt-1 h-8.5 min-w-0 overflow-clip'

@@ -25,7 +25,7 @@ export const cards = {
   'cards.clearFilters': 'Clear filters',
   'cards.updating': 'Updating',
   'cards.refreshFailed': 'Could not refresh. Showing earlier data.',
-  'cards.errorDefault': 'Could not load this.',
+  'cards.errorDefault': 'Could not load this. The request failed.',
   'cards.errorForbidden': 'You do not have access to this.',
   'cards.errorNotFound': 'This no longer exists.',
   'cards.unavailable': 'unavailable',

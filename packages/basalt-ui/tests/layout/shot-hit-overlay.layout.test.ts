@@ -1,0 +1,42 @@
+/**
+ * `shot detect`'s hit floor reads a control's target as its box unioned with the invisible `::after`
+ * overlay the parts draw (checkbox, radio, switch, stepper), so a 16 px box with a 24 px overlay is clean
+ * and a 20 px control with none, or with the overlay hidden, is `craft-6/hit-floor`.
+ */
+import { afterAll, describe, expect, test } from 'bun:test'
+import { CLOSE_BUDGET_MS, closeLayoutSuite, initLayoutSuite, openDocument } from './harness'
+import type { Viewport } from './harness'
+import { finishMeasurement, measureAnchor } from '../../src/cli/shot/measure'
+
+const ready = await initLayoutSuite()
+const layout = ready ? describe : describe.skip
+
+afterAll(closeLayoutSuite, CLOSE_BUDGET_MS)
+
+const DESKTOP: Viewport = { name: 'shot 1800', width: 1800, height: 1200 }
+
+const HTML = `<!doctype html><meta charset="utf-8"><style>
+  .box { display: inline-flex; width: 16px; height: 16px; position: relative; }
+  .box.hit::after { content: ''; position: absolute; top: 50%; left: 50%; width: 24px; height: 24px; translate: -50% -50%; }
+  .box.hidden::after { content: ''; display: none; }
+  .bar { display: block; width: 100px; height: 20px; }
+</style>
+<div id="root">
+  <span role="checkbox" aria-label="a" class="box hit"></span>
+  <span role="checkbox" aria-label="b" class="box"></span>
+  <button class="box hidden" aria-label="c"></button>
+  <button class="bar" aria-label="d"></button>
+</div>`
+
+layout('the hit floor of the in-page measurer', () => {
+  test('counts the ::after overlay of a control, never a hidden one', async () => {
+    const page = await openDocument(HTML, DESKTOP)
+    const handle = await page.raw.$('#root')
+    const m = finishMeasurement(await page.raw.evaluate(measureAnchor, handle as never))
+    expect((m.small ?? []).map((s) => s.replace(/^.*> /, ''))).toEqual([
+      'span.box 16x16',
+      'button.box 16x16',
+      'button.bar 100x20',
+    ])
+  })
+})

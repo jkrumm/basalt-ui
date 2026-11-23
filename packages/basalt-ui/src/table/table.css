@@ -1073,6 +1073,13 @@
   [data-slot='table-root'][data-look='grid'][data-fill] [data-slot='table-row'] > :last-child {
     border-inline-end-width: 1px !important;
   }
+  /* an empty or failed grid's message is centred across the scroller, past the columns its cell spans */
+  [data-slot='table-root'] [data-slot='table-cell'][data-message] {
+    overflow: visible;
+  }
+  [data-slot='table-root'][data-look='grid'][data-fill] [data-slot='table-row'] > [data-message] {
+    border-inline-end-width: 0 !important;
+  }
   /* the head keeps the density row: its menu button's ring needs the room a compact row lacks at the
      scroller's top edge, where the sideways scroll clips it */
   [data-slot='table-root'][data-look='grid'] [data-slot='table-header'] {
