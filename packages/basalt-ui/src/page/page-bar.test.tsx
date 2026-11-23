@@ -13,6 +13,7 @@ import { filterSlot } from '../controls/filter-slot'
 import { spec } from '../controls/spec'
 import type { PageAction } from './contract'
 import { Page, PageHostContext } from './page'
+import { Tabs, TabsList, TabsTrigger } from '../ui/tabs'
 import { PageBar, PageCrumb } from './page-bar'
 import { fakeHost, installLayoutDoubles, restoreLayoutDoubles, slotOf } from './page.test-support'
 
@@ -834,16 +835,45 @@ describe('PageBar view row', () => {
     )
     const { rerender } = render(bar(17))
     const overdue = screen.getByRole('tab', { name: 'Overdue 17' })
-    const count = overdue.querySelector('[data-slot="page-tab-count"]')!
+    const count = overdue.querySelector('[data-slot="tabs-trigger-count"]')!
     expect(count.hasAttribute('data-attention')).toBe(true)
     expect(count.className).toContain('text-bad')
-    expect(overdue.querySelector('[data-slot="page-tab-dot"]')?.className).toContain('bg-bad')
+    expect(overdue.querySelector('[data-slot="tabs-trigger-dot"]')?.className).toContain('bg-bad')
     expect(
-      screen.getByRole('tab', { name: 'All 236' }).querySelector('[data-slot="page-tab-count"]')
+      screen.getByRole('tab', { name: 'All 236' }).querySelector('[data-slot="tabs-trigger-count"]')
         ?.className,
     ).toContain('text-muted-foreground')
     rerender(bar(18))
     expect(screen.getByRole('tab', { name: 'Overdue 18' })).toBeDefined()
+  })
+
+  test('a page tab draws the badge a plain TabsTrigger draws', () => {
+    const status = statusOf()
+    const { container } = render(
+      <Page>
+        <PageBar
+          tabs={{
+            state: status,
+            label: 'Invoices',
+            badges: { overdue: { count: 7, attention: true, tone: 'bad' } },
+          }}
+        />
+        <Tabs defaultValue="x">
+          <TabsList aria-label="Plain">
+            <TabsTrigger value="x" count={7} attention tone="bad">
+              Overdue
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </Page>,
+    )
+    const badge = (tab: Element): string[] =>
+      [...tab.querySelectorAll('[data-slot^="tabs-trigger-"]')].map((el) => el.outerHTML)
+    const tabs = [...container.querySelectorAll('[role="tab"]')]
+    const inBar = tabs.find((el) => el.textContent === 'Overdue7')!
+    const plain = tabs.find((el) => el !== inBar && el.textContent === 'Overdue7')!
+    expect(badge(inBar)).toHaveLength(2)
+    expect(badge(inBar)).toEqual(badge(plain))
   })
 
   test('a counted tab binds its handle: a click writes it, a write from outside selects it', () => {

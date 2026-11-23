@@ -4,6 +4,7 @@ import type { VariantProps } from 'class-variance-authority'
 import { createContext, use } from 'react'
 import type { ReactElement } from 'react'
 import { cn } from '../core/cn'
+import type { Tone } from '../core/ports'
 
 /**
  * The `Tabs` cva table: the trigger height every part reads. `md` follows the density control
@@ -31,7 +32,14 @@ type Look = 'line' | 'segment' | 'pill'
 const LookContext = createContext<Look>('line')
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
-export const tabsParts = ['tabs', 'tabs-list', 'tabs-trigger', 'tabs-content'] as const
+export const tabsParts = [
+  'tabs',
+  'tabs-list',
+  'tabs-trigger',
+  'tabs-trigger-dot',
+  'tabs-trigger-count',
+  'tabs-content',
+] as const
 
 type LayoutClass = {
   /** Layout only (`w-full`, `mt-2`, `max-w-md`). Height and display belong to `size`. */
@@ -110,17 +118,43 @@ export function TabsList({ className, ...props }: TabsListProps): ReactElement {
   )
 }
 
-export type TabsTriggerProps = Omit<BaseTabs.Tab.Props, 'className'> & LayoutClass
+const DOT: Record<Tone, string> = {
+  good: 'bg-good',
+  warn: 'bg-warn',
+  bad: 'bg-bad',
+  info: 'bg-info',
+  accent: 'bg-brand',
+  neutral: 'bg-muted-foreground',
+}
+
+export type TabsTriggerProps = Omit<BaseTabs.Tab.Props, 'className'> &
+  LayoutClass & {
+    /** A count after the label, in muted tabular figures: how many records the panel holds. */
+    count?: number
+    /** Draws the count in the bad tone: the tab that needs the reader (overdue, failed). */
+    attention?: boolean
+    /** A dot in this tone before the label. */
+    tone?: Tone
+  }
 
 /**
  * One tab. The active tab takes the ink colour and a brand underline, or the selected fill when the
  * list is vertical (`segment`: a raised face; `pill`: a tint inside a hairline); a
  * disabled tab stays reachable by the arrow keys (it cannot be activated), as the WAI-ARIA tabs pattern asks.
+ * A `count`, an `attention` tone and a `tone` dot draw the badge `PageBar`'s tabs draw, so a tab bar
+ * inside a page matches the one in its band.
  *
  * @example
- * <TabsTrigger value="activity">Activity</TabsTrigger>
+ * <TabsTrigger value="activity" count={12}>Activity</TabsTrigger>
  */
-export function TabsTrigger({ className, ...props }: TabsTriggerProps): ReactElement {
+export function TabsTrigger({
+  className,
+  count,
+  attention,
+  tone,
+  children,
+  ...props
+}: TabsTriggerProps): ReactElement {
   const look = use(LookContext)
   return (
     <BaseTabs.Tab
@@ -136,7 +170,28 @@ export function TabsTrigger({ className, ...props }: TabsTriggerProps): ReactEle
           'h-(--tabs-h) -mb-px border-b-2 border-transparent data-active:border-brand data-[orientation=vertical]:mb-0 data-[orientation=vertical]:justify-start data-[orientation=vertical]:rounded-ctrl data-[orientation=vertical]:border-b-0 data-[orientation=vertical]:data-active:bg-selected',
         className,
       )}
-    />
+    >
+      {tone !== undefined && (
+        <span
+          aria-hidden="true"
+          data-slot="tabs-trigger-dot"
+          className={cn('size-1.5 shrink-0 rounded-full', DOT[tone])}
+        />
+      )}
+      {children}
+      {count !== undefined && (
+        <span
+          data-slot="tabs-trigger-count"
+          data-attention={attention === true ? '' : undefined}
+          className={cn(
+            'text-xs font-normal tabular-nums',
+            attention === true ? 'text-bad' : 'text-muted-foreground',
+          )}
+        >
+          {count}
+        </span>
+      )}
+    </BaseTabs.Tab>
   )
 }
 

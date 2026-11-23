@@ -1,6 +1,5 @@
 import type { ReactElement, ReactNode } from 'react'
-import { cn } from '../core/cn'
-import type { ControlHandle, Tone } from '../core/ports'
+import type { ControlHandle } from '../core/ports'
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs'
 import type { PageTabBadge, PageTabs } from './contract'
 
@@ -14,43 +13,6 @@ export type TabsLook = 'pill' | 'segment'
 
 /** Below the `regular` container tier each segment tab takes an equal share of its (full-width) home. */
 const PHONE_EQUAL = '@max-regular:flex-1 @max-regular:basis-0'
-
-const DOT: Record<Tone, string> = {
-  good: 'bg-good',
-  warn: 'bg-warn',
-  bad: 'bg-bad',
-  info: 'bg-info',
-  accent: 'bg-brand',
-  neutral: 'bg-muted-foreground',
-}
-
-/** A tab's tone dot and count: the count in muted tabular figures, in the bad tone for attention. */
-function TabBadge({ badge, children }: { badge: PageTabBadge | undefined; children: ReactNode }) {
-  return (
-    <>
-      {badge?.tone !== undefined && (
-        <span
-          aria-hidden="true"
-          data-slot="page-tab-dot"
-          className={cn('size-1.5 shrink-0 rounded-full', DOT[badge.tone])}
-        />
-      )}
-      {children}
-      {badge?.count !== undefined && (
-        <span
-          data-slot="page-tab-count"
-          data-attention={badge.attention === true ? '' : undefined}
-          className={cn(
-            'text-xs font-normal tabular-nums',
-            badge.attention === true ? 'text-bad' : 'text-muted-foreground',
-          )}
-        >
-          {badge.count}
-        </span>
-      )}
-    </>
-  )
-}
 
 /**
  * The strip a handle draws: one trigger per declared option, the handle owning the value, so a
@@ -88,9 +50,10 @@ function HandleTabs<K extends string>({
           <TabsTrigger
             key={option.value}
             value={option.value}
+            {...badges?.[option.value]}
             {...(look === 'segment' && { className: PHONE_EQUAL })}
           >
-            <TabBadge badge={badges?.[option.value]}>{option.label}</TabBadge>
+            {option.label}
           </TabsTrigger>
         ))}
       </TabsList>

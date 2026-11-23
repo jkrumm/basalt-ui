@@ -4,7 +4,7 @@ use when: 'the panels share one page and the reader switches between them in pla
 never when: 'the choice changes the page (use InnerNav or a route), or it is a view switch of one figure (use Segmented)'
 subpath: basalt-ui/ui/tabs
 peers: ['@base-ui/react']
-slots: [tabs, tabs-list, tabs-trigger, tabs-content]
+slots: [tabs, tabs-list, tabs-trigger, tabs-trigger-dot, tabs-trigger-count, tabs-content]
 ---
 
 # Tabs
@@ -43,10 +43,15 @@ TabsList({ className, ...props }: TabsListProps): ReactElement
 One tab. The active tab takes the ink colour and a brand underline, or the selected fill when the
 list is vertical (`segment`: a raised face; `pill`: a tint inside a hairline); a
 disabled tab stays reachable by the arrow keys (it cannot be activated), as the WAI-ARIA tabs pattern asks.
+A `count`, an `attention` tone and a `tone` dot draw the badge `PageBar`'s tabs draw, so a tab bar
+inside a page matches the one in its band.
 
 ```ts
-TabsTrigger({ className, ...props }: TabsTriggerProps): ReactElement
+TabsTrigger({ className, count, attention, tone, children, ...props }: TabsTriggerProps): ReactElement
   className?: string  // Layout only (`w-full`, `mt-2`, `max-w-md`)
+  count?: number  // A count after the label, in muted tabular figures: how many records the panel holds
+  attention?: boolean  // Draws the count in the bad tone: the tab that needs the reader (overdue, failed)
+  tone?: Tone  // A dot in this tone before the label
 ```
 
 ### `TabsContent`
@@ -70,4 +75,6 @@ Part `tabs`.
 - `tabs`
 - `tabs-list`
 - `tabs-trigger`
+- `tabs-trigger-dot`
+- `tabs-trigger-count`
 - `tabs-content`

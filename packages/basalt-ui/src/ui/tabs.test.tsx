@@ -17,6 +17,9 @@ const Sample = ({ size, keepMounted }: { size?: 'md' | 'sm'; keepMounted?: boole
         Gamma
       </TabsTrigger>
       <TabsTrigger value="d">Delta</TabsTrigger>
+      <TabsTrigger value="e" count={4} tone="bad" attention>
+        Epsilon
+      </TabsTrigger>
     </TabsList>
     <TabsContent value="a">
       <input aria-label="Draft" defaultValue="" />
@@ -123,6 +126,36 @@ describe('tabs module', () => {
     expect(trigger).not.toContain('border-brand')
     expect(trigger).toContain('pointer-coarse:min-h-11')
     expect(trigger).toContain('forced-colors:border')
+  })
+
+  test('a count draws the badge PageBar tabs draw: muted figures, the bad tone for attention', () => {
+    const { container } = render(
+      <Tabs defaultValue="a">
+        <TabsList aria-label="Sections">
+          <TabsTrigger value="a" count={12}>
+            Alpha
+          </TabsTrigger>
+          <TabsTrigger value="b" count={0} attention tone="bad">
+            Beta
+          </TabsTrigger>
+          <TabsTrigger value="c">Gamma</TabsTrigger>
+        </TabsList>
+      </Tabs>,
+    )
+    const alpha = [...container.querySelectorAll('[role="tab"]')][0]!
+    expect(alpha.textContent).toBe('Alpha12')
+    const plain = alpha.querySelector('[data-slot="tabs-trigger-count"]')!
+    expect(plain.className).toContain('text-muted-foreground')
+    expect(plain.hasAttribute('data-attention')).toBe(false)
+    const beta = [...container.querySelectorAll('[role="tab"]')][1]!
+    const hot = beta.querySelector('[data-slot="tabs-trigger-count"]')!
+    expect(hot.textContent).toBe('0')
+    expect(hot.className).toContain('text-bad')
+    expect(hot.hasAttribute('data-attention')).toBe(true)
+    expect(beta.querySelector('[data-slot="tabs-trigger-dot"]')?.className).toContain('bg-bad')
+    expect(
+      container.querySelectorAll('[role="tab"]')[2]?.querySelector('[data-slot^="tabs-trigger-"]'),
+    ).toBeNull()
   })
 
   test('keepMounted keeps a hidden panel in the DOM', () => {
