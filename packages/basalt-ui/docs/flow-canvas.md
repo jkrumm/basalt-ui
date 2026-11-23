@@ -21,7 +21,8 @@ resize, a fold and a zoom; one into a target with an issue takes the issue's ton
 its group header (a chip with the count), its row (a triangle) and its edge, and `FlowChecklist`
 lists it. Below 480 px of container the groups stack in source order, with no edges and no zoom.
 A drawing smaller than the frame sits in its middle. Put it in a `fill` page; a `PageAside` beside
-it docks and the canvas refits to the narrower frame.
+it docks and the canvas refits to the narrower frame. The column, group, row, edge and issue shapes
+are not exported: type data off `FlowCanvasProps['columns'][number]`, and take `flow` from `useFlow`.
 
 ## Signature
 
