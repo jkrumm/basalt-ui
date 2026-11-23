@@ -199,6 +199,7 @@ describe('sync on an added block', () => {
     expect(read(fx.app, 'src/blocks/demo/extra.ts')).toBe('export const extra = 2\n')
     expect(read(fx.app, 'src/blocks/demo/old.ts')).toBe(V1['old.ts'])
     expect(result.log).toContain('added src/blocks/demo/extra.ts')
+    expect(result.log).not.toContain('merged src/blocks/demo/old.ts')
     expect(result.log).toContain('kept src/blocks/demo/old.ts: the block no longer ships it')
     expect(existsSync(join(fx.app, '.basalt/base/src/blocks/demo/old.ts'))).toBe(false)
     expect(read(fx.app, '.basalt/base/src/blocks/demo/Demo.tsx')).toContain("'Inventory'")

@@ -125,6 +125,8 @@ function planBlock({ root, blockRoot, name, row, block, version, formatter }: Bl
       continue
     }
     const from = had.has(file) ? read(root, base) : ''
+    // The block moved, but not this file: nothing to merge or say.
+    if (from === shipped) continue
     if (from === null) {
       return {
         error: `${base} is missing, so ${path} has nothing to merge; restore it from git`,
