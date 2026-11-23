@@ -1501,3 +1501,119 @@ rows:
     after: [bench-table-kinds, bench-table-rest]
     after_needs: shipped
     facts: { 'brief': 'docs/v3/issues/bench/bench-table-reading.json' }
+  - key: bench-record-identity
+    issue: 3087
+  - key: bench-list-engine
+    title: 'One list engine behind Select, Combobox and the command palette: groups as data, rich options, async, virtual rows'
+    repo: basalt-ui
+    kind: feature
+    seat:
+      {
+        tier: opus,
+        effort: high,
+        why: 'A shared engine under three shipped controls that later rows build on.',
+      }
+    lane: browser
+    checkpoint: spec
+    facts: { 'brief': 'docs/v3/issues/bench/bench-list-engine.json' }
+  - key: bench-chat-parts
+    title: 'Chat parts on basalt-ui/ai in place of the recipes: composer, mentions, model picker, reasoning trace, message actions'
+    repo: basalt-ui
+    kind: feature
+    seat:
+      {
+        tier: opus,
+        effort: high,
+        why: 'A new public surface with IME-safe input and caret-anchored mentions.',
+      }
+    lane: browser
+    checkpoint: spec
+    after: [bench-list-engine]
+    after_needs: shipped
+    facts: { 'brief': 'docs/v3/issues/bench/bench-chat-parts.json' }
+  - key: bench-calendar
+    title: 'Calendar primitive and a schedule with week, month and day views, a now line, a mini month and events in the record surface'
+    repo: basalt-ui
+    kind: feature
+    seat:
+      {
+        tier: opus,
+        effort: high,
+        why: 'Time-grid overlap packing, time zones and a date-grid keyboard model.',
+      }
+    lane: browser
+    checkpoint: spec
+    facts: { 'brief': 'docs/v3/issues/bench/bench-calendar.json' }
+  - key: bench-flow-canvas
+    title: 'Flow canvas: pan and zoom with hand and pointer tools, collapsible group cards, elbow connectors, a docked panel, validation'
+    repo: basalt-ui
+    kind: feature
+    seat:
+      {
+        tier: opus,
+        effort: high,
+        why: 'Pan, zoom and connectors that re-measure through fold, zoom and resize.',
+      }
+    lane: browser
+    checkpoint: spec
+    facts: { 'brief': 'docs/v3/issues/bench/bench-flow-canvas.json' }
+  - key: bench-record-parts
+    title: 'Record page parts: an activity timeline with period groups, counted tabs on the tabs primitive, relationship cards'
+    repo: basalt-ui
+    kind: feature
+    seat: { role: lead, moveUp: true }
+    lane: browser
+    after: [bench-record-identity]
+    after_needs: shipped
+    facts: { 'brief': 'docs/v3/issues/bench/bench-record-parts.json' }
+  - key: bench-inbox-mail
+    title: 'Inbox and mail: a remembered split, a mail row with unread dot and hover checkbox, day groups, a thread, a composer as panel, window or page'
+    repo: basalt-ui
+    kind: feature
+    seat:
+      {
+        tier: opus,
+        effort: high,
+        why: 'New parts over the split, the record surface and the shared composer.',
+      }
+    lane: browser
+    checkpoint: spec
+    after: [bench-chat-parts, bench-record-parts]
+    after_needs: shipped
+    facts: { 'brief': 'docs/v3/issues/bench/bench-inbox-mail.json' }
+  - key: bench-theme-attributes
+    title: 'Runtime theme attributes: density, frame and pre-derived accents on html, one setter, a pre-paint script and a switcher part'
+    repo: basalt-ui
+    kind: feature
+    seat:
+      {
+        tier: opus,
+        effort: high,
+        why: 'Several derived accents under contrast and byte budgets, a public API.',
+      }
+    lane: browser
+    checkpoint: spec
+    facts: { 'brief': 'docs/v3/issues/bench/bench-theme-attributes.json' }
+  - key: bench-blocks
+    title: 'Blocks: product-shaped source installed by `basalt-ui add`, tracked in the eject ledger and merged by sync, starting with the reference pages'
+    repo: basalt-ui
+    kind: feature
+    seat:
+      {
+        tier: opus,
+        effort: high,
+        why: 'A new CLI verb on the three-way merge, where a lost edit is the failure.',
+      }
+    lane: browser
+    checkpoint: spec
+    after: [bench-record-parts]
+    after_needs: shipped
+    facts: { 'brief': 'docs/v3/issues/bench/bench-blocks.json' }
+  - key: bench-shell-nav
+    title: 'Shell nav: a workspace switcher, favourites the user fills, a rail the user resizes'
+    repo: basalt-ui
+    kind: feature
+    seat: { role: lead, moveUp: true }
+    lane: browser
+    checkpoint: spec
+    facts: { 'brief': 'docs/v3/issues/bench/bench-shell-nav.json' }

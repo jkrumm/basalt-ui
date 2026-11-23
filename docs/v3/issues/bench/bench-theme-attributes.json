@@ -1,0 +1,31 @@
+{
+  "why": "Themes are \"No\" in benchmark section 11, and section 3.4 left runtime attributes open; this row settles them as public attributes. Today: `setScheme` (src/core/scheme.ts) writes `data-theme` on html, and `themeScript` (basalt-ui/theme-script, src/css/theme-script.ts) applies it before paint, `ThemeSwitch` (basalt-ui/static) switches it; `[data-density='dense'|'normal'|'comfortable']` is in src/css/tokens.css and emitted by src/tokens/emit.ts, and nothing sets it at runtime; the frame is a prop (`ShellFrame`, `AppShellProps.frame`, src/shell/contract.ts, compact always flush); the accent is one build-time seed (`DeriveConfig.accent`, src/tokens/derive.ts, default #0077bd), and no `data-accent` selector exists. `persisted` (root basalt-ui) stores preferences.",
+  "what": "Density, frame and accent as public html attributes with one setter, a pre-paint script, and a switcher part.",
+  "owns": [
+    "packages/basalt-ui/src/core/scheme.ts and a new appearance module beside it",
+    "packages/basalt-ui/src/css/theme-script.ts",
+    "packages/basalt-ui/src/tokens/{emit.ts,derive.ts config surface} and src/cli/tokens-css.ts for the accent set",
+    "packages/basalt-ui/src/shell/parts/grid.tsx and src/shell/contract.ts only where the frame reads the attribute",
+    "a switcher part under packages/basalt-ui/src/controls",
+    "docs/DESIGN-CORE.md and .claude/rules/basalt-tokens.md, the lines on runtime attributes; generated docs"
+  ],
+  "must_not_touch": [
+    "any palette hex: retune derive config, never hand-edit (AGENTS.md)",
+    "the default accent's derived values: zinc and #0077bd stay byte-identical (README decision 5)",
+    "packages/basalt-ui/src/shell/parts/rail*.tsx (bench-shell-nav)",
+    "a runtime derive or a font choice (benchmark section 8 Out)"
+  ],
+  "change": "Read first: docs/v3/issues/bench/README.md (owner direction, decisions, how to use the reference) and docs/v3/BENCHMARK-ACCORDEE-BLUEPRINT.md, sections 2 and 11. Decided: (1) Three public attributes on html (or any subtree): `data-density` (the existing three values), `data-frame` (`panel` or `flush`), `data-accent` (a name from the set). (2) One setter and hook, `setAppearance(partial)` and `useAppearance()`, persisted under one `basalt:` key; `setScheme` stays as it is. `themeScript` applies scheme and the three attributes before paint, so a reload never flashes. (3) The `frame` prop stays the app's default; the attribute, when set, wins; compact and phone stay flush. (4) Accents are derived at build time by `derive.ts`, each seed with its own contrast guarantee, and emitted as `[data-accent=<name>]` blocks; the package names a set of six (the default plus five seeds the lead picks for spread in hue, each passing the derive contrast tests), and the app chooses in its config which ones it ships, none extra by default, so an app that opts out pays no bytes. Gate the CSS bytes per accent in the budgets. (5) A switcher part on basalt-ui/controls built from `ChoiceCard` and `SwatchPicker` (basalt-ui/ui/choice-card, swatch-picker): scheme, accent, density, frame, applied at once, with a reset; it fits a settings row (`FormGroupRow`) and a popover. (6) A table's per-view row height still wins inside the table. (7) The playground settings reference page (`/ref/settings`) gains an Appearance pane using the part.",
+  "reference": "settings.md 2.3 and shell.md 2.5: Appearance holds theme, theme colour, font, density, layout, reduce motion; thumbnail cards 120x76, 2 px border, radius 8; seven accents in 48x50 cells, gap 8 (Neutral, Blue, Violet, Rose, Orange, Green, Teal), choosing one sets `data-accent` on html; density compact multiplies spacing by 0.84 and keeps 28 px controls; layout Modern (inset panel) or Classic (flush, `data-layout=classic`), phones forced to Classic; a 480x678 themes window, changes apply at once, reset and done in the footer; state on html as a dark class and data-accent, data-density, data-layout. Leave their black primary and their fonts. Shots: shell/15-themes-window.png, shell/18-themes-blue-accent-applied.png, shell/17-start-classic-layout-compact.png, settings/41-preferences-theme-colour-blue.png.",
+  "acceptance": [
+    "Setting density, frame or accent changes the page at once and survives a reload with no flash (test on the pre-paint script)",
+    "Each shipped accent passes the derive contrast tests; the default accent's emitted CSS is unchanged (snapshot)",
+    "An app that ships no extra accent pays zero extra CSS bytes (budget)",
+    "The frame attribute overrides the prop, and compact stays flush (layout test)",
+    "The switcher part is exported with docs and used on /ref/settings; frames show no design-reviewer P1",
+    "make check passes"
+  ],
+  "out_of_scope": "Runtime derivation, a custom accent picker, runtime fonts, radius as a knob, per-user theme sync to a server.",
+  "proof": "Frames from `basalt-ui shot` at 1800x1200 and 390x844, light and dark, attached to the PR, and the design reviewer run on them. Include one frame per accent and per density on the list reference page.",
+  "commits": "Conventional, empty scope, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export updates migrations/areas and the generated docs in the same PR."
+}

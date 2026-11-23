@@ -1,0 +1,29 @@
+{
+  "why": "Calendar is \"No\" in benchmark section 2 and was left out of the reference pages. What exists: `DatePicker` and `DateRangePicker` (basalt-ui/ui/date-picker, on react-day-picker 10.0.2, a popover picker with no marks), `IntervalTrack` (basalt-ui/charts, src/charts/parts/interval-track.tsx: spans on one time axis, overlapping spans take lanes, read-only), `useNow` and the `CalendarDate` type (root basalt-ui), the record surface (`Peek` on basalt-ui/page, `recordAt` and `usePeek` on basalt-ui/router). docs/v3/DIRECTION.md section 6 refused \"Week and Month schedule\" with argo writing its own; the owner approved the benchmark that adds it, and this row reverses that line.",
+  "what": "A calendar primitive (the month grid) and a schedule composite with week, month and day views.",
+  "owns": [
+    "a new packages/basalt-ui/src/ui/calendar.tsx and its guard",
+    "a new schedule composite under packages/basalt-ui/src/cards",
+    "the lane packing in src/charts/parts/interval-track.tsx, moved to a pure module both use",
+    "apps/playground/src/routes/ref/ (a new schedule page)",
+    "docs/v3/DIRECTION.md section 6, the schedule line; generated docs"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/ui/date-picker.tsx beyond moving it onto the new grid if that is a straight swap",
+    "packages/basalt-ui/src/page/** (open events through the shipped record surface)"
+  ],
+  "change": "Read first: docs/v3/issues/bench/README.md (owner direction, decisions, how to use the reference) and docs/v3/BENCHMARK-ACCORDEE-BLUEPRINT.md, sections 2 and 11. Decided: (1) `Calendar` at basalt-ui/ui/calendar: a month grid with the keyboard model of a date grid, a today mark, a selected day or range, and per-day marks (dots by tone); it is also the mini month. Build it on react-day-picker, already a dependency. (2) A schedule composite on basalt-ui/cards, name yours, with `view: 'week' | 'month' | 'day'` in the URL through `field` (basalt-ui/router): week and day are a time grid with an hour gutter, an all-day row and events placed by start and end with overlapping events side by side (the lane packing shared with `IntervalTrack`); month is a 7 by 6 grid with events as one-line rows and a \"+N more\" past the fit. (3) The now line on today's column from `useNow`, a dot at its start. Past events dim. (4) Events are data (`id`, `title`, `start`, `end`, optional `allDay`, `tone`, `attendees`), instants in, shown in the zone and week start of the format defaults. (5) Activating an event calls `onOpen(id)`; the page opens it in the record surface with `usePeek`, so the URL holds it and Escape returns focus to the event. An empty slot reports `onSlot(start)`; creating is the app's. (6) A page frame: view switch, today, previous and next, the range title, and an optional right rail with the mini month and an up-next list, hidden below the wide tier. (7) Phone: day view with a week strip, no rail. The proof page sits on the parts-inventory domain of the reference pages (apps/playground/src/routes/ref/, its fixtures and fixed today) and compiles on the playground's app lint preset with zero basalt waivers; if packages/basalt-ui/blocks/ exists when you start (bench-blocks landed), ship the page as a block instead of a route. The domain's events are deliveries and supplier calls.",
+  "reference": "comms.md 2.5: week of 7 columns of 150 after a 56 gutter, day header 48, hour row 64, today a 28 circle; now line red with a 10 dot; a 1 h event 61 tall, 40 min 40, 15 min 29 compact; event radius 8, a 3 px left bar, title 13/19, time 12, past at 0.6 opacity, rise 400 ms; month 7x6, cells about 158x137, three events then cut; right rail 280, hidden below lg; mini month 34 cells, today a 28 circle, 3 px dots on busy days; up-next cards 247x90; views week and month only (day on phone), segmented 120x28; the event opens in a 480 non-modal aside with an 8 px resize edge. A left bar is a side stripe, which the owner rejected in his 2026-11-19 review: carry the tone another way. Shots: comms/40-meetings-resting.png, comms/41-meetings-month-view.png, comms/42-meetings-detail-drawer.png, comms/43-meetings-past-detail-ai-notes.png, comms/74-phone-meetings.png.",
+  "acceptance": [
+    "Calendar is exported from basalt-ui/ui/calendar with a guard and keyboard tests (arrows, page, home and end)",
+    "Week, month and day views render one event set; overlapping events never cover each other (layout test)",
+    "The view and the date are in the URL; an event opens in the record surface and Escape returns focus to it",
+    "The now line sits at the current minute and moves with useNow (test with a fixed clock)",
+    "At 390 px the page is a day view with a week strip",
+    "The schedule page shows the frames with no design-reviewer P1",
+    "make check passes"
+  ],
+  "out_of_scope": "Dragging or resizing events, recurrence rules, time-zone pickers, an agenda view, resource or room columns, a booking flow.",
+  "proof": "Frames from `basalt-ui shot` at 1800x1200 and 390x844, light and dark, attached to the PR, and the design reviewer run on them.",
+  "commits": "Conventional, empty scope, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export updates migrations/areas and the generated docs in the same PR."
+}

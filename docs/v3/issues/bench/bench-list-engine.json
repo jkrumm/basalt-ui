@@ -1,0 +1,27 @@
+{
+  "why": "Blueprint's strongest mechanism is one list engine behind four shells (blueprint.md sections 4 and 9.1 item 6). Ours are three wrappers that render an option three ways: `Select` (packages/basalt-ui/src/ui/select.tsx, `SelectOption` with value, label, disabled, description, icon; `SelectGroup` with a label) has no search, async or virtual rows; `Combobox` (src/ui/combobox.tsx: `ComboboxInput`, `ComboboxContent`, `ComboboxItem`, `ComboboxChips`, `Autocomplete`) searches and groups only through nested Base UI items, its `onCreate` works on flat lists only and its source says \"No virtualisation here\"; `CommandPalette` (basalt-ui/shell, src/shell/commands/command-palette.tsx) renders `Autocomplete` in a `Dialog` with rows pre-filtered by `defaultRank` (src/shell/commands/rank.ts) and the group as a trailing label. `VirtualList` (basalt-ui/ui/virtual-list, on @tanstack/react-virtual) is used by none of them. The mention list and the model picker of bench-chat-parts need this engine.",
+  "what": "One option model and one list engine under src/ui, rendered by Select, Combobox and CommandPalette.",
+  "owns": [
+    "packages/basalt-ui/src/ui/{select,combobox}.tsx and a new internal list module under src/ui (the engine)",
+    "packages/basalt-ui/src/shell/commands/{command-palette.tsx,rank.ts} (rank moves to a module ui may import)",
+    "their guards, tests and generated docs (docs/select.md, combobox.md, command-palette.md)"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/ui/menu.tsx (a menu is actions, not a list of values)",
+    "packages/basalt-ui/src/controls/filter-set-menu.tsx beyond adopting the option row if it renders one",
+    "packages/basalt-ui/src/table/**"
+  ],
+  "change": "Read first: docs/v3/issues/bench/README.md (owner direction, decisions, how to use the reference) and docs/v3/BENCHMARK-ACCORDEE-BLUEPRINT.md, sections 2 and 11. Decided: (1) One option model, exported as types from basalt-ui/ui/select and basalt-ui/ui/combobox alike: an option has value, label, and optional description, icon or avatar, keywords, disabled; a group is data (`{ label, options }`), so `options` takes options or groups and every shell draws the group header the same way. (2) Items are a static array or an async loader `(query, { signal }) => Promise<options or groups>` with loading, empty and error rows and an abort on the next keystroke; a stale answer never replaces a newer one. (3) Ranking is `defaultRank` and its `RankFn` type, moved out of src/shell into a shared module; Combobox and the palette accept `rank`, Select searches only when asked (`searchable`). (4) Above a threshold (lead picks it, 100 by default) the list renders through `VirtualList` with keyboard navigation and active-option scroll intact; check first whether Base UI's Combobox has its own virtualisation hook in the installed version (read node_modules/@base-ui/react, not memory) and use it if it does. (5) One option row anatomy (icon or avatar, label, description, trailing hint or shortcut, check for the selected value) at the control height of the size vocabulary bench-control-groups shipped; the palette rows take the same row at its larger size. (6) A create row (`onCreate`) works with groups and async. (7) Every existing prop keeps working; where a prop is superseded, it stays as an alias with a migration row. Multi-select stays Combobox's chips.",
+  "reference": "Blueprint (blueprint.md 4.1 to 4.4, 9.1): `Select`, `Suggest`, `MultiSelect`, `Omnibar` share `QueryList`; the item renderer receives modifiers (active, disabled, matchesPredicate); two filter forms (per item with exactMatch, and whole list); `itemsEqual`, `itemDisabled`, a typed create-new item, `initialContent` and `noResults`; groups are hand-built and virtualisation is not built in, which is where we go further. Accordee (shell.md 2.4): palette min(700px, 100vw - 24px) wide at 10vh, max height min(640px, 82vh), radius 16, input 56, rows 60, no scrim. Mention list (comms.md 2.6): 256x448 with AGENTS (5) and PEOPLE (5) groups, typing `@Ver` filters to one row. Shots: shell/11-cmdk-palette-resting.png, shell/13-cmdk-palette-actions.png, comms/47-agent-composer-mention-menu.png. Proportions only: heights come from basalt's ladder (README decision 4).",
+  "acceptance": [
+    "Select, Combobox and CommandPalette render the same option row and group header from the same data (a test renders one option set through all three)",
+    "An async Combobox shows loading, then results; a slow first answer never overwrites a later one (test with a fake loader)",
+    "A 10,000-option Combobox renders under 60 option nodes and keeps arrow-key navigation and the active option in view",
+    "Grouped options work with search, async and onCreate",
+    "Existing call sites in apps/playground compile unchanged",
+    "make check passes"
+  ],
+  "out_of_scope": "Menu and context menus. A tree select. The mention trigger and the model picker themselves (bench-chat-parts). A nested filter builder (still cut, README decision 8).",
+  "proof": "Frames from `basalt-ui shot` at 1800x1200 and 390x844, light and dark, attached to the PR, and the design reviewer run on them. The kit pages for select, combobox and the palette show groups, rich options, an async list and a virtual list.",
+  "commits": "Conventional, empty scope, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export updates migrations/areas and the generated docs in the same PR."
+}

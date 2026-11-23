@@ -1,0 +1,28 @@
+{
+  "why": "Benchmark section 6: product-shaped screens (an inbox pane, a record window, a builder, a week calendar, a wizard) are too product-shaped to freeze as npm API, and today that tier is recipes no compiler checks (`docs/recipes/board.md`, `saved-views.md`, `view-switch.md`, the `chat-thread` files). The eject machinery is the base: `basalt-ui eject` (src/cli/eject/index.ts) writes the file, a merge base under `.basalt/base/`, a ledger row in `.basalt/manifest.json` (`EjectedRow`: path, fromVersion, seedDigest, reason, origin seed, adopted or local; src/cli/eject/ledger.ts, src/cli/manifest.ts), and `sync` merges three ways (`planEjected`, `applyEjected`, src/cli/sync/three-way.ts, on `git merge-file`). It handles primitives from src/ui only (`SEED_DIR`, src/cli/merge/seed.ts). The five reference pages (apps/playground/src/routes/ref/: parts.tsx, notes.tsx, suppliers.$id.tsx, settings.tsx, -new-order.tsx) are the first blocks. docs/v3/DIRECTION.md section 6 refused an `add` verb; the owner approved the benchmark that adds this tier, and this row reverses that line.",
+  "what": "A block tier: source in the package, a CLI verb that installs it into the app, ledger rows with a merge base, three-way sync.",
+  "owns": [
+    "a new packages/basalt-ui/blocks/ tree (block source, typechecked and linted on the app preset)",
+    "packages/basalt-ui/src/cli/{eject,sync,merge}/**, src/cli/manifest.ts, src/cli/help.ts and a new verb module",
+    "packages/basalt-ui/package.json files and the pack test for the blocks tree",
+    "apps/playground/src/routes/ref/** (the routes render the block source)",
+    "the basalt-design skill's exemplar lines through its generator",
+    "docs/v3/DIRECTION.md section 6, the add-verb line; generated docs"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/ui/**, src/page/**, src/table/** (blocks compose shipped parts; a gap is filed, not patched)",
+    "the primitive eject path's behaviour and its budget"
+  ],
+  "change": "Read first: docs/v3/issues/bench/README.md (owner direction, decisions, how to use the reference) and docs/v3/BENCHMARK-ACCORDEE-BLUEPRINT.md, sections 2 and 11. Decided: (1) A block is a directory under packages/basalt-ui/blocks/<name>/ with its files and a small descriptor (name, files, the subpaths it imports, the ports its data comes through); it imports only public basalt-ui subpaths and takes its data through typed props or loaders, with its fixture beside it for the playground and shots only. (2) `basalt-ui add <block>` copies it into the app (default under src/blocks/, configurable), writes a merge base and a ledger row with origin `block` beside the eject rows, and never overwrites an existing file; `basalt-ui add --list` prints the blocks with one line each. (3) `basalt-ui sync` merges a changed block three ways as it does an ejected primitive; a local edit survives an upgrade or stops on a conflict with markers, never silently lost. Blocks do not count against the eject budget. (4) The five reference pages become blocks: list page, notes list with record surface, record page, settings page, create flow; the playground routes render the block source, so one source is linted, typechecked, shot and shipped. (5) The basalt-design skill answers \"which page do I copy\" with `basalt-ui add <block>`. (6) Document the promotion rule: a block two consumers run unchanged is promoted to a composite. Rows that land after this one ship their proof page as a block.",
+  "reference": "Benchmark section 6 (tiers table) and section 7 (an exemplar per archetype, \"a list page copies Invoices\"). docs/v3/concepts/primitives-distribution.md section 8: the registry format has no version and no lockfile, and `add --overwrite` destroyed four of four edits: never overwrite. No shots: this row is tooling.",
+  "acceptance": [
+    "`basalt-ui add <block>` installs a block into a fresh app that then typechecks and lints at error (pack test on the tarball)",
+    "An edited block survives `basalt-ui sync` after the block changed upstream, or stops with conflict markers (test on a fixture app)",
+    "The five reference pages are blocks and the playground renders them from the block source",
+    "The skill names `basalt-ui add` for each archetype",
+    "make check passes"
+  ],
+  "out_of_scope": "A public registry or a library site (after 3.0). Converting recipes beyond the reference pages. Blocks for the calendar, inbox, chat and canvas (their rows ship them).",
+  "proof": "A transcript of `basalt-ui add` and `basalt-ui sync` on a fixture app in the PR, and the pack test output.",
+  "commits": "Conventional, empty scope, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export updates migrations/areas and the generated docs in the same PR."
+}

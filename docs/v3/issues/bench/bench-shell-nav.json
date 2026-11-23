@@ -1,0 +1,27 @@
+{
+  "why": "Shell and nav is \"Yes\" (benchmark section 11), but the section 2 additive items were not exercised: a workspace switcher, favourites, a resizable rail. Today: `defineNav` (basalt-ui/router, src/router/nav/define-nav.ts) takes sections and a rail-bottom `pinned` list (`NavItemMeta`: id, label, short, icon, disabled, mobile, exact, activeWhen); the rail (src/shell/parts/rail.tsx) is 64 collapsed or 240 expanded (`RAIL_COLLAPSED_PX`, `RAIL_EXPANDED_PX`, src/shell/parts/grid.tsx), its collapse stored under `basalt:<storageKey>`; `RailAccount` (src/shell/parts/account.tsx) is the user menu; no workspace or favourite type exists.",
+  "what": "A workspace switcher in the brand zone, a favourites section the user fills, and a rail the user resizes.",
+  "owns": [
+    "packages/basalt-ui/src/shell/parts/{rail.tsx,rail-rows.tsx,rail-section.tsx,account.tsx,grid.tsx (rail width only),mobile/**}",
+    "packages/basalt-ui/src/shell/contract.ts and src/router/nav/** for the new props",
+    "packages/basalt-ui/src/page/record-panel.tsx only to host a favourite toggle",
+    "generated docs (docs/app-shell.md, define-nav.md)"
+  ],
+  "must_not_touch": [
+    "the work surface and the frame (bench-surface shipped them; bench-theme-attributes owns the frame attribute)",
+    "the phone tab bar's model (README decision 9)"
+  ],
+  "change": "Read first: docs/v3/issues/bench/README.md (owner direction, decisions, how to use the reference) and docs/v3/BENCHMARK-ACCORDEE-BLUEPRINT.md, sections 2 and 11. Decided: (1) `AppShell` takes an optional `workspace` (current, options with label and avatar or icon, `onSwitch`, an optional manage link): a switcher at the top of the rail in the brand zone, a `Menu` (basalt-ui/ui/menu) with the list, collapsing to the avatar at 64; on the phone it sits in the account sheet. (2) Favourites: a store port with a `persisted` default, a hook to toggle a `NavTarget` with label and icon, a toggle button for the record panel header and PageBar, and a Favourites section in the rail that shows only when it holds an entry, reorderable with `SortableList` (basalt-ui/ui/sortable-list). (3) The expanded rail resizes by a handle on its inner edge: pointer and keyboard separator with a value, double-click resets to the default width, a minimum and maximum from the ladder, the width persisted under the shell's `storageKey`; collapse to 64 stays as it is and the handle is absent at compact. (4) Collapsed items keep the tooltip with the shortcut. (5) The reference pages' nav gains a workspace and favourites so the shots show them.",
+  "reference": "shell.md 2.1, 2.2, 3 and settings.md 2.11: sidebar 204 with a 180 menu column and a 6 px right-edge resize handle (`cursor-ew-resize`); collapse animates 204 to 64 over 0.3 s; collapsed items 28x28 with a tooltip carrying shortcut keycaps; workspace switcher a 148x32 button, popover 224 wide, radius 10, a SWITCH WORKSPACE label; user menu 224; favourites a group that appears once a record is favourited; settings can reorder the sidebar (dnd-kit, live preview). Phone: a 300 px left sheet, which we do not copy (README decision 9). Shots: shell/08-sidebar-workspace-switcher.png, shell/19-sidebar-collapsed-rail.png, shell/20-sidebar-collapsed-hover-tooltip.png, settings/26-sidebar-rest.png.",
+  "acceptance": [
+    "The rail width survives a reload, resets on double-click, works by keyboard and respects its bounds (tests)",
+    "The workspace switcher switches through `onSwitch` and collapses to its avatar at 64 px",
+    "Favouriting a record from its panel adds it to a Favourites section that persists and reorders",
+    "At 390 px the tab bar is unchanged and the switcher sits in the account sheet",
+    "Frames of the reference pages with the new nav show no design-reviewer P1",
+    "make check passes"
+  ],
+  "out_of_scope": "A user-ordered main nav, nav permissions, multi-account sign-in, a settings page for the sidebar.",
+  "proof": "Frames from `basalt-ui shot` at 1800x1200 and 390x844, light and dark, attached to the PR, and the design reviewer run on them.",
+  "commits": "Conventional, empty scope, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export updates migrations/areas and the generated docs in the same PR."
+}
