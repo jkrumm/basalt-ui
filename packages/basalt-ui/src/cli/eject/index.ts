@@ -18,8 +18,8 @@ import { parseArgs } from 'node:util'
 
 import { noteRelocation, packageRoot, readFrameworkVersion, resolveProjectDir } from '../index'
 import { DEFAULT_ROOT } from '../config'
-import { findManifestAbove } from '../install-root'
-import { MANIFEST_PATH, readManifest, writeManifest } from '../manifest'
+import { locateInstall, normalizeRoot, pickDeclaredRoot } from '../install-root'
+import { writeManifest } from '../manifest'
 import { OXLINT_PRESET_FILE, renderOxlintPreset } from '../presets'
 import type { Manifest } from '../manifest'
 import { ejectHeader, stripHeader, withHeader } from '../merge/header'
@@ -137,33 +137,14 @@ type Context = {
   version: string
 }
 
-const normalizeRoot = (raw: string): string =>
-  raw.replace(/^(?:\.\/)+/, '').replace(/\/+$/, '') || '.'
-
 function locate(projectDir: string): { installRoot: string; manifest: Manifest } {
-  const installRoot = readManifest(projectDir) === null ? findManifestAbove(projectDir) : projectDir
-  if (installRoot === null) {
-    return refuse(
-      `no ${MANIFEST_PATH} at ${projectDir} or above; run \`basalt-ui init --profile parts\` first.`,
-    )
-  }
-  const read = readManifest(installRoot)
-  if (read === null || 'error' in read) return refuse(read?.error ?? `${MANIFEST_PATH} vanished`)
-  return { installRoot, manifest: read.manifest }
+  const found = locateInstall(projectDir, 'parts')
+  return 'error' in found ? refuse(found.error) : found
 }
 
 function pickRoot(ctx: Context, app: string | undefined): string {
-  if (app !== undefined) {
-    const wanted = normalizeRoot(app)
-    const hit = ctx.roots.find((r) => normalizeRoot(r) === wanted)
-    return hit ?? refuse(`--app ${app} is not a declared root. Roots: ${ctx.roots.join(', ')}`)
-  }
-  if (ctx.roots.length > 1) {
-    return refuse(
-      `the manifest declares ${ctx.roots.length} roots; pass --app <root>. Roots: ${ctx.roots.join(', ')}`,
-    )
-  }
-  return ctx.roots[0] as string
+  const root = pickDeclaredRoot(ctx.roots, app)
+  return typeof root === 'string' ? root : refuse(root.error)
 }
 
 /** `<root>/components/ui`, relative to the install root. */

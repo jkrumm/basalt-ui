@@ -10,8 +10,8 @@ import { parseArgs } from 'node:util'
 
 import { noteRelocation, packageRoot, readFrameworkVersion, resolveProjectDir } from '../index'
 import { DEFAULT_ROOT } from '../config'
-import { findManifestAbove } from '../install-root'
-import { MANIFEST_PATH, readManifest, writeManifest } from '../manifest'
+import { locateInstall, pickDeclaredRoot } from '../install-root'
+import { writeManifest } from '../manifest'
 import type { Manifest } from '../manifest'
 import { blockBasePath, blockKey } from '../eject/ledger'
 import type { BlockRow } from '../eject/ledger'
@@ -71,33 +71,6 @@ function list(pkgRoot: string): string[] {
   return lines.length > 0 ? lines : ['this basalt-ui ships no blocks.']
 }
 
-const normalizeRoot = (raw: string): string =>
-  raw.replace(/^(?:\.\/)+/, '').replace(/\/+$/, '') || '.'
-
-function locate(projectDir: string): { installRoot: string; manifest: Manifest } {
-  const installRoot = readManifest(projectDir) === null ? findManifestAbove(projectDir) : projectDir
-  if (installRoot === null) {
-    return refuse(
-      `no ${MANIFEST_PATH} at ${projectDir} or above; run \`basalt-ui init --profile app\` first.`,
-    )
-  }
-  const read = readManifest(installRoot)
-  if (read === null || 'error' in read) return refuse(read?.error ?? `${MANIFEST_PATH} vanished`)
-  return { installRoot, manifest: read.manifest }
-}
-
-function pickRoot(roots: string[], app: string | undefined): string {
-  if (app !== undefined) {
-    const hit = roots.find((r) => normalizeRoot(r) === normalizeRoot(app))
-    return hit ?? refuse(`--app ${app} is not a declared root. Roots: ${roots.join(', ')}`)
-  }
-  if (roots.length > 1)
-    refuse(
-      `the manifest declares ${roots.length} roots; pass --app <root>. Roots: ${roots.join(', ')}`,
-    )
-  return roots[0] as string
-}
-
 type Ctx = { installRoot: string; projectDir: string; manifest: Manifest; pkgRoot: string }
 
 /** A block's directory relative to the install root: `--dir`, else `<root>/blocks/<name>`. */
@@ -126,7 +99,8 @@ type Write = { path: string; content: string }
 
 function plan(ctx: Ctx, args: Args, version: string) {
   const declared = Object.keys(ctx.manifest.roots)
-  const root = pickRoot(declared.length > 0 ? declared : [DEFAULT_ROOT], args.app)
+  const picked = pickDeclaredRoot(declared.length > 0 ? declared : [DEFAULT_ROOT], args.app)
+  const root = typeof picked === 'string' ? picked : refuse(picked.error)
   const shipped = blockNames(ctx.pkgRoot)
   const writes: Write[] = []
   const ejected = { ...ctx.manifest.ejected }
@@ -198,7 +172,9 @@ export function add(
     }
     const project = resolveProjectDir(invocationCwd)
     noteRelocation('add', project)
-    const { installRoot, manifest } = locate(project.dir)
+    const found = locateInstall(project.dir, 'app')
+    if ('error' in found) return refuse(found.error)
+    const { installRoot, manifest } = found
     const ctx: Ctx = { installRoot, projectDir: project.dir, manifest, pkgRoot }
     const next = plan(ctx, args, readFrameworkVersion(pkgRoot))
     for (const { path, content } of next.writes) {
