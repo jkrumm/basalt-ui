@@ -1,5 +1,5 @@
 /** The settings page's pane keys, their copy and the option lists its panes read. */
-export const SECTIONS = ['reordering', 'notifications', 'workspace'] as const
+export const SECTIONS = ['reordering', 'notifications', 'appearance', 'workspace'] as const
 export type SectionId = (typeof SECTIONS)[number]
 
 export const COPY: Record<SectionId, { title: string; body: string }> = {
@@ -7,6 +7,10 @@ export const COPY: Record<SectionId, { title: string; body: string }> = {
   notifications: {
     title: 'Notifications',
     body: 'Which stock and order events reach whom, and how.',
+  },
+  appearance: {
+    title: 'Appearance',
+    body: 'How the app looks on this device. Changes apply at once.',
   },
   workspace: { title: 'Workspace', body: 'Exports and removal of the inventory.' },
 }

@@ -8,6 +8,7 @@
     "basalt-ui/form",
     "basalt-ui/page",
     "basalt-ui/router",
+    "basalt-ui/tokens",
     "basalt-ui/ui/button",
     "basalt-ui/ui/checkbox",
     "basalt-ui/ui/checkbox-matrix",
@@ -21,6 +22,7 @@
   ],
   "ports": [
     "hash: string, the URL hash naming the row to open at, or the empty string (the route reads it from the router)",
-    "export settingsControls: the section URL field; the route wires validateSearch and middlewares"
+    "export settingsControls: the section URL field; the route wires validateSearch and middlewares",
+    "accents?: AccentName[], the accents the app ships with tokens:css --accents, its base first; the Appearance pane hides the accent row below two"
   ]
 }
