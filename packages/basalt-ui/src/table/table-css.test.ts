@@ -54,8 +54,9 @@ describe('table.css', () => {
   // card's drawn edit control (bench-table-rest); 6,373 with a lamp's word and a stacked meter's parts shown
   // on the phone card, four container blocks (bench-table-reading); 6,807 with the list layout's one-line
   // rows and the gallery card's skipped paint (bench-view-layouts); 6,866 with the unclipped message row of an
-  // empty or failed grid (Issue 3088).
-  test('stays small: under 6,900 bytes gzipped', () => {
-    expect(gzipSync(SHEET).length).toBeLessThan(6900)
+  // empty or failed grid (Issue 3088); 6,931 with a grid table's cards at the container's width, one rule in
+  // each of the four card tiers (Issue 3091).
+  test('stays small: under 6,950 bytes gzipped', () => {
+    expect(gzipSync(SHEET).length).toBeLessThan(6950)
   })
 })

@@ -483,6 +483,12 @@
       [data-slot='table-cell'][colspan] {
       grid-column: 1 / -1;
     }
+    /* a grid table drawn as cards keeps no sideways scroll or pinned column */
+    [data-slot='table-root'][data-below='480'][data-phone='cards'][data-look='grid']
+      :is([data-slot='table'], [data-pin], [data-kind='tick'], [data-kind='row-number']) {
+      min-width: 0;
+      position: static;
+    }
     [data-slot='table-root'][data-below='480'][data-phone='scroll']
       :is([data-slot='table-scroller'], [data-slot='virtual-list']) {
       scroll-padding-inline: var(--table-scroll-pad-start, 0px) var(--table-scroll-pad-end, 0px);
@@ -660,6 +666,11 @@
     [data-slot='table-root'][data-below='800'][data-phone='cards']
       [data-slot='table-cell'][colspan] {
       grid-column: 1 / -1;
+    }
+    [data-slot='table-root'][data-below='800'][data-phone='cards'][data-look='grid']
+      :is([data-slot='table'], [data-pin], [data-kind='tick'], [data-kind='row-number']) {
+      min-width: 0;
+      position: static;
     }
     [data-slot='table-root'][data-below='800'][data-phone='scroll']
       :is([data-slot='table-scroller'], [data-slot='virtual-list']) {
@@ -840,6 +851,11 @@
       [data-slot='table-cell'][colspan] {
       grid-column: 1 / -1;
     }
+    [data-slot='table-root'][data-below='700'][data-phone='cards'][data-look='grid']
+      :is([data-slot='table'], [data-pin], [data-kind='tick'], [data-kind='row-number']) {
+      min-width: 0;
+      position: static;
+    }
     [data-slot='table-root'][data-below='700'][data-phone='scroll']
       :is([data-slot='table-scroller'], [data-slot='virtual-list']) {
       scroll-padding-inline: var(--table-scroll-pad-start, 0px) var(--table-scroll-pad-end, 0px);
@@ -1008,6 +1024,11 @@
     [data-slot='table-root'][data-below='always'][data-phone='cards']
       [data-slot='table-cell'][colspan] {
       grid-column: 1 / -1;
+    }
+    [data-slot='table-root'][data-below='always'][data-phone='cards'][data-look='grid']
+      :is([data-slot='table'], [data-pin], [data-kind='tick'], [data-kind='row-number']) {
+      min-width: 0;
+      position: static;
     }
   }
 
