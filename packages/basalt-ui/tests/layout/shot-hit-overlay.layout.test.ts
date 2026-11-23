@@ -99,3 +99,27 @@ layout('a fixed box is cut by no overflow ancestor', () => {
     expect(m.overlaps?.[0]).toContain('span.outside')
   })
 })
+
+const AXES =
+  '<!doctype html><meta charset="utf-8"><style>\n  #root { position: relative; width: 400px; height: 60px; font: 14px/20px sans-serif; }\n  .col { position: absolute; left: 0; top: 0; width: 100px; height: 20px; overflow-x: clip; overflow-y: visible; white-space: nowrap; }\n  .nb { position: absolute; left: 10px; top: 25px; white-space: nowrap; }\n</style>\n<div id="root">\n  <div class="col"><span class="down" style="position: relative; top: 20px">below</span></div>\n  <span class="nb">near</span>\n</div>'
+const CONTENTS =
+  '<!doctype html><meta charset="utf-8"><style>\n  #root { position: relative; width: 400px; height: 40px; font: 14px/20px sans-serif; }\n  .b { position: absolute; left: 10px; top: 0; white-space: nowrap; }\n</style>\n<div id="root">\n  <div class="dc" style="display: contents; overflow: hidden"><span class="a">aaa</span></div>\n  <span class="b">bbb</span>\n</div>'
+
+layout('the clip reads each axis on its own and skips display: contents', () => {
+  test('overflow-x: clip leaves the text below its box in y to overlap', async () => {
+    const page = await openDocument(AXES, DESKTOP)
+    const handle = await page.raw.$('#root')
+    const m = finishMeasurement(await page.raw.evaluate(measureAnchor, handle as never))
+    expect(m.overlaps ?? []).toHaveLength(1)
+    expect(m.overlaps?.[0]).toContain('span.down')
+    expect(m.overlaps?.[0]).toContain('span.nb')
+  })
+  test('a display: contents wrapper with overflow hidden does not hide its text', async () => {
+    const page = await openDocument(CONTENTS, DESKTOP)
+    const handle = await page.raw.$('#root')
+    const m = finishMeasurement(await page.raw.evaluate(measureAnchor, handle as never))
+    expect(m.overlaps ?? []).toHaveLength(1)
+    expect(m.overlaps?.[0]).toContain('span.a')
+    expect(m.overlaps?.[0]).toContain('span.b')
+  })
+})
