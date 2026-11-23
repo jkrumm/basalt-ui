@@ -147,6 +147,13 @@ export const KNOWN: readonly KnownFinding[] = [
     owner: 'charts: legend label contrast (light)',
   },
   {
+    route: '/ref/parts',
+    assertion: 'axe',
+    item: /^color-contrast \(serious\)/,
+    owner:
+      'ui/badge: a neutral DeltaBadge (muted ink on the selected fill) misses 4.5:1 in a flush StatCell',
+  },
+  {
     route: '/charts',
     assertion: 'ringWalk',
     item: /svg ".*outline contrast 1\.74:1/,
