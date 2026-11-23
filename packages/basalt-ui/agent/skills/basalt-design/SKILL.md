@@ -27,6 +27,16 @@ This file is the order of work and a map. The law is `.claude/rules/basalt-*.md`
 - **Anything that enters, leaves or moves:** [motion](references/motion.md), never a number.
 - **Model output** (chat parts, generated text): [ai](references/ai.md).
 
+## Which page to copy
+
+One reference page per archetype, built on one inventory domain from shipped parts only, with no waiver and no `c.custom`. Copy the page of your archetype, then change its domain:
+
+- **List page** (view row of saved views with counts, summary strip, grid with sticky identity, group-by, footer sums, bulk bar, board and gallery layouts): `apps/playground/src/routes/ref/parts.tsx`.
+- **List of documents** (a typed-icon title, a quiet preview, linked records, no tick column; a row opens as a side panel, a window or the page): `apps/playground/src/routes/ref/notes.tsx`.
+- **Record page** (identity, properties, tabs with counts over related lists, an activity feed): `apps/playground/src/routes/ref/suppliers.$id.tsx`.
+- **Settings page** (an inner nav of panes, bordered sections of rows, choice cards, a matrix, a tag input, a danger row): `apps/playground/src/routes/ref/settings.tsx`.
+- **Create flow** (a split wizard dialog with a live preview and a review step): `apps/playground/src/routes/ref/-new-order.tsx`.
+
 ## The rules pages break most
 
 1. Every figure stands against a base the data holds, and its delta names that base ("-8 pts vs 33 %"). A delta takes its tint from its polarity where the direction is good or bad for the reader; a change that is neither is `polarity: 'neutral'` ([cards](references/cards.md) § Every figure has a baseline).
