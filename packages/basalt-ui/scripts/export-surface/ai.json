@@ -1,1 +1,10 @@
-["defineBlock", "defineCatalog", "partView"]
+[
+  "Composer",
+  "Message",
+  "MessageActions",
+  "ModelPicker",
+  "ReasoningTrace",
+  "defineBlock",
+  "defineCatalog",
+  "partView"
+]

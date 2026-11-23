@@ -166,5 +166,10 @@
   "SitePager": "basalt-ui:apps/marketing/src/pages/guides/content-sites.astro",
   "ThemeSwitch": "basalt-ui:apps/marketing/src/layouts/Layout.astro",
   "siteMdxComponents": "basalt-ui:apps/marketing/src/pages/guides/content-sites.astro",
-  "Schedule": "basalt-ui:apps/playground/src/routes/ref/schedule.tsx (the reference schedule of deliveries and supplier calls, Issue 3103)"
+  "Schedule": "basalt-ui:apps/playground/src/routes/ref/schedule.tsx (the reference schedule of deliveries and supplier calls, Issue 3103)",
+  "Composer": "basalt-ui:packages/basalt-ui/blocks/assistant/Assistant.tsx (the assistant's prompt box with mentions and a model picker); bench-inbox-mail's mail composer reuses it",
+  "Message": "basalt-ui:packages/basalt-ui/blocks/assistant/Assistant.tsx (each turn of the thread: the user bubble and the assistant's full-width answer)",
+  "MessageActions": "basalt-ui:packages/basalt-ui/blocks/assistant/Assistant.tsx (copy, regenerate, feedback and edit under each answer, through Message)",
+  "ModelPicker": "basalt-ui:packages/basalt-ui/blocks/assistant/Assistant.tsx (the composer footer's model choice, several to compare)",
+  "ReasoningTrace": "basalt-ui:packages/basalt-ui/blocks/assistant/Assistant.tsx (the folded reasoning and tool steps above an answer, through partView)"
 }
