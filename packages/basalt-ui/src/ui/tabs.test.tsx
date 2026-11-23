@@ -144,18 +144,16 @@ describe('tabs module', () => {
     )
     const alpha = [...container.querySelectorAll('[role="tab"]')][0]!
     expect(alpha.textContent).toBe('Alpha12')
-    const plain = alpha.querySelector('[data-slot="tabs-trigger-count"]')!
+    const plain = alpha.querySelector('[data-badge="count"]')!
     expect(plain.className).toContain('text-muted-foreground')
     expect(plain.hasAttribute('data-attention')).toBe(false)
     const beta = [...container.querySelectorAll('[role="tab"]')][1]!
-    const hot = beta.querySelector('[data-slot="tabs-trigger-count"]')!
+    const hot = beta.querySelector('[data-badge="count"]')!
     expect(hot.textContent).toBe('0')
     expect(hot.className).toContain('text-bad')
     expect(hot.hasAttribute('data-attention')).toBe(true)
-    expect(beta.querySelector('[data-slot="tabs-trigger-dot"]')?.className).toContain('bg-bad')
-    expect(
-      container.querySelectorAll('[role="tab"]')[2]?.querySelector('[data-slot^="tabs-trigger-"]'),
-    ).toBeNull()
+    expect(beta.querySelector('[data-badge="dot"]')?.className).toContain('bg-bad')
+    expect(container.querySelectorAll('[role="tab"]')[2]?.querySelector('[data-badge]')).toBeNull()
   })
 
   test('keepMounted keeps a hidden panel in the DOM', () => {

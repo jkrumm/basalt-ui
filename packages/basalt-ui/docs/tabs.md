@@ -4,7 +4,7 @@ use when: 'the panels share one page and the reader switches between them in pla
 never when: 'the choice changes the page (use InnerNav or a route), or it is a view switch of one figure (use Segmented)'
 subpath: basalt-ui/ui/tabs
 peers: ['@base-ui/react']
-slots: [tabs, tabs-list, tabs-trigger, tabs-trigger-dot, tabs-trigger-count, tabs-content]
+slots: [tabs, tabs-list, tabs-trigger, tabs-content]
 ---
 
 # Tabs
@@ -75,6 +75,4 @@ Part `tabs`.
 - `tabs`
 - `tabs-list`
 - `tabs-trigger`
-- `tabs-trigger-dot`
-- `tabs-trigger-count`
 - `tabs-content`

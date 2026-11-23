@@ -32,14 +32,7 @@ type Look = 'line' | 'segment' | 'pill'
 const LookContext = createContext<Look>('line')
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
-export const tabsParts = [
-  'tabs',
-  'tabs-list',
-  'tabs-trigger',
-  'tabs-trigger-dot',
-  'tabs-trigger-count',
-  'tabs-content',
-] as const
+export const tabsParts = ['tabs', 'tabs-list', 'tabs-trigger', 'tabs-content'] as const
 
 type LayoutClass = {
   /** Layout only (`w-full`, `mt-2`, `max-w-md`). Height and display belong to `size`. */
@@ -174,14 +167,14 @@ export function TabsTrigger({
       {tone !== undefined && (
         <span
           aria-hidden="true"
-          data-slot="tabs-trigger-dot"
+          data-badge="dot"
           className={cn('size-1.5 shrink-0 rounded-full', DOT[tone])}
         />
       )}
       {children}
       {count !== undefined && (
         <span
-          data-slot="tabs-trigger-count"
+          data-badge="count"
           data-attention={attention === true ? '' : undefined}
           className={cn(
             'text-xs font-normal tabular-nums',
