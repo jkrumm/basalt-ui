@@ -1,5 +1,5 @@
 /**
- * The signal that moves the trial variants' bar out of the way: a text field has focus, so the
+ * The signal that moves the section bar out of the way: a text field has focus, so the
  * software keyboard is up.
  *
  * The keyboard is read from FOCUS, not from `visualViewport`: iOS Safari resizes only the visual

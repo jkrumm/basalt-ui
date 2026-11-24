@@ -1,6 +1,6 @@
 /**
  * The command palette as a bottom sheet, its search field at the top above the keyboard and its rows
- * scrolling under it: how the palette opens on a phone under a trial phone nav (Issue 3205). Loaded
+ * scrolling under it: how the palette opens on a phone under the section bar. Loaded
  * with `lazy()` by `command-palette.tsx`, so a palette that never opens as a sheet never loads the
  * drawer under it.
  */

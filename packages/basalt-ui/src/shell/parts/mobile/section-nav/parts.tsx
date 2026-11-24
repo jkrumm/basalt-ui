@@ -1,5 +1,5 @@
 /**
- * The small pieces both trial variants draw: the More glyph the shell owns, a section's glyph with a
+ * The small pieces the section bar and its drawer draw: the More glyph the shell owns, a section's glyph with a
  * monogram fallback, and the count badge on an icon.
  */
 import type { ReactElement } from 'react'
@@ -8,12 +8,12 @@ import type { IconComponent } from '../../../../core/ports'
 import { CountBadge } from '../../../../ui/badge'
 import { isLit } from '../../../core/badges'
 import type { NavBadge } from '../../../core/types'
-import { monogramOf } from '../../rail-text'
+import { RAIL_TEXT, monogramOf } from '../../rail-text'
 
-/** The variants' own strings, English until the shell's message keys land (see `MOBILE_TEXT`). */
+/** The section bar's own strings, English until the shell's message keys land (see `MOBILE_TEXT`). */
 export const VARIANT_TEXT = {
   more: 'More',
-  close: 'Close the menu',
+  search: RAIL_TEXT.search,
 } as const
 
 const STROKE = {
@@ -31,6 +31,16 @@ export function MoreGlyph({ className }: { className?: string }): ReactElement {
       <circle cx="5.5" cy="12" r="1.25" />
       <circle cx="12" cy="12" r="1.25" />
       <circle cx="18.5" cy="12" r="1.25" />
+    </svg>
+  )
+}
+
+/** A magnifier at 24 px: the search entries of the phone nav. */
+export function SearchGlyph({ className }: { className?: string }): ReactElement {
+  return (
+    <svg viewBox="0 0 24 24" className={cn('size-6', className)} {...STROKE} aria-hidden="true">
+      <circle cx="10.5" cy="10.5" r="6.5" />
+      <path d="m15.5 15.5 5 5" />
     </svg>
   )
 }
@@ -85,7 +95,8 @@ export function IconBadge({
       count={badge.count}
       attention={attention}
       className={cn(
-        'absolute -end-2 -top-1.5 ring-2',
+        // The border is transparent: it is what a forced-colors reader still sees of the badge.
+        'absolute -end-2 -top-1.5 border border-transparent ring-2',
         ringClass,
         !attention && 'bg-brand-fill text-on-brand',
       )}

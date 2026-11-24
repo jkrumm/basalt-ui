@@ -1,31 +1,25 @@
 /**
- * Which phone nav the shell paints: the shipped tab bar, or one of two trial variants the owner is
- * comparing (Issue 3205). The pick is `data-phone-nav` on `<html>`, written by the playground's
- * switch; nothing else writes it and no prop names it, so the trial moves no public type. With the
- * attribute absent (always on the server) the shell renders exactly what it rendered before.
+ * Which phone nav the shell paints: the section bar with its short drawer (the default), or the tab
+ * bar the shell shipped before it (the opt-out). The pick is `data-phone-nav="tabs"` on `<html>`; with
+ * the attribute absent, on the server included, a phone gets the section bar. No prop names it, so the
+ * shell's public types do not move. The server markup is always the section bar: an app that opts out and
+ * renders on the server shows it until hydration swaps in the tab bar.
  *
- * Both variants are one full-width bar whose slots are the nav's SECTIONS, each with the summed
- * badge of its items, and a last More slot that slides the app aside to reveal the rail:
- *
- * - `tray` (A): a section's items in a tray attached to the bar, grown from the tapped icon.
- * - `drawer` (B): a section's items in a short bottom drawer with a grabber, over the bar.
+ * The section bar is one full-width bar whose slots are the nav's SECTIONS, each with the summed badge
+ * of its items, and a last More slot that slides the app aside to reveal the rail. A section opens a
+ * short drawer over the bar that drags up to a tall snap and down to close.
  */
 import { useSyncExternalStore } from 'react'
 
-export const PHONE_NAV_VARIANTS = ['tray', 'drawer'] as const
+/** `drawer` is the section bar with its short drawer; `tabs` is the tab bar. */
+export type PhoneNavVariant = 'drawer' | 'tabs'
 
-/** `tabs` is the shipped tab bar. */
-export type PhoneNavVariant = 'tabs' | (typeof PHONE_NAV_VARIANTS)[number]
-
-/** The attribute on `<html>` that picks a trial variant. */
+/** The attribute on `<html>` that opts a phone into the tab bar. */
 export const PHONE_NAV_ATTRIBUTE = 'data-phone-nav'
 
 export function readPhoneNav(): PhoneNavVariant {
-  if (typeof document === 'undefined') return 'tabs'
-  const value = document.documentElement.getAttribute(PHONE_NAV_ATTRIBUTE)
-  return (PHONE_NAV_VARIANTS as readonly string[]).includes(value ?? '')
-    ? (value as PhoneNavVariant)
-    : 'tabs'
+  if (typeof document === 'undefined') return 'drawer'
+  return document.documentElement.getAttribute(PHONE_NAV_ATTRIBUTE) === 'tabs' ? 'tabs' : 'drawer'
 }
 
 function subscribe(onChange: () => void): () => void {
@@ -38,9 +32,9 @@ function subscribe(onChange: () => void): () => void {
   return () => observer.disconnect()
 }
 
-const serverSnapshot = (): PhoneNavVariant => 'tabs'
+const serverSnapshot = (): PhoneNavVariant => 'drawer'
 
-/** The variant picked on `<html>`; `tabs` on the server and while nothing is picked. */
+/** The phone nav picked on `<html>`: `drawer` unless the app opted into `tabs`. */
 export function usePhoneNav(): PhoneNavVariant {
   return useSyncExternalStore(subscribe, readPhoneNav, serverSnapshot)
 }

@@ -1,11 +1,10 @@
 /**
- * The bar both trial variants share: full width at the bottom, one slot per nav section (its icon,
- * its name, the summed badge of its items), then More. A section of one destination is a link; any
- * other opens that section's short list, which the variant draws (`children` sit in the bar's own
- * fixed box, directly above its row). A focused text field moves the whole box under the keyboard's
- * edge. Fixed, so main ends in a spacer as tall as the bar (`--shell-phone-clear`).
+ * The section bar: full width at the bottom, one slot per nav section (its icon, its name, the
+ * summed badge of its items), then More. A section of one destination is a link; any other opens that
+ * section's short drawer. The bar is the shell's footer row, so main ends where it begins; a focused
+ * text field takes it out of the way of the keyboard.
  */
-import type { ReactElement, ReactNode } from 'react'
+import type { ReactElement } from 'react'
 import { cn } from '../../../../core/cn'
 import { SHELL_TEXT } from '../../a11y'
 import { SlotLink } from './host'
@@ -54,8 +53,8 @@ export type SectionBarProps = {
   onMore: () => void
   /** A text field has focus: the bar steps out of the keyboard's way. */
   hidden: boolean
-  /** Drawn in the bar's box, above its row: A's tray. */
-  children?: ReactNode
+  /** The bar's box, for the drawer's geometry: it ends where the bar begins. */
+  hostRef?: (el: HTMLElement | null) => void
 }
 
 export function SectionBar({
@@ -66,18 +65,15 @@ export function SectionBar({
   moreOpen,
   onMore,
   hidden,
-  children,
+  hostRef,
 }: SectionBarProps): ReactElement {
   return (
     <div
+      ref={hostRef}
       data-slot="shell-phone-bar-host"
       data-hidden={hidden ? '' : undefined}
-      className={cn(
-        'fixed inset-x-0 bottom-0 z-40 flex flex-col',
-        'transition-transform duration-base ease-standard data-hidden:translate-y-full motion-reduce:transition-none',
-      )}
+      className={cn('relative z-40 flex flex-col data-hidden:hidden')}
     >
-      {children}
       <div className="border-t border-border bg-card pb-(--phone-safe-b) ps-(--phone-safe-l) pe-(--phone-safe-r)">
         <nav
           data-slot="shell-phone-bar"

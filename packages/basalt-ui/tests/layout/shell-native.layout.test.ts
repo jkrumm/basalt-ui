@@ -161,7 +161,10 @@ layout('command palette', () => {
       await p.raw.keyboard.press('ControlOrMeta+k')
       await p.waitFor(PALETTE)
       await p.raw.waitForSelector(ITEMS)
-      const dialog = (await p.box('dialog', slot('dialog-content'))).box
+      // A phone gets the palette as a bottom sheet, wider screens a dialog.
+      const dialog = (
+        await p.box('dialog', slot(viewport.width < 840 ? 'sheet-content' : 'dialog-content'))
+      ).box
       expect(dialog.left).toBeGreaterThanOrEqual(0)
       expect(dialog.right).toBeLessThanOrEqual(viewport.width)
       expect(dialog.top).toBeGreaterThanOrEqual(0)

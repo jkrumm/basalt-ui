@@ -336,6 +336,8 @@ export async function mount(spec: FixtureSpec, container: HTMLElement): Promise<
   if (!RESET.isConnected) document.head.append(RESET)
   const options = (spec as ShellFrameSpec).shellFrame ?? {}
   localStorage.clear()
+  // These frames pin the tab bar's own geometry (the opt-out); the section bar is `shell-phone-nav.layout.test.ts`.
+  document.documentElement.setAttribute('data-phone-nav', 'tabs')
   if (options.present !== undefined) {
     localStorage.setItem(
       'basalt:panel:record:present',

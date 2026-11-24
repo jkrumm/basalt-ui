@@ -1,14 +1,16 @@
 /**
- * Layout invariants of the two trial phone navs (Issue 3205), the ones happy-dom cannot see: every
- * target a thumb can hit is at least 44x44, a section's list stays in the bottom half of the screen,
- * nothing a reader must reach sits under a home indicator, More's sidebar holds the same floors, and
- * a focused text field is never under the bar. Each variant at 390x844 and 430x932.
+ * Layout invariants of the phone nav (the section bar and its short drawer, Issues 3205 and 3246), the
+ * ones happy-dom cannot see: every target a thumb can hit is at least 44x44, the drawer rests at a
+ * short snap in the bottom half of the screen and a tall one at most 85 % of it, a drag moves it
+ * between them and closes it, its list scrolls at the tall snap and hands the gesture back at the top,
+ * nothing a reader must reach sits under a home indicator, More's sidebar holds the same floors, search
+ * is in thumb reach and a focused text field is never under the bar. Each at 390x844 and 430x932.
  *
  * The home indicator is `--shell-safe-bottom: 34px` on `<html>` (the fixture's `safeBottom`): the
- * variants read `max(env(safe-area-inset-bottom), var(--shell-safe-bottom))`, and a headless browser's
- * `env()` is always 0. Assertions are relations and bounds, never exact pixels.
+ * phone nav reads `max(env(safe-area-inset-bottom), var(--shell-safe-bottom))`, and a headless
+ * browser's `env()` is always 0. Assertions are relations and bounds, never exact pixels.
  *
- * v3 only: the 2.x oracle has no variants, so under `LAYOUT_TARGET=v2` the file skips.
+ * v3 only: the 2.x oracle has no section bar, so under `LAYOUT_TARGET=v2` the file skips.
  */
 import { acquireShellTarget } from './shell-target'
 import { afterAll, describe, expect, test } from 'bun:test'
@@ -26,13 +28,11 @@ const PHONE_430: Viewport = { name: 'iPhone Pro Max', width: 430, height: 932 }
 const INSET = 34
 const FLOOR = 44
 
-type Variant = NonNullable<FixtureSpec['phoneNav']>
-
 const items = (prefix: string, n: number) =>
   Array.from({ length: n }, (_, i) => ({ key: `${prefix}${i}`, label: `${prefix} page ${i + 1}` }))
 
 /** Five sections: four bar slots (one holding a single page) and one behind More. */
-const spec = (phoneNav: Variant, extra: Partial<FixtureSpec> = {}): FixtureSpec => ({
+const spec = (phoneNav: 'drawer' | 'default', extra: Partial<FixtureSpec> = {}): FixtureSpec => ({
   nav: { maxTabs: 5 },
   sections: [
     {
@@ -49,7 +49,8 @@ const spec = (phoneNav: Variant, extra: Partial<FixtureSpec> = {}): FixtureSpec 
     },
     { label: 'Solo', items: [{ key: 'solo', label: 'Solo page' }] },
     { label: 'Kit', items: items('kit', 6) },
-    { label: 'Reference', items: items('ref', 4) },
+    // Longer than the tall snap holds, so its list scrolls.
+    { label: 'Reference', items: items('ref', 16) },
     { label: 'Trials', collapsible: true, items: items('trial', 3) },
   ],
   phoneNav,
@@ -84,100 +85,233 @@ function targets(p: LayoutPage, selector: string): Promise<Target[]> {
 const small = (found: readonly Target[]): Target[] =>
   found.filter((t) => t.height < FLOOR - 0.5 || t.width < FLOOR - 0.5)
 
-for (const variant of ['tray', 'drawer'] as const) {
-  for (const viewport of [PHONE, PHONE_430] as const) {
-    suite(`phone nav ${variant} at ${viewport.width}x${viewport.height}`, () => {
-      test('every bar target is at least 44x44 and clears the home indicator', async () => {
-        const p = await openFixture(spec(variant), viewport)
-        await p.waitFor(MORE)
-        const found = await targets(p, BAR)
-        expect(found.length).toBe(5)
-        expect(small(found)).toEqual([])
-        expect(found.filter((t) => t.bottom > viewport.height - INSET + 0.5)).toEqual([])
-      })
+const SHEET = slot('shell-phone-sheet')
+const GRABBER = slot('shell-phone-grabber')
+const SEARCH = slot('shell-phone-search')
 
-      test("a section's list: rows at least 44 high, in the bottom half, its end above the bar", async () => {
-        const p = await openFixture(spec(variant), viewport)
-        await p.waitFor(MORE)
-        await p.tap(`${BAR} button[aria-label^="Overview"]`)
-        await p.waitFor(LIST)
-        await p.settle()
-        const rows = await targets(p, LIST)
-        expect(rows.length).toBeGreaterThan(3)
-        expect(rows.filter((t) => t.height < FLOOR - 0.5)).toEqual([])
-        const bar = await p.box('bar', BAR)
-        const reach = await p.raw.evaluate((sel) => {
-          const list = document.querySelector<HTMLElement>(sel)
-          if (list === null) return null
-          list.scrollTop = list.scrollHeight
-          const all = list.querySelectorAll('a, button')
-          const end = all[all.length - 1]?.getBoundingClientRect()
-          return { top: list.getBoundingClientRect().top, end: end?.bottom ?? 0 }
-        }, LIST)
-        if (reach === null) throw new Error('no list')
-        // Thumb reach: nothing of the list sits in the top half of the screen.
-        expect(reach.top).toBeGreaterThanOrEqual(viewport.height / 2 - 0.5)
-        expect(reach.end).toBeLessThanOrEqual(bar.box.top + 0.5)
-      })
-
-      test("More: the app slides aside, the sidebar's targets are 44 px and clear the indicator", async () => {
-        const p = await openFixture(spec(variant), viewport)
-        await p.waitFor(MORE)
-        await p.tap(MORE)
-        await p.settle()
-        const sidebar = await p.box('sidebar', slot('shell-phone-sidebar'))
-        const shell = await p.box('shell', slot('shell'))
-        expect(shell.box.left).toBeGreaterThanOrEqual(sidebar.box.right - 0.5)
-        const found = await targets(p, slot('shell-phone-sidebar'))
-        expect(found.length).toBeGreaterThan(10)
-        expect(small(found)).toEqual([])
-        // The rail ends (its footer of settings and account last) above the indicator; what is
-        // past its scroll viewport's fold is scrolled to, not covered.
-        const rail = await p.box('rail', `${slot('shell-phone-sidebar')} ${slot('shell-rail')}`)
-        expect(rail.box.bottom).toBeLessThanOrEqual(viewport.height - INSET + 0.5)
-      })
-
-      test('a focused text field is never under the bar', async () => {
-        const p = await openFixture(spec(variant, { bodyHeight: 1600, field: true }), viewport)
-        await p.waitFor(MORE)
-        // The worst place: the field at the very bottom of the scrollport.
-        const covered = await p.raw.evaluate(async () => {
-          const field = document.querySelector<HTMLInputElement>('[data-testid="field"]')
-          if (field === null) return ['no field']
-          field.scrollIntoView({ block: 'end' })
-          field.focus()
-          await new Promise((resolve) =>
-            requestAnimationFrame(() => requestAnimationFrame(resolve)),
-          )
-          const r = field.getBoundingClientRect()
-          const points = [
-            [r.left + 4, r.top + r.height / 2],
-            [r.left + r.width / 2, r.top + r.height / 2],
-            [r.right - 4, r.bottom - 2],
-          ] as const
-          return points.flatMap(([x, y]) => {
-            const hit = document.elementFromPoint(x, y)
-            return hit === field
-              ? []
-              : [
-                  `(${Math.round(x)},${Math.round(y)}) hits ${hit?.outerHTML.slice(0, 80) ?? 'nothing'}`,
-                ]
-          })
-        })
-        expect(covered).toEqual([])
-      })
-
-      test('scrolled to the end, the last content pixel sits above the bar', async () => {
-        const p = await openFixture(spec(variant, { bodyHeight: 2400 }), viewport)
-        await p.waitFor(MORE)
-        await p.scrollToEnd()
-        await p.settle()
-        const end = await p.box('content end', '[data-testid="content-end"]')
-        const bar = await p.box('bar', BAR)
-        expect(end.box.bottom).toBeLessThanOrEqual(bar.box.top + 0.5)
-      })
+/** A finger dragging from (x, y) to (x, y + dy) in real touch events, the ones Base UI's swipe reads. */
+async function touchDrag(p: LayoutPage, x: number, y: number, dy: number): Promise<void> {
+  const cdp = await p.raw.context().newCDPSession(p.raw)
+  const point = (py: number) => [{ x, y: py, id: 1 }]
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: point(y) })
+  const steps = 12
+  for (let i = 1; i <= steps; i++) {
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: point(y + (dy * i) / steps),
     })
+    await p.raw.waitForTimeout(16)
   }
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+  // The drawer settles on the kit's spring, 500 ms.
+  await p.raw.waitForTimeout(800)
+  await p.settle()
+}
+
+const top = async (p: LayoutPage, selector: string): Promise<number> =>
+  (await p.box('box', selector)).box.top
+
+/** Open a section's drawer and let it rest. */
+async function open(p: LayoutPage, section: string): Promise<void> {
+  await p.waitFor(MORE)
+  await p.tap(`${BAR} button[aria-label^="${section}"]`)
+  await p.waitFor(LIST)
+  await p.raw.waitForTimeout(800)
+  await p.settle()
+}
+
+for (const viewport of [PHONE, PHONE_430] as const) {
+  suite(`phone nav at ${viewport.width}x${viewport.height}`, () => {
+    test('a nav with no pick is the section bar; every bar target is at least 44x44 and clears the home indicator', async () => {
+      const p = await openFixture(spec('default'), viewport)
+      await p.waitFor(MORE)
+      const found = await targets(p, BAR)
+      expect(found.length).toBe(5)
+      expect(small(found)).toEqual([])
+      expect(found.filter((t) => t.bottom > viewport.height - INSET + 0.5)).toEqual([])
+    })
+
+    test("the short snap: the drawer's foot is on the bar, its top in the bottom half, its rows 44 high", async () => {
+      const p = await openFixture(spec('drawer'), viewport)
+      await open(p, 'Overview')
+      const bar = await p.box('bar', BAR)
+      const sheet = await p.box('sheet', SHEET)
+      // Thumb reach: nothing of the drawer sits in the top half of the screen.
+      expect(sheet.box.top).toBeGreaterThanOrEqual(viewport.height / 2 - 1)
+      const rows = (await targets(p, LIST)).filter((t) => t.bottom <= bar.box.top + 0.5)
+      expect(rows.length).toBeGreaterThan(3)
+      expect(rows.filter((t) => t.height < FLOOR - 0.5)).toEqual([])
+      // The first row is whole; the list does not scroll at the short snap, a drag grows it instead.
+      // The page behind is dimmed: the scrim is on, over the page and under the bar.
+      const dim = await p.raw.evaluate((sel) => {
+        const scrim = document.querySelector(sel)
+        return scrim === null ? null : Number(getComputedStyle(scrim).opacity)
+      }, slot('shell-phone-list-scrim'))
+      expect(dim).toBe(1)
+      const scrolls = await p.raw.evaluate(
+        (sel) => getComputedStyle(document.querySelector(sel) as Element).overflowY,
+        LIST,
+      )
+      expect(scrolls).toBe('hidden')
+    })
+
+    test('a drag up grows the drawer to its tall snap, at most 85 % of the screen, and a drag down shrinks it', async () => {
+      const p = await openFixture(spec('drawer'), viewport)
+      await open(p, 'Reference')
+      const shortTop = await top(p, SHEET)
+      const grab = await p.box('grabber', GRABBER)
+      const x = grab.box.left + grab.box.width / 2
+      await touchDrag(p, x, grab.box.top + grab.box.height / 2, -400)
+      const tallTop = await top(p, SHEET)
+      expect(tallTop).toBeLessThan(shortTop - 100)
+      // The status bar and a strip of the page stay in view: the screen's top 15 % is not the drawer's.
+      expect(tallTop).toBeGreaterThanOrEqual(viewport.height * 0.15 - 1)
+      const grabTall = await p.box('grabber', GRABBER)
+      await touchDrag(p, x, grabTall.box.top + grabTall.box.height / 2, 300)
+      expect(await top(p, SHEET)).toBeGreaterThan(tallTop + 100)
+    })
+
+    test('at the tall snap the list scrolls inside, its last row ends above the bar, and the top of the list hands the drag back', async () => {
+      const p = await openFixture(spec('drawer'), viewport)
+      await open(p, 'Reference')
+      const grab = await p.box('grabber', GRABBER)
+      const x = grab.box.left + grab.box.width / 2
+      await touchDrag(p, x, grab.box.top + grab.box.height / 2, -400)
+      const tallTop = await top(p, SHEET)
+      const reach = await p.raw.evaluate((sel) => {
+        const list = document.querySelector<HTMLElement>(sel)
+        if (list === null) return null
+        const before = {
+          scrolls: getComputedStyle(list).overflowY,
+          over: list.scrollHeight - list.clientHeight,
+        }
+        list.scrollTop = list.scrollHeight
+        const all = list.querySelectorAll('a, button')
+        return { ...before, end: all[all.length - 1]?.getBoundingClientRect().bottom ?? 0 }
+      }, LIST)
+      if (reach === null) throw new Error('no list')
+      expect(reach.scrolls).toBe('auto')
+      expect(reach.over).toBeGreaterThan(0)
+      const bar = await p.box('bar', BAR)
+      expect(reach.end).toBeLessThanOrEqual(bar.box.top + 0.5)
+      // Back at the top of the list, a drag down on a row moves the drawer, not the list.
+      await p.raw.evaluate((sel) => {
+        const list = document.querySelector<HTMLElement>(sel)
+        if (list !== null) list.scrollTop = 0
+      }, LIST)
+      const row = await p.box('row', `${LIST} a`)
+      await touchDrag(p, row.box.left + row.box.width / 2, row.box.top + row.box.height / 2, 300)
+      expect(await top(p, SHEET)).toBeGreaterThan(tallTop + 100)
+    })
+
+    test('a drag down from the short snap closes the drawer', async () => {
+      const p = await openFixture(spec('drawer'), viewport)
+      await open(p, 'Overview')
+      const grab = await p.box('grabber', GRABBER)
+      await touchDrag(
+        p,
+        grab.box.left + grab.box.width / 2,
+        grab.box.top + grab.box.height / 2,
+        400,
+      )
+      const present = await p.raw.evaluate((sel) => document.querySelector(sel) !== null, SHEET)
+      expect(present).toBe(false)
+    })
+
+    test("another section swaps the drawer's rows and it stays open at the rest the reader chose", async () => {
+      const p = await openFixture(spec('drawer'), viewport)
+      await open(p, 'Overview')
+      await p.tap(`${BAR} button[aria-label^="Kit"]`)
+      await p.raw.waitForTimeout(800)
+      const sheet = await p.box('sheet', SHEET)
+      const bar = await p.box('bar', BAR)
+      expect(sheet.box.top).toBeGreaterThanOrEqual(viewport.height / 2 - 1)
+      const names = await p.raw.evaluate(
+        (sel) => document.querySelector(sel)?.textContent ?? '',
+        LIST,
+      )
+      expect(names).toContain('kit page 1')
+      expect(names).not.toContain('Cards')
+      expect(bar.box.top).toBeGreaterThan(sheet.box.top)
+    })
+
+    test('search is in thumb reach: in the drawer head and at the foot of More, 44 px, over the indicator', async () => {
+      const p = await openFixture(spec('drawer'), viewport)
+      await open(p, 'Overview')
+      const inDrawer = await p.box('search', SEARCH)
+      expect(inDrawer.box.top).toBeGreaterThanOrEqual(viewport.height / 2 - 1)
+      expect(Math.min(inDrawer.box.width, inDrawer.box.height)).toBeGreaterThanOrEqual(FLOOR - 0.5)
+      await p.tap(MORE)
+      await p.settle()
+      const inMore = await p.box('search', `${slot('shell-phone-sidebar')} ${SEARCH}`)
+      // A phone zooms out to fit the shifted app's width, so the screen is what the page reports now.
+      const screen = await p.raw.evaluate(() => window.innerHeight)
+      expect(inMore.box.top).toBeGreaterThanOrEqual(screen / 2)
+      expect(inMore.box.bottom).toBeLessThanOrEqual(screen - INSET + 0.5)
+      expect(inMore.box.height).toBeGreaterThanOrEqual(FLOOR - 0.5)
+      // The rail's own search row, at the top of the sidebar, is not drawn.
+      const rail = await p.raw.evaluate(
+        (sel) => document.querySelector(`${sel} [data-slot="shell-rail-search"]`) !== null,
+        slot('shell-phone-sidebar'),
+      )
+      expect(rail).toBe(false)
+    })
+
+    test("More: the app slides aside, the sidebar's targets are 44 px and clear the indicator", async () => {
+      const p = await openFixture(spec('drawer'), viewport)
+      await p.waitFor(MORE)
+      await p.tap(MORE)
+      await p.settle()
+      const sidebar = await p.box('sidebar', slot('shell-phone-sidebar'))
+      const shell = await p.box('shell', slot('shell'))
+      expect(shell.box.left).toBeGreaterThanOrEqual(sidebar.box.right - 0.5)
+      const found = await targets(p, slot('shell-phone-sidebar'))
+      expect(found.length).toBeGreaterThan(10)
+      expect(small(found)).toEqual([])
+      // The rail ends (its footer of settings and account last) above the indicator; what is
+      // past its scroll viewport's fold is scrolled to, not covered.
+      const rail = await p.box('rail', `${slot('shell-phone-sidebar')} ${slot('shell-rail')}`)
+      expect(rail.box.bottom).toBeLessThanOrEqual(viewport.height - INSET + 0.5)
+    })
+
+    test('a focused text field is never under the bar', async () => {
+      const p = await openFixture(spec('drawer', { bodyHeight: 1600, field: true }), viewport)
+      await p.waitFor(MORE)
+      // The worst place: the field at the very bottom of the scrollport.
+      const covered = await p.raw.evaluate(async () => {
+        const field = document.querySelector<HTMLInputElement>('[data-testid="field"]')
+        if (field === null) return ['no field']
+        field.scrollIntoView({ block: 'end' })
+        field.focus()
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+        const r = field.getBoundingClientRect()
+        const points = [
+          [r.left + 4, r.top + r.height / 2],
+          [r.left + r.width / 2, r.top + r.height / 2],
+          [r.right - 4, r.bottom - 2],
+        ] as const
+        return points.flatMap(([x, y]) => {
+          const hit = document.elementFromPoint(x, y)
+          return hit === field
+            ? []
+            : [
+                `(${Math.round(x)},${Math.round(y)}) hits ${hit?.outerHTML.slice(0, 80) ?? 'nothing'}`,
+              ]
+        })
+      })
+      expect(covered).toEqual([])
+    })
+
+    test('scrolled to the end, the last content pixel sits above the bar', async () => {
+      const p = await openFixture(spec('drawer', { bodyHeight: 2400 }), viewport)
+      await p.waitFor(MORE)
+      await p.scrollToEnd()
+      await p.settle()
+      const end = await p.box('content end', '[data-testid="content-end"]')
+      const bar = await p.box('bar', BAR)
+      expect(end.box.bottom).toBeLessThanOrEqual(bar.box.top + 0.5)
+    })
+  })
 }
 
 afterAll(closeLayoutSuite, CLOSE_BUDGET_MS)

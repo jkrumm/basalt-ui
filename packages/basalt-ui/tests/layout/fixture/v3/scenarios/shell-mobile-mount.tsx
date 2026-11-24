@@ -114,8 +114,9 @@ export async function mount(spec: FixtureSpec, container: HTMLElement): Promise<
   if (!RESET.isConnected) document.head.append(RESET)
   localStorage.clear()
   const html = document.documentElement
-  if (spec.phoneNav === undefined) html.removeAttribute('data-phone-nav')
-  else html.setAttribute('data-phone-nav', spec.phoneNav)
+  const phoneNav = spec.phoneNav ?? 'tabs'
+  if (phoneNav === 'default') html.removeAttribute('data-phone-nav')
+  else html.setAttribute('data-phone-nav', phoneNav)
   if (spec.safeBottom === undefined) html.style.removeProperty('--shell-safe-bottom')
   else html.style.setProperty('--shell-safe-bottom', `${spec.safeBottom}px`)
   const step = densityStep(spec.density)

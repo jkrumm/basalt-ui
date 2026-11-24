@@ -1,5 +1,5 @@
 /**
- * What the trial variants paint, projected from the same `projectMobileNav` the tab bar reads, so a
+ * What the section bar paints, projected from the same `projectMobileNav` the tab bar reads, so a
  * destination's row, badge and active state mean one thing in every form.
  *
  * The bar's slots are the nav's SECTIONS in declared order, at most `BAR_SECTIONS`: each with the

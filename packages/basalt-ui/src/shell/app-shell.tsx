@@ -201,7 +201,7 @@ export function AppShell<N extends DefinedNav>({
   useRouteFocus(pathname)
 
   const sizeClass = useSizeClass()
-  // A trial phone nav (Issue 3205): `tabs`, the shipped bar, unless the playground picked one.
+  // The phone nav: the section bar, unless the app opted into the tab bar (`data-phone-nav="tabs"`).
   const phoneNav = usePhoneNav()
   const rail = useRailState(storageKey, sizeClass)
   const railWidth = useRailWidthState(storageKey)
