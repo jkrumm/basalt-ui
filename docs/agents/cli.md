@@ -32,7 +32,10 @@ resolved local bin for this reason (`BASALT_BIN` overrides it). `basalt-ui --ver
 one-second check.
 
 The editor hook is `.basalt/hook.mjs` (`basalt-ui lint --hook`), placed and registered in
-`.claude/settings.json` by `init` and `sync`, so the agent's off-law edits are caught as it writes.
+`.claude/settings.json` by `sync` (which `init` runs), so the agent's off-law edits are caught as it
+writes. When the bin cannot run, the shim blocks only an edit under a declared root, `.basalt/` or
+`.claude/`. The CLI runs under Node 22+ and Bun; keep every CLI path on `node:` built-ins (the
+Node-only CI job runs `init`, `sync`, `doctor` and `lint` with no Bun on PATH).
 
 **The escape hatch is `// oxlint-disable-next-line basalt/<rule-id> -- <why>`**, scoped to that one rule
 and line; a waiver without `-- <why>` is itself a finding (`basalt/waiver-needs-reason`). The 2.x
