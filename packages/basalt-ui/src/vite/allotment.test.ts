@@ -28,7 +28,7 @@ describe('allotment', () => {
     for (const dir of ALLOTMENT.composites) expect(ALLOTMENT.subpaths[dir], dir).toBeDefined()
   })
 
-  it('lists every src/ui module as a primitive, and each composite as a src directory', () => {
+  it('has a src/ui module for every allotted primitive and a src directory for every composite', () => {
     const modules = readdirSync(`${SRC}ui`)
       .filter((f) => /^[a-z][a-z-]*\.tsx$/.test(f) && !f.includes('.test.'))
       .map((f) => f.replace(/\.tsx$/, ''))
@@ -37,6 +37,12 @@ describe('allotment', () => {
     }
     for (const dir of ALLOTMENT.composites)
       expect(readdirSync(`${SRC}${dir}`).length).toBeGreaterThan(0)
+  })
+
+  it('allots exactly the peers the primitives bring beyond Base UI', () => {
+    const own = new Set(Object.values(ALLOTMENT.primitivePeers).flat())
+    const registry = SURFACES['./ui/*'].optionalPeers.filter((p) => p !== '@base-ui/react')
+    expect([...own].toSorted()).toEqual([...registry].toSorted())
   })
 
   it('reads the fourteen runtime subpaths, 39 primitives and the five primitive peers', () => {
@@ -78,7 +84,7 @@ describe('closure', () => {
     const peers = requiredPeers(closureOf(['ui/date-picker', 'table'], graph))
     expect(peers.get('react-day-picker')).toBe('basalt-ui/ui/date-picker')
     expect(peers.get('@tanstack/react-table')).toBe('basalt-ui/table')
-    expect(peers.get('@base-ui/react')).toBe('basalt-ui/controls')
+    expect(peers.get('@base-ui/react')).toBe('basalt-ui/cards')
     expect(peers.has('shiki')).toBe(false)
   })
 

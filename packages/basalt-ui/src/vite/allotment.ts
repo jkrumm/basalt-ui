@@ -4,8 +4,10 @@
  * composite directories and every allotted primitive with its own extra peers.
  *
  * Hand-authored data, pinned by `allotment.test.ts` against `src/surfaces.ts`, the peer table of
- * `scripts/surface-gates.ts`, `src/ui/*.tsx` and the package subpaths (`docs/v3/CONTRACT.md` renders the
- * same facts); a subpath, a peer or a primitive added in one place and not here fails there.
+ * `scripts/surface-gates.ts` and `src/ui/*.tsx`, and by `scripts/gen-contract.test.ts` against the
+ * composites' real imports (`docs/v3/CONTRACT.md` renders the same facts). A subpath peer or a
+ * primitive peer added elsewhere and not here fails there; a new primitive with no peer of its own
+ * needs no entry.
  */
 export type SubpathAllotment = {
   /** Peers every import of the subpath needs installed. */
@@ -82,7 +84,7 @@ export const ALLOTMENT: Allotment = {
     table: {
       peers: ['@tanstack/react-table', '@base-ui/react'],
       lazy: [],
-      reaches: ['.', 'controls'],
+      reaches: ['.', 'controls', 'cards', 'page'],
     },
     charts: {
       peers: ['@tanstack/charts', 'd3-scale'],
