@@ -97,6 +97,16 @@ describe('a column that draws a mark keeps its card place', () => {
     expect(named.columns.find((p) => p.id === 'used')?.place).toBe('meta')
   })
 
+  test('with the meta slots filled by unnamed numbers the meter still takes a place before them', () => {
+    const numbers = Array.from({ length: 8 }, (_, i) =>
+      c.number('a', { header: `N${i}`, id: `n${i}` }),
+    )
+    const plan = planTable([c.entity('name'), ...numbers, c.meter('used', { max: 100 })], quiet)
+    // meta holds six: the meter, declared last, is placed before the numbers that come first
+    expect(plan.columns.find((p) => p.id === 'used')?.place).toBe('meta')
+    expect(plan.columns.filter((p) => p.place === 'meta').length).toBeLessThanOrEqual(6)
+  })
+
   test("phone: 'columns' keeps the meter as its one meta column", () => {
     const kept = planTable(base, quiet)
       .columns.filter((p) => p.phoneKeep)
