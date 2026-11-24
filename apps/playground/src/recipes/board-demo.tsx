@@ -1,7 +1,7 @@
 // The board wired to local state: what the layout fixture and the S9 test mount. The engine is the
 // shipped `drag`; the S9 test passes a stand-in with the same port.
 import { applyMove, Board, KanbanCard } from 'basalt-ui/cards'
-import type { DragLike } from 'basalt-ui/core/ports'
+import type { DragLike } from 'basalt-ui'
 import type { Move } from 'basalt-ui/cards'
 import { drag } from 'basalt-ui/ui/sortable-list'
 import { VirtualList } from 'basalt-ui/ui/virtual-list'
