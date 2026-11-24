@@ -8,7 +8,7 @@ import { ThemeProvider, useTheme } from 'remix-themes'
 // @invalid
 import useDarkMode from 'use-dark-mode'
 // @valid
-import { setScheme } from 'basalt-ui/core/scheme'
+import { setScheme } from 'basalt-ui'
 // @valid
 import { BasaltProvider } from 'basalt-ui/router'
 // @invalid
