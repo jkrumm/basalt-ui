@@ -84,7 +84,7 @@ export function useLive(): void {
 ## Offline semantics
 
 - `ConnectionView.state` is `live` (stream up), `polling` (no stream, ticks running) or `offline`; it never flips `onlineManager`.
-- Offline is three consecutive classified network failures (a fetch `TypeError` or the `NetworkError` the shared fetch throws) with 5 s hysteresis; any HTTP response resets the count.
+- Offline is three consecutive classified network failures (a fetch `TypeError` or the network error the shared fetch throws) with 5 s hysteresis; any HTTP response resets the count.
 - A schema error, a shape error, `unwrap`'s null-data throw and a failed `external` poll are not network failures and never take the page offline.
 - Wrap every API-client call in `unwrap()` so an error branch throws and a failure is classified.
 

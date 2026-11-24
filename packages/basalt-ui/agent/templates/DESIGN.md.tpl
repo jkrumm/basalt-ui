@@ -7,15 +7,16 @@
 
 ## Identity
 
-{{APP_NAME}} inherits the basalt-ui identity, and every value behind it is derived from the
-`basalt()` configuration, so this region names no value. Silence means "the defaults, unchanged".
+{{APP_NAME}} inherits the basalt-ui identity. Every colour is derived by `basalt-ui tokens:css` from
+the flags recorded in `.basalt/manifest.json`, so this region names no value. Silence means "the defaults, unchanged".
 
 - **Accent hue:** {{ACCENT_HUE}} (one accent, spent where a decision turns on it)
-- **Knobs:** none set. Record any non-default `derive`, `fonts`, `radius` or `density` here, with its reason.
+- **Palette flags:** none set. Record a non-default `--accent`, `--neutral`, `--vibrancy` or `--accents` here, with its reason.
+- **Density:** the `data-density` default (`dense`, `normal` or `comfortable`) if not `normal`, with its reason. Radius has no knob and the three faces ship in `fonts.css`.
 
 ## Direction
 
-_The owner writes this: what the app is for, who reads it, the tone it keeps. Agents leave it empty._
+_A person writes this: what the app is for, who reads it, the tone it keeps. Agents leave it empty._
 
 ## Series
 

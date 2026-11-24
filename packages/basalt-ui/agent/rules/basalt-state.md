@@ -41,5 +41,5 @@ not guarded:
 - Under SSR a field reads URL then fallback until hydration commits; never read a stored value in a server loader.
 - Wrap every API-client call in `unwrap()` so an error branch throws.
 - Keep `ai` and `@ai-sdk/*` on one major across packages; `doctor` checks it at install, the editor does not.
-- A text box that commits on Enter is a `useCommittedField`; a hand-written Enter handler ignores `isComposing` and breaks IME input.
+- A text box that commits on Enter skips the key while `event.nativeEvent.isComposing` is true; an Enter handler without that check breaks IME input.
 - A frame declares the same slots in every phase and fills none before ready: no pill, dash or delta outside the ready phase.

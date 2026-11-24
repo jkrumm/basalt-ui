@@ -1,6 +1,6 @@
 # Recipes
 
-A recipe is the shipped answer to a pattern basalt composes but does not export: a compiled example in `node_modules/basalt-ui/docs/recipes/<name>.md`, its region built by the playground typecheck. Read the one that matches before writing the pattern; a missing export is a recipe, never a local copy. One line per recipe: when to use it, then the file. A new recipe adds its own line here.
+A recipe is the shipped answer to a pattern basalt composes but does not export: a compiled example in `node_modules/basalt-ui/docs/recipes/<name>.md`. Read the one that matches before writing the pattern; a missing export is a recipe, never a local copy. One line per recipe: when to use it, then the file. A new recipe adds its own line here.
 
 - [add-page](node_modules/basalt-ui/docs/recipes/add-page.md): adding a destination to an AppShell app: one file route, one nav entry
 - [app-shell](node_modules/basalt-ui/docs/recipes/app-shell.md): mounting the application frame once, in the `_app` layout route
@@ -23,7 +23,7 @@ A recipe is the shipped answer to a pattern basalt composes but does not export:
 - [mdx](node_modules/basalt-ui/docs/recipes/mdx.md): render authored MDX with the same look as `Prose`, and block unsafe links
 - [memory-state](node_modules/basalt-ui/docs/recipes/memory-state.md): live client state across routes (a timer, a selection) that a basalt control must read and write
 - [optimistic](node_modules/basalt-ui/docs/recipes/optimistic.md): a save should show its result in the cached record before the server answers, and undo itself when the server refuses
-- [remembered-values](node_modules/basalt-ui/docs/recipes/remembered-values.md): a page's filter (a time window) should reopen at the value the user last chose, which 2.x did with a `persist` mirror on a `createSearchStore` field
+- [remembered-values](node_modules/basalt-ui/docs/recipes/remembered-values.md): a page's filter (a time window) should reopen at the value the user last chose
 - [seam-bar](node_modules/basalt-ui/docs/recipes/seam-bar.md): a part-of-whole bar you draw yourself (HTML parts in a row), with focus, dimming and a readout
 - [seam-linked](node_modules/basalt-ui/docs/recipes/seam-linked.md): a chart and a scrolling list of groups (versions, releases) beside it that share one focus
 - [seam-track](node_modules/basalt-ui/docs/recipes/seam-track.md): marks on a time or value track you draw yourself (a waterfall of spans, a lane), with an axis, row labels and focus

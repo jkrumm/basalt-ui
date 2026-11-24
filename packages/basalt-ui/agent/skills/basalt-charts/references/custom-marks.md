@@ -4,8 +4,7 @@ A direct label on a custom mark is placed in plot pixels, never in data space wi
 
 A custom `text` mark sets `fontSize` (`BASALT.text.micro`) and `fill` (`BASALT.ink`) itself: without them it draws about 15 px, larger than the chart's own labels.
 
-A mark you draw is judged as drawing, apart from whether the idea fits: rows, tracks and labels start on one shared x, every label fits its box at 1800 and 390 (none clipped, cut at the edge or hidden under a mark), marks of one class share one size, and pointing at a mark moves nothing on the page. A week track was the right form and the owner called its rendering poorly designed.
-
+A mark you draw is judged as drawing, apart from whether the idea fits: rows, tracks and labels start on one shared x, every label fits its box at 1800 and 390 (none clipped, cut at the edge or hidden under a mark), marks of one class share one size, and pointing at a mark moves nothing on the page.
 A region the question asks about (a ride window, the senders to mute) is a zone, never a hand-drawn `rect`: `axis: 'x'` takes an x range (numbers, `Date`s or band keys), `y` bounds it, and `label` names it on the plot.
 
 ```tsx

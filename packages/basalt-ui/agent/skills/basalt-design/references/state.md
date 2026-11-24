@@ -6,7 +6,7 @@ Where a value lives, decided in this order. Props are in the generated docs: [ex
 
 - A link should reproduce it (a filter, a range, a tab, a selection): a URL field of the page's `defineControls` store. A shared link opens the same view.
 - Only this device should remember it (a rail state, a density, an unfinished draft): `persisted`, one keyed store with a frozen envelope. Read [persisted](node_modules/basalt-ui/docs/persisted.md) before defining a key.
-- Live client state another module owns (a timer, a Zustand slice, a selection): [externalField](node_modules/basalt-ui/docs/external-field.md) binds it as a handle; the recipe is `docs/recipes/memory-state.md`, region `recipe:memory-state` in `apps/playground/src/recipes/memory-state.ts`.
+- Live client state another module owns (a timer, a Zustand slice, a selection): [externalField](node_modules/basalt-ui/docs/external-field.md) binds it as a handle; the recipe is [memory-state](node_modules/basalt-ui/docs/recipes/memory-state.md).
 - A server value is a query, not state. Server data and a draft of it stay separate.
 
 ## Page state against global memory

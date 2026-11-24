@@ -57,4 +57,4 @@ not guarded:
 - `CardGrid` takes a `min` tier (`narrow`, `regular`, `wide`), never a column count or a width.
 - One `PageBar` per `Page`, one lit attention badge: the dev build asserts both. A shortcut that runs an action is a `defineCommands` entry, one chord per command in an area (`defineCommands` throws on a second; `listed: false` keeps it out of the palette); a key that is no command is `useHotkey` from `@tanstack/react-hotkeys` (optional peer, pinned exact, `target` a ref); never a hand-written `window` `keydown`.
 - App CSS never targets `data-slot` or a shell class; stylelint `selector-disallowed-list` holds it where configured.
-- Build the router from `routerDefaults` and the template's `_app` layout; never `createBasaltRouter`.
+- Build the router from `routerDefaults` and the template's `_app` layout, never a router factory of your own.
