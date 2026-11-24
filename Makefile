@@ -96,7 +96,9 @@ check-post:
 # apps/playground is a sibling `init --profile app` install: sync places its gitignored root copies and must leave every
 # committed file in it as it is (a stale preset or AGENTS block fails here), then doctor passes all twelve checks.
 playground-doctor: ## The playground's install: basalt-ui sync changes no committed file, then basalt-ui doctor passes
-	@cd apps/playground && ./node_modules/.bin/basalt-ui sync > /dev/null && git diff --exit-code -- . && ./node_modules/.bin/basalt-ui doctor
+	@cd apps/playground && before="$$(git diff -- . | shasum)" && ./node_modules/.bin/basalt-ui sync > /dev/null \
+		&& { [ "$$(git diff -- . | shasum)" = "$$before" ] || { echo "basalt-ui sync changed apps/playground:"; git diff --stat -- .; exit 1; }; } \
+		&& ./node_modules/.bin/basalt-ui doctor
 
 # Production probe, NOT the local gate (`make check`). `curl -fsS` exits non-zero on any 4xx/5xx or
 # connection failure, so a green run means basalt-ui.com answered 2xx. The site is a static nginx
