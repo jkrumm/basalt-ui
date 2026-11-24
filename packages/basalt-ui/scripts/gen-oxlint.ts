@@ -111,57 +111,12 @@ export const REPO_COMPILER_RULE_EXEMPTIONS: readonly CompilerRuleExemption[] = [
 /** Paths are relative to `apps/playground` (oxlint resolves a nested config's globs from its dir). */
 export const PLAYGROUND_COMPILER_RULE_EXEMPTIONS: readonly CompilerRuleExemption[] = []
 
-/**
- * A form of a rule switched off for named playground files, the rest of the rule staying on. The
- * expression scenario below was built by hand before `primitive-bypass/list-rows` existed; c10
- * follows with its next cycle (`v3-owner-1-rerun` rebuilt n02 and n04 and deleted theirs). The trial
- * builds (expression scenarios and cycle pages) are never hand-finished, so `figure-readout` is off for
- * them as one entry until their rerun. Never a blanket off, never a new file.
- */
-type FormWaiver = { rule: string; forms: readonly string[]; reason: string; files: string[] }
-
-export const PLAYGROUND_FORM_WAIVERS: readonly FormWaiver[] = [
-  {
-    rule: 'basalt/primitive-bypass',
-    forms: ['figure-readout'],
-    reason:
-      'trial builds whose figure follows the focus, from before figure-readout; v3-owner-2-rerun rebuilds them',
-    files: ['src/scenarios/expr/**', 'src/cycle/**'],
-  },
-  // After the trial-build entry: a later override replaces an earlier one's options, so c10 names both.
-  {
-    rule: 'basalt/primitive-bypass',
-    forms: ['list-rows', 'figure-readout'],
-    reason: 'a hand-built row list from before RowList; rebuilt by its next cycle',
-    files: ['src/scenarios/expr/c10/**'],
-  },
-]
-
-/**
- * Trial builds rebuilt on the figure contract (`v3-owner-2-rerun`): an override after the trial-build
- * waiver turns every `primitive-bypass` form back on for them. Not a waiver: it lints in full.
- */
-export const PLAYGROUND_REBUILT_TRIALS: readonly string[] = [
-  'src/scenarios/expr/n04/**',
-  'src/cycle/shell-6/**',
-]
-
 /** The playground's `overrides`, pinned against `apps/playground/.oxlintrc.json` by the sync test. */
 export function projectPlaygroundOverrides(): OverrideBlock[] {
-  return [
-    ...PLAYGROUND_COMPILER_RULE_EXEMPTIONS.map(({ rule, files }) => ({
-      files,
-      rules: { [rule]: 'off' },
-    })),
-    ...PLAYGROUND_FORM_WAIVERS.map(({ rule, forms, files }) => ({
-      files,
-      rules: { [rule]: ['error', { formsOff: [...forms] }] },
-    })),
-    {
-      files: [...PLAYGROUND_REBUILT_TRIALS],
-      rules: { 'basalt/primitive-bypass': ['error', { formsOff: [] }] },
-    },
-  ]
+  return PLAYGROUND_COMPILER_RULE_EXEMPTIONS.map(({ rule, files }) => ({
+    files,
+    rules: { [rule]: 'off' },
+  }))
 }
 
 /** The one file allowed to import the chart engine's DOM host (`@tanstack/charts/react`). */
