@@ -491,7 +491,7 @@ function namesIn(file: string, pkgRoot: string, seen = new Set<string>()): Set<s
   return names
 }
 
-/** Public entry specifier (\`basalt-ui\`, \`basalt-ui/charts\`) → the names it exports. Copied from design-references.test.ts. */
+/** Public entry specifier (\`basalt-ui\`, \`basalt-ui/charts\`) → the names it exports; design-references.test.ts reads the same map. */
 export function publicEntries(pkgRoot: string = PKG_ROOT): Map<string, Set<string>> {
   const entries = new Map<string, Set<string>>()
   for (const [sub, target] of Object.entries(readExports(pkgRoot))) {

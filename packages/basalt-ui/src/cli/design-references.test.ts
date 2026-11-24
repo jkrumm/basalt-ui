@@ -1,10 +1,11 @@
 /** Drift guard for the `basalt-design` router: its references exist, are linked, and name only real exports. */
 import { describe, expect, it } from 'bun:test'
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
+import { publicEntries } from '../../scripts/agent-layer-guards'
+
 const SKILL_DIR = resolve(import.meta.dir, '../../agent/skills/basalt-design')
-const SRC = resolve(import.meta.dir, '..')
 const REFERENCES = [
   'ai',
   'anti-defaults',
@@ -36,64 +37,6 @@ function markdownFiles(dir: string): string[] {
     if (statSync(path).isDirectory()) return markdownFiles(path)
     return path.endsWith('.md') ? [path] : []
   })
-}
-
-const PKG = resolve(import.meta.dir, '../..')
-
-/** The source file behind a `package.json` export target (`./dist/charts/index.js` → `src/charts/index.ts`). */
-function sourceOf(target: string): string | undefined {
-  const base = join(PKG, target.replace(/^\.\/dist\//, 'src/').replace(/\.js$/, ''))
-  return [`${base}.ts`, `${base}.tsx`, join(base, 'index.ts')].find((f) => existsSync(f))
-}
-
-/** Names one source file exports, following `export * from './x'` one barrel deep. */
-function namesIn(file: string, seen = new Set<string>()): Set<string> {
-  const names = new Set<string>()
-  if (seen.has(file)) return names
-  seen.add(file)
-  const text = readFileSync(file, 'utf8')
-  for (const block of text.matchAll(/export\s+(?:type\s+)?\{([^}]*)\}/g)) {
-    for (const part of (block[1] ?? '').split(',')) {
-      const alias = part
-        .trim()
-        .replace(/^type\s+/, '')
-        .split(/\s+as\s+/)
-        .pop()
-      if (alias) names.add(alias.trim())
-    }
-  }
-  for (const m of text.matchAll(/export\s+(?:declare\s+)?(?:function|const|class|type)\s+(\w+)/g)) {
-    names.add(m[1] as string)
-  }
-  for (const m of text.matchAll(/export\s+\*\s+from\s+'(\.[^']+)'/g)) {
-    const target = sourceOf(`./dist/${join(file.slice(SRC.length + 1), '..', m[1] as string)}.js`)
-    if (target) for (const n of namesIn(target, seen)) names.add(n)
-  }
-  return names
-}
-
-/** Public entry specifier (`basalt-ui`, `basalt-ui/charts`) → the names it exports. */
-function publicEntries(): Map<string, Set<string>> {
-  const pkg = JSON.parse(readFileSync(join(PKG, 'package.json'), 'utf8')) as {
-    exports: Record<string, { import?: string }>
-  }
-  const entries = new Map<string, Set<string>>()
-  for (const [sub, target] of Object.entries(pkg.exports)) {
-    // A wildcard subpath (`./ui/*`) is one entry per module in its source directory.
-    if (sub.includes('*') && target.import) {
-      const dir = join(PKG, target.import.replace(/^\.\/dist\//, 'src/').replace(/\/\*\.js$/, ''))
-      for (const name of readdirSync(dir)) {
-        const mod = name.replace(/\.tsx?$/, '')
-        if (mod === name || /\.(test|guard|type-guard)$/.test(mod)) continue
-        const file = sourceOf(target.import.replace('*', mod))
-        if (file) entries.set(`basalt-ui/${sub.slice(2).replace('*', mod)}`, namesIn(file))
-      }
-      continue
-    }
-    const file = target.import ? sourceOf(target.import) : undefined
-    if (file) entries.set(sub === '.' ? 'basalt-ui' : `basalt-ui/${sub.slice(2)}`, namesIn(file))
-  }
-  return entries
 }
 
 const exportedNames = (): Set<string> =>
