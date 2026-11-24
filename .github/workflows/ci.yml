@@ -108,7 +108,7 @@ jobs:
           UNIT_PEAK_MIB: 16384
         run: bun scripts/unit-test.ts
 
-  # The CLI under Node with no Bun on PATH (engines.node >=22): Bun builds and packs the tarball, then a
+  # The CLI under Node with no Bun on PATH, at the engines.node floor (22.18, the first with type stripping on): Bun builds and packs the tarball, then a
   # scratch npm app runs init, sync, doctor and lint through the local bin, ages the install the way an
   # upgrade finds it, and proves sync heals it (packages/basalt-ui/scripts/node-cli-smoke.sh).
   node-cli:
@@ -125,10 +125,10 @@ jobs:
         working-directory: packages/basalt-ui
         run: bun run build && bun pm pack
 
-      - name: Setup Node.js 22 (the engines floor)
+      - name: Setup Node.js 22.18.0 (the engines floor)
         uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version: '22.18.0'
 
       - name: init, sync, doctor and lint with no Bun on PATH
         working-directory: packages/basalt-ui
