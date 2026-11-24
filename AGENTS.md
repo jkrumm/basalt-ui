@@ -1,7 +1,7 @@
 # Basalt UI — Project Context
 
 An opinionated framework for **React apps on Base UI and Tailwind 4**, extracted from argo (the POC). A
-consumer app instantly gets: a `BasaltProvider` (`basalt-ui/router`), an app
+consumer app instantly gets: a `BasaltProvider` (`basalt-ui`, re-exported by `basalt-ui/router`), an app
 shell (`AppShell`: header, rail, one scrollport, aside and a phone tab bar, driven by one `defineNav`), a chart system, a
 three-tier `--basalt-*` token system, a Vite preset, raw toolchain config presets, and a
 `basalt-ui` CLI (bin named like the package — never `bunx basalt`).
