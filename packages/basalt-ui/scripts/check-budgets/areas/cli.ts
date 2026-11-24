@@ -60,11 +60,12 @@ export const rows: readonly RowDef[] = [
   // 12947 -> 12970 (trial 2 kit defects): shot detect reads the frames the rest shot draws in their empty phase (measure.ts +9, detect.ts +13, types.ts +1).
   // 12905 -> 12947 (shot-overlap): `shot`'s measurer clips each text box by its clipping ancestors and its own ellipsis before the overlap test (measure.ts, +42).
   // 12970 -> 13272 (ga-agent-layer, Issue 3167): `init --profile app` installs lucide-react for the icon provider its root templates mount (init/steps.ts +13); `shot detect --facts <dir>` counts the words, phrases and constants a page says in several places (shot/facts.ts +208, shot/detect.ts +79, help.ts +2). Consumer: a basalt-design page whose fact count was a shell one-liner.
+  // 13272 -> 13285 (init-sibling-oxfmt): a sibling app's new `.oxfmtrc.json` copies the repo root's formatter settings, so oxfmt does not read a file holding only ignorePatterns (cli/init/steps.ts +13).
   {
     id: 'cli-lines',
     order: 110,
     label: 'CLI non-test lines (src/cli/**)',
-    ceiling: 13272,
+    ceiling: 13285,
     measure: () =>
       totalLines(
         walkFiles(join(PKG_ROOT, 'src/cli'), /\.tsx?$/).filter((p) => !/\.test\.tsx?$/.test(p)),
@@ -195,6 +196,13 @@ export const raises: Raises = {
       to: 13272,
       consumer:
         '`init --profile app` mounts the lucide icon defaults and installs lucide-react; `shot detect --facts <dir>` replaces the shell fact count the basalt-design skill carried',
+      repo: 'basalt-ui',
+    },
+    {
+      from: 13272,
+      to: 13285,
+      consumer:
+        '`init` in a sibling app (apps/playground, Issue 3164) writing its own .oxfmtrc.json',
       repo: 'basalt-ui',
     },
   ],

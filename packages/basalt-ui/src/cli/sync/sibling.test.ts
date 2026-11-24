@@ -220,6 +220,24 @@ describe('init --profile app in a declared sibling', () => {
     )
   })
 
+  it("a new .oxfmtrc.json in the app carries the repo root's formatter settings", async () => {
+    const dir = repo()
+    writeFileSync(
+      join(dir, '.oxfmtrc.json'),
+      JSON.stringify({ printWidth: 100, semi: false, ignorePatterns: ['dist/**'] }),
+    )
+    const result = await appInit(dir, 'apps/x-v3')
+    expect(result.code).toBe(0)
+    const fmt = JSON.parse(readFileSync(join(dir, 'apps/x-v3/.oxfmtrc.json'), 'utf8')) as {
+      printWidth: number
+      semi: boolean
+      ignorePatterns: string[]
+    }
+    expect(fmt.printWidth).toBe(100)
+    expect(fmt.semi).toBe(false)
+    expect(fmt.ignorePatterns).not.toContain('dist/**')
+  })
+
   it('renders the rules for the app and renames the skills and their references', async () => {
     const dir = repo()
     await appInit(dir, 'apps/x-v3')

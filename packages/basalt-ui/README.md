@@ -550,7 +550,8 @@ strict flags), `react-app` (`base` + DOM/JSX libs) and `node` (`base` + Node typ
 `tsc` checks every file in the program with the program's options, so a workspace package imported from source is checked under the preset's flags and no compiler option excludes it. Give each package its own tsconfig and link them with TS project references (`references` + `composite: true`), or consume the package's built `.d.ts`.
 
 `.oxfmtrc.json` has no `extends` of its own — copy `configs/oxfmt.json` verbatim. `basalt-ui init`
-only adds the `ignorePatterns` for the managed paths.
+adds the `ignorePatterns` for the managed paths to an existing file and writes a new one when none exists;
+a sibling app's new file copies the repo root's formatter settings (not its `ignorePatterns`).
 
 ---
 
