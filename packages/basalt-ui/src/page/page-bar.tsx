@@ -14,7 +14,7 @@ import { Input } from '../ui/input'
 import { Menu, MenuContent, MenuItem, MenuTrigger } from '../ui/menu'
 import { ConnectionIndicator } from './connection-indicator'
 import { FavoriteToggle } from './favorites'
-import { PanelSteps } from './panel-steps'
+import { CLOSE, Glyph, PanelSteps } from './panel-steps'
 import { registerRecordSteps } from '../core/record-steps'
 import { devAssertOnce, createBarClaims } from './core/claims'
 import { observeBarHeight, publishBarHeight } from './core/bar-measure'
@@ -137,8 +137,6 @@ function ActionText({ action, folded }: { action: PageTextAction; folded: boolea
 const isText = (action: PageAction): action is PageTextAction =>
   'kind' in action && action.kind === 'text'
 
-const CLOSE = 'M4 4l8 8M12 4l-8 8'
-
 /**
  * A routed record page's way through its list: the panels' previous and next, then close back to the
  * list. `k` and `j` step through the same sequence (`core/record-steps.ts`).
@@ -161,9 +159,7 @@ function RecordNav({
           data-slot="page-records-close"
           className={buttonVariants({ variant: 'ghost', size: 'sm', shape: 'icon' })}
         >
-          <svg viewBox="0 0 16 16" className="size-icon" fill="none" aria-hidden="true">
-            <path d={CLOSE} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
+          <Glyph d={CLOSE} />
         </AppLink>
       )}
     </div>
