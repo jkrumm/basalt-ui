@@ -14,6 +14,7 @@ import type { ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createQueryClient } from 'basalt-ui/data'
 import { BasaltProvider, routerDefaults } from 'basalt-ui/router'
+import { LucideProvider } from 'lucide-react'
 import { RouteError } from './components/route-error'
 import { RouteMissing } from './components/route-missing'
 import { RoutePending } from './components/route-pending'
@@ -44,8 +45,11 @@ declare module '@tanstack/react-router' {
 
 // `link` makes every link prop (`StatCard href`, `CardAction`, `col.entity`) navigate through the router: no document load.
 // Push updates: `live={bindInvalidation(queryClient, channel, o)}` here (docs/bind-invalidation.md).
+// The icon defaults the shipped basalt rule names (16 px, 1.5 px stroke): one provider per React root.
 createRoot(document.getElementById('root')!).render(
   <BasaltProvider link={defaults.link}>
-    <RouterProvider router={router} />
+    <LucideProvider size={16} strokeWidth={1.5} absoluteStrokeWidth>
+      <RouterProvider router={router} />
+    </LucideProvider>
   </BasaltProvider>,
 )

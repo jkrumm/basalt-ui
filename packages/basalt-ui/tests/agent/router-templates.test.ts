@@ -204,6 +204,19 @@ describe('router templates', () => {
     )
   })
 
+  test('the icon defaults mount once per React root: in main for an SPA, in the Start root for a Start app', () => {
+    const mounts = (tpls: string[]): number =>
+      tpls.reduce((n, tpl) => n + (filled(tpl).match(/<LucideProvider[\s>]/g)?.length ?? 0), 0)
+    const mount = '<LucideProvider size={16} strokeWidth={1.5} absoluteStrokeWidth>'
+    expect(mounts(Object.keys(SEEDS))).toBe(1)
+    expect(filled('main.tpl')).toContain("import { LucideProvider } from 'lucide-react'")
+    expect(filled('main.tpl')).toMatch(
+      /<BasaltProvider link=\{defaults\.link\}>\s*<LucideProvider[\s\S]*<\/LucideProvider>\s*<\/BasaltProvider>/,
+    )
+    expect(mounts([...Object.keys(SHARED_SEEDS), ...Object.keys(START_SEEDS)])).toBe(1)
+    expect(filled('__root.start.tpl')).toContain(mount)
+  })
+
   test('no template names a 2.x router symbol', () => {
     for (const tpl of [...Object.keys(SEEDS), ...Object.keys(START_SEEDS)]) {
       const text = readFileSync(join(pkgRoot, 'agent/templates', tpl), 'utf8')

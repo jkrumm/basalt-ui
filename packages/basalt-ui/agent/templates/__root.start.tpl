@@ -20,6 +20,7 @@ import {
 import type { ReactNode } from 'react'
 import { BasaltProvider, routerDefaults } from 'basalt-ui/router'
 import { themeScript } from 'basalt-ui/theme-script'
+import { LucideProvider } from 'lucide-react'
 import appCss from '{{CSS_ENTRY}}?url'
 
 export type RouterContext = { queryClient: QueryClient }
@@ -55,7 +56,9 @@ function RootDocument({ children }: { children: ReactNode }) {
 function RootLayout() {
   return (
     <BasaltProvider link={routerDefaults().link}>
-      <Outlet />
+      <LucideProvider size={16} strokeWidth={1.5} absoluteStrokeWidth>
+        <Outlet />
+      </LucideProvider>
     </BasaltProvider>
   )
 }
