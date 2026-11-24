@@ -301,7 +301,9 @@ node -e "
   console.log('site: static page 0 module scripts, island page 1 island')
 "
 [ -f .basalt/sources.css ] || { echo "FAILED: basaltAstro() wrote no .basalt/sources.css"; exit 1; }
-grep -qF 'dist/ui/button.*' .basalt/sources.css || { echo "FAILED: the island's button is not a source"; cat .basalt/sources.css; exit 1; }
+# The island imports ui/button: the sheet sources the ui directory, keeps button and drops what nothing reaches.
+grep -qE '^@source "[^"]*/dist/ui";$' .basalt/sources.css && ! grep -qF 'ui/button.*' .basalt/sources.css \
+  && grep -qF '@source not' .basalt/sources.css || { echo "FAILED: the island's button is not a source"; cat .basalt/sources.css; exit 1; }
 quiet ./node_modules/.bin/basalt-ui doctor
 echo "site: init wired it with no hand edit and doctor passes"
 
