@@ -15,7 +15,7 @@ const y = (d: Row): number => d.v
 
 export function rejected(): void {
   CartesianChart({
-    ariaLabel: 'V',
+    label: 'V',
     data: [],
     x,
     series: [
@@ -24,14 +24,14 @@ export function rejected(): void {
     ],
   })
   CartesianChart({
-    ariaLabel: 'V',
+    label: 'V',
     data: [],
     x,
     // @ts-expect-error a free color string is not a series color
     series: [{ mark: 'line', key: 'v', label: 'V', color: '#ff0000', y }],
   })
   CartesianChart({
-    ariaLabel: 'V',
+    label: 'V',
     data: [],
     x,
     // @ts-expect-error the stroke scale is closed: `weight`, never a number
@@ -40,21 +40,21 @@ export function rejected(): void {
   // @ts-expect-error an unnamed chart is an unlabeled image
   CartesianChart({ data: [], x, series: [{ mark: 'line', key: 'v', label: 'V', color, y }] })
   Lines({
-    ariaLabel: 'V',
+    label: 'V',
     data: [],
     x,
     // @ts-expect-error a bar is not a line
     series: [{ mark: 'bar', key: 'v', label: 'V', color, y }],
   })
   Bars({
-    ariaLabel: 'V',
+    label: 'V',
     data: [],
     x,
     // @ts-expect-error a dot is neither a bar nor an overlay line
     series: [{ mark: 'dot', key: 'v', label: 'V', color, y }],
   })
   CartesianChart({
-    ariaLabel: 'V',
+    label: 'V',
     data: [],
     x,
     // @ts-expect-error `dash` belongs to a line series
@@ -64,7 +64,7 @@ export function rejected(): void {
 
 test('the accepted shape compiles', () => {
   const props = {
-    ariaLabel: 'V',
+    label: 'V',
     data: [] as Row[],
     x,
     series: [{ mark: 'line', key: 'v', label: 'V', color, y, weight: 'strong', dash: true }],
