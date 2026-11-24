@@ -89,6 +89,6 @@ export type { BasaltMessages, CalendarDate, Format, Msg } from './core/format'
 
 // The one augmentable seam: `declare module 'basalt-ui' { interface BasaltRegister { … } }` only
 // merges when the entry exports the interface. `v2-surface.md` marks it `delete` (no consumer
-// *names* it), but every typed registry (commands, overlays, notifications, series) resolves
-// through it — augmentation is not an import, so the consumer count missed it.
-export type { BasaltRegister, SeriesKey } from './register'
+// *names* it), but every typed registry (commands, overlays, notifications) resolves through it —
+// augmentation is not an import, so the consumer count missed it.
+export type { BasaltRegister } from './register'

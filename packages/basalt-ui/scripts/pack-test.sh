@@ -336,22 +336,20 @@ cat >tsconfig.dist-vantage.json <<'JSON'
 }
 JSON
 # Write a consumer .ts that imports from the installed basalt-ui dist .d.ts files.
-# Uses groupTokens' branded SeriesGroup, the BasaltRegister augmentation seam and SeriesKey — one
-# per published surface.
+# Uses groupTokens' branded SeriesGroup and the BasaltRegister augmentation seam — one per published
+# surface.
 cat >dist-vantage.ts <<'TS'
 import type { BasaltRegister } from 'basalt-ui'
-import { buildPaletteCss, defineSeries, groupTokens } from 'basalt-ui/tokens'
-import type { SeriesKey } from 'basalt-ui'
+import { buildPaletteCss, groupTokens } from 'basalt-ui/tokens'
 
 // groupTokens returns a branded SeriesGroup that buildPaletteCss({ groups }) accepts
-const _group = groupTokens('x', defineSeries({ a: { light: '#111111', dark: '#eeeeee' } }))
+const _group = groupTokens('x', { a: { light: '#111111', dark: '#eeeeee' } })
 const _css = buildPaletteCss({ groups: [_group] })
 
-// An un-augmented register is never-keyed; SeriesKey resolves (never when un-augmented)
+// An un-augmented register is never-keyed
 const _k: keyof BasaltRegister = undefined as never
-const _sk: SeriesKey = undefined as never
 
-export { _css, _k, _sk }
+export { _css, _k }
 TS
 bunx tsc --project tsconfig.dist-vantage.json
 echo "dist-vantage tsc OK"

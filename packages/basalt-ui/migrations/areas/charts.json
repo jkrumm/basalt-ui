@@ -325,6 +325,15 @@
       "from": "basalt-ui/charts#BandStrip.ariaLabel",
       "to": "label",
       "note": "the accessible name is `label` on every part that takes one; `ariaLabel` stays a deprecated alias for one minor (a chart takes exactly one of the two)"
+    },
+    {
+      "id": "charts-series-key",
+      "kind": "removed",
+      "from": "basalt-ui#SeriesKey and the `series` slot of BasaltRegister",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "the slot typed no chart: `key`, `plot.rows(key)` and `focusSeries` take the data's own string; delete any `interface BasaltRegister { series: … }` augmentation",
+      "verify": "tsc"
     }
   ],
   "tokens": { "renamed": [], "valueShifts": [] },

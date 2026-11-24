@@ -4,7 +4,7 @@
  * The command holds no emission logic of its own: the sheet it prints is what `emitTokensCss`
  * returns and the JSON is what `emitJsonText` returns for the same options, so a consumer who ran
  * the CLI and one who imported the emitters see one design system. What the CLI adds is flag
- * handling, the `--extra` app sheet and its `.d.ts`, and `--check`. See `./toolchain-wiring.test.ts`
+ * handling, the `--extra` app sheet, and `--check`. See `./toolchain-wiring.test.ts`
  * for the framing's guard tests.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
@@ -242,7 +242,7 @@ describe('tokens:css --extra', () => {
   }
   const extra = (out = 'app-tokens.css') => ['--extra', FILE, '--out', out]
 
-  it('emits per-scheme pairs, vars once on :root, and a sibling .d.ts', () => {
+  it('emits per-scheme pairs and vars once on :root, and no .d.ts', () => {
     write({ series: { usage: SERIES }, vars: VARS })
     expect(tokensCss(extra(), dir)).toBe(0)
     const css = read('app-tokens.css')
@@ -256,23 +256,18 @@ describe('tokens:css --extra', () => {
     expect(css).toContain(
       ':root {\n  --basalt-optimalZone: color-mix(in srgb, var(--basalt-good) 10%, transparent);',
     )
-    const dts = read('app-tokens.css.d.ts')
-    expect(dts).toContain("declare module 'basalt-ui'")
-    expect(dts).toContain('interface BasaltRegister')
-    expect(dts).toContain("readonly 'usage-hrvWeekly'")
-    expect(dts).toContain('export {}')
+    // No register augmentation: a chart reads the pair from the series file itself.
+    expect(existsSync(resolve(dir, 'app-tokens.css.d.ts'))).toBe(false)
   })
 
-  it('writes the same two-line provenance header on both files', () => {
+  it('writes the two-line provenance header', () => {
     write({ series: { usage: SERIES } })
     tokensCss(extra(), dir)
-    for (const name of ['app-tokens.css', 'app-tokens.css.d.ts']) {
-      const [line1, line2] = read(name).split('\n')
-      expect(line1).toBe(GENERATED_HEADER_LINE)
-      expect(line2).toBe(
-        `/* basalt-ui ${VERSION} — \`basalt-ui tokens:css --extra ${FILE} --out app-tokens.css\` */`,
-      )
-    }
+    const [line1, line2] = read('app-tokens.css').split('\n')
+    expect(line1).toBe(GENERATED_HEADER_LINE)
+    expect(line2).toBe(
+      `/* basalt-ui ${VERSION} — \`basalt-ui tokens:css --extra ${FILE} --out app-tokens.css\` */`,
+    )
   })
 
   it('uses the scheme selectors of the stock sheet', () => {
@@ -310,29 +305,10 @@ describe('tokens:css --extra', () => {
       expect(log).toContain('app-tokens.css differs')
     })
 
-    it('exits 1 on one changed byte in the .d.ts', () => {
-      write({ series: { usage: SERIES }, vars: VARS })
-      tokensCss(extra(), dir)
-      writeFileSync(
-        resolve(dir, 'app-tokens.css.d.ts'),
-        read('app-tokens.css.d.ts').replace('usage-raw', 'usage-rax'),
-      )
-      const { value, log } = check()
-      expect(value).toBe(1)
-      expect(log).toContain('app-tokens.css.d.ts differs')
-    })
-
     it('exits 1 when the source moved and the files did not', () => {
       write({ series: { usage: SERIES } })
       tokensCss(extra(), dir)
       write({ series: { usage: { ...SERIES, hrv: { hue: 'red' } } } })
-      expect(check().value).toBe(1)
-    })
-
-    it('exits 1 when the .d.ts is missing', () => {
-      write({ series: { usage: SERIES } })
-      tokensCss(extra(), dir)
-      rmSync(resolve(dir, 'app-tokens.css.d.ts'))
       expect(check().value).toBe(1)
     })
   })
@@ -342,7 +318,6 @@ describe('tokens:css --extra', () => {
       write(data)
       const result = capture(() => tokensCss(extra(), dir))
       expect(existsSync(resolve(dir, 'app-tokens.css'))).toBe(false)
-      expect(existsSync(resolve(dir, 'app-tokens.css.d.ts'))).toBe(false)
       return result
     }
 
@@ -392,7 +367,7 @@ describe('tokens:css --extra', () => {
     })
   })
 
-  it('needs --out, since the sheet and the .d.ts are two files', () => {
+  it('needs --out, since the app sheet is a committed file', () => {
     write({ series: {} })
     const { value, log } = capture(() => tokensCss(['--extra', FILE], dir))
     expect(value).toBe(1)

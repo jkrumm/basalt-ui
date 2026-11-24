@@ -40,7 +40,6 @@
   "defineControls": "linewatch:web/src/lib/dashboard-store.ts",
   "defineNav": "argo:apps/dashboard/src/lib/nav.tsx",
   "defineOverlays": "argo:apps/dashboard/src/lib/commands.tsx",
-  "defineSeries": "argo:apps/dashboard/src/lib/series.ts",
   "Dock": "software-factory:the console Peek (apps/console/src/components/kit/peek.tsx) gains a pin that docks the record beside every page (Issue 1958)",
   "EmptyState": "argo:apps/dashboard/src/routes/strength-tracker.tsx",
   "EventList": "argo:apps/dashboard/src/features/agents/narratives-section.tsx",

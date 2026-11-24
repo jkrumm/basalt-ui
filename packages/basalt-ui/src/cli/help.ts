@@ -117,8 +117,8 @@ export const USAGE =
   '  --selector scopes a tenant sheet (only the roles that differ from the default) to a `:root[…]` selector.\n' +
   '  --accents emits the accent sheet instead: one :root[data-accent=<name>] block per named accent (blue, violet, rose,\n' +
   '    orange, green, teal) against the base the other flags set; import it after tokens.css. Without it no accent ships.\n' +
-  '  --extra emits your app-owned tokens (src/basalt.tokens.ts) to --out, plus a sibling <out>.d.ts.\n' +
-  '  --check writes nothing and exits 1 when --out (and the .d.ts) differ from what would be emitted (a CI gate).\n' +
+  '  --extra emits your app-owned tokens (src/basalt.tokens.ts) to --out.\n' +
+  '  --check writes nothing and exits 1 when --out differs from what would be emitted (a CI gate).\n' +
   '  Negative values take the = form: --vibrancy=-2.\n' +
   '\n' +
   'fonts:css [--out <path>] [--check]\n' +

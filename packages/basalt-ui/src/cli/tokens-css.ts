@@ -204,14 +204,14 @@ function invocationOf(flags: string[]): string {
 /** What one `tokens:css` run emits: files to `--out` (paths as given), or the stylesheet for stdout. */
 export type TokenEmit = { files: { out: string; content: string }[] } | { stdout: string }
 
-/** `--extra`: the app sheet to `--out` and its `.d.ts` beside it. */
+/** `--extra`: the app sheet to `--out`. */
 function extraOutput(flags: string[], cwd: string, version: string): TokenEmit | { error: string } {
   const file = flagValue(flags, '--extra') as string
   const out = flagValue(flags, '--out')
   if (out === undefined) {
     return {
       error:
-        'tokens:css --extra needs --out <path>: the sheet and its .d.ts are two files, so there is no stdout form.',
+        'tokens:css --extra needs --out <path>: the app sheet is a committed file, so there is no stdout form.',
     }
   }
   const clash = ['--accent', '--neutral', '--vibrancy', '--selector', '--accents', '--format'].find(
@@ -228,13 +228,7 @@ function extraOutput(flags: string[], cwd: string, version: string): TokenEmit |
   const header = generatedHeader(version, 'tokens:css', flags)
   const result = emitExtra(loaded.data, file, header)
   if (!result.ok) return { error: `✖ tokens:css --extra: ${result.error}` }
-  // Both files are always emitted: a drifted .d.ts must not hide behind a clean sheet.
-  return {
-    files: [
-      { out, content: result.css },
-      { out: `${out}.d.ts`, content: result.dts },
-    ],
-  }
+  return { files: [{ out, content: result.css }] }
 }
 
 /** `--vibrancy=-2`: the `=` form is the only way a negative number gets past `parseArgs`. */
