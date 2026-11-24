@@ -400,10 +400,10 @@ describe('budget ratchet (check 5)', () => {
     expect(status(results, 5)).toBe('passed')
   })
 
-  it('fails when a ceiling was raised against the base ref', async () => {
+  it('passes waivers above the base ref and names the growth: the record follows the count', async () => {
     const results = await run(repo([3, 5], [3, 6]), { baseRef: 'main' })
-    expect(status(results, 5)).toBe('failed')
-    expect(results[4]?.detail).toContain('waivers 6 > 5')
+    expect(status(results, 5)).toBe('passed')
+    expect(results[4]?.detail).toContain('waivers grew 5 -> 6 since main')
   })
 
   it('fails when escapes were raised', async () => {
@@ -423,19 +423,19 @@ describe('budget ratchet (check 5)', () => {
 
   it('passes a raise recorded by a new row naming the consumer, and fails a hand edit or a blank consumer', async () => {
     const row = (consumer: string) =>
-      `"raises": [{ "field": "waivers", "from": 5, "to": 6, "consumer": "${consumer}" }]`
+      `"raises": [{ "field": "ejects", "from": 3, "to": 4, "consumer": "${consumer}" }]`
     const withRaises = (dir: string, raises: string) => {
       const path = join(dir, '.basalt/budget.json')
       writeFileSync(path, readFileSync(path, 'utf8').replace(/"raises": \[\]/, raises))
       return dir
     }
-    const ok = withRaises(repo([3, 5], [3, 6]), row('probe consumer'))
+    const ok = withRaises(repo([3, 5], [4, 5]), row('probe consumer'))
     expect(status(await run(ok, { baseRef: 'main' }), 5)).toBe('passed')
-    const blank = withRaises(repo([3, 5], [3, 6]), row(' '))
+    const blank = withRaises(repo([3, 5], [4, 5]), row(' '))
     const failed = await run(blank, { baseRef: 'main' })
     expect(status(failed, 5)).toBe('failed')
-    expect(failed[4]?.detail).toContain('lint --raise waivers --consumer')
-    const wrong = withRaises(repo([3, 5], [3, 6]), row('x').replace('"to": 6', '"to": 5'))
+    expect(failed[4]?.detail).toContain('basalt-ui eject <name> --reason')
+    const wrong = withRaises(repo([3, 5], [4, 5]), row('x').replace('"to": 4', '"to": 3'))
     expect(status(await run(wrong, { baseRef: 'main' }), 5)).toBe('failed')
   })
 
