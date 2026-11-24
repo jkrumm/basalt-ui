@@ -32,7 +32,7 @@ autonomously execute large roadmap phases.
 
 Before a consolidation PR (deleting or adopting exports) or touching the stack and structure, Read `docs/repo-reference.md`: adopt-or-delete, net-negative waves, one doctrine one home.
 
-Before changing anything under `packages/basalt-ui/`, Read `packages/basalt-ui/AGENTS.md`. Before changing anything under `apps/marketing/`, Read `apps/marketing/AGENTS.md`: the site profile's proof, its wiring and its budgets.
+Before changing anything under `packages/basalt-ui/`, Read `packages/basalt-ui/AGENTS.md`. Before changing anything under `apps/marketing/`, Read `apps/marketing/AGENTS.md`: the site profile's proof, its wiring and its budgets. Before adding, moving or deleting a page under `apps/playground/`, Read `apps/playground/AGENTS.md`: what is tour, reference, kit and test fixture, and which tests name a route.
 
 ## Critical Rules (READ FIRST)
 
