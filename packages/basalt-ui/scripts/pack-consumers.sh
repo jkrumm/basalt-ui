@@ -306,23 +306,35 @@ quiet ./node_modules/.bin/basalt-ui doctor
 echo "site: init wired it with no hand edit and doctor passes"
 
 echo "==> site: a Dialog outside an island fails the build, naming the part and the fix"
+# The silent case: a component of the site's own that composes the Dialog, placed with no directive,
+# renders its trigger to HTML and ships no JavaScript to open it.
+mkdir -p src/components
+cat >src/components/Details.tsx <<'TSX'
+import { Dialog, DialogContent, DialogTrigger } from 'basalt-ui/ui/dialog'
+
+export function Details() {
+  return (
+    <Dialog>
+      <DialogTrigger>Open</DialogTrigger>
+      <DialogContent title="Details">Never opens: no island.</DialogContent>
+    </Dialog>
+  )
+}
+TSX
 cat >src/pages/dead.astro <<'ASTRO'
 ---
-import { Dialog, DialogContent, DialogTrigger } from 'basalt-ui/ui/dialog'
 import Layout from '../layouts/Layout.astro'
+import { Details } from '../components/Details'
 ---
 <Layout title="Dead">
-  <Dialog>
-    <DialogTrigger>Open</DialogTrigger>
-    <DialogContent title="Details">Never opens: no island.</DialogContent>
-  </Dialog>
+  <Details />
 </Layout>
 ASTRO
 if out=$(./node_modules/.bin/astro build 2>&1); then echo "FAILED: the build passed with a dead Dialog"; exit 1; fi
 for want in 'Dialog (data-slot="dialog-trigger") on /dead/index.html' 'client:visible'; do
   grep -qF "$want" <<<"$out" || { echo "FAILED: the build error does not say: $want"; echo "$out"; exit 1; }
 done
-rm src/pages/dead.astro
+rm src/pages/dead.astro src/components/Details.tsx
 echo "dead island: the build fails naming Dialog, its page and the fix"
 
 echo "PACK CONSUMERS PASSED"

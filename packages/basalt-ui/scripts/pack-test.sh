@@ -73,11 +73,11 @@ for f in src/index.css src/starlight.css tailwind.config.js MAINTAINING.md \
   agent/rules/basalt-router.md agent/rules/basalt-app.md agent/rules/basalt-query.md \
   dist/shell/app-sidebar.module.css.d.js dist/shell/app-mobile-nav.module.css.d.js \
   dist/shell/app-header.module.css.d.js; do forbid "$f"; done
-# The shipped rules are exactly five (v3): any other file under agent/rules/ is a retired rule
-# left in a stale worktree, which `sync` would place into consumers.
+# The shipped rules are exactly the five app rules and the site rule (v3): any other file under
+# agent/rules/ is a retired rule left in a stale worktree, which `sync` would place into consumers.
 if grep -E '^package/agent/rules/' "$LISTFILE" |
-  grep -vE '^package/agent/rules/basalt-(tokens|ui|page|state|charts)\.md$'; then
-  echo "FORBIDDEN in tarball: agent/rules/ holds a file outside the five shipped rules"
+  grep -vE '^package/agent/rules/basalt-(tokens|ui|page|state|charts|site)\.md$'; then
+  echo "FORBIDDEN in tarball: agent/rules/ holds a file outside the six shipped rules"
   exit 1
 fi
 # forbid() above is an exact-string match, so the test-artifact patterns need their own regex
