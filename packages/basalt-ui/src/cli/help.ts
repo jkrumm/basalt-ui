@@ -142,20 +142,23 @@ export const USAGE =
   "  app holds other people's data. Example:\n" +
   '    basalt-ui shot /overview --dist dist --api /api=https://app.example.com \\\n' +
   '      --local-storage auth-token=@env:APP_TOKEN --header authorization=@env:APP_BEARER --auto-anchors\n\n' +
-  'shot detect [--out <dir>] [--lint <oxlint-json-file>]\n' +
+  'shot detect [--out <dir>] [--lint <oxlint-json-file>] [--facts <dir>]\n' +
   '  The deterministic second review pass, no browser and no model: reads <out>/metrics.json (default: the\n' +
   '  out dir in .basalt/last-shot.json) and, with --lint, the basalt/* diagnostics of `oxlint --format json`\n' +
   '  output saved to a file. Writes <out>/detect.json and a findings table, content, then layout, then style:\n' +
   '  off-scale inset/gap/radius, nested radius step under 3 px, more than 3 font sizes, an empty region of\n' +
   '  40 % or more, overlap, a touch target under the hit floor, document overflow, a state crop identical\n' +
   '  to rest, error shots, a missing scale or no anchors. Contrast is not read: axe owns it.\n' +
+  '  --facts <dir> reads the .tsx files under <dir> (not *.test.tsx) and lists the words, phrases and constants\n' +
+  '  the page says in several places (communication-5, P2). With no metrics.json in <out> it is the whole run,\n' +
+  '  with no score; --lint needs metrics.json.\n' +
   '  Exit codes: 0 clean (P2/P3 findings are listed, not failing), 2 a P0 or P1 finding, 1 scan failure (missing\n' +
   '  or unreadable metrics.json or lint file, or detect.json cannot be written).\n' +
   '    P0  fails: broken or unreadable: an error shot; no anchors\n' +
   '    P1  fails: a rubric item fails (off-scale value, font sizes, empty region, nested radius, overlap, hit floor, document overflow, an ignored state, lint error)\n' +
   '    P2  noted, not failing: degraded: a lint warning\n' +
   '    P3  noted, not failing: polish: an off-scale value within 1 px of a step\n' +
-  '  score = 100 - (25 per P0 + 10 per P1 + 3 per P2 + 1 per P3), floored at 0. No anchor\n' +
+  '  score = 100 - (25 per P0 + 10 per P1 + 3 per P2 + 1 per P3). A score can go below 0. No anchor\n' +
   '  measured: "nothing measured", no score.\n' +
   '  detect takes --out <dir>, never a positional.\n' +
   '  A component can declare a rest anchor absent in a URL state with data-shot-absent="empty error": that\n' +

@@ -403,10 +403,10 @@ describe('scoreOf', () => {
     cite: 'c',
     defect: 'd',
   })
-  test('100 minus 25/10/3/1 per P0/P1/P2/P3, floored at 0', () => {
+  test('100 minus 25/10/3/1 per P0/P1/P2/P3, below 0 when the findings outweigh it', () => {
     expect(scoreOf([])).toBe(100)
     expect(scoreOf([at('P0'), at('P1'), at('P2'), at('P3')])).toBe(61)
-    expect(scoreOf(Array.from({ length: 5 }, () => at('P0')))).toBe(0)
+    expect(scoreOf(Array.from({ length: 5 }, () => at('P0')))).toBe(-25)
   })
 })
 
@@ -479,6 +479,55 @@ describe('detect command', () => {
     expect(text).not.toContain('score 75')
     const written = JSON.parse(readFileSync(join(out, 'detect.json'), 'utf8')) as { score: unknown }
     expect(written.score).toBeNull()
+  })
+
+  test('--facts with no metrics.json: the fact count alone, a P2 exits 0 with no score', async () => {
+    const cwd = tmp()
+    const page = join(cwd, 'src/overview')
+    mkdirSync(page, { recursive: true })
+    writeFileSync(
+      join(page, 'a.tsx'),
+      'export const Page = () => (\n<p>Median one</p>\n<p>Median two</p>\n<p>Median three</p>\n<p>Median four</p>\n)\n',
+    )
+    const out = join(cwd, 'out')
+    const { code, text } = await run(['--facts', 'src/overview', '--out', out], cwd)
+    expect(code).toBe(0)
+    expect(text).toContain('communication-5/repeated-word')
+    expect(text).toContain('no metrics.json: facts only, no score')
+    const written = JSON.parse(readFileSync(join(out, 'detect.json'), 'utf8')) as {
+      score: unknown
+      findings: Finding[]
+    }
+    expect(written.score).toBeNull()
+    expect(written.findings).toMatchObject([
+      {
+        rule: 'communication-5/repeated-word',
+        severity: 'P2',
+        layer: 'content',
+        anchor: 'src/overview',
+        cite: 'src/overview/a.tsx',
+      },
+    ])
+    const err = spyOn(console, 'error').mockImplementation(() => undefined)
+    try {
+      expect(
+        (await run(['--facts', 'src/overview', '--out', out, '--lint', 'gone.json'], cwd)).code,
+      ).toBe(1)
+    } finally {
+      err.mockRestore()
+    }
+  })
+
+  test('--facts beside metrics.json: its P2 findings count in the score', async () => {
+    const { cwd, out } = setup()
+    mkdirSync(join(cwd, 'page'))
+    writeFileSync(
+      join(cwd, 'page/a.tsx'),
+      '<p>Median one</p>\n<p>Median two</p>\n<p>Median three</p>\n<p>Median four</p>\n',
+    )
+    const { code, text } = await run(['--out', out, '--facts', 'page'], cwd)
+    expect(code).toBe(0)
+    expect(text).toContain('score 97')
   })
 
   test('a positional is refused with the --out form', async () => {
