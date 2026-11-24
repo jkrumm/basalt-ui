@@ -73,6 +73,17 @@ function GalleryBones(): ReactElement {
   )
 }
 
+/** An app's layout loading: plain lines, since the kit cannot know the shape its `render` draws. */
+function LineBones(): ReactElement {
+  return (
+    <div className="flex min-w-0 flex-col gap-2" data-slot="layout-bones">
+      {Array.from({ length: GALLERY_CARDS }, (_, line) => (
+        <Skeleton key={line} className="h-4 w-full" />
+      ))}
+    </div>
+  )
+}
+
 /** One message block: centred under nothing, the frame's height held when a panel reserved one. */
 function Message({
   slot,
@@ -99,7 +110,7 @@ function Message({
 }
 
 /**
- * A board or gallery in a phase with no cards: the layout's skeleton while loading, else the arm's
+ * A board, a gallery or an app's layout in a phase with no rows: the layout's skeleton while loading (plain lines for an app's), else the arm's
  * message. `frame` is the panel's arm when it handed one (the layout claims it, so the panel drops its own).
  */
 export function LayoutPhase<T>({
@@ -122,7 +133,13 @@ export function LayoutPhase<T>({
       className="flex w-full max-w-full min-w-0 flex-col"
     >
       {phase.tag === 'loading' &&
-        (model.layout === 'board' ? <BoardBones model={model} /> : <GalleryBones />)}
+        (model.layout === 'board' ? (
+          <BoardBones model={model} />
+        ) : model.layout === 'gallery' ? (
+          <GalleryBones />
+        ) : (
+          <LineBones />
+        ))}
       {phase.tag === 'offline' && (
         <Message slot="table-offline" fit={fit}>
           <OfflineLine />
