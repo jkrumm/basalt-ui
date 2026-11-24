@@ -2,7 +2,7 @@
  * The phone nav trial (Issue 3205): which of the shell's two phone nav variants the playground
  * runs, or the shipped tab bar. The pick is remembered on the device, `?nav=a|b|default` on any
  * address sets it (so a link opens a variant on a phone), and it reaches the shell as
- * `data-phone-nav` on `<html>`. While a variant runs the viewport meta adds `viewport-fit=cover`,
+ * `data-phone-nav` on the document element. While a variant runs the viewport meta adds `viewport-fit=cover`,
  * so the page runs under the notch and the home indicator and the variants' insets do the work; the
  * shipped bar keeps the meta it always had.
  */
@@ -45,7 +45,7 @@ function apply(pick: PhoneNavPick): void {
     ?.setAttribute('content', attribute === undefined ? PLAIN : `${PLAIN}, viewport-fit=cover`)
 }
 
-/** Reads `?nav=` once, then keeps `<html>` on the stored pick. Call before the first render. */
+/** Reads `?nav=` once, then keeps the document element on the stored pick. Call before the first render. */
 export function bootPhoneNav(): void {
   const param = new URLSearchParams(window.location.search).get('nav')
   if (isPick(param)) phoneNav.set(param)
