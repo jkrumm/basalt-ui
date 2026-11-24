@@ -404,8 +404,11 @@ impossible, land a one-release `releaseRules` override (`{"breaking":true,"relea
 - Strict TS, no `any`, explicit types on public exports; typed object params, low nesting, early
   returns. Function components only; no `React.FC`, no default exports.
 - Respect the token-layer boundary and the chart-engine boundary (`host.tsx` is the one `@tanstack/charts/react` importer).
-- Don't reintroduce Tailwind, OKLCH foundation palettes, ShadCN/Tremor/Starlight compat, or any
+- Don't reintroduce Tailwind, OKLCH foundation palettes, ShadCN/Tremor compat, or any
   `import.meta.env` reference in shipped code.
+- Starlight is the docs engine of a `site`, themed through the `starlight.css` bridge; `SiteArticle` is for
+  guides and articles. Keep the bridge current and ship nothing past it (no Starlight plugin, no
+  Starlight-only part): `docs/astro.md` § Starlight states it for consumers.
 - **One verb per role.** `define` declares a value that is data (`defineNav`, `defineControls`);
   `create` builds an instance that holds state or a connection (`createQueryClient`,
   `createSyncedState`, `createChannel`); `set` writes a process-wide default and returns nothing
