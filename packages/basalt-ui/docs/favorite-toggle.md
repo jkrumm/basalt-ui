@@ -3,7 +3,7 @@ name: FavoriteToggle
 use when: 'a record''s page or panel should offer to pin it to the rail'
 never when: 'the app has no `AppShell`, or the pin is a per-user setting that belongs on a settings page'
 subpath: basalt-ui/page
-peers: ['@base-ui/react', '@tanstack/react-router']
+peers: ['@base-ui/react']
 slots: []
 ---
 

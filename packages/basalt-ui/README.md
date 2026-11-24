@@ -510,7 +510,7 @@ declare module 'basalt-ui' {
 }
 ```
 
-Current slot: `notifications` (the kinds `notify` accepts beyond the four it ships). An un-augmented slot defaults to a never-keyed `{}` — augment only the slots you use. There is no series slot: a series colour is the pair from `basalt.tokens.ts`.
+Current slot: `notifications` (the kinds `notify` accepts beyond the four it ships). An un-augmented slot defaults to a never-keyed `{}` — augment only the slots you use. There is no series slot: a series color is the pair from `basalt.tokens.ts`.
 
 ---
 

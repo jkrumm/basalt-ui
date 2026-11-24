@@ -13,7 +13,7 @@
  * app shape. Declaration-merge your truth ONCE per concern, in that concern's own file. Every slot
  * is optional and defaults to a never-keyed empty type; an app that augments nothing pays zero cost.
  * The slot read today is `notifications`. There is no series slot: a chart
- * series `key` is the data's own name, and its colour is the pair from the app's series file.
+ * series `key` is the data's own name, and its color is the pair from the app's series file.
  *
  * @example
  * // src/lib/notifications.ts — augment ONE slot in its own file, 3 lines:

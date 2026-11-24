@@ -59,9 +59,7 @@ const lines =
   (
     series: readonly (typeof lineA | typeof lineB | typeof lineC | (typeof MANY)[number])[],
   ): BoxSlot =>
-  (box) => (
-    <Lines ariaLabel="Requests per day" data={rows} x={x} series={series} height={box.height} />
-  )
+  (box) => <Lines label="Requests per day" data={rows} x={x} series={series} height={box.height} />
 
 type Day = { day: string; v: number }
 const WEEK: Day[] = [
@@ -84,8 +82,8 @@ function Fixture() {
       </div>
       <div data-testid="pd-stat">
         <StatGroup variant="strip" label="Link health">
-          <StatCell label="Downstream" value={412} unit="Mbit/s" />
-          <StatCell label="Upstream" value={38} unit="Mbit/s" />
+          <StatCell title="Downstream" value={412} unit="Mbit/s" />
+          <StatCell title="Upstream" value={38} unit="Mbit/s" />
         </StatGroup>
       </div>
       <div data-testid="pd-chart">
@@ -106,7 +104,7 @@ function Fixture() {
           phase="ready"
           chart={(box) => (
             <Lines
-              ariaLabel="Orders per weekday"
+              label="Orders per weekday"
               data={WEEK}
               x={{ value: (d: Day) => d.day }}
               series={[

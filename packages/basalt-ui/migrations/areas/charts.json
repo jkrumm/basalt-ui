@@ -168,12 +168,12 @@
     },
     {
       "id": "charts-heatmap-state",
-      "kind": "renamed-prop",
+      "kind": "removed-prop",
       "from": "basalt-ui/charts#Heatmap.state",
       "to": "phase, empty",
       "profiles": ["parts", "app"],
       "manual": true,
-      "note": "Heatmap takes `phase` (a Phase or the query) and `empty: Empty | null` like every data part; `state` is a deprecated alias for one minor and applies only when `phase` and `empty` say nothing",
+      "note": "Heatmap takes `phase` (a Phase or the query) and `empty: Empty | null` like every data part; the 2.x `state` object is gone in 3.0: split it into the two props",
       "verify": "tsc"
     },
     {
@@ -182,9 +182,9 @@
       "from": "basalt-ui/charts#CardAction",
       "to": "basalt-ui/cards#CardAction",
       "profiles": ["parts", "app"],
-      "manual": true,
-      "note": "the frame value types import from one subpath beside the parts that take them; the charts subpath keeps a deprecated alias of the same type for one minor",
-      "verify": "tsc"
+      "note": "the frame value types import from one subpath beside the parts that take them; the charts alias is gone in 3.0",
+      "verify": "tsc",
+      "codemod": "imports"
     },
     {
       "id": "charts-frame-types-Empty",
@@ -192,9 +192,9 @@
       "from": "basalt-ui/charts#Empty",
       "to": "basalt-ui/cards#Empty",
       "profiles": ["parts", "app"],
-      "manual": true,
-      "note": "the frame value types import from one subpath beside the parts that take them; the charts subpath keeps a deprecated alias of the same type for one minor",
-      "verify": "tsc"
+      "note": "the frame value types import from one subpath beside the parts that take them; the charts alias is gone in 3.0",
+      "verify": "tsc",
+      "codemod": "imports"
     },
     {
       "id": "charts-frame-types-Fact",
@@ -202,9 +202,9 @@
       "from": "basalt-ui/charts#Fact",
       "to": "basalt-ui/cards#Fact",
       "profiles": ["parts", "app"],
-      "manual": true,
-      "note": "the frame value types import from one subpath beside the parts that take them; the charts subpath keeps a deprecated alias of the same type for one minor",
-      "verify": "tsc"
+      "note": "the frame value types import from one subpath beside the parts that take them; the charts alias is gone in 3.0",
+      "verify": "tsc",
+      "codemod": "imports"
     },
     {
       "id": "charts-frame-types-FootFacts",
@@ -212,9 +212,9 @@
       "from": "basalt-ui/charts#FootFacts",
       "to": "basalt-ui/cards#FootFacts",
       "profiles": ["parts", "app"],
-      "manual": true,
-      "note": "the frame value types import from one subpath beside the parts that take them; the charts subpath keeps a deprecated alias of the same type for one minor",
-      "verify": "tsc"
+      "note": "the frame value types import from one subpath beside the parts that take them; the charts alias is gone in 3.0",
+      "verify": "tsc",
+      "codemod": "imports"
     },
     {
       "id": "charts-frame-types-FrameHead",
@@ -222,9 +222,9 @@
       "from": "basalt-ui/charts#FrameHead",
       "to": "basalt-ui/cards#FrameHead",
       "profiles": ["parts", "app"],
-      "manual": true,
-      "note": "the frame value types import from one subpath beside the parts that take them; the charts subpath keeps a deprecated alias of the same type for one minor",
-      "verify": "tsc"
+      "note": "the frame value types import from one subpath beside the parts that take them; the charts alias is gone in 3.0",
+      "verify": "tsc",
+      "codemod": "imports"
     },
     {
       "id": "charts-frame-types-FrameState",
@@ -232,9 +232,9 @@
       "from": "basalt-ui/charts#FrameState",
       "to": "basalt-ui/cards#FrameState",
       "profiles": ["parts", "app"],
-      "manual": true,
-      "note": "the frame value types import from one subpath beside the parts that take them; the charts subpath keeps a deprecated alias of the same type for one minor",
-      "verify": "tsc"
+      "note": "the frame value types import from one subpath beside the parts that take them; the charts alias is gone in 3.0",
+      "verify": "tsc",
+      "codemod": "imports"
     },
     {
       "id": "charts-frame-types-Menu",
@@ -242,9 +242,9 @@
       "from": "basalt-ui/charts#Menu",
       "to": "basalt-ui/cards#CardMenu",
       "profiles": ["parts", "app"],
-      "manual": true,
-      "note": "the frame value types import from one subpath beside the parts that take them; the charts subpath keeps a deprecated alias of the same type for one minor",
-      "verify": "tsc"
+      "note": "the frame value types import from one subpath beside the parts that take them; the charts alias is gone in 3.0",
+      "verify": "tsc",
+      "codemod": "imports"
     },
     {
       "id": "charts-frame-types-MenuEntry",
@@ -252,79 +252,119 @@
       "from": "basalt-ui/charts#MenuEntry",
       "to": "basalt-ui/cards#MenuEntry",
       "profiles": ["parts", "app"],
-      "manual": true,
-      "note": "the frame value types import from one subpath beside the parts that take them; the charts subpath keeps a deprecated alias of the same type for one minor",
-      "verify": "tsc"
+      "note": "the frame value types import from one subpath beside the parts that take them; the charts alias is gone in 3.0",
+      "verify": "tsc",
+      "codemod": "imports"
     },
     {
       "profiles": ["parts", "app"],
-      "manual": true,
       "verify": "tsc",
       "id": "charts-label-CartesianChart",
       "kind": "renamed-prop",
       "from": "basalt-ui/charts#CartesianChart.ariaLabel",
       "to": "label",
-      "note": "the accessible name is `label` on every part that takes one; `ariaLabel` stays a deprecated alias for one minor (a chart takes exactly one of the two)"
+      "note": "the accessible name is `label` on every part that takes one; the old name is gone in 3.0",
+      "codemod": "props"
     },
     {
       "profiles": ["parts", "app"],
-      "manual": true,
       "verify": "tsc",
       "id": "charts-label-Lines",
       "kind": "renamed-prop",
       "from": "basalt-ui/charts#Lines.ariaLabel",
       "to": "label",
-      "note": "the accessible name is `label` on every part that takes one; `ariaLabel` stays a deprecated alias for one minor (a chart takes exactly one of the two)"
+      "note": "the accessible name is `label` on every part that takes one; the old name is gone in 3.0",
+      "codemod": "props"
     },
     {
       "profiles": ["parts", "app"],
-      "manual": true,
       "verify": "tsc",
       "id": "charts-label-Bars",
       "kind": "renamed-prop",
       "from": "basalt-ui/charts#Bars.ariaLabel",
       "to": "label",
-      "note": "the accessible name is `label` on every part that takes one; `ariaLabel` stays a deprecated alias for one minor (a chart takes exactly one of the two)"
+      "note": "the accessible name is `label` on every part that takes one; the old name is gone in 3.0",
+      "codemod": "props"
     },
     {
       "profiles": ["parts", "app"],
-      "manual": true,
       "verify": "tsc",
       "id": "charts-label-Sparkline",
       "kind": "renamed-prop",
       "from": "basalt-ui/charts#Sparkline.ariaLabel",
       "to": "label",
-      "note": "the accessible name is `label` on every part that takes one; `ariaLabel` stays a deprecated alias for one minor (a chart takes exactly one of the two)"
+      "note": "the accessible name is `label` on every part that takes one; the old name is gone in 3.0",
+      "codemod": "props"
     },
     {
       "profiles": ["parts", "app"],
-      "manual": true,
       "verify": "tsc",
       "id": "charts-label-MiniBars",
       "kind": "renamed-prop",
       "from": "basalt-ui/charts#MiniBars.ariaLabel",
       "to": "label",
-      "note": "the accessible name is `label` on every part that takes one; `ariaLabel` stays a deprecated alias for one minor (a chart takes exactly one of the two)"
+      "note": "the accessible name is `label` on every part that takes one; the old name is gone in 3.0",
+      "codemod": "props"
     },
     {
       "profiles": ["parts", "app"],
-      "manual": true,
       "verify": "tsc",
       "id": "charts-label-Heatmap",
       "kind": "renamed-prop",
       "from": "basalt-ui/charts#Heatmap.ariaLabel",
       "to": "label",
-      "note": "the accessible name is `label` on every part that takes one; `ariaLabel` stays a deprecated alias for one minor (a chart takes exactly one of the two)"
+      "note": "the accessible name is `label` on every part that takes one; the old name is gone in 3.0",
+      "codemod": "props"
     },
     {
       "profiles": ["parts", "app"],
-      "manual": true,
       "verify": "tsc",
       "id": "charts-label-BandStrip",
       "kind": "renamed-prop",
       "from": "basalt-ui/charts#BandStrip.ariaLabel",
       "to": "label",
-      "note": "the accessible name is `label` on every part that takes one; `ariaLabel` stays a deprecated alias for one minor (a chart takes exactly one of the two)"
+      "note": "the accessible name is `label` on every part that takes one; the old name is gone in 3.0",
+      "codemod": "props"
+    },
+    {
+      "id": "charts-label-IntervalTrack",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/charts#IntervalTrack.ariaLabel",
+      "to": "label",
+      "profiles": ["parts", "app"],
+      "codemod": "props",
+      "verify": "tsc",
+      "note": "the accessible name is `label` on every part that takes one; the old name is gone in 3.0"
+    },
+    {
+      "id": "charts-intervaltrack-state",
+      "kind": "removed-prop",
+      "from": "basalt-ui/charts#IntervalTrack.state",
+      "to": "phase, empty",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "verify": "tsc",
+      "note": "IntervalTrack takes `phase` and `empty` like every data part; the 2.x `state` object is gone in 3.0: split it into the two props"
+    },
+    {
+      "id": "charts-sparkline-points",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/charts#Sparkline.series",
+      "to": "points",
+      "profiles": ["parts", "app"],
+      "codemod": "props",
+      "verify": "tsc",
+      "note": "a sparkline draws one row of points, so the prop is `points`; `series` means series definitions on every other chart"
+    },
+    {
+      "id": "charts-minibars-points",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/charts#MiniBars.series",
+      "to": "points",
+      "profiles": ["parts", "app"],
+      "codemod": "props",
+      "verify": "tsc",
+      "note": "a sparkline draws one row of points, so the prop is `points`; `series` means series definitions on every other chart"
     },
     {
       "id": "charts-series-key",

@@ -3,7 +3,7 @@ name: useFavorite
 use when: 'a record needs its own favorite control (a menu row, a keyboard shortcut) rather than the star'
 never when: 'the star `FavoriteToggle`, a `PageBar` `favorite` or a panel''s `favorite` already draws what you need'
 subpath: basalt-ui/page
-peers: ['@base-ui/react', '@tanstack/react-router']
+peers: ['@base-ui/react']
 slots: []
 ---
 
