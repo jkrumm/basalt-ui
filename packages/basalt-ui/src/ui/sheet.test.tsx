@@ -131,6 +131,23 @@ describe('sheet module', () => {
   })
 })
 
+describe('Sheet placement flip', () => {
+  test('crossing the width breakpoint keeps the form mounted: no remount, so typed text and focus survive', () => {
+    const tree = (placement: 'bottom' | 'right') => (
+      <Sheet defaultOpen placement={placement}>
+        <SheetContent title="Edit">
+          <input aria-label="Name" />
+        </SheetContent>
+      </Sheet>
+    )
+    const { rerender } = render(tree('bottom'))
+    const field = document.querySelector('input[aria-label="Name"]')
+    expect(field).not.toBeNull()
+    rerender(tree('right'))
+    expect(document.querySelector('input[aria-label="Name"]')).toBe(field)
+  })
+})
+
 describe('Sheet state', () => {
   const panel = () => document.querySelector('[data-slot="sheet-content"]')
   const sheetOf = (state: Parameters<typeof Sheet>[0]['state']) => (

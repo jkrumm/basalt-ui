@@ -283,7 +283,7 @@ export function SheetContent({
     : undefined
   return (
     <ControlScopeProvider value={null}>
-      <KeyboardAware enabled={!right}>
+      <BaseDrawer.VirtualKeyboardProvider>
         <BaseDrawer.Portal>
           <BaseDrawer.Backdrop
             forceRender
@@ -344,26 +344,8 @@ export function SheetContent({
             </BaseDrawer.Popup>
           </BaseDrawer.Viewport>
         </BaseDrawer.Portal>
-      </KeyboardAware>
+      </BaseDrawer.VirtualKeyboardProvider>
     </ControlScopeProvider>
-  )
-}
-
-/**
- * A bottom sheet's form fields lift above the software keyboard: Base UI scrolls the body to the
- * focused field and keeps the footer clear of the keyboard. A right sheet needs none.
- */
-function KeyboardAware({
-  enabled,
-  children,
-}: {
-  enabled: boolean
-  children: ReactNode
-}): ReactElement {
-  return enabled ? (
-    <BaseDrawer.VirtualKeyboardProvider>{children}</BaseDrawer.VirtualKeyboardProvider>
-  ) : (
-    <>{children}</>
   )
 }
 
