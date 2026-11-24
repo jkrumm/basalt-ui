@@ -3,7 +3,7 @@ name: Newest peers
 # Installs the newest version every peer range of packages/basalt-ui admits (scripts/newest-peers.ts), then runs the
 # unit and pack tests. It reports a break the day a peer ships it and never gates a pull request: the ci job in
 # ci.yml does not need it. On a schedule a red run is the report; on a pull request that edits this job it runs once
-# with continue-on-error, so the result shows without blocking the merge.
+# with its test steps set to continue-on-error, so the job stays green and the result shows in the step log.
 #
 # The one install here is deliberately not frozen: re-resolving to the newest in-range versions is the point. Nothing
 # is committed from this checkout.
@@ -27,7 +27,6 @@ concurrency:
 jobs:
   newest-peers:
     runs-on: ubuntu-latest
-    continue-on-error: ${{ github.event_name == 'pull_request' }}
 
     steps:
       - name: Checkout
@@ -59,6 +58,7 @@ jobs:
         run: bun --filter basalt-ui build
 
       - name: Unit tests
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
         env:
           FACTORY_STEP_CORES: 4
           FACTORY_STEP_MEM_MIB: 16384
@@ -66,4 +66,5 @@ jobs:
         run: bun scripts/unit-test.ts
 
       - name: Pack test (every peer at its declared range)
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
         run: bun --filter basalt-ui pack-test
