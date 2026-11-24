@@ -4,7 +4,7 @@ use when: 'a record is edited or inspected beside the page and the page behind s
 never when: 'the question is a yes or no (use `Dialog`, or `AlertDialog` for a destructive confirm)'
 subpath: basalt-ui/ui/sheet
 peers: ['@base-ui/react']
-slots: [sheet-trigger, sheet-content, sheet-grabber, sheet-title, sheet-close]
+slots: [sheet-trigger, sheet-content, sheet-title, sheet-close]
 ---
 
 # Sheet
@@ -96,6 +96,5 @@ Part `sheet-content`.
 
 - `sheet-trigger`
 - `sheet-content`
-- `sheet-grabber`
 - `sheet-title`
 - `sheet-close`
