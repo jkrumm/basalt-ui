@@ -39,7 +39,7 @@ export type EmitOptions = {
   /** The invocation recorded on line 2; defaults to the bare command. */
   command?: string
   /**
-   * Emit a tenant sheet instead of the full one: only the colour roles that differ from the
+   * Emit a tenant sheet instead of the full one: only the color roles that differ from the
    * default, scoped to this selector. Must start with `:root[` so every block lands at 0-3-0,
    * above the default sheet's 0-2-0 whatever the source order.
    */
@@ -165,7 +165,7 @@ export function emitDerived(derived: DerivedV3, options: EmitOptions): string {
   )
 }
 
-/** The colour roles of `tokens` that differ from `baseline`, scoped to `selector`; empty when none do. */
+/** The color roles of `tokens` that differ from `baseline`, scoped to `selector`; empty when none do. */
 function tenantBlocks(
   tokens: readonly ResolvedToken[],
   baseline: readonly ResolvedToken[],
@@ -182,7 +182,7 @@ export type EmitAccentsOptions = Omit<EmitOptions, 'selector'> & {
 }
 
 /**
- * The accent sheet: per named accent, the colour roles its seed changes against the app's own base
+ * The accent sheet: per named accent, the color roles its seed changes against the app's own base
  * (`config`, the same retune its `tokens.css` was emitted with), scoped to
  * `:root[data-accent='<name>']`. An accent equal to the base emits nothing, so the default accent costs
  * no bytes. Each seed passes the gates or the emitter throws, as a retune does.
@@ -220,7 +220,7 @@ export function emitBasaltTypes(options: Pick<EmitOptions, 'version' | 'command'
   )
 }
 
-/** Utility prefixes the zone A colour denial applies to (tokens-visual 3.5). */
+/** Utility prefixes the zone A color denial applies to (tokens-visual 3.5). */
 export const ZONE_A_PREFIXES = [
   'bg',
   'border',
@@ -239,7 +239,7 @@ export const ZONE_A_PREFIXES = [
   'text',
 ] as const
 
-/** Denied outright, whatever the colour. */
+/** Denied outright, whatever the color. */
 export const ZONE_A_DENIED_OUTRIGHT = [
   'bg-current',
   'border-current',
@@ -255,7 +255,7 @@ export const ZONE_A_DENIED_OUTRIGHT = [
 export const ZONE_A_ALLOWED_CURRENT = ['fill-current', 'stroke-current', 'text-current'] as const
 
 export type ZoneADenial = {
-  /** Colour names (the `--color-` suffix) resolving to brand, status, tint, chart or seq. */
+  /** Color names (the `--color-` suffix) resolving to brand, status, tint, chart or seq. */
   names: string[]
   /** Pre-mixed alpha roles (`hairline`, `hover`, ...): `/NN` on them compounds the alpha. */
   premixed: string[]

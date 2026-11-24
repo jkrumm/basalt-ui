@@ -1,5 +1,5 @@
 /**
- * The structure-rest family (guardrails section 4, rows 10-15): `colour-literal`,
+ * The structure-rest family (guardrails section 4, rows 10-15): `color-literal`,
  * `waiver-needs-reason` and `data-primitive` with every fixture block as a RuleTester case under
  * ESLint and under oxlint's `plugins-dev`; `router-search`, `control-home` and `untrusted-markdown`
  * have their own test files. One file covers the five ids because each id's owned
@@ -14,8 +14,8 @@ import { RuleTester } from 'eslint'
 
 import { buildRule, formMessage } from '../../factory'
 import { formCount, isEnabled, mergeTables } from '../../rule-table'
-import { SUITES, FIXTURES_ROOT, parseFixture } from './colour-literal.cases'
-import { colourLiteralRules } from './colour-literal'
+import { SUITES, FIXTURES_ROOT, parseFixture } from './color-literal.cases'
+import { colorLiteralRules } from './color-literal'
 import { controlHomeRules } from './control-home'
 import { dataPrimitiveRules } from './data-primitive'
 import { routerSearchRules } from './router-search'
@@ -26,7 +26,7 @@ RuleTester.describe = describe
 RuleTester.it = it
 
 const FAMILY = mergeTables([
-  colourLiteralRules,
+  colorLiteralRules,
   waiverRules,
   dataPrimitiveRules,
   routerSearchRules,
@@ -49,7 +49,7 @@ describe('oxlint plugins-dev RuleTester', () => {
 
   it('runs every fixture block green under Node', async () => {
     const build = await Bun.build({
-      entrypoints: [resolve(import.meta.dirname, 'colour-literal.cases.ts')],
+      entrypoints: [resolve(import.meta.dirname, 'color-literal.cases.ts')],
       outdir,
       target: 'node',
       format: 'esm',
@@ -73,18 +73,18 @@ describe('forms', () => {
     entry.forms.filter(isEnabled).map((form) => ({ id, form })),
   )
 
-  it('has 20 live forms: colour-literal 1, waiver-needs-reason 2, data-primitive 9, untrusted-markdown 4, router-search 3, control-home 1', () => {
+  it('has 21 live forms: color-literal 1, waiver-needs-reason 3, data-primitive 9, untrusted-markdown 4, router-search 3, control-home 1', () => {
     const counts: Record<string, number> = {}
     for (const { id } of live) counts[id] = (counts[id] ?? 0) + 1
     expect(counts).toEqual({
-      'colour-literal': 1,
-      'waiver-needs-reason': 2,
+      'color-literal': 1,
+      'waiver-needs-reason': 3,
       'data-primitive': 9,
       'untrusted-markdown': 4,
       'router-search': 3,
       'control-home': 1,
     })
-    expect(formCount(FAMILY)).toBe(20)
+    expect(formCount(FAMILY)).toBe(21)
   })
 
   for (const { id, form } of live) {
@@ -118,7 +118,7 @@ describe('forms', () => {
 
 describe('profiles', () => {
   it('carries the profiles the contract names', () => {
-    expect(FAMILY['colour-literal']?.profiles).toEqual(['bridge', 'parts', 'app', 'site'])
+    expect(FAMILY['color-literal']?.profiles).toEqual(['bridge', 'parts', 'app', 'site'])
     expect(FAMILY['waiver-needs-reason']?.profiles).toEqual(['bridge', 'parts', 'app', 'site'])
     for (const id of ['data-primitive', 'untrusted-markdown', 'router-search', 'control-home']) {
       expect(FAMILY[id]?.profiles).toEqual(['parts', 'app'])

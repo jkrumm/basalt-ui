@@ -281,7 +281,7 @@ describe('checkWeakenedConfig', () => {
     })
 
     it('passes a directive naming only other rules', async () => {
-      const results = await run(withFile('/* oxlint-disable basalt/colour-literal -- canvas */\n'))
+      const results = await run(withFile('/* oxlint-disable basalt/color-literal -- canvas */\n'))
       expect(status(results, 3)).toBe('passed')
     })
 
@@ -377,7 +377,7 @@ describe('checkWeakenedConfig', () => {
     expect(status(results, 4)).toBe('skipped')
   })
 
-  it('the default offender is a colour literal', () => {
+  it('the default offender is a color literal', () => {
     expect(DEFAULT_OFFENDER.content).toContain('#')
   })
 

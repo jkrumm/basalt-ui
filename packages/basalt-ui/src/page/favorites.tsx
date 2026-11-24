@@ -1,6 +1,6 @@
 /**
- * Favourites: the records a reader pinned to the rail. The shell owns the list (`AppShell
- * favourites`, a `FavouritesStore`) and hands it to the page layer through `FavouritesContext`, so a
+ * Favorites: the records a reader pinned to the rail. The shell owns the list (`AppShell
+ * favorites`, a `FavoritesStore`) and hands it to the page layer through `FavoritesContext`, so a
  * record panel or a page bar can draw the toggle without importing the shell. Outside an `AppShell`
  * there is no context and the toggle draws nothing.
  *
@@ -18,18 +18,18 @@ import { isInAppPath } from '../core/url'
 import type { IconComponent } from '../core/ports'
 import { Button } from '../ui/button'
 import { Tooltip } from '../ui/tooltip'
-import type { FavouriteEntry, FavouriteInput, FavouritesStore } from './contract'
+import type { FavoriteEntry, FavoriteInput, FavoritesStore } from './contract'
 import { useSizeClass } from './use-size-class'
 
 /** What the shell provides: the list, and the three ways to change it. */
-export type FavouritesApi = {
-  readonly entries: readonly FavouriteEntry[]
-  toggle(input: FavouriteInput): void
+export type FavoritesApi = {
+  readonly entries: readonly FavoriteEntry[]
+  toggle(input: FavoriteInput): void
   remove(id: string): void
   move(from: number, to: number): void
 }
 
-export const FavouritesContext = createContext<FavouritesApi | null>(null)
+export const FavoritesContext = createContext<FavoritesApi | null>(null)
 
 // ---- Session glyphs ------------------------------------------------------------------------------
 
@@ -38,15 +38,15 @@ const glyphListeners = new Set<() => void>()
 let glyphVersion = 0
 
 /** Remembers the glyph a record offered, so the rail row can draw it this session. */
-export function rememberFavouriteGlyph(id: string, icon: IconComponent | undefined): void {
+export function rememberFavoriteGlyph(id: string, icon: IconComponent | undefined): void {
   if (icon === undefined || glyphs.get(id) === icon) return
   glyphs.set(id, icon)
   glyphVersion += 1
   for (const listener of glyphListeners) listener()
 }
 
-/** The glyph remembered for a favourite, or `undefined`. Re-renders when one is remembered. */
-export function useFavouriteGlyph(id: string): IconComponent | undefined {
+/** The glyph remembered for a favorite, or `undefined`. Re-renders when one is remembered. */
+export function useFavoriteGlyph(id: string): IconComponent | undefined {
   useSyncExternalStore(
     (listener) => {
       glyphListeners.add(listener)
@@ -60,7 +60,7 @@ export function useFavouriteGlyph(id: string): IconComponent | undefined {
 
 // ---- The default store ---------------------------------------------------------------------------
 
-function isEntry(value: unknown): value is FavouriteEntry {
+function isEntry(value: unknown): value is FavoriteEntry {
   if (typeof value !== 'object' || value === null) return false
   const { id, label, href } = value as Record<string, unknown>
   return (
@@ -71,16 +71,16 @@ function isEntry(value: unknown): value is FavouriteEntry {
   )
 }
 
-const NONE: readonly FavouriteEntry[] = []
+const NONE: readonly FavoriteEntry[] = []
 
 /**
- * The default `FavouritesStore`: `persisted` under `basalt:<key>`. Whatever storage holds is
+ * The default `FavoritesStore`: `persisted` under `basalt:<key>`. Whatever storage holds is
  * checked entry by entry, so a stale or edited value drops its bad rows and nothing else.
  */
-export function persistedFavourites(key: string): FavouritesStore {
+export function persistedFavorites(key: string): FavoritesStore {
   const store = persisted<readonly unknown[]>(key, { version: 1, initial: NONE })
   let seen: readonly unknown[] | undefined
-  let clean: readonly FavouriteEntry[] = NONE
+  let clean: readonly FavoriteEntry[] = NONE
   return {
     get() {
       const raw = store.get()
@@ -98,20 +98,20 @@ export function persistedFavourites(key: string): FavouritesStore {
 // ---- Reading and toggling ------------------------------------------------------------------------
 
 /**
- * Whether a record is a favourite and a function that flips it, or `null` outside an `AppShell`.
- * The glyph is remembered while the record is a favourite, so the rail row wears it.
+ * Whether a record is a favorite and a function that flips it, or `null` outside an `AppShell`.
+ * The glyph is remembered while the record is a favorite, so the rail row wears it.
  *
- * @useWhen a record needs its own favourite control (a menu row, a keyboard shortcut) rather than the star
- * @neverWhen the star `FavouriteToggle`, a `PageBar` `favourite` or a panel's `favourite` already draws what you need
+ * @useWhen a record needs its own favorite control (a menu row, a keyboard shortcut) rather than the star
+ * @neverWhen the star `FavoriteToggle`, a `PageBar` `favorite` or a panel's `favorite` already draws what you need
  *
  * @example
- * const favourite = useFavourite({ id: 'issue-12', label: 'Issue 12', target: navTarget(linkOptions({ to: '/issues/12' })) })
+ * const favorite = useFavorite({ id: 'issue-12', label: 'Issue 12', target: navTarget(linkOptions({ to: '/issues/12' })) })
  */
-export function useFavourite(input: FavouriteInput): { on: boolean; toggle: () => void } | null {
-  const api = useContext(FavouritesContext)
+export function useFavorite(input: FavoriteInput): { on: boolean; toggle: () => void } | null {
+  const api = useContext(FavoritesContext)
   const on = api?.entries.some((entry) => entry.id === input.id) ?? false
   useEffect(() => {
-    if (on) rememberFavouriteGlyph(input.id, input.icon)
+    if (on) rememberFavoriteGlyph(input.id, input.icon)
   }, [on, input.id, input.icon])
   if (api === null) return null
   return { on, toggle: () => api.toggle(input) }
@@ -119,7 +119,7 @@ export function useFavourite(input: FavouriteInput): { on: boolean; toggle: () =
 
 const STAR = 'M8 2l1.8 3.7 4 .6-2.9 2.8.7 4L8 11.2 4.4 13l.7-4L2.2 6.3l4-.6L8 2z'
 
-/** The star: outline while the record is not a favourite, filled while it is. */
+/** The star: outline while the record is not a favorite, filled while it is. */
 export function StarGlyph({ filled }: { filled: boolean }): ReactElement {
   return (
     <svg viewBox="0 0 16 16" className="size-icon" fill="none" aria-hidden="true">
@@ -134,34 +134,31 @@ export function StarGlyph({ filled }: { filled: boolean }): ReactElement {
   )
 }
 
-export type FavouriteToggleProps = FavouriteInput & {
+export type FavoriteToggleProps = FavoriteInput & {
   /** Layout only. */
   className?: string
 }
 
 /**
- * The star button that adds a record to the rail's Favourites section and takes it off again. It is
+ * The star button that adds a record to the rail's Favorites section and takes it off again. It is
  * a toggle (`aria-pressed`) named by the action it would do, and draws nothing outside an `AppShell`
- * or on a phone, where the rail that lists favourites is not drawn.
- * A `PageBar`, a `Peek` and a `Dock` draw it from their `favourite` prop; use the component itself
- * for a star of your own. `PageAside` takes no `favourite` prop.
+ * or on a phone, where the rail that lists favorites is not drawn.
+ * A `PageBar`, a `Peek` and a `Dock` draw it from their `favorite` prop; use the component itself
+ * for a star of your own. `PageAside` takes no `favorite` prop.
  *
  * @useWhen a record's page or panel should offer to pin it to the rail
  * @neverWhen the app has no `AppShell`, or the pin is a per-user setting that belongs on a settings page
  *
  * @example
- * <FavouriteToggle id="issue-12" label="Issue 12" icon={Bug} target={navTarget(linkOptions({ to: '/issues/12' }))} />
+ * <FavoriteToggle id="issue-12" label="Issue 12" icon={Bug} target={navTarget(linkOptions({ to: '/issues/12' }))} />
  */
-export function FavouriteToggle({
-  className,
-  ...input
-}: FavouriteToggleProps): ReactElement | null {
+export function FavoriteToggle({ className, ...input }: FavoriteToggleProps): ReactElement | null {
   const t = useMessages(page)
-  const favourite = useFavourite(input)
+  const favorite = useFavorite(input)
   // A phone has no rail to show the list in, so the star would pin to nothing it can see.
   const compact = useSizeClass() === 'compact'
-  if (favourite === null || compact) return null
-  const label = favourite.on ? t('page.unfavourite') : t('page.favourite')
+  if (favorite === null || compact) return null
+  const label = favorite.on ? t('page.unfavorite') : t('page.favorite')
   return (
     <Tooltip label={label}>
       <Button
@@ -169,11 +166,11 @@ export function FavouriteToggle({
         size="sm"
         shape="icon"
         aria-label={label}
-        aria-pressed={favourite.on}
-        className={cn(favourite.on && 'text-foreground', className)}
-        onClick={favourite.toggle}
+        aria-pressed={favorite.on}
+        className={cn(favorite.on && 'text-foreground', className)}
+        onClick={favorite.toggle}
       >
-        <StarGlyph filled={favourite.on} />
+        <StarGlyph filled={favorite.on} />
       </Button>
     </Tooltip>
   )

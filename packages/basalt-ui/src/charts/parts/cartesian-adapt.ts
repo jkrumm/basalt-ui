@@ -33,7 +33,7 @@ import { plotScales } from '../seams/plot-scales'
 /** The closed stroke scale: `weight` is the only way to thicken or soften a line. */
 export const WEIGHT_WIDTH = { quiet: 1.25, strong: 2.5 } as const
 
-/** A `{ light, dark }` pair as one CSS colour: `light-dark()` follows the page's `color-scheme`. */
+/** A `{ light, dark }` pair as one CSS color: `light-dark()` follows the page's `color-scheme`. */
 export const cssColor = (c: SeriesColor): string => `light-dark(${c.light}, ${c.dark})`
 
 /** The flat series the compiler, legend and tooltip read. */

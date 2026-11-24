@@ -192,7 +192,7 @@ describe('pre-edit', () => {
 
   it('denies a managed id added to the consumer lint config, and allows another edit of it', () => {
     const tr = t()
-    const rules = '{"extends":["./.oxlintrc.basalt.json"],"rules":{"basalt/colour-literal":"off"}}'
+    const rules = '{"extends":["./.oxlintrc.basalt.json"],"rules":{"basalt/color-literal":"off"}}'
     denied('.oxlintrc.json', { content: rules }, tr)
     const ok = hook(tr, {
       event: 'pre-edit',

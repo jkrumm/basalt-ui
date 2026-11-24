@@ -16,7 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from './popover'
 
 export type { CalendarRange } from './calendar-grid'
 
-/** A picked day as `YYYY-MM-DD`, the type `value` and `onChange` take. Re-exported so a form types its field without `core/format`. */
+/** A picked day as `YYYY-MM-DD`, the type `value` and `onValueChange` take. Re-exported so a form types its field without `core/format`. */
 export type { CalendarDate } from '../core/format'
 
 /**
@@ -79,8 +79,6 @@ export type DatePickerProps = Layout &
     value?: CalendarDate | null
     defaultValue?: CalendarDate | null
     /** Called with the clicked day, as `YYYY-MM-DD`. */
-    onChange?: (value: CalendarDate) => void
-    /** Same as `onChange`; a `FormField` hands this one. Both are called when both are given. */
     onValueChange?: (value: CalendarDate) => void
     /** Called when the calendar closes, so a validator runs after the pick. */
     onBlur?: () => void
@@ -93,8 +91,6 @@ export type DateRangePickerProps = Layout &
     value?: { from?: CalendarDate | null; to?: CalendarDate | null } | null
     defaultValue?: { from?: CalendarDate | null; to?: CalendarDate | null } | null
     /** Called once both ends are picked, never with a half range. */
-    onChange?: (value: CalendarRange) => void
-    /** Same as `onChange`; a `FormField` hands this one. Both are called when both are given. */
     onValueChange?: (value: CalendarRange) => void
     /** Called when the calendar closes, so a validator runs after the pick. */
     onBlur?: () => void
@@ -188,7 +184,7 @@ function PickerShell({
 }
 
 /**
- * Pick one day in a popover calendar. `value` and `onChange` are `YYYY-MM-DD` strings (the
+ * Pick one day in a popover calendar. `value` and `onValueChange` are `YYYY-MM-DD` strings (the
  * `CalendarDate` type), never a `Date`: nothing in the string carries a zone, so the day you store
  * is the day every reader sees, in Los Angeles and in Tokyo alike. The trigger prints it in UTC
  * through the app's `Format`. Arrow keys move by day, Page Up and Down by month, Escape closes.
@@ -200,12 +196,11 @@ function PickerShell({
  *
  * @example
  * const [day, setDay] = useState<CalendarDate | null>(null)
- * <DatePicker aria-label="Due date" value={day} onChange={setDay} />
+ * <DatePicker aria-label="Due date" value={day} onValueChange={setDay} />
  */
 export function DatePicker({
   value,
   defaultValue,
-  onChange,
   onValueChange,
   onBlur,
   placeholder,
@@ -259,7 +254,6 @@ export function DatePicker({
         onSelect={(day) => {
           const next = toCalendarDate(day)
           setInner(next)
-          onChange?.(next)
           onValueChange?.(next)
           state.setOpen(false)
         }}
@@ -270,7 +264,7 @@ export function DatePicker({
 
 /**
  * Pick a span of days in a popover calendar. The same zone-less `YYYY-MM-DD` strings as
- * `DatePicker`. `onChange` fires once, when both ends are picked: the first click only starts a
+ * `DatePicker`. `onValueChange` fires once, when both ends are picked: the first click only starts a
  * range (a half range is never reported, so a URL never holds one). Picking the same day twice is
  * a one-day range. Clicking again after a full range starts a new one. The trigger prints both ends
  * in UTC through the app's `Format`.
@@ -279,12 +273,11 @@ export function DatePicker({
  * @neverWhen the user picks one day (use `DatePicker`)
  *
  * @example
- * <DateRangePicker aria-label="Report window" value={range} onChange={setRange} />
+ * <DateRangePicker aria-label="Report window" value={range} onValueChange={setRange} />
  */
 export function DateRangePicker({
   value,
   defaultValue,
-  onChange,
   onValueChange,
   onBlur,
   placeholder,
@@ -357,7 +350,6 @@ export function DateRangePicker({
             to: toCalendarDate(range.to),
           }
           setInner(next)
-          onChange?.(next)
           onValueChange?.(next)
           state.setOpen(false)
         }}

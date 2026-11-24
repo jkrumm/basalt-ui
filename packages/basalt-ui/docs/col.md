@@ -234,7 +234,7 @@ col<T>(): Col<T>
     labels?: Readonly<Record<O, string>>  // The text of each option in the cell, the phone card and the column filter; the stored value without it
     tone?: (value: O) => Tone  // Receives the closed option union `options` declares, so a `Record<Option, Tone>` indexes without a cast
     filter?: "multi"  // `'multi'` filters by a checklist of the options; the user can also rank them from the header
-    lamp?: boolean  // The toned dot alone, its word for assistive tech and on hover: a column of states read by colour at a glance
+    lamp?: boolean  // The toned dot alone, its word for assistive tech and on hover: a column of states read by color at a glance
     age?: { at: (row: T) => string | number | Date | null | undefined; label?: string; }
 
   DeltaOptions:

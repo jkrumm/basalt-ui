@@ -7,7 +7,7 @@ import { cn } from '../core/cn'
 import type { IconComponent, NavTarget, RecordSequence } from '../core/ports'
 import type { AvatarEntry } from '../ui/avatar'
 import { DOCK_WIDTH } from './core/docking'
-import type { FavouriteInput } from './contract'
+import type { FavoriteInput } from './contract'
 import { widthStore } from './core/panel-store'
 import { PageHostContext, ShellDockContext } from './page'
 import {
@@ -31,8 +31,8 @@ export type DockProps = {
   tag?: string
   /** The record's own page. Draws an `Open full page` link in the header. */
   fullPage?: string | NavTarget
-  /** Draws a star in the header that adds the record to the shell rail's Favourites; nothing outside an `AppShell` or on a phone, where the rail is not drawn. */
-  favourite?: FavouriteInput
+  /** Draws a star in the header that adds the record to the shell rail's Favorites; nothing outside an `AppShell` or on a phone, where the rail is not drawn. */
+  favorite?: FavoriteInput
   /** The close button and Escape inside the panel: the caller decides how the address changes (`usePeek().dock.close`). */
   onClose: () => void
   /** A glyph before the title, for what kind of record it is. */
@@ -78,7 +78,7 @@ export function Dock({
   title,
   tag,
   fullPage,
-  favourite,
+  favorite,
   onClose,
   icon,
   avatar,
@@ -150,7 +150,7 @@ export function Dock({
         records={records}
         actions={actions}
         fullPage={fullPage}
-        favourite={favourite}
+        favorite={favorite}
         onClose={onClose}
         closeLabel={labels.close}
       />

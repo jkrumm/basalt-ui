@@ -288,7 +288,7 @@ layout('chat-thread: composer, live region and axe', () => {
           (s) => document.documentElement.setAttribute('data-theme', s),
           scheme,
         )
-        await sleep(500) // a colour transition in flight would be measured mid-way
+        await sleep(500) // a color transition in flight would be measured mid-way
         // The thread's own region. A CodeBlock keeps a copy confirmation of its own, empty until a click.
         const live = (): Promise<number> =>
           page.count(

@@ -26,12 +26,12 @@ export const rowsNoStyle: ReactElement = (
 )
 
 export const rowsNoColor: ReactElement = (
-  // @ts-expect-error a list takes no colour
+  // @ts-expect-error a list takes no color
   <RowList title="Open Issues" items={items} color="red" />
 )
 
-export const rowsSeparatorColour: ReactElement = (
-  // @ts-expect-error the separator is none or hairline, never a colour or a width
+export const rowsSeparatorColor: ReactElement = (
+  // @ts-expect-error the separator is none or hairline, never a color or a width
   <RowList title="Open Issues" items={items} separator="border-foreground" />
 )
 

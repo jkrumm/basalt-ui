@@ -1,8 +1,8 @@
 /**
  * IntervalTrack label ink is chosen by what the label sits on (Issue 2451): every label the track
  * draws holds 4.5:1 against its own ground in both schemes, at rest and on the lifted span. A span's
- * fill is its colour mixed into the card under `TINT_CAP`, the share at which `ink` still holds for
- * any colour at all, so the rule holds for a series colour the kit has never seen.
+ * fill is its color mixed into the card under `TINT_CAP`, the share at which `ink` still holds for
+ * any color at all, so the rule holds for a series color the kit has never seen.
  */
 import { afterEach, describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
@@ -74,7 +74,7 @@ function resolve(value: string, scheme: Scheme): string {
 
 describe('the tint cap', () => {
   // The cube's corners and the playground's calendar and sleep series: the darkest and the lightest
-  // colours a series file can name, and the ones the kit draws.
+  // colors a series file can name, and the ones the kit draws.
   const corners = [0, 1, 2, 3, 4, 5, 6, 7].map((n) =>
     toHex([4, 2, 1].map((bit) => ((n & bit) !== 0 ? 255 : 0))),
   )
@@ -89,7 +89,7 @@ describe('the tint cap', () => {
     '#6c8cf0',
   ]
   for (const scheme of SCHEMES) {
-    test(`${scheme}: ink holds 4.5:1 on any colour mixed in at the cap`, () => {
+    test(`${scheme}: ink holds 4.5:1 on any color mixed in at the cap`, () => {
       const card = token('card', scheme)
       for (const c of [...corners, ...kit]) {
         expect(

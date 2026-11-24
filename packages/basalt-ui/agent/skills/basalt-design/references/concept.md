@@ -17,7 +17,7 @@ Before any form is picked, write the surface as a few lines: the parts it needs,
 - Say what they share. Parts that show the same items share one focus: pointing at or stepping to an item in one focuses it in the other, both ways ([linked-parts](../../basalt-charts/references/linked-parts.md)). A shared filter or scale is stated once, on the part that owns it.
 - Size the footprint to the question: a comparison of two numbers is one small card that hugs its content, and the page leaves the rest empty.
 - The parts read as one working surface: a shared edge and a shared gap.
-- Pick the page's layout. The shell is two planes: the rail on the frame, the page on one work surface in the card colour. A list, a split page and a canvas are `Page fill`: the one main part meets the surface's edges. A dashboard, a form and a settings page stay padded and set their cards on the surface, where a card reads by its hairline ring alone; a card inside a card is the defect.
+- Pick the page's layout. The shell is two planes: the rail on the frame, the page on one work surface in the card color. A list, a split page and a canvas are `Page fill`: the one main part meets the surface's edges. A dashboard, a form and a settings page stay padded and set their cards on the surface, where a card reads by its hairline ring alone; a card inside a card is the defect.
 
 ## Datasets
 

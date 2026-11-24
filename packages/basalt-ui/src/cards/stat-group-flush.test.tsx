@@ -17,8 +17,8 @@ describe('StatGroup flush', () => {
   test('draws the strip with no card: a rule below and cells ruled as the strip is', () => {
     render(
       <StatGroup variant="flush" label="Invoices">
-        <StatCell label="Outstanding" value={186250} sub="33 invoices waiting" />
-        <StatCell label="Overdue" value={81120} sub="17 invoices, oldest 118 days late" />
+        <StatCell title="Outstanding" value={186250} sub="33 invoices waiting" />
+        <StatCell title="Overdue" value={81120} sub="17 invoices, oldest 118 days late" />
       </StatGroup>,
     )
     const group = document.querySelector('[data-slot="stat-group"]')!
@@ -34,9 +34,9 @@ describe('StatGroup flush', () => {
     const warn = spyOn(console, 'warn').mockImplementation(() => {})
     render(
       <StatGroup variant="flush" label="Invoices">
-        <StatCell label="Outstanding" value={186250} sub="33 invoices waiting" />
-        <StatCell label="Bare" value={12} />
-        <StatCell label="Paid" value={167} status={{ tone: 'good', label: 'On time' }} />
+        <StatCell title="Outstanding" value={186250} sub="33 invoices waiting" />
+        <StatCell title="Bare" value={12} />
+        <StatCell title="Paid" value={167} status={{ tone: 'good', label: 'On time' }} />
       </StatGroup>,
     )
     expect(screen.queryByText('Bare')).toBeNull()
@@ -50,9 +50,9 @@ describe('StatGroup flush', () => {
     const warn = spyOn(console, 'warn').mockImplementation(() => {})
     render(
       <StatGroup variant="flush" label="Invoices">
-        <StatCell label="Outstanding" value={186250} sub="33 invoices waiting" />
-        <StatCell label="Overdue" value={undefined} phase="loading" />
-        <StatCell label="Paid" value={undefined} phase={{ tag: 'error', message: 'down' }} />
+        <StatCell title="Outstanding" value={186250} sub="33 invoices waiting" />
+        <StatCell title="Overdue" value={undefined} phase="loading" />
+        <StatCell title="Paid" value={undefined} phase={{ tag: 'error', message: 'down' }} />
       </StatGroup>,
     )
     expect(document.querySelectorAll('[data-slot="stat-cell"]')).toHaveLength(3)
@@ -63,9 +63,9 @@ describe('StatGroup flush', () => {
     const warn = spyOn(console, 'warn').mockImplementation(() => {})
     render(
       <StatGroup variant="flush" label="Invoices">
-        <StatCell label="Outstanding" value={186250} sub="33 invoices waiting" />
-        <StatCell label="Open" value={42} empty={null} />
-        <StatCell label="Paid" value={undefined} empty={{ cause: 'No invoices paid yet' }} />
+        <StatCell title="Outstanding" value={186250} sub="33 invoices waiting" />
+        <StatCell title="Open" value={42} empty={null} />
+        <StatCell title="Paid" value={undefined} empty={{ cause: 'No invoices paid yet' }} />
       </StatGroup>,
     )
     expect(screen.queryByText('Open')).toBeNull()
@@ -77,8 +77,8 @@ describe('StatGroup flush', () => {
     const warn = spyOn(console, 'warn').mockImplementation(() => {})
     const { container } = render(
       <StatGroup variant="flush" label="Invoices">
-        <StatCell label="Open" value={42} />
-        <StatCell label="Paid" value={7} />
+        <StatCell title="Open" value={42} />
+        <StatCell title="Paid" value={7} />
       </StatGroup>,
     )
     expect(container.innerHTML).toBe('')
@@ -89,8 +89,8 @@ describe('StatGroup flush', () => {
     const warn = spyOn(console, 'warn').mockImplementation(() => {})
     render(
       <StatGroup variant="strip" label="Fleet">
-        <StatCell label="Deploys" value={164} sub="this week" />
-        <StatCell label="Bare" value={12} />
+        <StatCell title="Deploys" value={164} sub="this week" />
+        <StatCell title="Bare" value={12} />
       </StatGroup>,
     )
     expect(screen.getByText('Bare')).toBeDefined()

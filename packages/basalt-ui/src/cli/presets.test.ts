@@ -107,7 +107,7 @@ describe('renderOxlintPreset', () => {
     expect(restyle[1].message?.spacing).not.toContain('margin')
   })
 
-  it('zone E turns the structure rules off for the file and the colour rules stay on', () => {
+  it('zone E turns the structure rules off for the file and the color rules stay on', () => {
     const path = 'src/components/ui/button.tsx'
     const zone = overridesOf(manifest({ ejected: { '.#button': row(path) } })).find(
       (o) => o.files.includes(path) && 'shadcn/no-restyle' in o.rules,
@@ -125,7 +125,7 @@ describe('renderOxlintPreset', () => {
     )
     expect(forms?.rules['basalt/tw-off-law']).toEqual([
       'error',
-      { formsOff: ['surface-recipe', 'app-colour', 'app-colour-arbitrary'] },
+      { formsOff: ['surface-recipe', 'app-color', 'app-color-arbitrary'] },
     ])
   })
 

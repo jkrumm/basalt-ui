@@ -39,7 +39,7 @@ basalt binds TanStack Form; the app owns its schema and its save. Props are in t
 - A group sets `size` (and a ButtonGroup `variant`) for its children; a child that passes its own keeps it.
 
 - Options with a hint, price or picture: `variant="card"` or `"tile"` on `RadioGroup`/`CheckboxGroup`. A role grid: [CheckboxMatrix](node_modules/basalt-ui/docs/checkbox-matrix.md). Free values: [TagInput](node_modules/basalt-ui/docs/tag-input.md). A code: [OneTimeCode](node_modules/basalt-ui/docs/one-time-code.md), error on the whole code.
-- One palette colour: [SwatchPicker](node_modules/basalt-ui/docs/swatch-picker.md). Shortcut values beside a field: [QuickPicks](node_modules/basalt-ui/docs/quick-picks.md).
+- One palette color: [SwatchPicker](node_modules/basalt-ui/docs/swatch-picker.md). Shortcut values beside a field: [QuickPicks](node_modules/basalt-ui/docs/quick-picks.md).
 
 ## Save
 

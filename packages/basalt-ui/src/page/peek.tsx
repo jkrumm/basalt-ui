@@ -21,7 +21,7 @@ import {
 import { Sheet, SheetContent } from '../ui/sheet'
 import { PRESENTATIONS, presentationStore, widthStore } from './core/panel-store'
 import type { Presentation } from './core/panel-store'
-import type { FavouriteInput } from './contract'
+import type { FavoriteInput } from './contract'
 import { PageHostContext, ShellOverlayContext } from './page'
 import { PeekChip, PeekWindow } from './peek-window'
 import type { WindowRect } from './peek-window'
@@ -63,8 +63,8 @@ export type PeekProps = {
   defaultPresent?: 'peek' | 'window' | 'page'
   /** The record's own page. Draws an `Open full page` link in the header; a plain click leaves the peek. */
   fullPage?: string | NavTarget
-  /** Draws a star in the header that adds the record to the shell rail's Favourites; nothing outside an `AppShell` or on a phone, where the rail is not drawn. */
-  favourite?: FavouriteInput
+  /** Draws a star in the header that adds the record to the shell rail's Favorites; nothing outside an `AppShell` or on a phone, where the rail is not drawn. */
+  favorite?: FavoriteInput
   /** Escape, the close button and Back: the caller decides how the address changes (`usePeek().close`). */
   onClose: () => void
   /** Draws a button that moves the record into the shell's `Dock` (`usePeek().pin`). Not drawn on a phone. */
@@ -262,7 +262,7 @@ function PeekPanel({
   kind = 'record',
   defaultPresent = 'peek',
   fullPage,
-  favourite,
+  favorite,
   onClose,
   onPin,
   actions,
@@ -322,7 +322,7 @@ function PeekPanel({
       records={records}
       actions={actions}
       fullPage={fullPage}
-      favourite={favourite}
+      favorite={favorite}
       onPin={onPin}
       menu={menu}
       onClose={onClose}

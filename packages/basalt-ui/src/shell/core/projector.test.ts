@@ -49,7 +49,7 @@ describe('rollupBadges', () => {
     expect(rollupBadges([])).toBeNull()
   })
 
-  test('attention survives the rollup as the one warn colour; an unlit attention badge does not', () => {
+  test('attention survives the rollup as the one warn color; an unlit attention badge does not', () => {
     const rolled = rollupBadges([
       { count: 2, attention: true },
       { count: 1, attention: true },
@@ -150,7 +150,7 @@ describe('createProjector: the attention assertion', () => {
     users: { count: 1 },
   }
 
-  test('two attention badges lit raise the dev assertion once; the rollup shows one warn colour', () => {
+  test('two attention badges lit raise the dev assertion once; the rollup shows one warn color', () => {
     const project = createProjector()
     const first = project({ nav: NAV, state: NO_STATE, badges: twoLit })
     project({ nav: NAV, state: NO_STATE, badges: twoLit })

@@ -6,10 +6,10 @@
 export const RAIL_TEXT = {
   search: 'Search',
   resize: 'Resize sidebar',
-  favourites: 'Favourites',
+  favorites: 'Favorites',
   switchWorkspace: 'Switch workspace',
   expand: 'Expand sidebar',
-  removeFavourite: (label: string): string => `Remove ${label} from favourites`,
+  removeFavorite: (label: string): string => `Remove ${label} from favorites`,
   /** The cue on a folded section's header while the current page sits inside it. */
   containsActive: 'Contains the current page',
 } as const

@@ -63,7 +63,7 @@ function evaluate(expr: string, scheme: Scheme): Rgba {
   return { rgb, a }
 }
 
-/** The colour a paint shows on the card of a scheme. */
+/** The color a paint shows on the card of a scheme. */
 function onCard(paint: string, scheme: Scheme): string {
   const { rgb, a } = evaluate(paint, scheme)
   const card = hexToRgb(token('card', scheme))
@@ -95,7 +95,7 @@ describe('dimmedHuePaint', () => {
     })
   }
 
-  test('two lines stay different colours dimmed, as one slate they would not', () => {
+  test('two lines stay different colors dimmed, as one slate they would not', () => {
     const [a, b] = ['#1f6fb0', '#a06a00'].map((c) => onCard(dimmedHuePaint(c), 0))
     expect(a).not.toBe(b)
   })
@@ -121,7 +121,7 @@ describe('the focused mark rises as the rest fall', () => {
       })
     }
 
-    test(`${name}: a focused accent mark stays above the card more than its resting colour and its dimmed neighbours`, () => {
+    test(`${name}: a focused accent mark stays above the card more than its resting color and its dimmed neighbours`, () => {
       const accent = '#4374a6'
       const card = token('card', scheme)
       const focused = contrastRatio(onCard(focusedPaint(accent), scheme), card)

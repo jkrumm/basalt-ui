@@ -233,7 +233,7 @@ export function spreadLabels(ys: readonly number[], plotHeight: number): number[
  * series read another scale); `legend`: none. Labels that would collide are spread apart, never
  * dropped: a label no height clears of the other series' lines stays where the spread left it, because
  * the legend may be hidden (`endLabels` draws none) and the label is then the only name. The text mark has no
- * stroke, so a label another line runs through gets a card-coloured `backing` box under its glyphs. A label the
+ * stroke, so a label another line runs through gets a card-colored `backing` box under its glyphs. A label the
  * spread moves off its line's end gets a `leader` back to it. A series whose last point the plot's own x scale cannot place, or places outside the plot
  * (`plot.xFraction` outside [0, 1]: clipped by a narrower `xDomain`), has no label.
  */
@@ -590,7 +590,7 @@ export function endLabelOffset(
   return { dx: -END_LABEL_DX, dy: side === 'above' ? END_LABEL_FLIP_DY : END_LABEL_FLIP_DY_BELOW }
 }
 
-/** `paint` is the label's fill for a series colour: its line's own paint, so a label dims with its line. */
+/** `paint` is the label's fill for a series color: its line's own paint, so a label dims with its line. */
 export function endLabelMarks<T, X extends ChartX>(
   plan: readonly EndLabel<T, X>[],
   paint: (color: string) => string = (color) => color,
@@ -614,7 +614,7 @@ export function endLabelMarks<T, X extends ChartX>(
   ])
 }
 
-/** The surface a struck label is drawn on: the text mark has no stroke, so a line through it is covered by a card-coloured box instead of a halo. */
+/** The surface a struck label is drawn on: the text mark has no stroke, so a line through it is covered by a card-colored box instead of a halo. */
 function backingMarks(key: string, box: LabelBox): ChartMarks {
   return [
     decorative(

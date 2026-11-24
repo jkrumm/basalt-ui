@@ -6,7 +6,7 @@ import { cn } from '../core/cn'
 import { useFormat } from '../core/format'
 
 /**
- * The `Progress` cva table: a 6 px rounded track and the fill inside it. `tone` colours the fill,
+ * The `Progress` cva table: a 6 px rounded track and the fill inside it. `tone` colors the fill,
  * default `accent`; an indeterminate bar pulses (never under reduced motion).
  *
  * @example
@@ -30,7 +30,7 @@ export const progressVariants = cva(
 )
 
 /**
- * The `Ring` cva table: a 48 px circular gauge with the percentage in its middle. `tone` colours
+ * The `Ring` cva table: a 48 px circular gauge with the percentage in its middle. `tone` colors
  * the arc, default `accent`. No `RingProgress` options: size and thickness are the table's.
  *
  * @example

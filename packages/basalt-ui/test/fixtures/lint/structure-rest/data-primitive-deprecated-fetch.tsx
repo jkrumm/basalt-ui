@@ -1,4 +1,4 @@
-// Blocks: see colour-literal.tsx.
+// Blocks: see color-literal.tsx.
 
 // @invalid
 await queryClient.ensureQueryData(gymsOptions())

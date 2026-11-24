@@ -52,7 +52,7 @@ function Scatter({ data }: { data: readonly Pt[] }) {
     <div>
       <output data-readout="">{focus.readout('none', (d) => d.name)}</output>
       <CartesianChart<Pt>
-        ariaLabel="Scatter"
+        label="Scatter"
         data={data}
         x={{ value: (d) => d.x }}
         series={[{ key: 'y', label: 'Y', color: COLOR, mark: 'dot', y: (d) => d.y }]}
@@ -128,7 +128,7 @@ describe('a custom rect beside bars', () => {
     const host = document.createElement('div')
     host.innerHTML = renderToString(
       <CartesianChart<Hour>
-        ariaLabel="Hours"
+        label="Hours"
         data={hours}
         x={{ value: (d) => d.at }}
         series={[{ mark, key: 'v', label: 'V', color: COLOR, y: (d) => d.v }]}
@@ -174,7 +174,7 @@ describe('dimmed bars in dark', () => {
     const focus = useChartFocus(STAGES, { announce: (d) => d.stage })
     return (
       <CartesianChart<Stage>
-        ariaLabel="Pace"
+        label="Pace"
         data={STAGES}
         x={{ value: (d) => d.stage }}
         series={[{ key: 'behind', label: 'Behind', color: COLOR, mark: 'bar', y: (d) => d.behind }]}

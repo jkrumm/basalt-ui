@@ -1,7 +1,7 @@
 /**
  * TanStack Start root route. `shellComponent` is the document: the server renders it, the browser
  * hydrates it. `ScriptOnce` runs basalt's pre-paint scheme script before React hydrates, so the
- * stored colour scheme is on the root element at first paint; `suppressHydrationWarning` is for that one
+ * stored color scheme is on the root element at first paint; `suppressHydrationWarning` is for that one
  * attribute. `component` holds the app: `BasaltProvider` wraps the outlet, and nothing in it reads
  * `window` or storage while rendering (read browser state in an effect, or behind `ClientOnly`).
  * `RouterContext` types what `getRouter()` (`router.tsx`) passes as `context`. The frame is the

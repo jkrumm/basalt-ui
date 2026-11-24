@@ -3,7 +3,7 @@ import type { MeterProps } from './meter'
 /**
  * Hand-authored guard for `meter` (docs/v3/ARCHITECTURE.md 4.2). `requires` survives eject;
  * `closed` is dropped on eject. Zones are `MeterSpec` from `src/core/ports.ts`: two or more, each
- * with a `label`, because a verdict is never colour alone.
+ * with a `label`, because a verdict is never color alone.
  */
 
 // basalt:guard requires
@@ -25,7 +25,7 @@ export const closedTone: Pick<MeterProps, 'tone'> = { tone: 'purple' }
 export const unlabelledZone: Pick<MeterProps, 'zones'> = {
   zones: [
     { to: 1, tone: 'good', label: 'Fine' },
-    // @ts-expect-error a zone without a label is colour alone
+    // @ts-expect-error a zone without a label is color alone
     { to: 2, tone: 'bad' },
   ],
 }

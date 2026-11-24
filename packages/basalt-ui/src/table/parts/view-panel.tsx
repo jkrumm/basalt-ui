@@ -159,8 +159,8 @@ function Pending<T>({ c }: { c: ViewsController<T> }): ReactElement | null {
 function useLabels() {
   const t = useMessages(table)
   const rowHeight: Record<RowHeight, string> = {
-    compact: t('table.panelCompact'),
-    default: t('table.panelDefault'),
+    dense: t('table.panelCompact'),
+    normal: t('table.panelDefault'),
     comfortable: t('table.panelComfortable'),
   }
   const preset: Record<Preset | 'custom', string> = {
@@ -229,7 +229,7 @@ function Root<T>({
       <Group>
         <Row
           label={t('table.panelRowHeight')}
-          value={labels.rowHeight[model.rowHeight ?? 'default']}
+          value={labels.rowHeight[model.rowHeight ?? 'normal']}
           onClick={() => go('rowHeight')}
         />
         <Row
@@ -372,17 +372,17 @@ function RowHeightPage<T>({ c }: { c: ViewsController<T> }): ReactElement {
   return (
     <RadioGroup<RowHeight>
       aria-label={t('table.panelRowHeight')}
-      value={model.rowHeight ?? 'default'}
+      value={model.rowHeight ?? 'normal'}
       onValueChange={(next) => model.setRowHeight(next)}
       options={[
         {
-          value: 'compact',
-          label: labels.rowHeight.compact,
+          value: 'dense',
+          label: labels.rowHeight.dense,
           description: t('table.panelCompactRows'),
         },
         {
-          value: 'default',
-          label: labels.rowHeight.default,
+          value: 'normal',
+          label: labels.rowHeight.normal,
           description: t('table.panelDefaultRows'),
         },
         {

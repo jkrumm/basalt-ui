@@ -73,7 +73,7 @@ props extend and `src/surfaces.ts` stays the SSOT for real subpaths.
   layer boundary. `Tier` is re-exported from `widget-header` **type-only**, so it emits no runtime
   edge into the UI half.
 - `Tone`/`ToneWithNeutral` is the ONE status vocabulary. Forks exist (`SidebarBlockTone`
-  byte-identical; `CalloutKind`, `AccountBadgeTone`, `NotificationIntent`
+  byte-identical; `AccountBadgeTone`, `NotificationIntent`
   differ) — an adopter ALIASES its fork to this type; nothing gets renamed out from under a
   consumer.
 
@@ -415,7 +415,7 @@ impossible, land a one-release `releaseRules` override (`{"breaking":true,"relea
   empty sentence is `cause`; a frame's pending node is `skeleton`, and `loading` is a boolean.
   An action's identity is `id`; every data part takes `phase`; a width has one word (`compact` is
   the window class, `narrow` the 240 px container). `tone` (`good`, `warn`, `bad`, `info`) is the
-  verdict colour of a read-out (`Alert`, `Status`, `Num`, `Meter`, `Progress`, `Lozenge`,
+  verdict color of a read-out (`Alert`, `Status`, `Num`, `Meter`, `Progress`, `Lozenge`,
   `Toast`); a `Button` is an action, not a read-out, so its `variant` names the role
   (`primary`, `secondary`, `ghost`) and the destructive one is `danger`: the one written exception.
 - When extending the public API, keep it grounded in the consumer need that drove it, and update

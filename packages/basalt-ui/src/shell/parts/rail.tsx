@@ -31,7 +31,7 @@ import { RailBlock } from './blocks'
 import { Button } from '../../ui/button'
 import { Tooltip } from '../../ui/tooltip'
 import { useRailControl } from './grid'
-import { RailFavourites } from './rail-favourites'
+import { RailFavorites } from './rail-favorites'
 import { RailResizeHandle } from './rail-resize'
 import { RailRowView } from './rail-rows'
 import { useSectionFolds } from './rail-folds'
@@ -134,7 +134,7 @@ export function Rail({
         className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-1.5 pb-3 [mask-image:linear-gradient(to_bottom,black_calc(100%-12px),transparent)]"
       >
         {search !== undefined && <RailSearch onOpen={search.onOpen} />}
-        <RailFavourites />
+        <RailFavorites />
         {model.sections.map((section, index) => (
           <RailSectionView key={section.id} section={section} first={index === 0} />
         ))}

@@ -1,5 +1,5 @@
 /**
- * `basalt-ui/theme-script`: the pre-paint colour-scheme script as a string, for the document head.
+ * `basalt-ui/theme-script`: the pre-paint color-scheme script as a string, for the document head.
  * Tooling, frozen per major; reads the stored scheme and appearance and stamps each attribute
  * (`data-theme`, `data-density`, `data-frame`, `data-accent`) only when it is absent.
  */

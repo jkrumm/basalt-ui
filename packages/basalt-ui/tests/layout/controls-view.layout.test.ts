@@ -1,6 +1,6 @@
 /**
  * `ControlView` in real Chrome at 1440, 768, 390 and 320 (docs/v3/issues/g1/v3-ctl-4-control-view.
- * json): the override cue is text (not colour alone) in the pill, row and inline presentations and
+ * json): the override cue is text (not color alone) in the pill, row and inline presentations and
  * Reset restores the global; every control of every kind stays inside its frame with no sideways
  * scroll; a coarse pointer gets a 44 px hit box on every interactive element; axe finds nothing
  * serious or critical.
@@ -91,7 +91,7 @@ async function open(
   await page.raw.waitForSelector('[data-testid="cv-kinds-row"] [data-slot="control-view"]')
   if (scheme === 'dark') {
     await page.raw.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'))
-    // The colour transition of every control runs for 150 ms after the scheme flips.
+    // The color transition of every control runs for 150 ms after the scheme flips.
     await page.raw.waitForTimeout(300)
   }
   await page.settle()

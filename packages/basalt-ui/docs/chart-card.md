@@ -41,9 +41,9 @@ ChartCard(props: ChartCardProps): ReactElement
   panes?: readonly ChartPane[]
 ```
 
-`CardMenu`, `Phase`, `QueryStateLike` import from `basalt-ui/cards`: `import type { CardMenu, Phase, QueryStateLike } from 'basalt-ui/cards'`.
+`CardMenu`, `Empty`, `FootFacts`, `Phase`, `QueryStateLike` import from `basalt-ui/cards`: `import type { CardMenu, Empty, FootFacts, Phase, QueryStateLike } from 'basalt-ui/cards'`.
 
-`ChartCardProps`, `ChartFigure`, `ChartPane`, `Empty`, `FootFacts`, `LegendEntry` import from `basalt-ui/charts`: `import type { ChartCardProps, ChartFigure, ChartPane, Empty, FootFacts, LegendEntry } from 'basalt-ui/charts'`.
+`ChartCardProps`, `ChartFigure`, `ChartPane`, `LegendEntry` import from `basalt-ui/charts`: `import type { ChartCardProps, ChartFigure, ChartPane, LegendEntry } from 'basalt-ui/charts'`.
 
 `ControlsSlot` import from `basalt-ui/controls`: `import type { ControlsSlot } from 'basalt-ui/controls'`.
 

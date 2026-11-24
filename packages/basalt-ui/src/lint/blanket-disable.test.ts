@@ -40,7 +40,7 @@ describe('findBlanketDisables', () => {
 
   it('ignores a directive that scopes to other rules', () => {
     const source = [
-      '/* oxlint-disable basalt/colour-literal -- overlay */',
+      '/* oxlint-disable basalt/color-literal -- overlay */',
       '// oxlint-disable-next-line basalt/raw-scroll -- why',
       '// oxlint-disable-line',
     ].join('\n')

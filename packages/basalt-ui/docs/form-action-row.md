@@ -21,7 +21,7 @@ FormActionRow({ label, description, icon, id, tone, action, className, }: FormAc
   description?: ReactNode  // Help text under the label
   icon?: IconComponent  // An icon tile at the start of the row
   id?: string  // A stable id for the row, a target for a link (`#row-delete`): `SettingsLayout` scrolls to it and marks it once
-  tone?: SettingsRowTone  // `danger` reads in the verdict colour
+  tone?: SettingsRowTone  // `danger` reads in the verdict color
   className?: string  // Layout only (`w-full`)
   action: ReactNode  // The control at the end of the row: a `Button` (`variant="danger"` for a destructive one)
 ```

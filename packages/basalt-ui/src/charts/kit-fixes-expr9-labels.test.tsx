@@ -16,7 +16,7 @@ const color = { light: 'var(--basalt-line)', dark: 'var(--basalt-line)' }
 function html(rows: Item[], format?: (v: number) => string): string {
   return renderToString(
     <CartesianChart<Item>
-      ariaLabel="Queue"
+      label="Queue"
       data={rows}
       x={{ value: (d) => d.age, domain: [0, 100] }}
       y={{ domain: [0, 14] }}

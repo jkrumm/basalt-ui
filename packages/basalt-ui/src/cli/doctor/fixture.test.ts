@@ -61,7 +61,7 @@ const STUB_HOOK = `let input = ''
 process.stdin.on('data', (chunk) => (input += chunk))
 process.stdin.on('end', () => {
   if (input.includes('__basalt_seeded_offender__')) {
-    console.error('src/__basalt_seeded_offender__.tsx:1 basalt/colour-literal: hex literal. Use a BASALT token.')
+    console.error('src/__basalt_seeded_offender__.tsx:1 basalt/color-literal: hex literal. Use a BASALT token.')
     process.exit(2)
   }
   process.exit(0)
@@ -262,7 +262,7 @@ export function commitTree(dir: string): void {
 
 /** The doctor options a healthy tree needs: a lint runner that fires, oxlint at the pin, a base ref. */
 export const HEALTHY: DoctorOptions = {
-  runLint: () => ['basalt/colour-literal'],
+  runLint: () => ['basalt/color-literal'],
   installedOxlint: '1.93.0',
   baseRef: 'HEAD',
 }

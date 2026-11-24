@@ -9,15 +9,15 @@ Taste checks for a page that reads as a default. Read before the first build and
 - **Restated figures.** One number in the summary line, a card and a table cell: each figure appears once per page.
 - **A generic title.** "Overview" or "Dashboard" alone: name the subject and its scope. [type:PageBarProps]
 - **A page root of its own.** A `div` with its own `gap` or `p-4`, a fragment, or a `@container` wrapper around the page: return `Page`, which owns the gutter and the top inset. [lint:page-root]
-- **Colour on its own.** A status carried by hue only: a word plus its tone, and polarity is data on the delta. [lint:status-fill-as-text]
-- **A side stripe.** A coloured bar on one edge of a card, row, toast or node reads as generated filler: say the state with `Status`, a badge or the tone of the whole border. [lint:tw-off-law]
+- **Color on its own.** A status carried by hue only: a word plus its tone, and polarity is data on the delta. [lint:status-fill-as-text]
+- **A side stripe.** A colored bar on one edge of a card, row, toast or node reads as generated filler: say the state with `Status`, a badge or the tone of the whole border. [lint:tw-off-law]
 
 ## Self-check before review
 
 Four defects a reviewer can pass and a person still marks down at the screen; the rubric fails a component on them (Craft 4, 8, 9 and 10), so run each on your own frames before you shoot for review:
 
 - **Count the accent.** In the 1800 rest frame, name every series and mark class in the accent. More than one is cut to one, the rest go to ink steps in the series file, unless the page names a second meaning in a word ([chart-color](chart-color.md)).
-- **No bare border.** Search the page for `border`, `border-b`, `border-t` and `divide-y` with no colour class beside them: each paints in the text colour. A rule between rows names `border-border` or `border-grid`, and rows separated by spacing and a hover surface need none.
+- **No bare border.** Search the page for `border`, `border-b`, `border-t` and `divide-y` with no color class beside them: each paints in the text color. A rule between rows names `border-border` or `border-grid`, and rows separated by spacing and a hover surface need none.
 - **Hover sweep.** Shoot `basalt-ui shot <route> --states rest,hover,focus,tooltip` and set each crop against the ready crop: the plot, its axes and the parts beside it sit at the same pixel position. A readout that grows the card, a label that wraps on focus or a legend that reflows is the defect.
 - **Redraw test for marks you drew.** Rows, tracks and their labels start on one x and one rhythm; every label fits its box at 1800 and 390, none clipped or hidden under a mark; marks of one class share one size. Judge it as drawing, apart from whether the idea is right.
 - **Records as a table.** A grid of five or more cards that each show one record of one shape gets a table view of the same records ([cards](cards.md)).
@@ -28,7 +28,7 @@ Run it against the rendered page at 1800 and 390, light and dark, and one keyboa
 
 - **Answer on the mark**, **baseline**, **one name** and **axes**: [chart-labels](chart-labels.md).
 - **One measure**, **part to whole**, **age and target**: [chart-form](chart-form.md), [table](table.md) § Measures in a column.
-- **Colour budget**: one accent, one status hue on the state that needs action, one meaning per hue across the cards ([chart-color](chart-color.md)).
+- **Color budget**: one accent, one status hue on the state that needs action, one meaning per hue across the cards ([chart-color](chart-color.md)).
 - **Extremes, zeros, legends and heat grids**: [chart-honest](chart-honest.md).
 - **Linked parts and one readout**: point at an item in the chart, then in the list, then step with the arrow keys; the other part focuses it every time, both ways ([linked-parts](../../basalt-charts/references/linked-parts.md)).
 - **One view, sizes and 390**: [chart-view](chart-view.md).

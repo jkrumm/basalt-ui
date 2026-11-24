@@ -50,7 +50,7 @@ How a stat card and its neighbours read. The slots and props are in [StatCard](n
 - Write every percent through `useFormat().percent` (it takes the fraction), one form per page.
 - Pass the numbers; the part formats them. Pass the phase or the query; the card draws its own skeleton at its loaded height. [type:StatCardProps]
 - The card's action sits in the card menu; the page's one primary action sits in [PageBar](node_modules/basalt-ui/docs/page-bar.md), drawn ink-inverted. [type:PageBarProps]
-- Cards in one row align their heights; spend colour once ([chart-color](chart-color.md)).
+- Cards in one row align their heights; spend color once ([chart-color](chart-color.md)).
 
 ## Neighbours
 

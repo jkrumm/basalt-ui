@@ -2,7 +2,7 @@
  * `DatePicker` and `DateRangePicker` under TZ=America/Los_Angeles and TZ=Asia/Tokyo: a picked day is
  * the clicked day, a stored day prints as itself, and the boundary only ever carries `YYYY-MM-DD`.
  * Zone-less means the same wall-clock day west of UTC (where `new Date('2026-11-20')` is the 19th)
- * and east of it (where a local midnight is still yesterday in UTC). The day colours: one strong
+ * and east of it (where a local midnight is still yesterday in UTC). The day colors: one strong
  * fill on a pick or a range's ends (`data-picked`), the quiet `selected` band under the middle, and
  * today a neutral ring, never the brand.
  */
@@ -54,7 +54,7 @@ for (const zone of ZONES) {
           aria-label="Due date"
           defaultOpen
           defaultValue="2026-11-15"
-          onChange={(v) => picked.push(v)}
+          onValueChange={(v) => picked.push(v)}
         />,
       )
       expect(document.querySelector('[data-day="2026-11-15"]')?.getAttribute('data-selected')).toBe(
@@ -79,7 +79,7 @@ for (const zone of ZONES) {
           aria-label="Due date"
           defaultOpen
           value="2026-03-31"
-          onChange={(v) => picked.push(v)}
+          onValueChange={(v) => picked.push(v)}
         />,
       )
       fireEvent.click(dayButton('2026-03-01'))
@@ -94,7 +94,7 @@ for (const zone of ZONES) {
           aria-label="Window"
           defaultOpen
           value={{ from: '2026-11-02', to: '2026-11-04' }}
-          onChange={(r) => picked.push(r)}
+          onValueChange={(r) => picked.push(r)}
         />,
       )
       fireEvent.click(dayButton('2026-11-10'))
@@ -105,7 +105,9 @@ for (const zone of ZONES) {
 
     test('the same day twice is a one-day range', () => {
       const picked: CalendarRange[] = []
-      render(<DateRangePicker aria-label="Window" defaultOpen onChange={(r) => picked.push(r)} />)
+      render(
+        <DateRangePicker aria-label="Window" defaultOpen onValueChange={(r) => picked.push(r)} />,
+      )
       fireEvent.click(dayButton('2026-11-10'))
       fireEvent.click(dayButton('2026-11-10'))
       expect(picked).toEqual([{ from: '2026-11-10', to: '2026-11-10' }])
@@ -172,20 +174,6 @@ describe('form binding', () => {
     expect(picked).toEqual(['2026-11-20'])
   })
 
-  test('onValueChange and onChange are both called on a pick', () => {
-    const calls: string[] = []
-    render(
-      <DatePicker
-        aria-label="Due date"
-        defaultOpen
-        onChange={(v) => calls.push(`onChange ${v}`)}
-        onValueChange={(v) => calls.push(`onValueChange ${v}`)}
-      />,
-    )
-    fireEvent.click(dayButton('2026-11-20'))
-    expect(calls).toEqual(['onChange 2026-11-20', 'onValueChange 2026-11-20'])
-  })
-
   test('a completed range calls onValueChange with both ends', () => {
     const picked: CalendarRange[] = []
     render(
@@ -207,7 +195,7 @@ describe('form binding', () => {
   })
 })
 
-describe('day colours', () => {
+describe('day colors', () => {
   const cell = (iso: string): HTMLElement => {
     const el = document.querySelector(`[data-day="${iso}"]`)
     if (!(el instanceof HTMLElement)) throw new Error(`no day cell for ${iso}`)

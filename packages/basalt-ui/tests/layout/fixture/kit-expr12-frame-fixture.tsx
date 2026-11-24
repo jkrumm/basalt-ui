@@ -6,7 +6,7 @@ import { createRoot } from 'react-dom/client'
 import type { ReactElement } from 'react'
 import { StatCell } from '../../../src/cards/stat-cell'
 import { StatGroup } from '../../../src/cards/stat-group'
-import type { Phase } from '../../../src/index'
+import type { Phase } from '../../../src/cards'
 
 // One source per group: frames that share a `retry` draw one Retry between them (Issue 2452).
 const RETRY = { strip: (): void => undefined, cards: (): void => undefined }
@@ -23,7 +23,7 @@ function Group({ variant, state }: { variant: 'strip' | 'cards'; state: string }
     <div data-testid={`x12-${variant}-${state}`} className="min-w-0">
       <StatGroup variant={variant} label="Plan">
         <StatCell
-          label="Rows"
+          title="Rows"
           phase={phase}
           value={none ? null : 17}
           sub="of 40"
@@ -43,7 +43,7 @@ function Group({ variant, state }: { variant: 'strip' | 'cards'; state: string }
           ]}
         />
         <StatCell
-          label="Blocked"
+          title="Blocked"
           phase={phase}
           value={none ? null : 1}
           status={none ? undefined : { tone: 'bad', label: 'Backfill legacy entries' }}
@@ -53,7 +53,7 @@ function Group({ variant, state }: { variant: 'strip' | 'cards'; state: string }
           ]}
         />
         <StatCell
-          label="Can start"
+          title="Can start"
           phase={phase}
           value={none ? null : 3}
           status={none ? undefined : { tone: 'accent', label: 'Cursor pagination' }}

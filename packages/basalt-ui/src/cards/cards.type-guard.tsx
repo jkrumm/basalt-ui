@@ -31,7 +31,7 @@ export const noTone: ReactElement = (
 )
 
 export const noColor: ReactElement = (
-  // @ts-expect-error a card takes no colour
+  // @ts-expect-error a card takes no color
   <StatCard title="Shipped" value={1} color="red" />
 )
 
@@ -63,7 +63,7 @@ export const missingPolarity: ReactElement = (
 )
 
 export const statusWithoutWord: ReactElement = (
-  // @ts-expect-error a verdict carries a word, never a colour alone
+  // @ts-expect-error a verdict carries a word, never a color alone
   <StatCard title="Shipped" value={1} status={{ tone: 'good' }} />
 )
 

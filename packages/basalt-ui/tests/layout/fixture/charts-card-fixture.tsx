@@ -58,7 +58,7 @@ const FRAME = {
 
 const chart: BoxSlot = (box) => (
   <Lines
-    ariaLabel="Requests and errors per day"
+    label="Requests and errors per day"
     data={rows}
     x={x}
     series={[lineA, lineB]}
@@ -117,7 +117,7 @@ function Fixture() {
           title="Failed"
           chart={(box) => (
             <Lines
-              ariaLabel="Requests, errors unavailable"
+              label="Requests, errors unavailable"
               data={rows}
               x={x}
               series={[lineA, { ...lineB, failed: true }]}
@@ -131,7 +131,7 @@ function Fixture() {
           title="Tooltip"
           chart={(box) => (
             <Lines
-              ariaLabel="Requests and errors, hover"
+              label="Requests and errors, hover"
               data={rows}
               x={x}
               series={[lineA, lineB]}
@@ -147,7 +147,7 @@ function Fixture() {
           legend={[lineA, lineB].map(({ key, label, color }) => ({ key, label, color }))}
           chart={(box) => (
             <Lines
-              ariaLabel="Requests and errors, named by the card"
+              label="Requests and errors, named by the card"
               data={rows}
               x={x}
               series={[

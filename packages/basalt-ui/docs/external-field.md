@@ -22,7 +22,9 @@ externalField<T>(store: PlainStore<T>, o: FieldBase<T>): ControlHandle<T>
   subscribe: (onChange: () => void) => () => void
 ```
 
-`ControlHandle`, `PlainStore` import from `basalt-ui`: `import type { ControlHandle, PlainStore } from 'basalt-ui'`.
+`ControlHandle` import from `basalt-ui/router`: `import type { ControlHandle } from 'basalt-ui/router'`.
+
+`PlainStore` import from `basalt-ui`: `import type { PlainStore } from 'basalt-ui'`.
 
 ## Example
 

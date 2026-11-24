@@ -3,7 +3,7 @@
  * ai-mdx.md section 7, P8 and P9; Issue v3-ai-i2): no sideways scroll at 390, code scrolls in its
  * own box instead of widening the page, the table of contents is a rail from a wide container (50rem) and a trigger
  * below it, headings carry anchors, the diagram renders, and axe finds nothing serious or
- * critical. Asserted here because happy-dom has no geometry and no colour computation.
+ * critical. Asserted here because happy-dom has no geometry and no color computation.
  *
  * The page is self-contained: `fixture/content.css` is compiled with the Tailwind CLI into a temp
  * directory and `fixture/content-fixture.tsx` is bundled in memory, both inlined into a document

@@ -92,13 +92,13 @@ function Cells(): ReactElement {
   return (
     <section data-testid="k18-cells" className="grid gap-3 @regular:grid-cols-3">
       <StatCell
-        label="Sidecar errors"
+        title="Sidecar errors"
         value={150}
         meter={{ label: 'Listed', value: 100, max: 150, caption: 'of 150 listed' }}
         phase="ready"
       />
       <StatCell
-        label="Still to bill"
+        title="Still to bill"
         value="US$7.01"
         meter={{
           label: 'Pass progress by cost',
@@ -110,7 +110,7 @@ function Cells(): ReactElement {
         phase="ready"
       />
       <StatCell
-        label="Time on hold"
+        title="Time on hold"
         value={47}
         unit="min"
         rows={[

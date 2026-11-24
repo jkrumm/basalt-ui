@@ -1,4 +1,4 @@
-// Blocks: see colour-literal.tsx.
+// Blocks: see color-literal.tsx.
 
 // @invalid
 const a = <Lines ariaLabel="Runs" data={runs.data ?? []} series={series} />

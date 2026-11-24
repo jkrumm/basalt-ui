@@ -155,7 +155,7 @@
   "rules": {
     "basalt/viewport-keyed": "error",
     "basalt/dark-fork": "error",
-    "basalt/fixed-colour": "error",
+    "basalt/fixed-color": "error",
     "basalt/status-fill-as-text": "error",
     "basalt/raw-scroll": "error",
     "basalt/tw-off-law": "error",
@@ -164,7 +164,7 @@
     "basalt/logical-properties": "off",
     "basalt/import-boundary": "error",
     "basalt/primitive-bypass": "error",
-    "basalt/colour-literal": "error",
+    "basalt/color-literal": "error",
     "basalt/motion-literal": "error",
     "basalt/waiver-needs-reason": "error",
     "basalt/data-primitive": "error",
@@ -191,14 +191,14 @@
           "*-scrim-wash",
           "*-border"
         ],
-        "message": "\"{{className}}\" is no colour the theme declares. Token names are not classes: canvas is bg-background, raised is bg-popover, hover is bg-accent, hairline is border-border, ink is text-foreground, ink-muted is text-muted-foreground, ink-faint is text-faint. Otherwise app colour comes from Status, Lozenge, DeltaBadge or a Num tone; the palette is derived, so no colour is declared per app. A shadow or a type step is not a colour: check its spelling."
+        "message": "\"{{className}}\" is no color the theme declares. Token names are not classes: canvas is bg-background, raised is bg-popover, hover is bg-accent, hairline is border-border, ink is text-foreground, ink-muted is text-muted-foreground, ink-faint is text-faint. Otherwise app color comes from Status, Lozenge, DeltaBadge or a Num tone; the palette is derived, so no color is declared per app. A shadow or a type step is not a color: check its spelling."
       }
     ],
     "shadcn/no-arbitrary-values": [
       "error",
       {
         "allow": ["grid-cols-[*]", "grid-rows-[*]", "*:grid-cols-[*]", "*:grid-rows-[*]"],
-        "message": "\"{{className}}\" hardcodes an off-token value. By kind: a colour comes from Status, Lozenge, DeltaBadge or a Num tone; overflow is ui/scroll-area, or the page owns the scroll; space around an element is gap on the parent; a spacing value is a step of the spacing ladder (integers, halves below 4); a width belongs to the parent container, and one computed from data is BarList, ui/progress or ui/meter."
+        "message": "\"{{className}}\" hardcodes an off-token value. By kind: a color comes from Status, Lozenge, DeltaBadge or a Num tone; overflow is ui/scroll-area, or the page owns the scroll; space around an element is gap on the parent; a spacing value is a step of the spacing ladder (integers, halves below 4); a width belongs to the parent container, and one computed from data is BarList, ui/progress or ui/meter."
       }
     ],
     "shadcn/no-unknown-classes": [

@@ -1,6 +1,6 @@
 /**
  * The surface a struck value label is drawn on. A text mark has no stroke, so a rule that
- * crosses a label's glyphs is covered by a card-coloured box under them: the rule gives way to the number.
+ * crosses a label's glyphs is covered by a card-colored box under them: the rule gives way to the number.
  */
 import { decorative } from '@tanstack/charts/mark/decorative'
 import { rect } from '@tanstack/charts/rect'
@@ -32,7 +32,7 @@ export function isStruck(
 }
 
 /**
- * One card-coloured rect per struck box. `frame` is the plot in px and `domain` the y values its height spans
+ * One card-colored rect per struck box. `frame` is the plot in px and `domain` the y values its height spans
  * (low, high) on `scale`; the boxes are in plot px, the rect in plot fractions and values.
  */
 export function backingMarks(opts: {
@@ -41,7 +41,7 @@ export function backingMarks(opts: {
   frame: { width: number; height: number }
   domain: readonly [number, number]
   scale: 'y' | 'y2'
-  /** The rect's paint: the card's own colour by default, a leader's ink when the boxes are hairlines. */
+  /** The rect's paint: the card's own color by default, a leader's ink when the boxes are hairlines. */
   fill?: string
 }): ChartMarks {
   const { boxes, frame, domain, scale } = opts

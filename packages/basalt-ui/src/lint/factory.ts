@@ -78,7 +78,7 @@ export const isTestFile = (context: RuleContext): boolean => {
 
 const SERIES_FILE = /(?:^|\/)basalt\.tokens\.[cm]?[jt]s$/
 
-/** The app's one series file (`basalt.tokens.ts`, the `tokens:css --extra` input): the one file that writes raw colour pairs. */
+/** The app's one series file (`basalt.tokens.ts`, the `tokens:css --extra` input): the one file that writes raw color pairs. */
 export const isSeriesFile = (context: RuleContext): boolean => {
   const host = context as RuleContext & { physicalFilename?: string; filename?: string }
   return SERIES_FILE.test((host.physicalFilename ?? host.filename ?? '').replaceAll('\\', '/'))

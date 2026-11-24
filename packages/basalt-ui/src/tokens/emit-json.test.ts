@@ -37,7 +37,7 @@ describe('emitJson', () => {
     expect(Object.keys(json.schemes)).toEqual(['light', 'dark'])
   })
 
-  test('every role and scheme equals the colour the CSS emit declares', () => {
+  test('every role and scheme equals the color the CSS emit declares', () => {
     for (const scheme of ['light', 'dark'] as const) {
       const roles = Object.entries(json.schemes[scheme])
       expect(roles.length).toBeGreaterThan(20)

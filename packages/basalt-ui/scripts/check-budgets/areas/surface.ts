@@ -68,7 +68,7 @@ export const rows: readonly RowDef[] = [
     label: 'barrel type exports, non-chart (src entries)',
     // 2.0 target 60.
     // 261 -> 264 (Issue 3209, site header menus): `SiteNavItem`, `SiteNavMenu`, `SiteMenuEntry` from `./static` (the section and image shapes stay inline: `SiteNavMenu['menu'][number]`, `SiteMenuEntry['image']`).
-    // 158 -> 162 (Issue 3106, shell nav): `FavouriteEntry`, `FavouriteInput`, `FavouritesStore`, `FavouriteToggleProps` from `./page`.
+    // 158 -> 162 (Issue 3106, shell nav): `FavoriteEntry`, `FavoriteInput`, `FavoritesStore`, `FavoriteToggleProps` from `./page`.
     // 162 -> 163 (Issue 3109, record page parts): `RelationshipCardProps` from `./cards` (the item, fact and strength shapes stay inline: `RelationshipCardProps['facts']`).
     // 163 -> 166 (Issue 3103, bench-calendar): `ScheduleProps`, `ScheduleEvent`, `MiniMonthLike` from `./cards`.
     // 166 -> 168 (Issue 3105, runtime theme attributes): `AccentName` from `./tokens` and `AppearanceSwitcherProps` from `./controls`.
@@ -401,7 +401,7 @@ export const raises: Raises = {
       from: 158,
       to: 162,
       consumer:
-        'the playground peek layer and supplier page type a favourite (`FavouriteInput`) and an app that keeps favourites on a server implements `FavouritesStore` (Issue 3106)',
+        'the playground peek layer and supplier page type a favorite (`FavoriteInput`) and an app that keeps favorites on a server implements `FavoritesStore` (Issue 3106)',
       repo: 'basalt-ui',
     },
     {

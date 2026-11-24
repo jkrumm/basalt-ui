@@ -4,7 +4,7 @@
  * geometry: in a `StatCard` chart box of 72 the plot is 56 and the label row 16, a bare sparkline has
  * no tab stop while a labelled one is a single stop that answers arrow keys, Home and End, the bars
  * hold the 24 px cap and the 3 px gap, nothing pushes the page sideways, and axe finds nothing serious
- * or critical in either colour scheme.
+ * or critical in either color scheme.
  *
  * Self-contained like `ui-range`: `fixture/charts-sparkline.css` is compiled with the Tailwind CLI
  * into a temp directory and `fixture/charts-sparkline-fixture.tsx` is bundled in memory.

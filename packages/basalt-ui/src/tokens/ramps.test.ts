@@ -1,6 +1,6 @@
 /**
  * `ramps.ts` carries the 2.x `BP` families hex-identical (tokens-visual 3.8), so no argo/rb series
- * colour shifts when `BP` and `p()` are deleted. This pins every hex and `p()`'s default steps
+ * color shifts when `BP` and `p()` are deleted. This pins every hex and `p()`'s default steps
  * against `palette.ts` until that module goes.
  */
 import { describe, expect, test } from 'bun:test'

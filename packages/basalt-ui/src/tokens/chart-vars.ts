@@ -62,7 +62,7 @@ export const CHART_CVD_MIN = 8
 export const CHART_HUE_GAP = 30
 
 /** Preference order for `chart-2..5`: the 2.x four first, then the other chromatic fills. Gray is
- * not a series colour and violet repeats grape's hue. */
+ * not a series color and violet repeats grape's hue. */
 const CHART_FAMILY_ORDER = [
   'orange',
   'teal',

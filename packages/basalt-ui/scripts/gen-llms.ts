@@ -64,7 +64,7 @@ const SUBPATH_TYPES: Record<string, string> = Object.fromEntries(
 const SIGNATURES = readSignatures(SUBPATH_TYPES)
 const OPTION_TYPES = readOptionTypes(SUBPATH_TYPES)
 
-// Literal-union aliases a signature names but cannot show (`kind?: CalloutKind`). Read AFTER the
+// Literal-union aliases a signature names but cannot show (`rowHeight?: RowHeight`). Read AFTER the
 // signatures, so it cannot change how they print.
 const TYPE_GLOSSARY = readTypeGlossary(SUBPATH_TYPES, Object.values(SIGNATURES).flat().join('\n'))
 releaseEntryProgram()

@@ -35,7 +35,7 @@ export type MotionBezier = readonly [number, number, number, number]
 /**
  * The standard curve for a change in place (`--basalt-ease`, Tailwind `ease-standard`).
  *
- * @useWhen a `motion` transition changes an element that stays on screen (a width, a colour, a position).
+ * @useWhen a `motion` transition changes an element that stays on screen (a width, a color, a position).
  * @neverWhen the element arrives or leaves: use `MOTION_EASE_ENTER` or `MOTION_EASE_EXIT`.
  */
 export const MOTION_EASE_STANDARD: MotionBezier = [0.4, 0, 0.2, 1]

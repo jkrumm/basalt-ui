@@ -100,7 +100,7 @@ const rowsOf = (rows: StatCellProps['rows']): StatRow[] => {
 }
 
 /**
- * One cell of a `StatGroup`, or a lone cell on its own tracks: a caption (icon, label, qualifier,
+ * One cell of a `StatGroup`, or a lone cell on its own tracks: a caption (icon, title, subtitle,
  * definition glyph), the figure with its verdict, the delta pill on the line under it beside the base
  * it names ("vs prior 7 days", from `delta.label`), then the meter, chart, rows and foot line it
  * declares. Inside a group its tracks are shared with its neighbours; a track a cell does
@@ -113,13 +113,13 @@ const rowsOf = (rows: StatCellProps['rows']): StatRow[] => {
  * with a `Phase` it applies whenever it is set. A `meter` without a `format` prints with the cell's unit and
  * as many digits as its figure shows.
  *
- * @useWhen a status bar or KPI row shows one figure with its qualifier, meter, trend and a few rows
+ * @useWhen a status bar or KPI row shows one figure with its subtitle, meter, trend and a few rows
  * @neverWhen the figure stands alone as a card (use a stat card) or the rows are the content (use a list)
  *
  * @example
  * <StatCell
- *   label="Recovery"
- *   qualifier="7 day"
+ *   title="Recovery"
+ *   subtitle="7 day"
  *   value={82}
  *   unit="%"
  *   status={{ tone: 'good', label: 'Optimal' }}
@@ -130,9 +130,9 @@ const rowsOf = (rows: StatCellProps['rows']): StatRow[] => {
  */
 export function StatCell(props: StatCellProps): ReactElement {
   const {
-    label,
+    title,
     icon: Icon,
-    qualifier,
+    subtitle,
     info,
     value,
     unit,
@@ -168,8 +168,8 @@ export function StatCell(props: StatCellProps): ReactElement {
   )
   const inner = (
     <>
-      {href !== undefined && <Target label={label} href={href} />}
-      {onClick !== undefined && <Target label={label} onClick={onClick} />}
+      {href !== undefined && <Target label={title} href={href} />}
+      {onClick !== undefined && <Target label={title} onClick={onClick} />}
       <div data-slot="stat-caption" className={T_CAPTION}>
         {swatch !== undefined && (
           <span
@@ -182,12 +182,12 @@ export function StatCell(props: StatCellProps): ReactElement {
         {Icon !== undefined && (
           <Icon className="mr-0.5 size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
         )}
-        <p className="truncate text-xs font-medium text-muted-foreground">{label}</p>
-        {qualifier !== undefined && (
-          <p className="shrink-[2] truncate text-xs text-muted-foreground">{qualifier}</p>
+        <p className="truncate text-xs font-medium text-muted-foreground">{title}</p>
+        {subtitle !== undefined && (
+          <p className="shrink-[2] truncate text-xs text-muted-foreground">{subtitle}</p>
         )}
         {info !== undefined && (
-          <CardInfo label={about(label)} className="-my-1">
+          <CardInfo label={about(title)} className="-my-1">
             {info}
           </CardInfo>
         )}
@@ -206,7 +206,7 @@ export function StatCell(props: StatCellProps): ReactElement {
         status={status}
         hidden={hidden}
         solo={!spans}
-        label={label}
+        label={title}
         empty={resolved.tag === 'empty' ? resolved.empty : undefined}
         grouped={variant !== null}
         collapsed={collapsed}
@@ -289,7 +289,7 @@ export function StatCell(props: StatCellProps): ReactElement {
     'data-phase': resolved.tag,
     'aria-busy': resolved.tag === 'loading' || undefined,
     role: 'group',
-    'aria-label': label,
+    'aria-label': title,
   } as const
   if (variant === 'cards') {
     // One element, so `data-slot="stat-cell"` survives: the card chrome is the `Card` class table.

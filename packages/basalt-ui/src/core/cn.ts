@@ -5,7 +5,7 @@ import { CN_THEME } from './cn-theme'
 /**
  * Class merge: `clsx`, then a conflict-aware drop of Tailwind 4 utilities. One function over one
  * conflict table (`resolveGroup` + `OVERRIDES`), written without `tailwind-merge`: the table
- * knows this theme, so `text-display` (size) and `text-red-500` (colour) both survive. To flip
+ * knows this theme, so `text-display` (size) and `text-red-500` (color) both survive. To flip
  * `cn` to bare `clsx` (docs/v3/ARCHITECTURE.md F6), change `cn`'s last line to `return joined`.
  */
 export type { ClassValue }

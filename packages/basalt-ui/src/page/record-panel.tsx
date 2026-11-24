@@ -27,8 +27,8 @@ import { Avatar } from '../ui/avatar'
 import type { AvatarEntry } from '../ui/avatar'
 import { Button, buttonVariants } from '../ui/button'
 import { Menu, MenuContent, MenuItem, MenuTrigger } from '../ui/menu'
-import type { FavouriteInput } from './contract'
-import { FavouriteToggle } from './favourites'
+import type { FavoriteInput } from './contract'
+import { FavoriteToggle } from './favorites'
 import { ScrollArea } from '../ui/scroll-area'
 
 /** The labels every side panel shares, so each message has one home: its close button and its width handle. */
@@ -73,8 +73,8 @@ export type PanelHeaderProps = {
   records?: RecordSequence | undefined
   actions?: PanelActions | undefined
   fullPage?: string | NavTarget | undefined
-  /** Draws the favourite star, before the full-page link; nothing outside an `AppShell`. */
-  favourite?: FavouriteInput | undefined
+  /** Draws the favorite star, before the full-page link; nothing outside an `AppShell`. */
+  favorite?: FavoriteInput | undefined
   /** Draws the pin button. */
   onPin?: (() => void) | undefined
   /** The presentation menu, drawn after the divider. */
@@ -253,7 +253,7 @@ export function PanelHeader({
   records,
   actions,
   fullPage,
-  favourite,
+  favorite,
   onPin,
   menu,
   onClose,
@@ -269,7 +269,7 @@ export function PanelHeader({
     ) : Icon !== undefined ? (
       <Icon className="size-icon" aria-hidden="true" />
     ) : null
-  const tools = fullPage !== undefined || onPin !== undefined || favourite !== undefined
+  const tools = fullPage !== undefined || onPin !== undefined || favorite !== undefined
   const end = menu !== undefined || onClose !== undefined
   return (
     // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- a window's drag handle; the keyboard path is the side panel and the page presentation
@@ -284,7 +284,7 @@ export function PanelHeader({
       <div className="flex shrink-0 items-center gap-1" data-peek="off">
         {records !== undefined && <PanelSteps records={records} />}
         {actions !== undefined && <PanelActionBar actions={actions} />}
-        {favourite !== undefined && <FavouriteToggle {...favourite} />}
+        {favorite !== undefined && <FavoriteToggle {...favorite} />}
         {fullPage !== undefined && <FullPageLink href={fullPage} />}
         {onPin !== undefined && (
           <Button

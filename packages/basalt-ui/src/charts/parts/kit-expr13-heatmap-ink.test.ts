@@ -2,7 +2,7 @@
  * Expression cycle 13 kit fixes, the Heatmap label ink (`v3-expr-13-kit-fixes` 8): every annotation on a
  * cell reads against the cell as it is drawn, at rest (4.5:1) and dimmed (3:1, the label at DIMMED_TEXT),
  * in both schemes. The ink is the one `inkOn` picks from the composite (`heatmap-ink.ts`), evaluated here on
- * the shipped tokens: the composite is the sRGB mix of the card and the cell colour, as `color-mix` draws it.
+ * the shipped tokens: the composite is the sRGB mix of the card and the cell color, as `color-mix` draws it.
  */
 import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
@@ -40,7 +40,7 @@ const inkHex = (fill: string): string => (hexToOklab(fill).L < 0.565 ? '#ffffff'
 /** The label as it shows: the ink at `share` over its own cell fill. */
 const shown = (ink: string, share: number, fill: string): string => mixHex(fill, ink, share)
 
-/** The fill a value cell draws at `opacity` of its colour, over the card. */
+/** The fill a value cell draws at `opacity` of its color, over the card. */
 const composite = (color: string, opacity: number, scheme: 0 | 1): string =>
   mixHex(token('card', scheme), token(color, scheme), opacity)
 
@@ -80,8 +80,8 @@ describe('the label ink of an absent cell and of a status state reads', () => {
   }
 })
 
-describe("the ink is written as the kit's relative colour, dimmed at DIMMED_TEXT", () => {
-  test('a flat dimmed label is the inkOn colour at 70% over transparent', () => {
+describe("the ink is written as the kit's relative color, dimmed at DIMMED_TEXT", () => {
+  test('a flat dimmed label is the inkOn color at 70% over transparent', () => {
     expect(flatInk('var(--basalt-brand)', 1, true)).toContain(`color-mix(in srgb, oklch(from `)
     expect(flatInk('var(--basalt-brand)', 1, true)).toContain(' 70%, transparent)')
     expect(flatInk('var(--basalt-brand)', 1, false)).not.toContain('70%')

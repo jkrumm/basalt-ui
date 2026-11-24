@@ -20,7 +20,7 @@
     "records: the related orders, parts and notes query state, typed QueryStateLike with data?: SupplierRecords",
     "now: the reading time in ms, for countdowns, relative times and the activity feed",
     "partsHref: NavTarget, the parent link of the PageBar",
-    "recordHref: NavTarget, this record's own link, the favourite target",
+    "recordHref: NavTarget, this record's own link, the favorite target",
     "partHref: (partId) => NavTarget, the link of each relationship card",
     "newOrder: (dialog: NewOrderSlot) => ReactNode, renders the create flow with supplier, open and onOpenChange",
     "export recordControls: the tab and order URL fields; the route wires validateSearch and middlewares"

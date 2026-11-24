@@ -45,7 +45,7 @@ function Fixture() {
     <main className="flex max-w-3xl min-w-0 flex-col gap-6 p-4 text-foreground">
       <section className={BOX} data-testid="ax-band">
         <CartesianChart
-          ariaLabel="Time per stage, three labels"
+          label="Time per stage, three labels"
           data={STAGES}
           x={{ ...stageX, ticks: 3 }}
           series={[stageBars]}
@@ -53,7 +53,7 @@ function Fixture() {
       </section>
       <section className={BOX} data-testid="ax-edge">
         <CartesianChart
-          ariaLabel="Time per stage, a rule before the fourth"
+          label="Time per stage, a rule before the fourth"
           data={STAGES}
           x={stageX}
           series={[stageBars]}
@@ -62,7 +62,7 @@ function Fixture() {
       </section>
       <section className={BOX} data-testid="ax-clamp">
         <CartesianChart
-          ariaLabel="Values with one outlier, capped"
+          label="Values with one outlier, capped"
           data={POINTS}
           x={pointX}
           series={[dots]}
@@ -71,7 +71,7 @@ function Fixture() {
       </section>
       <section className={BOX} data-testid="ax-format">
         <CartesianChart
-          ariaLabel="Quarter steps with a comma decimal"
+          label="Quarter steps with a comma decimal"
           data={small}
           x={pointX}
           series={[dots]}

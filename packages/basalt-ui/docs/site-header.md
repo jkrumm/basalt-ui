@@ -53,6 +53,6 @@ SiteHeader({ brand, links, navLabel, menuLabel, actions, menuId, className, }: S
   ]}
   navLabel="Main"
   menuLabel="Menu"
-  actions={<ThemeSwitch label="Colour scheme" labels={schemeLabels} />}
+  actions={<ThemeSwitch label="Color scheme" labels={schemeLabels} />}
 />
 ```

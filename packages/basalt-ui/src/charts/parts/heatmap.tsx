@@ -37,9 +37,8 @@ import { HEIGHT_MAX, HEIGHT_MIN } from '../box'
 import { ChartPlaceholder, resolveChartState } from '../state'
 import { AXIS_LINE, CHART_THEME, CV, CV_STATUS, DIMMED } from '../core/theme'
 import type { ChartFocus, ChartName } from '../contract'
-import { chartName } from '../chart-name'
 import { engineFocusHandler, hostFocusProps } from '../focus'
-import type { ChartSeries, ChartState, ChartTooltipRow, ResponsiveChartHeight } from '../types'
+import type { ChartSeries, ChartTooltipRow, ResponsiveChartHeight } from '../types'
 import type { Empty } from '../../core/phase'
 import type { Phase, QueryStateLike } from '../../core/ports'
 import { toChartState } from './cartesian-adapt'
@@ -68,7 +67,7 @@ export type HeatmapState<K extends string = string> = Omit<
   color?: string | undefined
 }
 
-/** The fill a state resolves to: its `color`, else its tone's status colour, else neutral. */
+/** The fill a state resolves to: its `color`, else its tone's status color, else neutral. */
 const fillOf = (s: HeatmapState | undefined): string =>
   s?.color ?? (s?.tone === undefined ? CV.neutral : CV_STATUS[s.tone])
 
@@ -137,8 +136,6 @@ type HeatmapBase<T, K extends string> = BasaltProps & {
   phase?: Phase | QueryStateLike | undefined
   /** The measured-empty state once the query settled; `cause` is the line the tile prints. */
   empty?: Empty | null | undefined
-  /** @deprecated Use `phase` and `empty`; removed in the next minor. */
-  state?: ChartState | undefined
   /**
    * `useChartFocus(data, …)`: pointing at a cell or stepping with the arrow keys focuses its datum,
    * every other cell dims, and `focus.readout` drives a card fact. The grid stays one tab stop. A
@@ -341,7 +338,7 @@ const inside = (grid: readonly (readonly unknown[])[], r: number, c: number): bo
  * @neverWhen there is one row of states over time (use BandStrip), or the exact value matters more than the pattern (use a table)
  */
 export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>): ReactElement {
-  const ariaLabel = chartName(props)
+  const ariaLabel = props.label
   const {
     data,
     getRow,
@@ -362,14 +359,13 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
     matchHeight: matchHeightProp = false,
     phase,
     empty,
-    state: legacyState,
     className,
     style,
     focus,
     annotate,
   } = props
   // `phase` and `empty` say pending, error, then the empty cause; the deprecated `state` fills in when they say nothing.
-  const state = toChartState(phase, empty, legacyState)
+  const state = toChartState(phase, empty)
   const chartId = useId()
   const focused = focus?.datum ?? null
   // A list row that holds a run of cells (`focus.hold`) focuses every one of them, not the first alone.

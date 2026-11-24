@@ -104,7 +104,7 @@ export function Inset({ className, ...props }: PartProps<'div'>): ReactElement {
 }
 
 /**
- * The neutral tile behind a band icon. It has no tone: colour belongs to a verdict, not to a card.
+ * The neutral tile behind a band icon. It has no tone: color belongs to a verdict, not to a card.
  *
  * @example
  * <IconTile><GitMerge className="size-icon" aria-hidden /></IconTile>
@@ -391,7 +391,7 @@ export type CardPhaseProps = FrameState & {
  *
  * @example
  * <CardPhase phase={query} empty={rows.length ? null : { cause: 'No merges yet' }} height={72}>
- *   {(box) => <Sparkline series={rows} height={box.height} label="Shipped per day" />}
+ *   {(box) => <Sparkline points={rows} height={box.height} label="Shipped per day" />}
  * </CardPhase>
  */
 export function CardPhase({

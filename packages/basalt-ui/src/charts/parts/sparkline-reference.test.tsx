@@ -23,8 +23,8 @@ const yOf = (v: number, [lo, hi]: [number, number]): number =>
   INSET + (H - 2 * INSET) * (1 - (v - lo) / (hi - lo))
 
 const spark = (
-  props: Partial<Omit<Parameters<typeof Sparkline>[0], 'label' | 'ariaLabel'>> = {},
-): ReactElement => <Sparkline series={data} label="S" height={H} {...props} />
+  props: Partial<Omit<Parameters<typeof Sparkline>[0], 'label'>> = {},
+): ReactElement => <Sparkline points={data} label="S" height={H} {...props} />
 
 describe('Sparkline reference', () => {
   test('a number reference draws one rule at y(42), inside the data domain', () => {
@@ -33,8 +33,8 @@ describe('Sparkline reference', () => {
   })
 
   test("'mean' draws at the mean of the plotted, non-null values", () => {
-    const series = [10, null, 30, 20]
-    expect(refY(spark({ series, reference: 'mean' }))).toBeCloseTo(yOf(20, [10, 30]), 1)
+    const points = [10, null, 30, 20]
+    expect(refY(spark({ points, reference: 'mean' }))).toBeCloseTo(yOf(20, [10, 30]), 1)
   })
 
   test('an out-of-range reference widens the y domain so it is never clipped', () => {
@@ -58,7 +58,7 @@ describe('Sparkline reference', () => {
 
   test('NaN and an all-gap series draw no reference', () => {
     expect(refs(spark({ reference: Number.NaN }))).toHaveLength(0)
-    expect(refs(spark({ series: [null, null], reference: 'mean' }))).toHaveLength(0)
+    expect(refs(spark({ points: [null, null], reference: 'mean' }))).toHaveLength(0)
   })
 
   describe('a { min, max } band', () => {
@@ -110,7 +110,7 @@ describe('Sparkline reference', () => {
     })
 
     test('a null in the series stays a gap with the band drawn', () => {
-      const node = spark({ series: [10, 20, null, 40, 50], reference: { min: 20, max: 40 } })
+      const node = spark({ points: [10, 20, null, 40, 50], reference: { min: 20, max: 40 } })
       const d = dom(node).querySelector('[data-slot="spark-line"]')?.getAttribute('d') ?? ''
       expect(d.split('M').length - 1).toBe(2)
       expect(band(node)).not.toBeNull()
@@ -121,7 +121,7 @@ describe('Sparkline reference', () => {
     expect(refs(spark())).toHaveLength(0)
   })
 
-  test('the reference is not a series: the line is the same with or without it inside the domain', () => {
+  test('the reference is not a points: the line is the same with or without it inside the domain', () => {
     const line = (r?: number): string | null | undefined =>
       dom(spark(r === undefined ? {} : { reference: r }))
         .querySelector('[data-slot="spark-line"]')

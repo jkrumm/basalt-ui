@@ -1,7 +1,7 @@
 /**
  * `CartesianChart` — the one cartesian rung of v3 (`charts/contract.ts`): `Series` is a union by
  * `mark` (line, bar, dot), a series carries only closed vocabulary (`weight`, `dash`, a `{ light,
- * dark }` colour), and `label` is required. `Lines` and `Bars` are this component with the series
+ * dark }` color), and `label` is required. `Lines` and `Bars` are this component with the series
  * narrowed.
  *
  * Three layers, composed here and nowhere else: the width hook (`../sizing`), the bare engine mount
@@ -36,7 +36,6 @@ import { ChartPlaceholder, resolveChartState } from '../state'
 import { rowX } from '../types'
 import type { ChartMarks, ChartSeries, ChartX, PlotContext } from '../types'
 import type { CartesianChartProps, ChartZone, CustomMarks, Series } from '../contract'
-import { chartName } from '../chart-name'
 import { takeLabelTies } from '../label-obstacles'
 import { PaneGutterContext } from '../pane-gutter'
 import { applySeams } from '../seams'
@@ -74,7 +73,7 @@ const rootStyle: CSSProperties = {
   containerType: 'inline-size',
 }
 
-// In a card the plot sits on the inset: the hover's axis labels wear its colour as their halo.
+// In a card the plot sits on the inset: the hover's axis labels wear its color as their halo.
 const cardRootStyle = { ...rootStyle, '--bc-guide-halo': CV.inset } as CSSProperties
 
 // Visually hidden, still in the accessibility tree: the summary and the data table.
@@ -135,7 +134,7 @@ const xLabel = (v: ChartX): string => (v instanceof Date ? v.toISOString().slice
 /** The data table behind the picture: every point of every series, up to {@link TABLE_MAX_POINTS}. */
 function DataTable<D>(props: CartesianChartProps<D>): ReactElement | null {
   const { data, series, x } = props
-  const ariaLabel = chartName(props)
+  const ariaLabel = props.label
   const { locale } = useProviderContext()
   if (data.length > TABLE_MAX_POINTS) return null
   const shown = series.filter((s) => s.failed !== true)
@@ -182,7 +181,7 @@ function custom<D>(build: CustomMarks<D>['build']): CustomMarks<D> {
 }
 
 /**
- * The cartesian chart. `series` is the single source of colour, legend entry and tooltip row; custom
+ * The cartesian chart. `series` is the single source of color, legend entry and tooltip row; custom
  * engine marks come from `CartesianChart.custom` and are drawn after the series' own. The series
  * fields, selection, custom marks, axis titles and y capping are in `cartesian-chart-guide.md`.
  *
@@ -222,7 +221,7 @@ function itemEnd(last: ChartX, xs: readonly ChartX[]): ChartX {
 /** The rung `Lines` and `Bars` render through: the public props plus the kind-only options. */
 export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): ReactElement {
   const { summary, table, phase, layout = 'stacked', naming = 'auto' } = props
-  const ariaLabel = chartName(props)
+  const ariaLabel = props.label
   const chartId = useId()
   const { locale } = useProviderContext()
   const inCard = useInChartCard()
@@ -302,11 +301,12 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
 
   const hasBars = stable.series.some((s) => s.mark === 'bar')
   const base = useMemo(
-    () => applySeams(toEngineSpec({ ...stable, ariaLabel } as CartesianChartProps<D>), stable),
+    () =>
+      applySeams(toEngineSpec({ ...stable, label: ariaLabel } as CartesianChartProps<D>), stable),
     [stable, ariaLabel],
   )
   // Bar shades are part of the series, so the legend swatch wears what the plot draws: the shade of
-  // same-coloured bars, else the per-datum `opacity` sampled on the first row, else the default.
+  // same-colored bars, else the per-datum `opacity` sampled on the first row, else the default.
   const opacityOf = useMemo(
     () =>
       new Map(

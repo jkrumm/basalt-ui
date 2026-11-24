@@ -1,6 +1,6 @@
 /**
  * The RuleTester suites of `control-home`, built from its fixture files with
- * the grammar of `colour-literal.cases.ts` (every `// @valid` / `// @invalid` block is one case).
+ * the grammar of `color-literal.cases.ts` (every `// @valid` / `// @invalid` block is one case).
  * ESLint runs them in process from the `*.test.ts` files; oxlint's `plugins-dev` runs a bundled
  * copy under Node through `../../factory.oxlint.mjs`.
  */
@@ -10,7 +10,7 @@ import { resolve } from 'node:path'
 import type { LintRule } from '../../factory'
 import { buildRule } from '../../factory'
 import type { RuleTable } from '../../rule-table'
-import { FIXTURES_ROOT, parseFixture } from './colour-literal.cases'
+import { FIXTURES_ROOT, parseFixture } from './color-literal.cases'
 import { controlHomeRules } from './control-home'
 
 type Case = { code: string; filename?: string; options?: unknown[] }

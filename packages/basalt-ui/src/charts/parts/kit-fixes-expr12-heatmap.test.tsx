@@ -31,7 +31,7 @@ function Harness(): ReactElement {
   })
   return (
     <Heatmap
-      ariaLabel="Messages"
+      label="Messages"
       data={CELLS}
       getRow={(d) => d.row}
       getCol={(d) => d.col}

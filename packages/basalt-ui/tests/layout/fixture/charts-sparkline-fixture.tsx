@@ -38,10 +38,10 @@ function Fixture() {
           phase="ready"
           chart={(box) => (
             <Sparkline
-              series={DAYS}
+              points={DAYS}
               height={box.height}
               axisLabels={LABELS}
-              ariaLabel="Shipped per day"
+              label="Shipped per day"
             />
           )}
         />
@@ -54,12 +54,12 @@ function Fixture() {
           phase="ready"
           chart={(box) => (
             <Sparkline
-              series={DAYS}
+              points={DAYS}
               form="area"
               reference="mean"
               height={box.height}
               axisLabels={LABELS}
-              ariaLabel="Merged per day"
+              label="Merged per day"
             />
           )}
         />
@@ -72,10 +72,10 @@ function Fixture() {
           phase="ready"
           chart={(box) => (
             <MiniBars
-              series={DAYS}
+              points={DAYS}
               height={box.height}
               axisLabels={LABELS}
-              ariaLabel="Reviews per day"
+              label="Reviews per day"
             />
           )}
         />
@@ -89,21 +89,21 @@ function Fixture() {
           phase="ready"
           chart={(box) => (
             <Sparkline
-              series={WEEKS.map((value, i) => ({ value, label: `W${41 + i}` }))}
+              points={WEEKS.map((value, i) => ({ value, label: `W${41 + i}` }))}
               cap={12}
               format={(v) => `${v} h`}
               height={box.height}
               axisLabels={['W41', 'Weekly', 'W52']}
-              ariaLabel="Time in queue per week"
+              label="Time in queue per week"
             />
           )}
         />
       </div>
       <div data-testid="cs-image" className="w-48">
-        <Sparkline series={DAYS} height={32} ariaLabel="Latency, last 14 days" />
+        <Sparkline points={DAYS} height={32} label="Latency, last 14 days" />
       </div>
       <div data-testid="cs-wide" className="w-full">
-        <MiniBars series={[3, 5, 2, 6, 4]} height={48} ariaLabel="Builds per day" />
+        <MiniBars points={[3, 5, 2, 6, 4]} height={48} label="Builds per day" />
       </div>
     </main>
   )

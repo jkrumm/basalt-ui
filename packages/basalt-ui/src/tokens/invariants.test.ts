@@ -221,7 +221,7 @@ describe('token invariants (docs/v3/evidence/self-tokens-theme.md §d)', () => {
       `--basalt-hairline: color-mix(in srgb, var(--basalt-ink) ${INK_MIX_PCT.hairline.dark}%, transparent);`,
     )
     // The card ring is the card shadow, a hairline and nothing else, in both schemes: a card on the
-    // work surface (its own colour) reads by this edge. No other shadow role embeds the hairline: a
+    // work surface (its own color) reads by this edge. No other shadow role embeds the hairline: a
     // second ring is a second edge (d8).
     const cards = [...css.matchAll(/--basalt-shadow-card: ([^;]+);/g)].map(([, value]) => value)
     expect(cards.length).toBeGreaterThan(0)
@@ -439,5 +439,5 @@ describe('token invariants (docs/v3/evidence/self-tokens-theme.md §d)', () => {
 
   test.todo('bridge: shadcn aliases cover every semantic token, no dark: branch (tok-t3)', pending)
 
-  test.todo('check-tokens scan: src/ui has no raw colour, no /NN alpha (tok-t4)', pending)
+  test.todo('check-tokens scan: src/ui has no raw color, no /NN alpha (tok-t4)', pending)
 })

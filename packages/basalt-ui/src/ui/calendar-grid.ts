@@ -31,7 +31,7 @@ export const NO_MARKS: CalendarMarks = {}
 const ISO_DAY = /^(\d{4})-(\d{2})-(\d{2})$/
 
 /**
- * The day colours, all tokens. A picked day (the single day, or either end of a range) is the one
+ * The day colors, all tokens. A picked day (the single day, or either end of a range) is the one
  * strong fill; the middle of a range is the quiet `selected` band its ends sit on; hover is the
  * lighter `accent`; today is a neutral ring and weight, never the brand, so it never competes with
  * the pick.

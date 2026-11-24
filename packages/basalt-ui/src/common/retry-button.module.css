@@ -45,7 +45,7 @@
   }
 }
 
-/* Busy is the disabled paint: the muted colour and subtle background, flat, no border. */
+/* Busy is the disabled paint: the muted color and subtle background, flat, no border. */
 .retry:disabled {
   background: var(--basalt-canvas);
   border-color: transparent;

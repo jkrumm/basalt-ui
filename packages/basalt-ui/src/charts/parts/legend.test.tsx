@@ -113,7 +113,7 @@ describe('a failed series in CartesianChart', () => {
   const chart = (failed: boolean): HTMLElement =>
     html(
       <CartesianChart
-        ariaLabel="Both"
+        label="Both"
         data={rows}
         x={x}
         series={[a, { ...b, ...(failed && { failed }) }]}
@@ -140,7 +140,7 @@ describe('a failed series in CartesianChart', () => {
   test('every series failed still names them all', () => {
     const el = html(
       <CartesianChart
-        ariaLabel="Both"
+        label="Both"
         data={rows}
         x={x}
         series={[

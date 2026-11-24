@@ -41,7 +41,7 @@ step "doctor after init"
 "$BIN" doctor
 step "lint: a first reasoned waiver passes"
 cat >src/brand.ts <<'EOF'
-// oxlint-disable-next-line basalt/colour-literal -- the brand mark keeps its print hex
+// oxlint-disable-next-line basalt/color-literal -- the brand mark keeps its print hex
 export const BRAND_MARK = '#ff0000'
 EOF
 "$BIN" lint

@@ -881,7 +881,7 @@ const areaTint = (color: string): string => `color-mix(in srgb, ${color} ${AREA_
  * to the smaller of its minimum and 0, the baseline the area closes to even when the y domain
  * excludes 0. A boundary at value `v` sits at `(ceiling - v) / (ceiling - floor)`. Hard edges:
  * neighbouring zones meet at one offset; overlapping zones never run backwards. `null` when no zone
- * reaches the area (the caller keeps the plain series-colour fade). Linear axes only.
+ * reaches the area (the caller keeps the plain series-color fade). Linear axes only.
  */
 export function zoneAreaGradient(
   index: number,
@@ -912,7 +912,7 @@ export function zoneAreaGradient(
   return { id: areaGradientId(index), x1: 0, y1: 0, x2: 0, y2: 1, stops }
 }
 
-/** The gradient resource for a series' `area` fill: zones, a colour ref, or the series colour. */
+/** The gradient resource for a series' `area` fill: zones, a color ref, or the series color. */
 function seriesAreaGradient<T, X extends ChartX>(
   s: ChartSeries<T>,
   index: number,

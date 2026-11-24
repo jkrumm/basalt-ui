@@ -3,7 +3,7 @@
  * the size ladder is 16, 20, 28 and 48 px in both shapes and with every fallback, a failing image
  * leaves the box exactly as the plain fallback draws it, a stack overlaps and counts the rest, a
  * narrow title truncates without moving its face or its tags, the chip is 28 px high and shows its
- * remove button on hover and on focus, and axe finds nothing serious in either colour scheme.
+ * remove button on hover and on focus, and axe finds nothing serious in either color scheme.
  * Asserted here because happy-dom has no geometry and no network.
  *
  * Self-contained like `ui-status.layout.test.ts`: the fixture CSS is compiled with the Tailwind CLI and

@@ -365,7 +365,7 @@ export type RecordPageProps = {
   now: number
   /** The parts list link, the PageBar parent. */
   partsHref: NavTarget
-  /** This record's own link, the favourite target. */
+  /** This record's own link, the favorite target. */
   recordHref: NavTarget
   /** The link to a part's record. */
   partHref: (partId: string) => NavTarget
@@ -414,7 +414,7 @@ export function RecordPage({
           tags: <Lozenge tone={RATING_TONE[record.rating]}>{RATING_LABELS[record.rating]}</Lozenge>,
         }}
         parent={parent}
-        favourite={{
+        favorite={{
           id: `supplier-${id}`,
           label: record.name,
           icon: Factory,

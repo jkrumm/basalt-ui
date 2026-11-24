@@ -32,7 +32,7 @@ const lift = (key: 'squat' | 'bench', gaps?: 'break' | 'connect'): LineSeries<Ro
 }
 
 const html = (series: LineSeries<Row>[]): string =>
-  renderToString(<Lines ariaLabel="Lifts" data={data} x={{ value: (d) => d.t }} series={series} />)
+  renderToString(<Lines label="Lifts" data={data} x={{ value: (d) => d.t }} series={series} />)
 
 /** Subpaths (`M` commands) of every path in a series' line group. */
 function segments(markup: string, key: string): number {
@@ -85,7 +85,7 @@ describe('series gaps', () => {
       const doc = document.implementation.createHTMLDocument('')
       doc.body.innerHTML = renderToString(
         <Lines
-          ariaLabel="Lone"
+          label="Lone"
           data={rows}
           x={{ value: (d) => d.t }}
           series={[{ ...lift('squat'), ...extra }]}
@@ -113,7 +113,7 @@ describe('series gaps', () => {
       expect(dots(render(loneRows([null, 100, null]), { gaps: 'connect' }))).toBe(1)
     })
 
-    test('getMarker returning null leaves the point to the lone dot; a marker colour takes it over', () => {
+    test('getMarker returning null leaves the point to the lone dot; a marker color takes it over', () => {
       expect(dots(render(loneRows([null, 100, null]), { getMarker: () => null }))).toBe(1)
       expect(
         dots(render(loneRows([null, 100, null]), { getMarker: () => ({ color: 'red' }) })),

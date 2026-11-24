@@ -1,6 +1,6 @@
 /**
  * The matrix assertions that are not `quality.*` exports (quality-contract section 4): forced
- * colours, fit on worst-case data, reduced motion and the two carried effective-hit-box checks.
+ * colors, fit on worst-case data, reduced motion and the two carried effective-hit-box checks.
  * Each throws an `Error` naming the offending elements, like the exports do, so one offender
  * fixture per assertion can prove it fails (`offenders.test.ts`).
  */
@@ -8,7 +8,7 @@ import type { Page } from 'playwright-core'
 import { quality } from '../../../src/testing/quality'
 import type { PageLike } from '../../../src/testing/quality'
 
-/** Slots that draw no frame of their own, so forced colours has nothing to keep. */
+/** Slots that draw no frame of their own, so forced colors has nothing to keep. */
 const FRAMELESS = new Set([
   'separator',
   'skeleton',
@@ -48,7 +48,7 @@ function fail(name: string, lines: readonly string[]): never {
 }
 
 /**
- * Forced colours drop `box-shadow` and background colour. A surface or control whose frame in
+ * Forced colors drop `box-shadow` and background color. A surface or control whose frame in
  * normal rendering is a shadow ring (no border) must keep a border or outline when
  * `forced-colors: active`, or its edge vanishes.
  */

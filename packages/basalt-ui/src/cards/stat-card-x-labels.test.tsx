@@ -10,7 +10,9 @@ const box = (): HTMLElement | null => document.querySelector('[data-slot="stat-c
 describe('StatCard xLabels', () => {
   test('three labels sit under the plot, which gets 56 px', () => {
     const chart = mock((_box: { height: number | 'fill'; phase: string }) => <svg />)
-    render(<StatCard title="Shipped" value={388} chart={chart} xLabels={['Mon', 'Thu', 'Sun']} />)
+    render(
+      <StatCard title="Shipped" value={388} chart={chart} axisLabels={['Mon', 'Thu', 'Sun']} />,
+    )
     expect(chart.mock.calls[0]?.[0]).toEqual({ height: 56, phase: 'ready' })
     const row = box()?.querySelector('[data-slot="stat-x-labels"]')
     expect([...(row?.children ?? [])].map((el) => el.textContent)).toEqual(['Mon', 'Thu', 'Sun'])
@@ -19,9 +21,7 @@ describe('StatCard xLabels', () => {
 
   test('chartHeight sizes the box, the plot under labels and the inset: a one-line chart leaves no band', () => {
     const chart = mock((_box: { height: number | 'fill'; phase: string }) => <svg />)
-    const { container } = render(
-      <StatCard title="Rate" value={38} chart={chart} chartHeight={20} />,
-    )
+    const { container } = render(<StatCard title="Rate" value={38} chart={chart} height={20} />)
     expect(chart.mock.calls[0]?.[0]).toEqual({ height: 20, phase: 'ready' })
     expect(
       container
@@ -35,8 +35,8 @@ describe('StatCard xLabels', () => {
         title="Rate"
         value={38}
         chart={labelled}
-        chartHeight={40}
-        xLabels={['a', 'b', 'c']}
+        height={40}
+        axisLabels={['a', 'b', 'c']}
       />,
     )
     expect(labelled.mock.calls[0]?.[0]).toEqual({ height: 24, phase: 'ready' })

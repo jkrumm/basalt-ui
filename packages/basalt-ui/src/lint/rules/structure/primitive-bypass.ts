@@ -1204,7 +1204,7 @@ const rowRuleToken = (opening: Node): string | undefined =>
  * A repeating row list built by hand: a row element a data `.map` returns that carries a
  * `border-t`, `border-b` or `border-y` utility, or an element with `divide-y` whose children are
  * a data `.map`. Rows from an array literal or an UPPER_CASE constant are fixed content (a nav) and
- * pass, and so does a full `border` (a tile). With the default border colour a bare rule is the
+ * pass, and so does a full `border` (a tile). With the default border color a bare rule is the
  * hairline now, but the list is still a part: RowList owns the row, its focus link, its scroll and
  * its density.
  */

@@ -193,7 +193,7 @@ describe('rendered', () => {
   const settle = (): Promise<void> => new Promise((r) => setTimeout(r, 60))
   const chart = (onMarks: (p: ChartPlot<Row>) => void, height = 200) => (
     <CartesianChart
-      ariaLabel="C"
+      label="C"
       data={data}
       x={{ value: x }}
       series={[{ mark: 'line', key: 'a', label: 'A', color: COLOR, y: (d) => d.v }]}

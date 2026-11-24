@@ -326,7 +326,7 @@ export function ShellGrid({
 }
 
 /**
- * The work surface: one plane in the card colour holding the identity row, main, the aside and the
+ * The work surface: one plane in the card color holding the identity row, main, the aside and the
  * dock, a grid of its own. As a rounded panel it clips, so an aside or a dock panel ends at its corners. Its columns
  * ease while a dock opens or closes (`data-dock-shift` on the root).
  */
@@ -351,7 +351,7 @@ export function ShellSurface({
         'motion-safe:group-data-dock-shift/shell:transition-[grid-template-columns] motion-safe:group-data-dock-shift/shell:duration-slow motion-safe:group-data-dock-shift/shell:ease-standard',
         // Panel: inset on the three free sides, rounded, one hairline drawn as an outset ring in the
         // inset, so the edge costs the rows inside no pixel. Flush: one hairline on the rail side,
-        // where the frame's colour meets the surface's.
+        // where the frame's color meets the surface's.
         'border-border ring-border md:mt-(--shell-inset) md:me-(--shell-inset) md:mb-(--shell-inset)',
         // Only a rounded panel clips: its corners cut what runs to them (a fill table, an aside, a dock).
         '[:root:not([data-frame])_[data-frame=panel]_&]:md:overflow-clip [:root:not([data-frame])_[data-frame=panel]_&]:md:rounded-card [:root:not([data-frame])_[data-frame=panel]_&]:md:ring-1',

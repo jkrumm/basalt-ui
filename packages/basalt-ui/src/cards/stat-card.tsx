@@ -18,13 +18,17 @@ import {
 
 /** The chart box: plot 56 plus the 16 px label row. The slot draws inside it and cannot grow it. */
 const CHART_HEIGHT = 72
-/** The label row the card draws itself under the plot (`xLabels`), px. */
+/** The label row the card draws itself under the plot (`axisLabels`), px. */
 const LABEL_ROW = 16
 /** A figure longer than this steps down a size where the card is narrower than `regular`; so does any text figure. */
 const LONG_FIGURE = 10
 
 /** The label row: start, middle and end under the plot, in the box's 16 px. */
-function XLabels({ labels }: { labels: NonNullable<StatCardProps['xLabels']> }): ReactElement {
+function AxisLabels({
+  labels,
+}: {
+  labels: NonNullable<StatCardProps['axisLabels']>
+}): ReactElement {
   return (
     <div
       data-slot="stat-x-labels"
@@ -42,7 +46,7 @@ function XLabels({ labels }: { labels: NonNullable<StatCardProps['xLabels']> }):
 /**
  * The inset is exactly as tall as its anatomy, so a loading, empty or error card is as tall as a
  * ready one and nothing leaves an empty band under the figure: figure row 36, sub row 20 (hidden
- * below `@narrow`, and its height with it), an 8 px gap and the chart box (`chartHeight`, 72 by default), plus the
+ * below `@narrow`, and its height with it), an 8 px gap and the chart box (`height`, 72 by default), plus the
  * inset's 24 px of padding. With no chart the phase arms are one row, so they fit a box one figure row tall.
  */
 const BODY_HEIGHT = {
@@ -75,15 +79,27 @@ const bodyHeight = (hasSub: boolean, hasChart: boolean): string =>
  *   value={388}
  *   delta={{ value: '+12%', polarity: 'up-good' }}
  *   phase={query}
- *   chart={(box) => <Sparkline series={perDay} height={box.height} label="Shipped per day" />}
- *   xLabels={["Mon", "Thu", "Sun"]}
+ *   chart={(box) => <Sparkline points={perDay} height={box.height} label="Shipped per day" />}
+ *   axisLabels={["Mon", "Thu", "Sun"]}
  *   footer={[{ label: 'Open', value: 12 }, { label: 'Merged', value: 4 }]}
  * />
  */
 export function StatCard(props: StatCardProps): ReactElement {
-  const { title, value, unit, delta, status, sub, subMono, chart, xLabels, footer, href, onClick } =
-    props
-  const chartHeight = props.chartHeight ?? CHART_HEIGHT
+  const {
+    title,
+    value,
+    unit,
+    delta,
+    status,
+    sub,
+    subMono,
+    chart,
+    axisLabels,
+    footer,
+    href,
+    onClick,
+  } = props
+  const chartHeight = props.height ?? CHART_HEIGHT
   const { phase, empty, subtitle, icon, info, controls, menu } = props
   const figure = formatValue(value)
   const resolved = resolvePhase({ phase, empty })
@@ -167,10 +183,12 @@ export function StatCard(props: StatCardProps): ReactElement {
                   >
                     {chart({
                       height:
-                        xLabels === undefined ? chartHeight : Math.max(0, chartHeight - LABEL_ROW),
+                        axisLabels === undefined
+                          ? chartHeight
+                          : Math.max(0, chartHeight - LABEL_ROW),
                       phase: box.phase,
                     })}
-                    {xLabels !== undefined && <XLabels labels={xLabels} />}
+                    {axisLabels !== undefined && <AxisLabels labels={axisLabels} />}
                   </div>
                 )}
               </>

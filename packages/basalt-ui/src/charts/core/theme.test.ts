@@ -67,7 +67,7 @@ describe('chart layer reads v3 tokens only', () => {
     expect(missing(all.flatMap(names))).toEqual([])
   })
 
-  test('the palette is the five v3 series colours, in order', () => {
+  test('the palette is the five v3 series colors, in order', () => {
     expect(Object.entries(CHART_ENGINE_VARS).filter(([k]) => /^--ts-chart-\d$/.test(k))).toEqual(
       [1, 2, 3, 4, 5].map((n) => [`--ts-chart-${n}`, `var(--basalt-chart-${n})`]),
     )

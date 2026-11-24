@@ -1,7 +1,7 @@
 /**
  * `FormField`: one labelled control with its description and its error, by construction. The label
  * is required by type; the error region is always mounted, so a message that appears is announced;
- * the required mark is a `*` glyph beside the control's own `aria-required`, never colour alone; a
+ * the required mark is a `*` glyph beside the control's own `aria-required`, never color alone; a
  * disabled fieldset around it disables every control kind inside.
  *
  * The value comes from one of two sources, never both: `field` (a `FieldLike`, the submit forms'

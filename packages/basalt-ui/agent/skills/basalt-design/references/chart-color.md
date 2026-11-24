@@ -1,6 +1,6 @@
-# Chart colour
+# Chart color
 
-Neutral by default, one accent, one status hue. Series colours come from the app's series file; the code is step 2 of the `basalt-charts` skill.
+Neutral by default, one accent, one status hue. Series colors come from the app's series file; the code is step 2 of the `basalt-charts` skill.
 
 ## The accent
 
@@ -17,9 +17,9 @@ Neutral by default, one accent, one status hue. Series colours come from the app
 - A delta pill takes its tint from its polarity (`up-good`, `up-bad`) where the direction is good or bad for the reader, and `polarity: 'neutral'` where it is neither. A quiet or zero day, or a delta against an empty or partial period, stays neutral.
 - A ramp starts neutral below its threshold and turns hue only past it; zero stays neutral.
 
-## One colour, one meaning
+## One color, one meaning
 
 - A part of a whole or a category split is read from position, order and a direct label; a hue per part is a rainbow.
-- A state has one colour in every linked view: the legend swatches, a table's status dots and the marks match, and a rise is one hue in the chart and in the pill.
-- Kinds told apart by colour take the series file's pairs. An HTML mark (a [Meter](node_modules/basalt-ui/docs/meter.md) bar, a track `div`, a dot) reads the same pair as a CSS variable: `groupTokens('<group>', tokens.series.<group>)` from `basalt-ui/tokens` gives `var(--basalt-<group>-<key>)`, so a kind keeps one colour in the chart, the list and the track. Kinds drawn as close greys fail; give them distinct ink steps or a direct label.
+- A state has one color in every linked view: the legend swatches, a table's status dots and the marks match, and a rise is one hue in the chart and in the pill.
+- Kinds told apart by color take the series file's pairs. An HTML mark (a [Meter](node_modules/basalt-ui/docs/meter.md) bar, a track `div`, a dot) reads the same pair as a CSS variable: `groupTokens('<group>', tokens.series.<group>)` from `basalt-ui/tokens` gives `var(--basalt-<group>-<key>)`, so a kind keeps one color in the chart, the list and the track. Kinds drawn as close greys fail; give them distinct ink steps or a direct label.
 - Before the shot is done, name each hue's meaning across the cards and the table columns of the 1800 frame together: a hue with two meanings, or one fact in two hues, is cut to an ink step or a word.

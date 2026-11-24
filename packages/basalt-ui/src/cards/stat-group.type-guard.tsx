@@ -18,8 +18,8 @@ const row = { label: 'HRV', value: '64 ms' }
 export const validGroup: ReactElement = (
   <StatGroup variant="strip" label="Recovery">
     <StatCell
-      label="Recovery"
-      qualifier="7 day"
+      title="Recovery"
+      subtitle="7 day"
       info="Readiness from sleep and load."
       value={82}
       unit="%"
@@ -32,13 +32,13 @@ export const validGroup: ReactElement = (
       rows={[row, row, row, row]}
       href="/recovery"
     />
-    <StatCell label="Sleep" value={null} onClick={() => undefined} />
+    <StatCell title="Sleep" value={null} onClick={() => undefined} />
   </StatGroup>
 )
 
 export const validCards: ReactElement = (
   <StatGroup variant="cards">
-    <StatCell label="Downstream" value="412" unit="Mbit/s" phase="loading" />
+    <StatCell title="Downstream" value="412" unit="Mbit/s" phase="loading" />
   </StatGroup>
 )
 
@@ -56,37 +56,37 @@ export const validPanelHeight: ReactElement = (
 
 export const cellClassName: ReactElement = (
   // @ts-expect-error a composite takes no styling channel
-  <StatCell label="Recovery" className="p-8" />
+  <StatCell title="Recovery" className="p-8" />
 )
 
 export const cellStyle: ReactElement = (
   // @ts-expect-error a composite takes no styling channel
-  <StatCell label="Recovery" style={{ color: 'red' }} />
+  <StatCell title="Recovery" style={{ color: 'red' }} />
 )
 
 export const cellColor: ReactElement = (
-  // @ts-expect-error a cell takes no colour
-  <StatCell label="Recovery" color="red" />
+  // @ts-expect-error a cell takes no color
+  <StatCell title="Recovery" color="red" />
 )
 
 export const cellTone: ReactElement = (
   // @ts-expect-error a cell takes no hue: a verdict is `status`
-  <StatCell label="Recovery" tone="good" />
+  <StatCell title="Recovery" tone="good" />
 )
 
 /** A list the page maps from data is a plain readonly array: at most four draw, a fifth warns in development. */
 export const cellMappedRows: ReactElement = (
-  <StatCell label="Recovery" rows={[row, row, row].map((r) => r)} />
+  <StatCell title="Recovery" rows={[row, row, row].map((r) => r)} />
 )
 
 export const cellLinkAndButton: ReactElement = (
   // @ts-expect-error a cell is a link or a button, never both
-  <StatCell label="Recovery" href="/recovery" onClick={() => undefined} />
+  <StatCell title="Recovery" href="/recovery" onClick={() => undefined} />
 )
 
 export const cellStatusWithoutWord: ReactElement = (
-  // @ts-expect-error a verdict carries a word, never a colour alone
-  <StatCell label="Recovery" status={{ tone: 'good' }} />
+  // @ts-expect-error a verdict carries a word, never a color alone
+  <StatCell title="Recovery" status={{ tone: 'good' }} />
 )
 
 export const panelClassName: ReactElement = (
@@ -95,7 +95,7 @@ export const panelClassName: ReactElement = (
 )
 
 export const panelColor: ReactElement = (
-  // @ts-expect-error a panel takes no colour
+  // @ts-expect-error a panel takes no color
   <DataPanel title="Open" bodySize={{ rows: 3 }} body={() => null} color="red" />
 )
 
@@ -117,14 +117,14 @@ export const panelNodeBody: ReactElement = (
 export const groupClassName: ReactElement = (
   // @ts-expect-error a composite takes no styling channel
   <StatGroup variant="strip" className="gap-8">
-    <StatCell label="Recovery" />
+    <StatCell title="Recovery" />
   </StatGroup>
 )
 
 export const groupWithoutVariant: ReactElement = (
   // @ts-expect-error the layout is named: `strip` or `cards`
   <StatGroup>
-    <StatCell label="Recovery" />
+    <StatCell title="Recovery" />
   </StatGroup>
 )
 
@@ -133,7 +133,7 @@ export const groupTextChild: ReactElement = (
   <StatGroup variant="strip">Recovery</StatGroup>
 )
 
-declare const notACell: ReactElement<{ title: string }>
+declare const notACell: ReactElement<{ heading: string }>
 
 export const groupForeignElement: ReactElement = (
   // @ts-expect-error a group takes cells: an element carrying other props is not one

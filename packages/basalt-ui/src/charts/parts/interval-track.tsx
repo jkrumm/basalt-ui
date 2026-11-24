@@ -27,7 +27,6 @@ import { BASALT, alpha } from '../../tokens'
 import { resolveContainerClass } from '../../tokens/size-classes'
 import { HEIGHT_MIN } from '../box'
 import { chartLabels } from '../chart-labels'
-import { chartName } from '../chart-name'
 import type { ChartFocus, ChartName, SeriesColor } from '../contract'
 import { engineRow, xGuide } from '../core/compile'
 import type { CartesianDefinition } from '../core/compile'
@@ -39,7 +38,7 @@ import { engineFocusHandler, hostFocusProps } from '../focus'
 import { ChartEngine, idPrefixOf } from '../host'
 import { ChartLegend } from '../legend'
 import { ChartPlaceholder, resolveChartState } from '../state'
-import type { ChartSeries, ChartState, ChartTooltipRow, ResponsiveChartHeight } from '../types'
+import type { ChartSeries, ChartTooltipRow, ResponsiveChartHeight } from '../types'
 import { cssColor, toChartState } from './cartesian-adapt'
 import { assignLanes } from '../../core/lanes'
 import { LABEL_SLACK, cutToFit, placeLaneLabels } from './interval-layout'
@@ -113,8 +112,6 @@ export type IntervalTrackProps<
     phase?: Phase | QueryStateLike | undefined
     /** The measured-empty state once the query settled; `cause` is the line the tile prints. */
     empty?: Empty | null | undefined
-    /** @deprecated Use `phase` and `empty`; removed in the next minor. */
-    state?: ChartState | undefined
   }
 
 /** Px per lane at the natural height, and the air round a row's lanes, in lanes. */
@@ -139,20 +136,20 @@ const OUTLINE_PX = 1
 const RADIUS = 3
 /** The focused span's ring, px. */
 const LIFT_PX = 1.5
-/** The card-coloured seam round a tinted span, px: two neighbours of one series read as two. */
+/** The card-colored seam round a tinted span, px: two neighbours of one series read as two. */
 const SEAM_PX = 1
 /** The row extent's band: a quiet neutral, under the tint of the quietest span. */
 const BAND_SHARE = 0.08
 
 /**
- * The most of a colour mixed into the card that still holds `ink` at 4.5:1 for any colour at all
+ * The most of a color mixed into the card that still holds `ink` at 4.5:1 for any color at all
  * (black on the light card, white on the dark one): 43 % and 25 % with the shipped tokens, held here
  * with a margin for a derived palette. A focused lane span lifts to it (a back span takes a ring only); `interval-ink.test.tsx` holds it.
  */
 export const TINT_CAP = { light: 0.4, dark: 0.22 } as const
-/** A span's share of its colour at rest, under the cap, so an inside label is always `ink`. */
+/** A span's share of its color at rest, under the cap, so an inside label is always `ink`. */
 export const TINT = { light: 0.16, dark: 0.16 } as const
-/** A colour mixed into the card at its scheme's share: an opaque fill, so its contrast is known. */
+/** A color mixed into the card at its scheme's share: an opaque fill, so its contrast is known. */
 export const tint = (color: string, share: { light: number; dark: number }): string =>
   `light-dark(${mixCard(color, share.light)}, ${mixCard(color, share.dark)})`
 const mixCard = (color: string, share: number): string =>
@@ -256,7 +253,7 @@ function trackModel<T>(input: {
 export function IntervalTrack<T, X extends IntervalX = IntervalX, K extends string = string>(
   props: IntervalTrackProps<T, X, K>,
 ): ReactElement {
-  const ariaLabel = chartName(props)
+  const ariaLabel = props.label
   const {
     data,
     getRow,
@@ -278,11 +275,10 @@ export function IntervalTrack<T, X extends IntervalX = IntervalX, K extends stri
     height,
     phase,
     empty,
-    state: legacyState,
     className,
     style,
   } = props
-  const state = toChartState(phase, empty, legacyState)
+  const state = toChartState(phase, empty)
   const chartId = useId()
   const coarse = useCoarsePointer()
   const focused = focus?.datum ?? null
@@ -477,7 +473,7 @@ export function IntervalTrack<T, X extends IntervalX = IntervalX, K extends stri
             }),
           )
         }
-        // The focused span takes a ring in its own colour (the accent on a one-series track) and a lane
+        // The focused span takes a ring in its own color (the accent on a one-series track) and a lane
         // span lifts one tone, to the cap; every other span keeps its paint. Decorative: no pointer.
         for (const it of items.filter(isFocused)) {
           const s = seriesByKey.get(it.series)
@@ -681,8 +677,8 @@ export function IntervalTrack<T, X extends IntervalX = IntervalX, K extends stri
 
 const AT_BOX = { x1: 'x1', x2: 'x2', y1: 'y1', y2: 'y2', key: 'id' } as const
 /**
- * Colour names a category only when there are two: one lane series paints neutral, and the accent is
- * kept for the focused span. A back series keeps its own colour.
+ * Color names a category only when there are two: one lane series paints neutral, and the accent is
+ * kept for the focused span. A back series keeps its own color.
  */
 const isOneSeries = (series: readonly IntervalSeries[]): boolean =>
   series.filter((s) => s.layer !== 'back').length <= 1

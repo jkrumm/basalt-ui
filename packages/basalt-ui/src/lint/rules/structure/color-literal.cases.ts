@@ -1,7 +1,7 @@
 /**
  * The RuleTester suites for the structure-rest family, built from the fixture files: every block
  * of a form's fixture is one case, so the fixture list and the proof cannot drift apart. ESLint's
- * RuleTester runs them in process from `colour-literal.test.ts`; oxlint's `plugins-dev` runs a
+ * RuleTester runs them in process from `color-literal.test.ts`; oxlint's `plugins-dev` runs a
  * bundled copy under Node through `../../factory.oxlint.mjs` (it refuses Bun).
  *
  * Fixture grammar: a `// @valid` or `// @invalid` line starts a block; inside it `// @filename
@@ -15,7 +15,7 @@ import { resolve } from 'node:path'
 import type { LintRule } from '../../factory'
 import { buildRule } from '../../factory'
 import type { Form, RuleTable } from '../../rule-table'
-import { colourLiteralRules } from './colour-literal'
+import { colorLiteralRules } from './color-literal'
 import { dataPrimitiveRules } from './data-primitive'
 import { waiverRules } from './waiver-needs-reason'
 
@@ -108,7 +108,7 @@ export function suiteFor(table: RuleTable, id: string): Suite {
 }
 
 export const SUITES: Suite[] = [
-  suiteFor(colourLiteralRules, 'colour-literal'),
+  suiteFor(colorLiteralRules, 'color-literal'),
   suiteFor(waiverRules, 'waiver-needs-reason'),
   suiteFor(dataPrimitiveRules, 'data-primitive'),
 ]

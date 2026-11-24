@@ -45,8 +45,8 @@ describe('switch module', () => {
   })
 })
 
-describe('switch track under forced colours', () => {
-  test('the track has a 1px transparent border that forced colours paint, with a 1px inset so the thumb stays put', () => {
+describe('switch track under forced colors', () => {
+  test('the track has a 1px transparent border that forced colors paint, with a 1px inset so the thumb stays put', () => {
     const tokens = switchVariants().split(' ')
     expect(tokens).toContain('border')
     expect(tokens).toContain('border-transparent')

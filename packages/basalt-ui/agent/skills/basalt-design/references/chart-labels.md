@@ -5,7 +5,7 @@ The answer is on the mark. The figure, the baseline and the label on the mark th
 ## A headline value has a baseline
 
 - Every headline figure has a baseline: a zero line, a reference line, a zone, or a signed delta that names its period. `refLines` and `zones` are data on [CartesianChart](node_modules/basalt-ui/docs/cartesian-chart.md). [type:ChartRefLine] [type:ChartZone]
-- Against a limit, draw the limit and print the distance to it; a limit that exists only as a colour rule becomes geometry or a signed distance.
+- Against a limit, draw the limit and print the distance to it; a limit that exists only as a color rule becomes geometry or a signed distance.
 - The threshold that defines the answer is a `refLines` rule or a zone on the chart as well as any footer value, and the mark that matters says why it matters, beyond its name ("over 4 kt apart").
 
 ## Label the mark that answers

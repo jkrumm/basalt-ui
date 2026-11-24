@@ -1,7 +1,7 @@
 /**
  * The labels that name the answer in real Chrome at 1800 and 390 (`v3-expr-11-kit-fixes` 4 and 6a):
  * every bar clamped by a bounded axis shows its true value beside its caret, the value clears the
- * caret and the zone label, in both colour schemes. Asserted here because happy-dom has no geometry.
+ * caret and the zone label, in both color schemes. Asserted here because happy-dom has no geometry.
  * A value standing on a bar reads at 4.5:1 against the bar's flattened fill, and no value runs over a
  * gridline.
  *
@@ -113,8 +113,8 @@ type Ink = { text: string; ratio: number; onBar: boolean }
 
 /**
  * The value labels of one card standing on a bar, with the contrast of their computed fill against the
- * bar's fill flattened over the card, and the gridlines they meet. Colours go through a canvas, which
- * resolves any CSS colour (the label's is a relative colour) to RGB.
+ * bar's fill flattened over the card, and the gridlines they meet. Colors go through a canvas, which
+ * resolves any CSS color (the label's is a relative color) to RGB.
  */
 const inkOf = (page: LayoutPage, id: string, source: string) =>
   page.raw.evaluate(

@@ -74,7 +74,7 @@ export const rows: readonly RowDef[] = [
     // 143778 B with the group scope every shell control reads and the popups reset (Issue 2853).
     // 143900 -> 144400 (Issue 2940): 144069 B measured; the Dialog sizes, header actions and wash backdrop.
     // 144400 -> 146600 (Issue 2939): 146457 B measured; the panel anatomy the Dock and the aside draw and the Dock's dragged width.
-    // 146600 -> 161800 (Issue 3106): 161405 B measured; the workspace switcher (menu radios, avatar), the Favourites section (`SortableList`) and the rail's width handle.
+    // 146600 -> 161800 (Issue 3106): 161405 B measured; the workspace switcher (menu radios, avatar), the Favorites section (`SortableList`) and the rail's width handle.
     // 161800 -> 169000 (Issue 3102): 168504 B measured; the palette draws its rows and group headers through the list engine.
     // 169000 -> 181000 (Issue 3205): 180751 B measured; the two phone nav trial variants and the palette's phone sheet, lazy chunks this row counts and an app loads only when a variant is picked.
     // 181000 -> 185000 (Issue 3206): 184567 B measured; the shell's keyboard inset, the More surface's Sheet with Base UI's VirtualKeyboardProvider, a grabber and snap points.
@@ -144,7 +144,7 @@ export const raises: Raises = {
       from: 146600,
       to: 161800,
       consumer:
-        "the benchmark against Accordee (owner direction 2026-11-21, docs/v3/issues/bench/README.md, plan row bench-shell-nav, Issue 3106): a workspace switcher in the brand zone, a Favourites rail section the reader fills from a record's star and reorders (SortableList), and a rail the reader resizes",
+        "the benchmark against Accordee (owner direction 2026-11-21, docs/v3/issues/bench/README.md, plan row bench-shell-nav, Issue 3106): a workspace switcher in the brand zone, a Favorites rail section the reader fills from a record's star and reorders (SortableList), and a rail the reader resizes",
       repo: 'basalt-ui',
     },
     {
@@ -202,7 +202,7 @@ export const raises: Raises = {
       from: 31500,
       to: 31700,
       consumer:
-        "the benchmark against Accordee (owner direction 2026-11-21, docs/v3/issues/bench/README.md, plan row bench-shell-nav, Issue 3106): a workspace switcher in the brand zone, a Favourites rail section the reader fills from a record's star and reorders (SortableList), and a rail the reader resizes",
+        "the benchmark against Accordee (owner direction 2026-11-21, docs/v3/issues/bench/README.md, plan row bench-shell-nav, Issue 3106): a workspace switcher in the brand zone, a Favorites rail section the reader fills from a record's star and reorders (SortableList), and a rail the reader resizes",
       repo: 'basalt-ui',
     },
     {

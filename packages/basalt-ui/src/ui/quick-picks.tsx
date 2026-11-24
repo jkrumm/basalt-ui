@@ -16,7 +16,7 @@ export const quickPicksVariants = cva('flex flex-wrap items-center gap-2 pointer
 /**
  * The pill table: a 24 px pill that stays 24 px on every pointer and grows only its invisible
  * `::after` hit area to 44 px for a coarse one. The picked pill is filled with ink, so the state
- * never rides on colour alone.
+ * never rides on color alone.
  */
 const quickPickVariants = cva(
   'relative inline-flex h-6 cursor-pointer items-center rounded-full border border-input bg-background px-3 text-xs text-foreground transition-colors select-none focus-ring after:absolute after:inset-x-0 after:top-1/2 after:h-6 after:-translate-y-1/2 pointer-coarse:after:h-11 hover:bg-accent data-checked:border-transparent data-checked:bg-primary data-checked:text-primary-foreground data-disabled:cursor-not-allowed data-disabled:opacity-50',

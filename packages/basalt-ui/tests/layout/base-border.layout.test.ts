@@ -1,5 +1,5 @@
 /**
- * The default border colour (css/generate.ts `borderRules`): a border with no colour utility paints
+ * The default border color (css/generate.ts `borderRules`): a border with no color utility paints
  * the hairline token under the kit stylesheet, in both schemes, as the kit's own `border-border`
  * does. A bare `divide-y` takes it too. `outline` and `ring` are left at currentColor on purpose
  * (they mark focus), and this suite holds that as well so a change to it is deliberate.
@@ -55,7 +55,7 @@ afterAll(() => {
   if (scratch) rmSync(scratch, { recursive: true, force: true })
 })
 
-type Colours = {
+type Colors = {
   bare: string
   named: string
   grid: string
@@ -66,7 +66,7 @@ type Colours = {
   outlineText: string
 }
 
-async function coloursIn(scheme: 'light' | 'dark'): Promise<Colours> {
+async function colorsIn(scheme: 'light' | 'dark'): Promise<Colors> {
   const page = await openFixture(EMPTY_SPEC, DESKTOP_1440, documentPath, 'reduce', 'fine')
   await page.raw.evaluate((s) => {
     document.documentElement.setAttribute('data-theme', s)
@@ -95,10 +95,10 @@ async function coloursIn(scheme: 'light' | 'dark'): Promise<Colours> {
   })
 }
 
-layout('default border colour', () => {
+layout('default border color', () => {
   for (const scheme of ['light', 'dark'] as const) {
     test(`a bare border and a divide are the hairline in ${scheme}`, async () => {
-      const c = await coloursIn(scheme)
+      const c = await colorsIn(scheme)
       expect(c.hairline).not.toBe(c.ink)
       expect(c.bare).toBe(c.hairline)
       expect(c.divide).toBe(c.hairline)
@@ -107,7 +107,7 @@ layout('default border colour', () => {
     })
 
     test(`outline keeps currentColor in ${scheme}`, async () => {
-      const c = await coloursIn(scheme)
+      const c = await colorsIn(scheme)
       expect(c.outline).toBe(c.outlineText)
       expect(c.outline).not.toBe(c.hairline)
     })

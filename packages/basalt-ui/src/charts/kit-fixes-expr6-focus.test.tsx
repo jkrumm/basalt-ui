@@ -30,7 +30,7 @@ function Linked() {
   return (
     <div>
       <CartesianChart
-        ariaLabel="Pace"
+        label="Pace"
         data={STAGES}
         x={{ value: (d) => d.stage }}
         series={[{ key: 'at', label: 'At', color: COLOR, mark: 'bar', y: (d) => d.at }]}
@@ -105,7 +105,7 @@ function Shared() {
       {[0, 1].map((n) => (
         <CartesianChart
           key={n}
-          ariaLabel={`Pace ${n}`}
+          label={`Pace ${n}`}
           data={STAGES}
           x={{ value: (d) => d.stage }}
           series={[{ key: 'at', label: 'At', color: COLOR, mark: 'bar', y: (d) => d.at }]}

@@ -26,7 +26,7 @@ const read = (name: string): Preset =>
 const NUMBERED = [
   'viewport-keyed',
   'dark-fork',
-  'fixed-colour',
+  'fixed-color',
   'status-fill-as-text',
   'raw-scroll',
   'tw-off-law',
@@ -37,7 +37,7 @@ const NUMBERED = [
   'router-search',
   'data-primitive',
   'untrusted-markdown',
-  'colour-literal',
+  'color-literal',
   'waiver-needs-reason',
   'page-root',
   'motion-off-scale',

@@ -1,12 +1,12 @@
 /**
  * The 2.x `BP` families, carried hex-identical and kept INTERNAL (tokens-visual 3.8): no `--basalt-*`
- * name, no package export, so `BP` and `p()` can go and no argo/rb series colour shifts. The data
+ * name, no package export, so `BP` and `p()` can go and no argo/rb series color shifts. The data
  * form `{ hue: 'forest', light: 3, dark: 4 }` of a `basalt.tokens.ts` series entry resolves through
  * {@link rampPair}; `ramps.test.ts` pins every hex against `palette.ts`'s `BP` until that module
  * is deleted.
  */
 
-/** Five steps, darkest first for the colour families (a grey family runs dark-surface to light). */
+/** Five steps, darkest first for the color families (a grey family runs dark-surface to light). */
 export const RAMPS = {
   darkGray: ['#18181b', '#27272a', '#3f3f46', '#52525c', '#71717a'],
   gray: ['#52525c', '#71717a', '#a1a1aa', '#d4d4d8', '#e4e4e7'],

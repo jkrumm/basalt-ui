@@ -1,4 +1,4 @@
-// Blocks: see colour-literal.tsx. `// @ts` blocks need a TS parser and run under oxlint only;
+// Blocks: see color-literal.tsx. `// @ts` blocks need a TS parser and run under oxlint only;
 // the plain import below is the same ImportSpecifier and runs under both hosts.
 
 // @invalid

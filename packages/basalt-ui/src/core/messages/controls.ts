@@ -71,7 +71,7 @@ export const controls = {
   'controls.appearance.light': 'Light',
   'controls.appearance.dark': 'Dark',
   'controls.appearance.system': 'System',
-  'controls.appearance.accent': 'Accent colour',
+  'controls.appearance.accent': 'Accent color',
   'controls.appearance.density': 'Density',
   'controls.appearance.dense': 'Compact',
   'controls.appearance.denseHelp': '28 px controls, the most rows.',

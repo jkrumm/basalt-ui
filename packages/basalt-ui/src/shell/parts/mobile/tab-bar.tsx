@@ -11,7 +11,7 @@
  * above it ends where the bar begins: the last pixel of a page is never under it.
  *
  * Floors (pointer coarse): bar 48, every tab at least 44, every surface row 48. The active tab shows
- * a neutral pill behind its icon, never the identity colour; an unread badge is a dot on the icon.
+ * a neutral pill behind its icon, never the identity color; an unread badge is a dot on the icon.
  */
 import { useRouter } from '@tanstack/react-router'
 import { useState, useSyncExternalStore } from 'react'

@@ -301,10 +301,10 @@ layout('form parts', () => {
           await styleOf(page, 'swatch', '[role="radio"]:not([data-checked])', 'box-shadow'),
         ).toBe('none')
         await page.raw.click('[data-testid="swatch-menu"] button')
-        await page.raw.waitForSelector('[role="radiogroup"][aria-label="Label colour"]')
+        await page.raw.waitForSelector('[role="radiogroup"][aria-label="Label color"]')
         const inside = await page.raw.evaluate(() => {
           const r = document
-            .querySelector('[role="radiogroup"][aria-label="Label colour"]')!
+            .querySelector('[role="radiogroup"][aria-label="Label color"]')!
             .getBoundingClientRect()
           return r.left >= 0 && r.right <= window.innerWidth
         })

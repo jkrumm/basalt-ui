@@ -1,6 +1,6 @@
 ---
 source: basalt-ui
-description: Colour, scheme and spacing — every value is a token, never a literal.
+description: Color, scheme and spacing — every value is a token, never a literal.
 paths:
   - '**/src/**'
 ---
@@ -9,14 +9,14 @@ paths:
 
 Every value is a token and the palette is derived, never authored; each bullet names what holds it.
 
-## Colour
+## Color
 
-- Write no hex, `rgb()`, `hsl()` or `oklch()` literal; use a `BASALT.*` token, `alpha(BASALT.x, n)` or the app's series file. [lint:colour-literal]
-- A brand fill and its ink come from `Button` variant primary or `Status` in app code; `on-brand` is bridge-only. Never `text-white` or `text-black`. [lint:fixed-colour]
-- Never fork a colour with `dark:`; tokens switch per scheme, so add the token. [lint:dark-fork]
-- A status colour is a fill or a tone prop, never text; text takes `text-good` or `text-brand`. [lint:status-fill-as-text]
-- App code takes colour from the status components, never an arbitrary or raw colour class. [lint:tw-off-law]
-- A series colour is a `{ light, dark }` pair, authored once in the series file. [type:SeriesColor]
+- Write no hex, `rgb()`, `hsl()` or `oklch()` literal; use a `BASALT.*` token, `alpha(BASALT.x, n)` or the app's series file. [lint:color-literal]
+- A brand fill and its ink come from `Button` variant primary or `Status` in app code; `on-brand` is bridge-only. Never `text-white` or `text-black`. [lint:fixed-color]
+- Never fork a color with `dark:`; tokens switch per scheme, so add the token. [lint:dark-fork]
+- A status color is a fill or a tone prop, never text; text takes `text-good` or `text-brand`. [lint:status-fill-as-text]
+- App code takes color from the status components, never an arbitrary or raw color class. [lint:tw-off-law]
+- A series color is a `{ light, dark }` pair, authored once in the series file. [type:SeriesColor]
 
 ## Spacing and classes
 
@@ -38,7 +38,7 @@ Every value is a token and the palette is derived, never authored; each bullet n
 not guarded:
 
 - `auto` means the `data-theme` attribute is absent and the system scheme applies; an explicit choice sets the attribute and is stored under the `basalt:scheme` key. Never write either by hand.
-- Secondary text is `text-muted-foreground`; `text-muted` is a surface and paints the card colour.
+- Secondary text is `text-muted-foreground`; `text-muted` is a surface and paints the card color.
 - Radius has no knob in 3.0 (four fixed values, `tokens/table.ts`): never override it locally. Density is the `data-density` attribute (`dense`, `normal`, `comfortable`) on `<html>` or a subtree; never set `--basalt-ctl-h` or `--basalt-row-h` by hand. `basalt()` takes no radius, density or fonts option; the three faces ship in `fonts.css`.
 - The reader's density, frame and accent are `data-density`, `data-frame` and `data-accent` on `<html>`, written by `setAppearance` (`basalt-ui`) and offered by `AppearanceSwitcher`; never write them or `basalt:appearance` by hand. An accent works only if the app ships it: a `tokens` output in `.basalt/manifest.json` with the flags `--accents violet,teal`, written by `basalt-ui tokens:css --accents violet,teal --out src/accents.css` and imported after `tokens.css`.
 - A token name you did not see in `basalt-ui/tokens` does not exist; read the generated token list before inventing one.

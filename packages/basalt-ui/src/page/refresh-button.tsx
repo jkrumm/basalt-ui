@@ -100,7 +100,7 @@ function Glyph({ spinning }: { spinning: boolean }): ReactElement {
  * server job's own `syncing`, `lastCompletedAt`, `onSync` and `error`. The age (`2 min. ago`) is
  * absent on the server and on the first client paint, so it cannot mismatch on hydration. While
  * `syncing` the glyph spins and a second press is refused without losing focus; an `error` is part
- * of the accessible name and the tooltip, never colour alone. On paper the button is hidden and a
+ * of the accessible name and the tooltip, never color alone. On paper the button is hidden and a
  * line "Updated <date and time>" states when the data was taken.
  *
  * @useWhen a page or the shell header offers a refresh of live data, with how old it is

@@ -1,7 +1,7 @@
 ---
 name: Badge
 use when: 'a state, a count or a change needs a small chip beside a label: `Lozenge` for a word, `CountBadge` for a number, `DeltaBadge` for a change against a period'
-never when: 'the verdict is a dot and a word on one entity (use Status), or the chip would carry colour alone'
+never when: 'the verdict is a dot and a word on one entity (use Status), or the chip would carry color alone'
 subpath: basalt-ui/ui/badge
 peers: []
 slots: [lozenge, count-badge, delta-badge]
@@ -39,7 +39,7 @@ CountBadge({ count, max, attention, className, ...props }: CountBadgeProps): Rea
 ### `DeltaBadge`
 
 A change against a period. The arrow is the direction, the tint is the verdict; a zero change is
-a neutral chip with a minus glyph, a `neutral` polarity never takes a verdict colour, and a string
+a neutral chip with a minus glyph, a `neutral` polarity never takes a verdict color, and a string
 with no sign (`2 of 3 scheduled`, `53 % of all`) is a neutral chip with no arrow.
 
 ```ts

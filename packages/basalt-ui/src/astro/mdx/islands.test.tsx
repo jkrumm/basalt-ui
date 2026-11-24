@@ -39,7 +39,7 @@ describe('ChartIsland', () => {
     })
   }
 
-  test('series colours are chart tokens by position unless picked', () => {
+  test('series colors are chart tokens by position unless picked', () => {
     const html = renderToString(<ChartIsland title="t" x="week" data={data} series={series} />)
     expect(html).toContain('--basalt-chart-1')
     expect(html).toContain('--basalt-chart-3')

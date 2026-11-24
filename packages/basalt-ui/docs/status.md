@@ -28,13 +28,13 @@ Status({ tone, className, children, ...props }: StatusProps): ReactElement
 
 ### `Swatch`
 
-A chip of one series colour for a legend or a list key. Decorative: the series name sits beside
+A chip of one series color for a legend or a list key. Decorative: the series name sits beside
 it as text.
 
 ```ts
 Swatch({ color, className, ...props }: SwatchProps): ReactElement
   className?: string  // Layout only (`ml-auto`, `shrink-0`)
-  color: SwatchColor  // The series colour
+  color: SwatchColor  // The series color
 ```
 
 ## `statusVariants`

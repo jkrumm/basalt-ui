@@ -61,7 +61,7 @@ describe('CodeBlock — the plain block', () => {
     expect(root?.getAttribute('data-lang')).toBe('ts')
   })
 
-  test('the frame is an inset ring in the border colour, not ring-inset (which paints the inset colour token)', () => {
+  test('the frame is an inset ring in the border color, not ring-inset (which paints the inset color token)', () => {
     const { container } = render(<CodeBlock lang="ts" code="x" />)
     const root = container.firstElementChild
     expect(root?.className).toContain('inset-ring-border')

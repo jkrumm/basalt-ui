@@ -46,7 +46,7 @@ function Fixture(): ReactElement {
           title="Tokens by project"
           chart={() => (
             <CartesianChart
-              ariaLabel="Tokens by project"
+              label="Tokens by project"
               data={ROWS}
               x={{ value: (d) => d.name }}
               series={[

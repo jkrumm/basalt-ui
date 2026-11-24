@@ -73,7 +73,7 @@ export const rows: readonly RowDef[] = [
     // bars' recede, the kit fixes of expression cycle 16.
     // 134000 -> 134200 (Issue 2696): 134090 B measured, +~90 B gz over the cap for the surface backing under an end
     // label another line runs through, a series the `endLabels` naming leaves no legend to name.
-    // 134200 -> 134700 (Issue 2716): 134553 B measured, +~460 B gz over the cap for the card-coloured backing under a value label a rule crosses, the clamp caret cut in the card's colour on a bar, and the ink-step bars' stronger recede and rise, the kit fixes of expression cycle 17.
+    // 134200 -> 134700 (Issue 2716): 134553 B measured, +~460 B gz over the cap for the card-colored backing under a value label a rule crosses, the clamp caret cut in the card's color on a bar, and the ink-step bars' stronger recede and rise, the kit fixes of expression cycle 17.
     // 134700 -> 135100 (Issue 2784): 135017 B measured, +~320 B gz over the cap for the stacked panes' shared y gutter, the tick rows a bar value keeps off and the focused band label that keeps its neighbours, the kit fixes of expression cycle 18.
     // 135100 -> 135300 (Issue 2784): 135262 B measured, +~160 B gz over the cap for the band label measured as the engine measures it (chip bold, tick regular) in place of a shrunk estimate that Linux Chrome's wider glyphs defeated.
     // 135300 -> 135400 (Issue 2889): 135349 B measured, +~90 B gz over master (135262) for the zone caption that slides along a zone full of bars (n96's aperture, ISO and shutter cards lost the caption their focal card kept).
@@ -99,7 +99,7 @@ export const raises: Raises = {
       from: 10,
       to: 11,
       consumer:
-        "`IntervalTrack` (Issue 2306, owner review 1): n35 drew a calendar week's spans by hand on the seam track with fixed widths, raw colours and four waivers; the playground's /kit/interval-track draws the same week through the kind",
+        "`IntervalTrack` (Issue 2306, owner review 1): n35 drew a calendar week's spans by hand on the seam track with fixed widths, raw colors and four waivers; the playground's /kit/interval-track draws the same week through the kind",
       repo: 'basalt-ui',
     },
     {
@@ -171,14 +171,14 @@ export const raises: Raises = {
       from: 134200,
       to: 134700,
       consumer:
-        "n82's '0' at Now under the typical-day rule and n84's 'US$1,832' under the 'No report' rule (Issue 2716): a value label a rule crosses sits on a card-coloured backing, and the caret of a clamped bar is cut in the card's colour",
+        "n82's '0' at Now under the typical-day rule and n84's 'US$1,832' under the 'No report' rule (Issue 2716): a value label a rule crosses sits on a card-colored backing, and the caret of a clamped bar is cut in the card's color",
       repo: 'basalt-ui',
     },
     {
       from: 134000,
       to: 134200,
       consumer:
-        "n79's end labels struck by converging lines at 390 (Issue 2696): a series named only by its end label keeps it on a card-coloured backing, as the text mark has no stroke",
+        "n79's end labels struck by converging lines at 390 (Issue 2696): a series named only by its end label keeps it on a card-colored backing, as the text mark has no stroke",
       repo: 'basalt-ui',
     },
     {

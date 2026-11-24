@@ -9,7 +9,7 @@ slots: []
 
 # CartesianChart
 
-The cartesian chart. `series` is the single source of colour, legend entry and tooltip row; custom
+The cartesian chart. `series` is the single source of color, legend entry and tooltip row; custom
 engine marks come from `CartesianChart.custom` and are drawn after the series' own. The series
 fields, selection, custom marks, axis titles and y capping are in `cartesian-chart-guide.md`.
 

@@ -10,7 +10,7 @@ import type { Rule } from 'eslint'
 import { Linter, RuleTester } from 'eslint'
 
 import { buildRule, formMessage } from '../../factory'
-import { FIXTURES_ROOT, parseFixture } from './colour-literal.cases'
+import { FIXTURES_ROOT, parseFixture } from './color-literal.cases'
 import { enabledRule } from './import-boundary.cases'
 import { IMPORT_BOUNDARY } from './import-boundary'
 import { untrustedMarkdownRules } from './untrusted-markdown'

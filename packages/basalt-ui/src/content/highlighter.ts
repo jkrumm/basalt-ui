@@ -67,7 +67,7 @@ const LANG_ALIASES: Record<string, string> = {
  * shiki stops tokenising a line after 500 ms by default and leaves the rest mis-scoped (`:` and `=`
  * in `const x: number = 1` come back variable-blue instead of keyword-red). The first pass over a
  * grammar compiles its regexes lazily and blows that budget on a loaded host, so the same code
- * highlighted twice differed. 0 is "no limit": the colours never depend on how busy the host is.
+ * highlighted twice differed. 0 is "no limit": the colors never depend on how busy the host is.
  */
 const NO_TIME_LIMIT = 0
 

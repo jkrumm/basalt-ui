@@ -62,7 +62,7 @@ const PEERS: Record<string, string> = {
 
 /** The doctor options a healthy tree needs: a lint runner that fires, oxlint at the pin, no base ref. */
 const HEALTHY: DoctorOptions = {
-  runLint: () => ['basalt/colour-literal'],
+  runLint: () => ['basalt/color-literal'],
   installedOxlint: '1.93.0',
   baseRef: 'HEAD',
 }

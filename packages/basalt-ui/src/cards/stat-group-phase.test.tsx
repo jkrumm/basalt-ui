@@ -23,7 +23,7 @@ const row = { label: 'HRV', value: '64 ms' }
 const row2 = { label: 'Resting', value: '48 bpm' }
 
 const cellProps = (probe: Probe, chart: NonNullable<StatCellProps['chart']>): StatCellProps => ({
-  label: 'Recovery',
+  title: 'Recovery',
   value: 82,
   meter: { label: 'Recovery', value: 82, max: 100 },
   chart,
@@ -99,7 +99,7 @@ describe('StatCell phase matrix', () => {
   test('both error kinds print their own sentence; forbidden never retries', () => {
     const forbidden = render(
       <StatCell
-        label="Recovery"
+        title="Recovery"
         phase={{ tag: 'error', kind: 'forbidden', retry: () => undefined }}
       />,
     )
@@ -108,7 +108,7 @@ describe('StatCell phase matrix', () => {
     cleanup()
     const missing = render(
       <StatCell
-        label="Recovery"
+        title="Recovery"
         phase={{ tag: 'error', kind: 'not-found', retry: () => undefined }}
       />,
     )
@@ -118,7 +118,7 @@ describe('StatCell phase matrix', () => {
 
   test('an error runs its retry', () => {
     const retry = mock(() => undefined)
-    const { getByRole } = render(<StatCell label="Recovery" phase={{ tag: 'error', retry }} />)
+    const { getByRole } = render(<StatCell title="Recovery" phase={{ tag: 'error', retry }} />)
     fireEvent.click(getByRole('button', { name: 'Retry' }))
     expect(retry).toHaveBeenCalledTimes(1)
   })
@@ -133,7 +133,7 @@ describe('StatCell phase matrix', () => {
 
   test('empty.cause takes the figure track of a cell that declares nothing else', () => {
     const { container, getByText } = render(
-      <StatCell label="Recovery" empty={{ cause: 'No readings yet' }} />,
+      <StatCell title="Recovery" empty={{ cause: 'No readings yet' }} />,
     )
     expect(container.querySelector('[data-slot="stat-empty"]')).toBeNull()
     expect(container.querySelector('[data-slot="stat-figure"]')?.textContent).toContain(
@@ -145,7 +145,7 @@ describe('StatCell phase matrix', () => {
   test('a filtered empty offers Clear filters', () => {
     const reset = mock(() => undefined)
     const { getByRole } = render(
-      <StatCell label="Recovery" empty={{ cause: 'No match', filtered: { reset } }} />,
+      <StatCell title="Recovery" empty={{ cause: 'No match', filtered: { reset } }} />,
     )
     fireEvent.click(getByRole('button', { name: 'Clear filters' }))
     expect(reset).toHaveBeenCalledTimes(1)
@@ -159,13 +159,13 @@ describe('StatCell phase matrix', () => {
   })
 
   test('a null value is a dash, never zero', () => {
-    const { container } = render(<StatCell label="Sleep" value={null} />)
+    const { container } = render(<StatCell title="Sleep" value={null} />)
     expect(container.querySelector('[data-slot="stat-figure"]')?.textContent).toBe('–')
   })
 
   test('srText names the cell for assistive tech and hides the drawn figures', () => {
     const { container } = render(
-      <StatCell label="Recovery" value={82} srText="Recovery 82 percent, optimal" />,
+      <StatCell title="Recovery" value={82} srText="Recovery 82 percent, optimal" />,
     )
     expect(container.querySelector('.sr-only')?.textContent).toBe('Recovery 82 percent, optimal')
     expect(container.querySelector('[data-slot="stat-figure"]')?.getAttribute('aria-hidden')).toBe(
@@ -174,16 +174,16 @@ describe('StatCell phase matrix', () => {
   })
 
   test('a cell is a link, a button or inert', () => {
-    const link = render(<StatCell label="Recovery" href="/r" />)
+    const link = render(<StatCell title="Recovery" href="/r" />)
     expect(link.container.querySelectorAll('a[data-slot="stat-target"]')).toHaveLength(1)
     expect(link.container.querySelectorAll('button[data-slot="stat-target"]')).toHaveLength(0)
     cleanup()
     const onClick = mock(() => undefined)
-    const button = render(<StatCell label="Recovery" onClick={onClick} />)
+    const button = render(<StatCell title="Recovery" onClick={onClick} />)
     fireEvent.click(button.container.querySelector('button[data-slot="stat-target"]')!)
     expect(onClick).toHaveBeenCalledTimes(1)
     cleanup()
-    const inert = render(<StatCell label="Recovery" />)
+    const inert = render(<StatCell title="Recovery" />)
     expect(inert.container.querySelector('[data-slot="stat-target"]')).toBeNull()
   })
 
@@ -196,8 +196,8 @@ describe('StatCell phase matrix', () => {
   test('a cards group keeps data-slot stat-cell on one element per cell, as a card surface', () => {
     const { container } = render(
       <StatGroup variant="cards">
-        <StatCell label="A" value={1} />
-        <StatCell label="B" value={2} />
+        <StatCell title="A" value={1} />
+        <StatCell title="B" value={2} />
       </StatGroup>,
     )
     const cells = container.querySelectorAll('[data-slot="stat-cell"]')
@@ -208,8 +208,8 @@ describe('StatCell phase matrix', () => {
   test('inside a group the cell is a subgrid spanning every track', () => {
     const { container } = render(
       <StatGroup variant="strip">
-        <StatCell label="A" value={1} />
-        <StatCell label="B" value={2} />
+        <StatCell title="A" value={1} />
+        <StatCell title="B" value={2} />
       </StatGroup>,
     )
     const cells = container.querySelectorAll('[data-phase]')

@@ -5,7 +5,7 @@ import { alertVariants } from '../ui/alert'
 import type { Slot } from './types'
 
 export type SiteCalloutProps = {
-  /** The tint and the glyph colour. Default `'info'`. */
+  /** The tint and the glyph color. Default `'info'`. */
   tone?: Tone
   /** The visible headline. */
   title?: string

@@ -41,6 +41,6 @@ IntervalTrack<T, X extends IntervalX = IntervalX, K extends string = string>(pro
   empty?: Empty | null  // The measured-empty state once the query settled; `cause` is the line the tile prints
 ```
 
-`Phase`, `QueryStateLike` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike } from 'basalt-ui/cards'`.
+`Empty`, `Phase`, `QueryStateLike` import from `basalt-ui/cards`: `import type { Empty, Phase, QueryStateLike } from 'basalt-ui/cards'`.
 
-`ChartFocus`, `Empty`, `IntervalSeries`, `IntervalTrackProps`, `IntervalX` import from `basalt-ui/charts`: `import type { ChartFocus, Empty, IntervalSeries, IntervalTrackProps, IntervalX } from 'basalt-ui/charts'`.
+`ChartFocus`, `IntervalSeries`, `IntervalTrackProps`, `IntervalX` import from `basalt-ui/charts`: `import type { ChartFocus, IntervalSeries, IntervalTrackProps, IntervalX } from 'basalt-ui/charts'`.

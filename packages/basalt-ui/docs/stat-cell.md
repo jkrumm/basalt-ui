@@ -1,6 +1,6 @@
 ---
 name: StatCell
-use when: 'a status bar or KPI row shows one figure with its qualifier, meter, trend and a few rows'
+use when: 'a status bar or KPI row shows one figure with its subtitle, meter, trend and a few rows'
 never when: 'the figure stands alone as a card (use a stat card) or the rows are the content (use a list)'
 subpath: basalt-ui/cards
 peers: ['@base-ui/react']
@@ -9,7 +9,7 @@ slots: [stat-base, stat-caption, stat-cell, stat-chart, stat-empty, stat-foot, s
 
 # StatCell
 
-One cell of a `StatGroup`, or a lone cell on its own tracks: a caption (icon, label, qualifier,
+One cell of a `StatGroup`, or a lone cell on its own tracks: a caption (icon, title, subtitle,
 definition glyph), the figure with its verdict, the delta pill on the line under it beside the base
 it names ("vs prior 7 days", from `delta.label`), then the meter, chart, rows and foot line it
 declares. Inside a group its tracks are shared with its neighbours; a track a cell does
@@ -26,10 +26,10 @@ StatCell(props: StatCellProps): ReactElement
   onClick?: () => void
   phase?: Phase | QueryStateLike
   empty?: Empty | null
-  label: string
-  icon?: IconComponent  // A glyph before the label, drawn in the caption's muted ink
-  swatch?: { light: string; dark: string; }  // The series colour of the mark this figure reads, drawn as a dot before the label
-  qualifier?: string
+  title: string
+  icon?: IconComponent  // A glyph before the title, drawn in the caption's muted ink
+  swatch?: { light: string; dark: string; }  // The series color of the mark this figure reads, drawn as a dot before the title
+  subtitle?: string
   info?: string
   value?: string | number | null
   unit?: string
@@ -51,8 +51,8 @@ StatCell(props: StatCellProps): ReactElement
 
 ```tsx
 <StatCell
-  label="Recovery"
-  qualifier="7 day"
+  title="Recovery"
+  subtitle="7 day"
   value={82}
   unit="%"
   status={{ tone: 'good', label: 'Optimal' }}

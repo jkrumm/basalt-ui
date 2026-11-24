@@ -20,7 +20,7 @@ describe('StatGroup shared failure', () => {
           {LABELS.map((label, i) => (
             <StatCell
               key={label}
-              label={label}
+              title={label}
               phase={{ tag: 'error', retry: retries[i] as () => void }}
             />
           ))}
@@ -40,7 +40,7 @@ describe('StatGroup shared failure', () => {
       const { container } = render(
         <StatGroup variant={variant} label="Link health">
           {LABELS.map((label) => (
-            <StatCell key={label} label={label} value={1} empty={{ cause: 'No readings yet' }} />
+            <StatCell key={label} title={label} value={1} empty={{ cause: 'No readings yet' }} />
           ))}
         </StatGroup>,
       )
@@ -52,8 +52,8 @@ describe('StatGroup shared failure', () => {
   test('the strip keeps every caption; the cards hold their height invisibly', () => {
     const strip = render(
       <StatGroup variant="strip">
-        <StatCell label="Downstream" phase={{ tag: 'error' }} />
-        <StatCell label="Upstream" phase={{ tag: 'error' }} />
+        <StatCell title="Downstream" phase={{ tag: 'error' }} />
+        <StatCell title="Upstream" phase={{ tag: 'error' }} />
       </StatGroup>,
     )
     expect(strip.container.textContent).toContain('Downstream')
@@ -61,8 +61,8 @@ describe('StatGroup shared failure', () => {
     cleanup()
     const cards = render(
       <StatGroup variant="cards">
-        <StatCell label="Downstream" phase={{ tag: 'error' }} />
-        <StatCell label="Upstream" phase={{ tag: 'error' }} />
+        <StatCell title="Downstream" phase={{ tag: 'error' }} />
+        <StatCell title="Upstream" phase={{ tag: 'error' }} />
       </StatGroup>,
     )
     for (const cell of cards.container.querySelectorAll('[data-slot="stat-cell"]'))
@@ -72,8 +72,8 @@ describe('StatGroup shared failure', () => {
   test('cells that differ keep their own state', () => {
     const { container } = render(
       <StatGroup variant="strip">
-        <StatCell label="Downstream" phase={{ tag: 'error', retry: () => undefined }} />
-        <StatCell label="Upstream" value={44} />
+        <StatCell title="Downstream" phase={{ tag: 'error', retry: () => undefined }} />
+        <StatCell title="Upstream" value={44} />
       </StatGroup>,
     )
     expect(container.querySelector('[data-slot="stat-group-message"]')).toBeNull()
@@ -81,8 +81,8 @@ describe('StatGroup shared failure', () => {
     cleanup()
     const kinds = render(
       <StatGroup variant="strip">
-        <StatCell label="A" phase={{ tag: 'error', kind: 'forbidden' }} />
-        <StatCell label="B" phase={{ tag: 'error' }} />
+        <StatCell title="A" phase={{ tag: 'error', kind: 'forbidden' }} />
+        <StatCell title="B" phase={{ tag: 'error' }} />
       </StatGroup>,
     )
     expect(kinds.container.querySelectorAll('[role="alert"]').length).toBe(2)
@@ -91,7 +91,7 @@ describe('StatGroup shared failure', () => {
   test('a group of one cell is not collapsed', () => {
     const { container } = render(
       <StatGroup variant="strip">
-        <StatCell label="Downstream" phase={{ tag: 'error' }} />
+        <StatCell title="Downstream" phase={{ tag: 'error' }} />
       </StatGroup>,
     )
     expect(container.querySelector('[data-slot="stat-group-message"]')).toBeNull()

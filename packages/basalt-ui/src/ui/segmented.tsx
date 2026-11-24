@@ -36,7 +36,7 @@ export const segmentedVariants = cva(
 
 // The pressed option draws the raised face itself, in CSS: the server HTML shows the selection, and
 // no measured rect decides where it sits.
-// Forced colours drop the fill and the shadow: an outline marks the selection (no layout box of its own).
+// Forced colors drop the fill and the shadow: an outline marks the selection (no layout box of its own).
 const OWN_FACE =
   'data-pressed:bg-secondary data-pressed:shadow-raised forced-colors:data-pressed:outline-2 forced-colors:data-pressed:-outline-offset-2 forced-colors:data-pressed:outline-current'
 

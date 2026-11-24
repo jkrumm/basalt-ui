@@ -1,5 +1,5 @@
 // A neutral divider, a tab underline, a transparent rest edge, a neutral pseudo rule and a
-// splitter line lit only under hover, focus or drag: none is a coloured bar at rest.
+// splitter line lit only under hover, focus or drag: none is a colored bar at rest.
 export const a = <aside className="border-s border-border" />
 export const b = <button className="border-b-2 border-transparent data-active:border-sky-600" />
 export const c = <a className="border-l-2 border-transparent" />

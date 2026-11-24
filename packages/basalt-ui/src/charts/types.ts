@@ -49,7 +49,7 @@ export type ChartSeries<T> = {
   /** Bars and areas. */
   fillOpacity?: number | undefined
   /** `Lines`: a soft gradient fill under the line — `true` in the series color, a color ref, or
-   * `'zones'`: a vertical gradient coloured by the chart's `zones` on this series' axis, hard stops
+   * `'zones'`: a vertical gradient colored by the chart's `zones` on this series' axis, hard stops
    * at the zone boundaries (no zone in reach: the series color). Linear axes only. */
   area?: boolean | 'zones' | (string & {}) | undefined
   /** Which y axis the series is measured against. `'right'` needs the chart's `y2`. */
@@ -201,7 +201,7 @@ export type RefLine = {
   /**
    * Names the line on the plot: a small muted caption on one of four spots (the plot's end or
    * start, above or below the line). It follows the legend toggle. The ink is `--basalt-ink-muted`, never
-   * the line colour.
+   * the line color.
    */
   label?: string | undefined
   /**

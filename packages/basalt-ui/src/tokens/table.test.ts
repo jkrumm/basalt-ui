@@ -125,7 +125,7 @@ describe('public names', () => {
 describe('values', () => {
   const tokens = resolveTokens()
 
-  test('colour roles are pairs, scalars are strings, and nothing is empty', () => {
+  test('color roles are pairs, scalars are strings, and nothing is empty', () => {
     for (const { def, value } of tokens) {
       if (isPair(value)) {
         expect(value.light.length).toBeGreaterThan(0)

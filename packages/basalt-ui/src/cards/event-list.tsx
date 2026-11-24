@@ -53,8 +53,6 @@ export type EventListProps = FrameHead &
     items: readonly EventListItem[]
     /** The body holds this many rows of height at every phase; more rows scroll. Default 5. */
     bodyRows?: ListRows
-    /** @deprecated Use `bodyRows`; removed in the next minor. */
-    rows?: ListRows
     /** Rows shown before, and added by each "Show more". Default 25. */
     pageSize?: number
     /**
@@ -133,7 +131,7 @@ function EventSkeleton({ rows }: { rows: number }): ReactElement {
  */
 export function EventList(props: EventListProps): ReactElement {
   const { items, pageSize = DEFAULT_PAGE, now, phase, empty } = props
-  const rows = listRows(props.bodyRows ?? props.rows)
+  const rows = listRows(props.bodyRows)
   const { title, subtitle, icon, info } = props
   const f = useFormat()
   const { timeZone } = useIntl()

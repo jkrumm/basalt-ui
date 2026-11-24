@@ -81,7 +81,7 @@ describe('linePaint', () => {
   const plot = (visible: ChartSeries<number>[], focused: number | null) =>
     ({ visible, focused }) as unknown as PlotContext<number, number>
 
-  test('no focus is the series colour; two lines dim to their hue; one dims to the shared paint', () => {
+  test('no focus is the series color; two lines dim to their hue; one dims to the shared paint', () => {
     expect(linePaint(plot([line('a'), line('b')], null), '#123456')).toBe('#123456')
     expect(linePaint(plot([line('a'), line('b')], 1), '#123456')).toBe(dimmedHuePaint('#123456'))
     expect(linePaint(plot([line('a')], 1), '#123456')).toBe(dimmedPaint('#123456'))

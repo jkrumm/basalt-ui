@@ -23,5 +23,5 @@ export const requiresSwatchPicker = (
 > => c
 
 // basalt:guard closed
-// @ts-expect-error a free colour value is not a choice
+// @ts-expect-error a free color value is not a choice
 export const free: Pick<SwatchPickerProps, 'value'> = { value: '#ff0000' }

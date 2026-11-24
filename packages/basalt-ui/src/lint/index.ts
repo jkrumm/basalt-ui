@@ -10,7 +10,7 @@ import { createPlugin } from './factory'
 import type { RuleTable } from './rule-table'
 import { mergeTables } from './rule-table'
 import { CLASS_RULES } from './rules/class/table'
-import { colourLiteralRules } from './rules/structure/colour-literal'
+import { colorLiteralRules } from './rules/structure/color-literal'
 import { controlHomeRules } from './rules/structure/control-home'
 import { dataPrimitiveRules } from './rules/structure/data-primitive'
 import { importBoundaryRules } from './rules/structure/import-boundary'
@@ -26,7 +26,7 @@ const FAMILIES: readonly RuleTable[] = [
   CLASS_RULES,
   importBoundaryRules,
   primitiveBypassRules,
-  colourLiteralRules,
+  colorLiteralRules,
   motionLiteralRules,
   waiverRules,
   dataPrimitiveRules,

@@ -16,9 +16,9 @@ Which form answers the question, and what it must draw. Start from the question'
 
 ## Part to whole
 
-- A few named parts of a whole are one stacked [BarList](node_modules/basalt-ui/docs/bar-list.md) row (`series` names the parts, the row's `parts` carries their values), or a Meter for one value on named zones: both draw the colours, the focus and the labels a bar of hand-sized `div`s lacks.
+- A few named parts of a whole are one stacked [BarList](node_modules/basalt-ui/docs/bar-list.md) row (`series` names the parts, the row's `parts` carries their values), or a Meter for one value on named zones: both draw the colors, the focus and the labels a bar of hand-sized `div`s lacks.
 - A count of a whole draws its share beside the figure: a Meter or a row `bar` (a [StatCell](node_modules/basalt-ui/docs/stat-cell.md) `meter`, a `rows` entry's `bar`). A figure alone leaves the whole unmarked.
-- The parts take their colours from the series file in the order `series` lists them, so the bar, its legend rows and every other list of the same parts show one colour per part.
+- The parts take their colors from the series file in the order `series` lists them, so the bar, its legend rows and every other list of the same parts show one color per part.
 - The part that answers carries its value on its segment (`chartLabels.fits` places it where it fits), so segments are read by name rather than by legend order.
 - The legend rows join the focus both ways through `focus.item(i)` or `focus.seriesItem(key)`, and the dim is the kit's alone.
 

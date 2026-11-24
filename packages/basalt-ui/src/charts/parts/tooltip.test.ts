@@ -9,7 +9,7 @@ import { TOOLTIP_DELAY, engineRows, shortDate, swatchBackground, tooltipBehaviou
 const pair = { light: '#0b6bcb', dark: '#5aa9f0' }
 
 describe('swatches', () => {
-  test('solid is the plain colour, the other three are a background', () => {
+  test('solid is the plain color, the other three are a background', () => {
     expect(swatchBackground('red')).toBe('red')
     expect(swatchBackground('red', 'solid')).toBe('red')
     expect(swatchBackground('red', 'dashed')).toContain('repeating-linear-gradient(90deg, red')
@@ -24,7 +24,7 @@ describe('swatches', () => {
     expect(new Set(shapes).size).toBe(4)
   })
 
-  test('rows are data: the colour pair becomes light-dark(), no colour keeps no swatch', () => {
+  test('rows are data: the color pair becomes light-dark(), no color keeps no swatch', () => {
     const [first, second] = engineRows([
       { label: 'Requests', value: '12', color: pair, swatch: 'line' },
       { label: 'Note', value: 'x' },

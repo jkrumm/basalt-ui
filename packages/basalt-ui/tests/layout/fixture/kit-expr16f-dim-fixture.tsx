@@ -1,6 +1,6 @@
 /**
  * Expression cycle 16, the dim on an ink-step bar series (`v3-expr-16-kit-fixes` 6, n75 and n76): one
- * `Bars` series in a grey step of the ink scale with the chart's focus, and one in a chromatic colour
+ * `Bars` series in a grey step of the ink scale with the chart's focus, and one in a chromatic color
  * for comparison. `data-testid="k16f-ink"` and `k16f-hue` box each chart; `k16f-ink-focus` carries
  * `focus.index`. Entry of `kit-expr16f-dim.layout.test.ts`.
  */

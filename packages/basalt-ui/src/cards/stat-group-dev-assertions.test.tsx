@@ -52,8 +52,8 @@ describe('dev assertions', () => {
   test('a group of bare numbers warns once, naming the fix', () => {
     render(
       <StatGroup variant="strip" label="Fleet">
-        <StatCell label="Services" value={6} sub="1 not healthy" />
-        <StatCell label="Deploys" value={164} sub="Last 7 days" />
+        <StatCell title="Services" value={6} sub="1 not healthy" />
+        <StatCell title="Deploys" value={164} sub="Last 7 days" />
       </StatGroup>,
     )
     expect(warn).toHaveBeenCalledTimes(1)
@@ -63,8 +63,8 @@ describe('dev assertions', () => {
   test('one cell with a baseline is not a bare group', () => {
     render(
       <StatGroup variant="strip" label="Fleet">
-        <StatCell label="Services" value={6} status={{ tone: 'warn', label: '1 degraded' }} />
-        <StatCell label="Deploys" value={164} />
+        <StatCell title="Services" value={6} status={{ tone: 'warn', label: '1 degraded' }} />
+        <StatCell title="Deploys" value={164} />
       </StatGroup>,
     )
     expect(warn).not.toHaveBeenCalled()
@@ -72,15 +72,15 @@ describe('dev assertions', () => {
 
   test('more than four rows warn once and draw the first four', () => {
     const rows = ['a', 'b', 'c', 'd', 'e'].map(row)
-    const { container } = render(<StatCell label="Recovery" rows={rows} />)
-    render(<StatCell label="Sleep" rows={rows} />)
+    const { container } = render(<StatCell title="Recovery" rows={rows} />)
+    render(<StatCell title="Sleep" rows={rows} />)
     expect(warn).toHaveBeenCalledTimes(1)
     expect(String(warn.mock.calls[0]?.[0])).toContain('5 rows')
     expect(container.querySelectorAll('[data-slot="stat-row"]')).toHaveLength(4)
   })
 
   test('four rows are fine', () => {
-    render(<StatCell label="Recovery" rows={[row('a'), row('b'), row('c'), row('d')]} />)
+    render(<StatCell title="Recovery" rows={[row('a'), row('b'), row('c'), row('d')]} />)
     expect(warn).not.toHaveBeenCalled()
   })
 
@@ -96,7 +96,7 @@ describe('dev assertions', () => {
       panel(
         panel(
           <StatGroup variant="strip">
-            <StatCell label="A" />
+            <StatCell title="A" />
           </StatGroup>,
         ),
       ),

@@ -5,8 +5,8 @@ import { cn } from '../core/cn'
 import type { SeriesGroup } from '../tokens'
 
 /**
- * The `Status` cva table: a dot and its word. `tone` colours the dot; the word carries the verdict,
- * so the row never relies on colour alone. `tone` is the closed vocabulary of `src/core/ports.ts`.
+ * The `Status` cva table: a dot and its word. `tone` colors the dot; the word carries the verdict,
+ * so the row never relies on color alone. `tone` is the closed vocabulary of `src/core/ports.ts`.
  *
  * @example
  * statusVariants({ tone: 'warn' }) // class string for a non-`Status` element
@@ -29,8 +29,8 @@ export const statusVariants = cva(
 )
 
 /**
- * The `Swatch` cva table: a 10 px chip of one series colour, the key beside a legend word. No
- * axes: the colour is data and arrives as `color`, never as a class.
+ * The `Swatch` cva table: a 10 px chip of one series color, the key beside a legend word. No
+ * axes: the color is data and arrives as `color`, never as a class.
  *
  * @example
  * swatchVariants() // class string for a hand-built key
@@ -47,7 +47,7 @@ type Layout = Omit<ComponentProps<'span'>, 'className' | 'children' | 'color' | 
 
 export type StatusProps = Layout &
   VariantProps<typeof statusVariants> & {
-    /** The word. A status never carries colour alone. */
+    /** The word. A status never carries color alone. */
     children: string
   }
 
@@ -69,19 +69,19 @@ export function Status({ tone, className, children, ...props }: StatusProps): Re
 }
 
 /**
- * A series colour: a `BASALT.*` reference (`BASALT.good`, `BASALT.warn`) or a `groupTokens` ref. A raw
- * `#hex`, `rgb()` or colour name does not type-check, nor does a plain string: mint the ref with
+ * A series color: a `BASALT.*` reference (`BASALT.good`, `BASALT.warn`) or a `groupTokens` ref. A raw
+ * `#hex`, `rgb()` or color name does not type-check, nor does a plain string: mint the ref with
  * `groupTokens`.
  */
 export type SwatchColor = `var(--basalt-${string})` | SeriesGroup[string]
 
 export type SwatchProps = Layout & {
-  /** The series colour. Required: a swatch with no colour is an empty box. */
+  /** The series color. Required: a swatch with no color is an empty box. */
   color: SwatchColor
 }
 
 /**
- * A chip of one series colour for a legend or a list key. Decorative: the series name sits beside
+ * A chip of one series color for a legend or a list key. Decorative: the series name sits beside
  * it as text.
  *
  * @example

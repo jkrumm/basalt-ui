@@ -22,26 +22,26 @@ function Fixture(): ReactElement {
       <div data-testid="k16-errors">
         <StatGroup variant="cards" label="Summary">
           <StatCell
-            label="Mailboxes syncing"
+            title="Mailboxes syncing"
             value={4}
             meter={{ label: 'Share', value: 4, max: 6 }}
             rows={rows}
             phase={{ tag: 'error', message: 'Gateway timed out', retry }}
           />
           <StatCell
-            label="Messages in and out"
+            title="Messages in and out"
             value={6400}
             rows={rows}
             phase={{ tag: 'error', message: 'Counter unreachable', retry }}
           />
           <StatCell
-            label="Backlog"
+            title="Backlog"
             value={101}
             rows={rows}
             phase={{ tag: 'error', message: 'Gateway timed out', retry }}
           />
           <StatCell
-            label="Failures"
+            title="Failures"
             value={23}
             rows={rows}
             phase={{ tag: 'error', message: 'Gateway timed out', retry }}
@@ -51,15 +51,15 @@ function Fixture(): ReactElement {
       <div data-testid="k16-strip">
         <StatGroup variant="strip" label="Review">
           <StatCell
-            label="Due now"
+            title="Due now"
             phase={{ tag: 'error', message: 'The server did not answer.', retry }}
           />
           <StatCell
-            label="Slipped share of learned"
+            title="Slipped share of learned"
             phase={{ tag: 'error', message: 'The server did not answer.' }}
           />
           <StatCell
-            label="Last session"
+            title="Last session"
             phase={{ tag: 'error', message: 'The log did not answer.', retry }}
           />
         </StatGroup>
@@ -67,14 +67,14 @@ function Fixture(): ReactElement {
       <div data-testid="k16-delta">
         <StatGroup variant="cards" label="Volume">
           <StatCell
-            label="Messages in and out"
+            title="Messages in and out"
             value="166,228"
             delta={{ value: '+2,258%', polarity: 'neutral', label: 'vs prior 30 d' }}
             rows={rows}
             phase="ready"
           />
           <StatCell
-            label="Messages"
+            title="Messages"
             value="6,400"
             delta={{ value: '-9%', polarity: 'neutral', label: 'vs prior 30 d' }}
             rows={rows}

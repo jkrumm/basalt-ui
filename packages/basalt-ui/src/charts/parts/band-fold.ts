@@ -31,7 +31,7 @@ const TONE_GLYPH: Partial<Record<StatusTone, string>> = { warn: '!', bad: '×' }
 
 type ToneSource = Pick<NamedChartState, 'glyph' | 'tone'> & { color?: string | undefined }
 
-/** A state's status tone: its own, else the one its status colour names. */
+/** A state's status tone: its own, else the one its status color names. */
 export function toneOf(s: ToneSource): StatusTone | undefined {
   return (
     s.tone ?? (s.color === CV_STATUS.warn ? 'warn' : s.color === CV_STATUS.bad ? 'bad' : undefined)

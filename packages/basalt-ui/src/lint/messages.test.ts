@@ -2,7 +2,7 @@
  * No shipped message names a fix another shipped rule reports (lint cycle 1, lint-1.16). The
  * messages are collected from every surface that writes one: the rule table's `fix` and `next`, the
  * `message` options the preset writes for each shipped profile, the generated no-restyle contracts
- * and the stylelint preset. The class-utility tokens and bare colour roles they propose run through
+ * and the stylelint preset. The class-utility tokens and bare color roles they propose run through
  * the class rules at each profile the message ships at (lint-3.11), and the at-rules they name
  * through the stylesheet's at-rule ban (lint-3.12). A clause that says `at bridge` is read at that
  * profile only.
@@ -93,7 +93,7 @@ const UTILITY =
   /(?<![\w-])(?:[a-z][\w-]*:)*-?(?:gap|space-[xy]|[pm][xytrblse]?|[wh]|size|max-[wh]|min-[wh]|text|bg|border|rounded|shadow|flex|grid|col|row|justify|items|self|overflow|ring|outline|font|leading|tracking|z|inset|basis|grow|shrink|order)-[A-Za-z0-9*.[\]/%]+(?![\w-])/g
 
 /**
- * A colour role named bare (`on-brand`), tried as the ink utility it stands for. Only a hyphenated
+ * A color role named bare (`on-brand`), tried as the ink utility it stands for. Only a hyphenated
  * role reads: a one-word role (`brand`, `ink`) is also a plain English word in the prose.
  */
 const ROLE = new RegExp(
@@ -213,7 +213,7 @@ describe('shipped messages', () => {
   })
 
   it('would flag a fix another rule rejects at its profile', () => {
-    // cycle 3's fixed-colour message (lint-3.11) and shadcn's own no-unknown-classes advice (lint-3.12)
+    // cycle 3's fixed-color message (lint-3.11) and shadcn's own no-unknown-classes advice (lint-3.12)
     expect(classOffenders(at('on-brand for ink on a brand fill', ['parts']))).not.toEqual([])
     expect(classOffenders(at('on-brand ink on a brand fill at bridge', ['bridge', 'app']))).toEqual(
       [],
@@ -223,7 +223,7 @@ describe('shipped messages', () => {
     ])
   })
 
-  it('feeds a raw colour per prefix through the bridge no-raw-colors message (lint-4.13)', () => {
+  it('feeds a raw color per prefix through the bridge no-raw-colors message (lint-4.13)', () => {
     const rule = preset('bridge').rules['shadcn/no-raw-colors'] as [string, { message: string }]
     const template = rule[1].message
     // shadcn's suggestions keep the variant and ignore the role (`dark:bg-primary`, `text-dim-bar`),
@@ -245,11 +245,11 @@ describe('shipped messages', () => {
   })
 
   it('names the theme class for a token name written as a class (lint-4.14)', () => {
-    const colourMessages = messages.filter((m) =>
+    const colorMessages = messages.filter((m) =>
       /shadcn\/no-(?:raw-colors|unknown-classes) message$/.test(m.source),
     )
-    expect(colourMessages.length).toBe(6)
-    for (const { source, text } of colourMessages) {
+    expect(colorMessages.length).toBe(6)
+    for (const { source, text } of colorMessages) {
       expect(text, source).toContain('hover is bg-accent')
       expect(text, source).toContain('canvas is bg-background')
     }
@@ -262,7 +262,7 @@ describe('shipped messages', () => {
   })
 
   it('names the surface for a white or black fill (lint-4.15)', () => {
-    const fix = messages.find((m) => m.source === 'basalt/fixed-colour black-white fix')?.text
+    const fix = messages.find((m) => m.source === 'basalt/fixed-color black-white fix')?.text
     expect(fix).toContain('surface is Card')
     expect(fix).toContain('bg-card or bg-background for a surface at bridge')
   })

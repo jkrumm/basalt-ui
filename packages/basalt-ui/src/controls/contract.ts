@@ -77,14 +77,8 @@ export type FilterSetProps = {
   match?: { shown: number; total: number }
 }
 
-/** The bound field is `state`; `handle` is a deprecated alias for one minor. */
-export type ViewTabsBinding<T extends string = string> =
-  | { state: ControlHandle<T>; handle?: undefined }
-  | {
-      /** @deprecated Use `state`; removed in the next minor. */
-      handle: ControlHandle<T>
-      state?: undefined
-    }
+/** The bound field is `state`. */
+export type ViewTabsBinding<T extends string = string> = { state: ControlHandle<T> }
 
 // ---- Forms (state-persistence-forms 6) ----------------------------------------------------
 

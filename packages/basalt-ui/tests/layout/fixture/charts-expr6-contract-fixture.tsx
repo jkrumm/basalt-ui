@@ -35,7 +35,7 @@ function Figure(props: { id: string; mono: boolean }) {
 function Cell(props: { id: string; mono: boolean }) {
   return (
     <div data-testid={props.id} className="min-w-0">
-      <StatCell label="Last drop" value={3} unit="min" sub={WHEN} subMono={props.mono} />
+      <StatCell title="Last drop" value={3} unit="min" sub={WHEN} subMono={props.mono} />
     </div>
   )
 }

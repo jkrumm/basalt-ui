@@ -53,6 +53,7 @@ describe('kebab', () => {
     expect(kebab('StatCard')).toBe('stat-card')
     expect(kebab('createSearchStore')).toBe('create-search-store')
     expect(kebab('BASALT')).toBe('basalt')
+    expect(kebab('MOTION_EASE_ENTER')).toBe('motion-ease-enter')
     expect(kebab('BasaltDataTable')).toBe('basalt-data-table')
   })
 })

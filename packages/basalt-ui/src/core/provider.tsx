@@ -78,7 +78,7 @@ function applyScheme(scheme: Scheme): void {
  * No `basalt-ui/ui/*` primitive needs it or a router: `primitive.contract.test.tsx` renders each with
  * none and inside one with no `link`. What each prop changes for an island: `docs/static-site.md`.
  *
- * @useWhen an app mounts its tree once at the entry, so the colour scheme, the locale, the link every link prop renders through and the push binding are set in one place
+ * @useWhen an app mounts its tree once at the entry, so the color scheme, the locale, the link every link prop renders through and the push binding are set in one place
  * @neverWhen a leaf renders on its own (it needs no provider: English, `auto` scheme, a plain anchor)
  *
  * @example

@@ -77,7 +77,7 @@ type CalendarSingle = {
   /** The picked day as `YYYY-MM-DD`, or null. Omit it to let the calendar keep its own pick. */
   value?: CalendarDate | null
   /** Called with the clicked or keyed-in day, as `YYYY-MM-DD`. */
-  onChange?: (day: CalendarDate) => void
+  onValueChange?: (day: CalendarDate) => void
 }
 
 type CalendarRangeSelection = {
@@ -85,7 +85,7 @@ type CalendarRangeSelection = {
   /** The picked span, or null. Omit it to let the calendar keep its own pick. */
   value?: CalendarRange | null
   /** Called once both ends are picked, never with a half range. */
-  onChange?: (range: CalendarRange) => void
+  onValueChange?: (range: CalendarRange) => void
 }
 
 export type CalendarProps = CalendarShared &
@@ -99,7 +99,7 @@ export const calendarParts = ['calendar'] as const
  * A month of days, inline: no field and no popup. Use it for a mini month beside a schedule or a
  * page's own day picker. Arrow keys move by day and week, Page Up and Down by month, Shift with Page
  * by year, Home and End to the week's ends, and a click or Enter picks a day. A day in `marks` gets
- * up to three dots and says busy in its name, so a colour never carries the meaning alone.
+ * up to three dots and says busy in its name, so a color never carries the meaning alone.
  *
  * @useWhen a month is shown inline: a mini month beside a schedule, or a page's day picker with no field
  * @neverWhen a form field picks a day (use `DatePicker`), or the page shows events by the hour (use `Schedule` from `basalt-ui/cards`)
@@ -130,8 +130,8 @@ export function Calendar(props: CalendarProps): ReactElement {
   const value = props.value === undefined ? inner : props.value
   const day = typeof value === 'string' ? value : null
   const span = typeof value === 'object' && value !== null ? value : null
-  const onDayChange = props.mode === 'range' ? undefined : props.onChange
-  const onRangeChange = props.mode === 'range' ? props.onChange : undefined
+  const onDayChange = props.mode === 'range' ? undefined : props.onValueChange
+  const onRangeChange = props.mode === 'range' ? props.onValueChange : undefined
   const rangeSelected: DateRange | undefined =
     draft ??
     (span === null ? undefined : { from: toLocalDate(span.from), to: toLocalDate(span.to) })

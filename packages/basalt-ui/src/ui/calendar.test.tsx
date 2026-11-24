@@ -80,7 +80,7 @@ describe('calendar', () => {
         aria-label="November"
         month="2026-11-01"
         today={TODAY}
-        onChange={(day) => picked.push(day)}
+        onValueChange={(day) => picked.push(day)}
       />,
     )
     fireEvent.click(dayButton('2026-11-20'))
@@ -95,7 +95,7 @@ describe('calendar', () => {
         mode="range"
         month="2026-11-01"
         today={TODAY}
-        onChange={(range) => picked.push(range)}
+        onValueChange={(range) => picked.push(range)}
       />,
     )
     fireEvent.click(dayButton('2026-11-10'))

@@ -1,6 +1,6 @@
 // Blocks: a `// @valid` or `// @invalid` header starts one; `// @errors a,b` names the message ids
 // an invalid block reports (default: this form), `// @filename`, `// @options <json>` and `// @ts`
-// (oxlint only: needs a TS parser) set the run. The test (src/lint/rules/structure/colour-literal.test.ts) feeds each block to the rule.
+// (oxlint only: needs a TS parser) set the run. The test (src/lint/rules/structure/color-literal.test.ts) feeds each block to the rule.
 
 // @invalid
 const fill = '#ff8800'
@@ -51,7 +51,7 @@ import tokens from '#ff8800'
 // A call named defineSeries is no exemption: the series file is the one place a pair is written.
 const SERIES = defineSeries({ sessions: { light: '#2871c7', dark: '#5190f7' } })
 const other = { light: '#ff8800', dark: '#112233' }
-// @errors colour-literal,colour-literal,colour-literal,colour-literal
+// @errors color-literal,color-literal,color-literal,color-literal
 
 // @valid
 // @filename src/basalt.tokens.ts
@@ -74,11 +74,11 @@ ctx.shadowColor = 'red'
 // @invalid
 const style = { color: 'red', backgroundColor: 'whitesmoke' }
 
-// @errors colour-literal,colour-literal
+// @errors color-literal,color-literal
 // @invalid
 const mark = <rect fill="steelblue" stroke="black" />
 
-// @errors colour-literal,colour-literal
+// @errors color-literal,color-literal
 // @valid
 ctx.strokeStyle = BASALT.ink
 ctx.fillStyle = 'transparent'
@@ -105,14 +105,14 @@ const row = { rowId: '#456', number: '#789' }
 
 // @invalid
 const mark = { color: '#123', fill: '#456' }
-// @errors colour-literal,colour-literal
+// @errors color-literal,color-literal
 
 // @invalid
 const paint = { 'line-color': 'crimson' }
 
 // @invalid
 const circle = { 'circle-color': 'white', 'fill-color': 'steelblue' }
-// @errors colour-literal,colour-literal
+// @errors color-literal,color-literal
 
 // @invalid
 const edge = { stroke: 'hsl(var(--border))' }
@@ -160,5 +160,5 @@ const wide = 'color(from var(--basalt-accent) srgb r g b / 50%)'
 
 // @valid
 const nearby = 'url(#from)'
-const word = 'Choose a colour from the palette'
+const word = 'Choose a color from the palette'
 const fn = 'format(from the list)'

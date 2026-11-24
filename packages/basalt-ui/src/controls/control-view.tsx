@@ -1,7 +1,7 @@
 /**
  * `ControlView`: the one place a bound control is drawn. It owns the label, the renderer of the
  * handle's kind and the override cue, so a page author who writes `spec(...)` cannot leave the cue
- * out. A control that overrides its global shows a neutral `Local` chip (text, never colour alone)
+ * out. A control that overrides its global shows a neutral `Local` chip (text, never color alone)
  * titled `Overrides global: <value>`, and a reset that unsets the override.
  *
  * The presentation (`pill`, `row`, `inline`) comes from the home through context; with no home it is
@@ -59,7 +59,7 @@ function ResetIcon(): ReactElement {
  * One bound control, drawn from its `spec`: the label (visible in every presentation, so a select at
  * a generic default such as `All` still says what it filters), the input of the handle's kind and, when a
  * widget overrides its global, the cue and the reset. The cue is a neutral `Local` chip (text, never
- * colour alone) titled `Overrides global: <value>`, with `Use global` on a row and `Reset <label> to
+ * color alone) titled `Overrides global: <value>`, with `Use global` on a row and `Reset <label> to
  * global` elsewhere. The presentation comes from the home; there is no `variant` prop.
  *
  * @useWhen a home draws one `FilterSpec` and must show when a card overrides its global

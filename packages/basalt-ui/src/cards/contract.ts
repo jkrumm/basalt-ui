@@ -55,12 +55,12 @@ export type StatCardProps = CardTarget &
     sub?: string | undefined
     /** The sub line is a time or an id: drawn in the mono face with tabular numerals. */
     subMono?: boolean | undefined
-    /** Called only in `ready` and `stale`, in a fixed clipping box of `chartHeight` (72 px: plot 56 + label row 16). */
+    /** Called only in `ready` and `stale`, in a fixed clipping box of `height` (72 px: plot 56 + label row 16). */
     chart?: BoxSlot | undefined
     /** The chart box's height in px, default 72. A one-line chart (a `Meter`, about 20 px) passes its own, so the card has no empty band; every phase holds the one height. */
-    chartHeight?: number | undefined
+    height?: number | undefined
     /** The three labels under the chart (start, middle, end), drawn in the 16 px row so the slot draws the plot alone. */
-    xLabels?: readonly [string, string, string] | undefined
+    axisLabels?: readonly [string, string, string] | undefined
     footer?: FootFacts | undefined
     controls?: ControlsSlot<'widget'> | undefined
     menu?: CardMenu | undefined
@@ -78,12 +78,12 @@ export type StatRow = {
 /** An `undefined` field is an absent one, so a maybe-value passes straight. */
 export type StatCellProps = CardTarget &
   FrameState & {
-    label: string
-    /** A glyph before the label, drawn in the caption's muted ink. */
+    title: string
+    /** A glyph before the title, drawn in the caption's muted ink. */
     icon?: IconComponent | undefined
-    /** The series colour of the mark this figure reads, drawn as a dot before the label. */
+    /** The series color of the mark this figure reads, drawn as a dot before the title. */
     swatch?: { light: string; dark: string } | undefined
-    qualifier?: string | undefined
+    subtitle?: string | undefined
     info?: string | undefined
     value?: number | string | null | undefined
     unit?: string | undefined

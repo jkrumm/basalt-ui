@@ -40,10 +40,10 @@ export const PRESET_FILE = '.oxlintrc.basalt.json'
 const OXLINTRC = '.oxlintrc.json'
 const SCRIPT_FILE = /\.[cm]?[jt]sx?$/
 
-/** A hex literal is `colour-literal`, the one form that runs at every profile that lints a root. */
+/** A hex literal is `color-literal`, the one form that runs at every profile that lints a root. */
 export const DEFAULT_OFFENDER: Offender = {
   content: "export const seeded = '#ff0000'\n",
-  fired: (id) => id === 'basalt/colour-literal',
+  fired: (id) => id === 'basalt/color-literal',
 }
 
 export type WeakenedInput = {
@@ -447,7 +447,7 @@ function managedIds(
   }
   if (blanket.length > 0) {
     problems.push(
-      `file-level disable silences waiver-needs-reason: ${blanket.join(', ')}; waive the line with a reason, declare the path in manifest.deepRender and name colour-literal, shadcn/no-inline-styles or raw-scroll, or, for a generated file, add its path to ignorePatterns in ${OXLINTRC}`,
+      `file-level disable silences waiver-needs-reason: ${blanket.join(', ')}; waive the line with a reason, declare the path in manifest.deepRender and name color-literal, shadcn/no-inline-styles or raw-scroll, or, for a generated file, add its path to ignorePatterns in ${OXLINTRC}`,
     )
   }
   return problems.length > 0

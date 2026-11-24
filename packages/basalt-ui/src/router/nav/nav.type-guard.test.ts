@@ -151,7 +151,7 @@ export const missingLabel = defineNav({
 
 // ── 4. an unknown item key (the hole a flat `{ id, label, to }` shape would have) ─────────────────
 // `Constrain<T, C>` is an ASSIGNABILITY check and assignability does no excess-property checking, so
-// a flat carrier shape would accept `colour` silently. `Exact<T, Shape>` types foreign keys `never`.
+// a flat carrier shape would accept `color` silently. `Exact<T, Shape>` types foreign keys `never`.
 
 export const unknownItemKey = defineNav({
   sections: [
@@ -159,8 +159,8 @@ export const unknownItemKey = defineNav({
       id: 'g',
       label: 'G',
       items: [
-        // @ts-expect-error 'colour' is not a nav item key
-        { id: 'x', label: 'X', colour: 'red', link: linkOptions({ to: '/' }) },
+        // @ts-expect-error 'color' is not a nav item key
+        { id: 'x', label: 'X', color: 'red', link: linkOptions({ to: '/' }) },
       ],
     },
   ],
@@ -183,8 +183,8 @@ export const unknownChildKey = defineNav({
             {
               id: 'y',
               label: 'Y',
-              // @ts-expect-error 'colour' is not a nav item key, one level down
-              colour: 'red',
+              // @ts-expect-error 'color' is not a nav item key, one level down
+              color: 'red',
               link: linkOptions({ to: '/cards' }),
             },
           ],
@@ -238,8 +238,8 @@ export const unknownGrandchildKey = defineNav({
                 {
                   id: 'z',
                   label: 'Z',
-                  // @ts-expect-error 'colour' is not a nav item key, two levels down
-                  colour: 'red',
+                  // @ts-expect-error 'color' is not a nav item key, two levels down
+                  color: 'red',
                   link: linkOptions({ to: '/table' }),
                 },
               ],
@@ -261,8 +261,8 @@ export const unknownPinnedKey = defineNav({
     {
       id: 'p',
       label: 'P',
-      // @ts-expect-error 'colour' is not a nav item key on a pinned item
-      colour: 'red',
+      // @ts-expect-error 'color' is not a nav item key on a pinned item
+      color: 'red',
       link: linkOptions({ to: '/' }),
     },
   ],
@@ -290,8 +290,8 @@ export const unknownSectionKey = defineNav({
     {
       id: 'g',
       label: 'G',
-      // @ts-expect-error 'colour' is not a section key
-      colour: 'red',
+      // @ts-expect-error 'color' is not a section key
+      color: 'red',
       items: [{ id: 'x', label: 'X', link: linkOptions({ to: '/' }) }],
     },
   ],

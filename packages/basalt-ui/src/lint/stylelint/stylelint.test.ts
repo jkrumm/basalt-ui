@@ -68,7 +68,7 @@ async function lint(files: string, configFile = SHIPPED_CONFIG): Promise<Map<str
 
 /** Each offender fixture and the rule it must fire. */
 const OFFENDERS: [file: string, rule: string][] = [
-  ['named-colour.css', 'color-named'],
+  ['named-color.css', 'color-named'],
   ['hex.css', 'color-no-hex'],
   ['rgb.css', 'function-disallowed-list'],
   ['oklch.css', 'function-disallowed-list'],
@@ -94,7 +94,7 @@ const OFFENDERS: [file: string, rule: string][] = [
   ['radius-percent.css', 'declaration-property-value-allowed-list'],
   ['raw-line-height.css', 'declaration-property-value-allowed-list'],
   ['basalt-declaration.css', 'property-disallowed-list'],
-  ['theme-colour-declared.css', 'property-disallowed-list'],
+  ['theme-color-declared.css', 'property-disallowed-list'],
   ['theme-radius-font-declared.css', 'property-disallowed-list'],
   ['important.css', 'declaration-no-important'],
   ['viewport-media.css', 'media-feature-name-disallowed-list'],
@@ -243,7 +243,7 @@ describe('messages', () => {
     expect(plugin[0]?.text).toContain('`Prose`')
   })
 
-  it('a fill-only colour, a fixed width and a fixed track each fire once, a legal twin none', async () => {
+  it('a fill-only color, a fixed width and a fixed track each fire once, a legal twin none', async () => {
     for (const file of [
       'color-chart-fill.css',
       'color-status-tint.css',

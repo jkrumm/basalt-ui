@@ -30,7 +30,7 @@ its six woff2 files relative to itself (`./files/`), so copy `dist/css/files` be
 | `prose.css`      | `.basalt-prose` for h2-h4, paragraphs, lists, code, tables                                     |
 | `fonts.css`      | the `@font-face` rules for the three faces plus Head Digits                                    |
 
-Your own rules beat `.basalt-prose` without `!important`. Read colour, spacing and type through
+Your own rules beat `.basalt-prose` without `!important`. Read color, spacing and type through
 `var(--basalt-*)`, never a literal.
 
 ## Diagrams (archify)
@@ -42,7 +42,7 @@ diagram follows the page's light and dark scheme with no second palette. The dia
 `--basalt-surface` (the canvas); on a card, set `--basalt-surface: var(--basalt-card)` on the card, or
 `data-surface='card'` where `tailwind.css` is loaded (it owns that attribute rule). The file is unlayered on purpose (archify's
 own theme blocks are, and an unlayered rule out-ranks a layered one); it needs `tokens.css` loaded, since
-it carries no fallback colours.
+it carries no fallback colors.
 
 ## Retune the tokens
 
@@ -112,4 +112,4 @@ smallest island (a provider and one `Button`) about 9 KB, nearly all of it the b
 ## What a static page does not get
 
 Components, the Tailwind bridge, charts and the shell are other profiles. They read the same tokens,
-so moving up later changes no colour. Firefox and Safari are not covered by the browser tests.
+so moving up later changes no color. Firefox and Safari are not covered by the browser tests.

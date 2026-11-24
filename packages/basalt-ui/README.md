@@ -305,7 +305,7 @@ waives nothing. The 2.x `theme-allow` and `theme-allow-file` annotations are ine
 
 ### Consumer-series extensibility
 
-App-specific series colours live in the consumer, authored once in the app's `basalt.tokens.ts`. `init` seeds it at `bridge` and above (`--extra <file>` at `tokens` and `site`), emits `basalt.tokens.css` from it with `tokens:css --extra`, and imports that sheet in the stylesheet entry. The file is import-free, the one place raw colour is written, and a pair is `{ light, dark }`:
+App-specific series colors live in the consumer, authored once in the app's `basalt.tokens.ts`. `init` seeds it at `bridge` and above (`--extra <file>` at `tokens` and `site`), emits `basalt.tokens.css` from it with `tokens:css --extra`, and imports that sheet in the stylesheet entry. The file is import-free, the one place raw color is written, and a pair is `{ light, dark }`:
 
 ```ts
 // src/basalt.tokens.ts

@@ -2,7 +2,7 @@
  * The class family under both hosts (guardrails section 13): ESLint's RuleTester in process,
  * oxlint's `plugins-dev` RuleTester in a Node child over a bundled copy of the same suites. The
  * suites come from the fixtures (`class.cases.ts`); the tests below add the input-to-id table, the
- * fix-token check, the padding-form check and the no-hand-typed-colour check.
+ * fix-token check, the padding-form check and the no-hand-typed-color check.
  */
 import { afterAll, describe, expect, it } from 'bun:test'
 import { mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs'
@@ -101,13 +101,13 @@ describe('input to id', () => {
       input: 'bg-(--basalt-good)',
       code: `export const a = <div className="bg-(--basalt-good)" />`,
       ruleId: 'basalt/tw-off-law',
-      messageId: 'app-colour-arbitrary',
+      messageId: 'app-color-arbitrary',
     },
     {
       input: 'border-l-4 border-bad',
       code: `export const a = <div className="border-l-4 border-bad" />`,
       ruleId: 'basalt/tw-off-law',
-      messageId: 'app-colour',
+      messageId: 'app-color',
       also: [
         { ruleId: 'basalt/tw-off-law', messageId: 'side-stripe' },
         { ruleId: 'basalt/logical-properties', messageId: 'border-side' },
@@ -134,16 +134,16 @@ describe('input to id', () => {
     {
       input: 'bg-black',
       code: `export const a = <div className="bg-black" />`,
-      ruleId: 'basalt/fixed-colour',
+      ruleId: 'basalt/fixed-color',
       messageId: 'black-white',
     },
     {
-      // Two distinct violations on one token (contrast, and colour in app code): both report.
+      // Two distinct violations on one token (contrast, and color in app code): both report.
       input: 'text-chart-1',
       code: `export const a = <div className="text-chart-1" />`,
       ruleId: 'basalt/status-fill-as-text',
       messageId: 'text-on-fill',
-      also: [{ ruleId: 'basalt/tw-off-law', messageId: 'app-colour' }],
+      also: [{ ruleId: 'basalt/tw-off-law', messageId: 'app-color' }],
     },
     {
       input: 'overflow-auto',
@@ -189,8 +189,8 @@ describe('forms', () => {
     'overflow-scroll': 'ui/scroll-area',
     'off-ladder-spacing': 'ladder step',
     'surface-recipe': 'Card',
-    'app-colour': 'Status',
-    'app-colour-arbitrary': 'Status',
+    'app-color': 'Status',
+    'app-color-arbitrary': 'Status',
     'alpha-on-premixed': 'pre-mixed token',
     'numeric-container': '@narrow:',
     'important-modifier': 'cva variant',
@@ -221,7 +221,7 @@ describe('forms', () => {
     expect(Object.keys(CLASS_RULES)).toEqual([
       'viewport-keyed',
       'dark-fork',
-      'fixed-colour',
+      'fixed-color',
       'status-fill-as-text',
       'raw-scroll',
       'tw-off-law',
@@ -233,8 +233,8 @@ describe('forms', () => {
     expect(all).toHaveLength(34)
   })
 
-  it('runs viewport-keyed, dark-fork, fixed-colour and status-fill-as-text from bridge up', () => {
-    for (const id of ['viewport-keyed', 'dark-fork', 'fixed-colour', 'status-fill-as-text']) {
+  it('runs viewport-keyed, dark-fork, fixed-color and status-fill-as-text from bridge up', () => {
+    for (const id of ['viewport-keyed', 'dark-fork', 'fixed-color', 'status-fill-as-text']) {
       expect(CLASS_RULES[id as keyof typeof CLASS_RULES].profiles).toContain('bridge')
     }
     for (const id of ['raw-scroll', 'app-spacing'] as const) {
@@ -286,7 +286,7 @@ describe('forms', () => {
     expect(lint(readFixture(padding?.fixture as string))).toEqual([])
   })
 
-  it('reads tw-off-law colours from zone-a.ts, never a hand list', () => {
+  it('reads tw-off-law colors from zone-a.ts, never a hand list', () => {
     const sources = readdirSync(import.meta.dirname)
       .filter((file) => file.endsWith('.ts') && !/\.(?:test|cases)\.ts$/.test(file))
       .map((file) => readFileSync(join(import.meta.dirname, file), 'utf8'))

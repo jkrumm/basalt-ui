@@ -228,7 +228,7 @@ export function ListPage({
       <div data-shot="summary">
         <StatGroup variant="flush" label="Inventory">
           <StatCell
-            label="Stock value"
+            title="Stock value"
             phase={query}
             value={ready ? f.money(stockValue, 'EUR', { maximumFractionDigits: 0 }) : null}
             delta={
@@ -246,7 +246,7 @@ export function ListPage({
             sub={ready ? 'At unit cost' : undefined}
           />
           <StatCell
-            label="Below reorder point"
+            title="Below reorder point"
             phase={query}
             value={ready ? below.length : null}
             meter={
@@ -262,7 +262,7 @@ export function ListPage({
             sub={ready ? `${below.length - out.length} low, ${out.length} out` : undefined}
           />
           <StatCell
-            label="Out of stock"
+            title="Out of stock"
             phase={query}
             value={ready ? out.length : null}
             status={
@@ -275,7 +275,7 @@ export function ListPage({
             sub={ready ? `${outOnOrder} already on order` : undefined}
           />
           <StatCell
-            label="Deliveries in 7 days"
+            title="Deliveries in 7 days"
             phase={query}
             value={ready ? week : null}
             delta={

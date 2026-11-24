@@ -50,7 +50,7 @@ export type ScheduleMarks = Readonly<Partial<Record<CalendarDate, Tone | readonl
 export type MiniMonthLike = ComponentType<{
   'aria-label': string
   value: CalendarDate
-  onChange: (day: CalendarDate) => void
+  onValueChange: (day: CalendarDate) => void
   defaultMonth: CalendarDate
   today: CalendarDate
   marks: ScheduleMarks
@@ -109,7 +109,7 @@ const LABEL_CLEAR = 12
 const NOW_TICK = 60_000
 
 /**
- * An event's fill: the tone's tint over the card colour, so the fill is opaque and no hour line
+ * An event's fill: the tone's tint over the card color, so the fill is opaque and no hour line
  * shows through an event (the tint tokens alone are mixed with transparent).
  */
 const TONE_FILL: Record<Tone, string> = {
@@ -1006,7 +1006,7 @@ function Rail<E extends ScheduleEvent>({
           key={startOfMonth(anchor)}
           aria-label={t('schedule.month')}
           value={anchor}
-          onChange={onPick}
+          onValueChange={onPick}
           defaultMonth={anchor}
           today={today}
           marks={marks}

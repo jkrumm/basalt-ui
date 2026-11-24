@@ -4,7 +4,7 @@
 
 Placed by `basalt-ui init`, refreshed by `basalt-ui sync` (`--check` gates drift in CI); edit `DESIGN.md`, not this block.
 
-**Stack** (profile `tokens`): CSS entries and `basalt-ui tokens:css` only; no React, no Tailwind, no lint preset. Colour comes from a `--basalt-*` token, never a literal.
+**Stack** (profile `tokens`): CSS entries and `basalt-ui tokens:css` only; no React, no Tailwind, no lint preset. Color comes from a `--basalt-*` token, never a literal.
 
 **Precedence** (highest wins): consumer `DESIGN.md` > global skills.
 

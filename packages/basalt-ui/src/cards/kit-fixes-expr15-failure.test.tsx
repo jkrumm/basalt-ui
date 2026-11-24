@@ -16,11 +16,11 @@ describe('StatGroup failures that differ', () => {
     const { container, getAllByRole } = render(
       <StatGroup variant="strip" label="Review">
         <StatCell
-          label="Due now"
+          title="Due now"
           phase={{ tag: 'error', message: 'The server did not answer.', retry: items }}
         />
         <StatCell
-          label="Last session"
+          title="Last session"
           phase={{ tag: 'error', message: 'The log did not answer.', retry: sessions }}
         />
       </StatGroup>,
@@ -37,8 +37,8 @@ describe('StatGroup failures that differ', () => {
   test('cells with one message and one kind still share one banner', () => {
     const { container } = render(
       <StatGroup variant="strip" label="Review">
-        <StatCell label="Due now" phase={{ tag: 'error', message: 'The server did not answer.' }} />
-        <StatCell label="Slipped" phase={{ tag: 'error', message: 'The server did not answer.' }} />
+        <StatCell title="Due now" phase={{ tag: 'error', message: 'The server did not answer.' }} />
+        <StatCell title="Slipped" phase={{ tag: 'error', message: 'The server did not answer.' }} />
       </StatGroup>,
     )
     expect(container.querySelector('[data-slot="stat-group-message"]')).not.toBeNull()

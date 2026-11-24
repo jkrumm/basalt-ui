@@ -35,7 +35,7 @@ function FillCard(props: { id: string }) {
         figure={{ value: 1234, period: 'last 14 days' }}
         chart={(box) => (
           <CartesianChart<Row>
-            ariaLabel={props.id}
+            label={props.id}
             data={rows}
             x={x}
             height={box.height}
@@ -70,7 +70,7 @@ function Stat(props: { id: string; phase: 'loading' | 'ready' }) {
         value={1234}
         delta={{ value: '+5%', polarity: 'up-good' }}
         sub="vs last month"
-        chart={(box) => <Sparkline series={SPARK} height={box.height} ariaLabel="Value" />}
+        chart={(box) => <Sparkline points={SPARK} height={box.height} label="Value" />}
         footer={[
           { label: 'Open', value: 12 },
           { label: 'Done', value: 4 },

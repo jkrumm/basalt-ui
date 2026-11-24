@@ -80,14 +80,6 @@ export type PageTabs<K extends string = string> =
       state: ControlHandle<K>
       label: string
       badges?: Partial<Record<K, PageTabBadge>>
-      handle?: undefined
-    }
-  | {
-      /** @deprecated Use `state`; removed in the next minor. */
-      handle: ControlHandle<K>
-      label: string
-      badges?: Partial<Record<K, PageTabBadge>>
-      state?: undefined
     }
 
 /** The view row's search: a string field, written as the reader types. `label` names the box. */
@@ -145,10 +137,10 @@ export type PageBarProps<K extends string = string, L extends string = string> =
   connection?: ConnectionView
   refresh?: { scope: 'page' | 'global' } & FreshnessView['button']
   /**
-   * The record this page is: a star that adds it to the shell rail's Favourites. In the view row it
+   * The record this page is: a star that adds it to the shell rail's Favorites. In the view row it
    * sits before `settings`; without a row it leads the header's actions. Nothing outside an `AppShell`.
    */
-  favourite?: FavouriteInput
+  favorite?: FavoriteInput
   /**
    * At most 5, at most one `primary`, none required. In a shell they claim the header's end unless
    * the band holds a control; then they end the band, the primary last.
@@ -237,27 +229,27 @@ export type SplitPageProps = {
 /** Type of `mdxComponents`: h2-h4 with anchors, a, table, blockquote, Callout, Steps, Step, Tabs, Tab, Figure, Kbd. */
 export type MDXComponents = Readonly<Record<string, ComponentType<never>>>
 
-// ---- Favourites (shell nav) ----------------------------------------------------------------
+// ---- Favorites (shell nav) ----------------------------------------------------------------
 
-/** One favourite as stored: serialisable, so a store can keep it anywhere. */
-export type FavouriteEntry = { id: string; label: string; href: string }
+/** One favorite as stored: serialisable, so a store can keep it anywhere. */
+export type FavoriteEntry = { id: string; label: string; href: string }
 
 /**
- * Where an app's favourites live. The default is `persisted` under `<storageKey>-favourites`; an
+ * Where an app's favorites live. The default is `persisted` under `<storageKey>-favorites`; an
  * app that keeps them on a server passes its own. `get` returns the same array until `set` or an
  * outside change replaces it.
  */
-export type FavouritesStore = {
-  get(): readonly FavouriteEntry[]
-  set(next: readonly FavouriteEntry[]): void
+export type FavoritesStore = {
+  get(): readonly FavoriteEntry[]
+  set(next: readonly FavoriteEntry[]): void
   subscribe(listener: () => void): () => void
 }
 
-/** What a record offers to be favourited: a stable id, a label, where it opens and its glyph. */
-export type FavouriteInput = {
+/** What a record offers to be favorited: a stable id, a label, where it opens and its glyph. */
+export type FavoriteInput = {
   id: string
   label: string
   target: string | NavTarget
-  /** Drawn on the rail row for this session; a stored favourite keeps no glyph. */
+  /** Drawn on the rail row for this session; a stored favorite keeps no glyph. */
   icon?: IconComponent
 }

@@ -16,7 +16,7 @@ type CalledCalendar = {
   mode?: 'single'
   size?: 'md' | 'sm'
   value?: CalendarDate | null
-  onChange?: (day: CalendarDate) => void
+  onValueChange?: (day: CalendarDate) => void
   month?: CalendarDate
   marks?: NonNullable<CalendarProps['marks']>
   today?: CalendarDate
@@ -26,7 +26,7 @@ type CalledRangeCalendar = {
   mode: 'range'
   size?: 'md' | 'sm'
   value?: CalendarRange | null
-  onChange?: (range: CalendarRange) => void
+  onValueChange?: (range: CalendarRange) => void
   month?: CalendarDate
   marks?: NonNullable<CalendarProps['marks']>
   today?: CalendarDate
@@ -36,13 +36,13 @@ export const requiresCalendar = (
   c: CalledCalendar,
 ): Pick<
   NamedSingle,
-  'aria-label' | 'mode' | 'size' | 'value' | 'onChange' | 'month' | 'marks' | 'today'
+  'aria-label' | 'mode' | 'size' | 'value' | 'onValueChange' | 'month' | 'marks' | 'today'
 > => c
 export const requiresRangeCalendar = (
   c: CalledRangeCalendar,
 ): Pick<
   NamedRange,
-  'aria-label' | 'mode' | 'size' | 'value' | 'onChange' | 'month' | 'marks' | 'today'
+  'aria-label' | 'mode' | 'size' | 'value' | 'onValueChange' | 'month' | 'marks' | 'today'
 > => c
 
 // basalt:guard closed

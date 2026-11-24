@@ -40,7 +40,7 @@ describe('num module', () => {
     expect(text(0)).toBe('0')
   })
 
-  test('format options reach Intl and tone colours a finite value', () => {
+  test('format options reach Intl and tone colors a finite value', () => {
     const { container } = render(<Num value={0.25} format={{ style: 'percent' }} tone="good" />)
     const el = container.querySelector<HTMLElement>('[data-slot="num"]')!
     expect(el.textContent).toBe('25%')

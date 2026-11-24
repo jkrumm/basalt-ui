@@ -17,7 +17,7 @@ them work (it applies and stores the choice under `basalt:scheme`, as `setScheme
 
 ```ts
 ThemeSwitch({ label, labels, className }: ThemeSwitchProps): ReactElement
-  label: string  // The group's accessible name ("Colour scheme")
+  label: string  // The group's accessible name ("Color scheme")
   labels: Readonly<Record<Scheme, string>>  // Each option's accessible name; the buttons show only a glyph
   className?: string
 ```
@@ -29,5 +29,5 @@ ThemeSwitch({ label, labels, className }: ThemeSwitchProps): ReactElement
 ## Example
 
 ```tsx
-<ThemeSwitch label="Colour scheme" labels={{ light: 'Light', dark: 'Dark', auto: 'System' }} />
+<ThemeSwitch label="Color scheme" labels={{ light: 'Light', dark: 'Dark', auto: 'System' }} />
 ```

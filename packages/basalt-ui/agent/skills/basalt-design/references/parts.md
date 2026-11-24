@@ -32,7 +32,7 @@ Every shipped part, grouped by the question it answers; open `node_modules/basal
 - `Dock` (`basalt-ui/page`): a record chosen from a list should stay open beside the screen while the reader keeps working in it, on any page
 - `EmptyState` (`basalt-ui/page`): a settled query or a filter left a page or region with nothing to list
 - `Facts` (`basalt-ui/page`): the properties of one record are listed as label and value, such as the body of an inspector in a `PageAside`
-- `FavouriteToggle` (`basalt-ui/page`): a record's page or panel should offer to pin it to the rail
+- `FavoriteToggle` (`basalt-ui/page`): a record's page or panel should offer to pin it to the rail
 - `InnerNav` (`basalt-ui/page`): a page has named sections or panes the URL should remember (settings, the sections of a record)
 - `OverlayHost` (`basalt-ui/page`): an app opens overlays by key through `defineOverlays`
 - `Page` (`basalt-ui/page`): a route renders a screen: its bar, its sections and an optional aside live under one Page
@@ -70,7 +70,7 @@ Every shipped part, grouped by the question it answers; open `node_modules/basal
 - `RowList` (`basalt-ui/cards`): the rows are things of one kind, each with a name, an optional second line, a verdict and a figure, shown beside a chart that draws the same items (ids with ages, windows with hours, resources with a hop)
 - `Schedule` (`basalt-ui/cards`): dated events with a start and an end are read by the day and the hour: deliveries, calls, shifts, bookings
 - `StatCard` (`basalt-ui/cards`): a page shows one headline figure with its change, verdict and trend as a card
-- `StatCell` (`basalt-ui/cards`): a status bar or KPI row shows one figure with its qualifier, meter, trend and a few rows
+- `StatCell` (`basalt-ui/cards`): a status bar or KPI row shows one figure with its subtitle, meter, trend and a few rows
 - `StatGroup` (`basalt-ui/cards`): a page shows several headline figures side by side, a status bar or a row of KPIs
 - `StepRail` (`basalt-ui/cards`): a pipeline, deploy, job run or trace summary shows its steps and their durations
 - `Verdict` (`basalt-ui/cards`): a card states a state in one word with a tone (`status` on a stat card)
@@ -113,7 +113,7 @@ Every shipped part, grouped by the question it answers; open `node_modules/basal
 
 ## Move the reader between pages and links
 
-- `BasaltProvider` (`basalt-ui/router`): an app mounts its tree once at the entry, so the colour scheme, the locale, the link every link prop renders through and the push binding are set in one place
+- `BasaltProvider` (`basalt-ui/router`): an app mounts its tree once at the entry, so the color scheme, the locale, the link every link prop renders through and the push binding are set in one place
 
 ## Render prose, markdown or code
 
@@ -176,7 +176,7 @@ Every shipped part, grouped by the question it answers; open `node_modules/basal
 - `basalt-ui/ui/slider` (`Slider`): a number or a low-high range is picked on a bounded scale and approximate is fine
 - `basalt-ui/ui/sortable-list` (`SortableList`): the user sets an order by hand: a settings list, the order of tabs or columns
 - `basalt-ui/ui/status` (`Status`, `Swatch`): one entity has a verdict word with a dot (Healthy, Degraded) in a row or a header
-- `basalt-ui/ui/swatch-picker` (`SwatchPicker`): the user tags a record with one colour of the palette: a stage, a label, a calendar
+- `basalt-ui/ui/swatch-picker` (`SwatchPicker`): the user tags a record with one color of the palette: a stage, a label, a calendar
 - `basalt-ui/ui/switch` (`Switch`): a setting turns on or off and takes effect at once
 - `basalt-ui/ui/table` (`Table`): the rows are static and need no sort, filter, paging or selection: a short list, a spec sheet, a receipt
 - `basalt-ui/ui/tabs` (`Tabs`): the panels share one page and the reader switches between them in place

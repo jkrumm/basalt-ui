@@ -438,6 +438,6 @@ export function xRefLineMarks<X extends ChartX>(opts: {
 export const dotSwatch = (color: string): string =>
   `radial-gradient(circle, ${color} 0 3px, transparent 3.5px) center / 100% 100% no-repeat`
 
-/** A hollow ring: a 1.5px band of the colour between two radii. */
+/** A hollow ring: a 1.5px band of the color between two radii. */
 export const ringSwatch = (color: string): string =>
   `radial-gradient(circle, transparent 0 2px, ${color} 2.5px 4px, transparent 4.5px) center / 100% 100% no-repeat`

@@ -25,7 +25,7 @@ describe('generateCss', () => {
     }
   })
 
-  test('a border with no colour utility is the hairline, in the basalt layer, ahead of every utility', () => {
+  test('a border with no color utility is the hairline, in the basalt layer, ahead of every utility', () => {
     const css = generated['tailwind.css']
     const layer = css.slice(css.indexOf('@layer basalt {'))
     expect(layer).toContain('::file-selector-button {\n    border-color: var(--basalt-hairline);')
@@ -137,7 +137,7 @@ describe('archify.css', () => {
     expect(set.toSorted()).toEqual(ARCHIFY_CLASSIC_VARS.toSorted())
   })
 
-  test('carries no colour literal: every value is a token read', () => {
+  test('carries no color literal: every value is a token read', () => {
     for (const value of Object.values(ARCHIFY_VARS)) {
       expect(value).toMatch(/var\(--basalt-[a-z0-9-]+\)/)
       expect(value).not.toMatch(/#[0-9a-f]{3,8}\b|rgba?\(|hsl|oklch\(/i)

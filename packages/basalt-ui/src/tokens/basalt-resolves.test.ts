@@ -5,7 +5,7 @@ import { BASALT } from './core'
 
 /**
  * `BASALT.*` is a set of `var(--basalt-*)` refs, so a member naming a variable the emitted sheet lacks paints
- * nothing (an unset SVG fill is black, an unset colour is inherited). `check-tokens` reads `var()`
+ * nothing (an unset SVG fill is black, an unset color is inherited). `check-tokens` reads `var()`
  * strings in source, never `BASALT.*` members, so this is the gate that holds them: every ref a `BASALT` member
  * carries is one `css/tokens.css` defines.
  */
@@ -24,7 +24,7 @@ describe('BASALT refs resolve in the v3 token sheet', () => {
     (value.match(/--basalt-[a-z0-9-]+/g) ?? []).map((name): [string, string] => [path, name]),
   )
 
-  test('BASALT carries colour and radius refs to check', () => {
+  test('BASALT carries color and radius refs to check', () => {
     expect(refs.length).toBeGreaterThan(20)
   })
 

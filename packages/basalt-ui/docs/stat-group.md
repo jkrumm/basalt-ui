@@ -30,7 +30,7 @@ StatGroup({ variant, label, children }: StatGroupProps): ReactElement | null
 
 ```tsx
 <StatGroup variant="strip" label="Fleet health">
-  <StatCell icon={Rocket} label="Deploys" value={164} delta={{ value: '+12%', polarity: 'up-good', label: 'vs prior 7 days' }} chart={perDay} phase={query} />
-  <StatCell icon={Clock} label="Median duration" value={174} unit="s" delta={{ value: '-14 s', polarity: 'up-bad', label: 'vs prior 7 days' }} phase={query} />
+  <StatCell icon={Rocket} title="Deploys" value={164} delta={{ value: '+12%', polarity: 'up-good', label: 'vs prior 7 days' }} chart={perDay} phase={query} />
+  <StatCell icon={Clock} title="Median duration" value={174} unit="s" delta={{ value: '-14 s', polarity: 'up-bad', label: 'vs prior 7 days' }} phase={query} />
 </StatGroup>
 ```

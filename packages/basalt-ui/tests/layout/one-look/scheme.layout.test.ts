@@ -340,7 +340,7 @@ layout('print emulation shows light values only', () => {
 
 layout('forced colors', () => {
   for (const theme of ['light', 'dark'] as const) {
-    test(`${theme}: the card stays legible and the focus ring uses a system colour`, async () => {
+    test(`${theme}: the card stays legible and the focus ring uses a system color`, async () => {
       const page = await open(null, '<button id="f" type="button">Go</button>')
       await page.raw.evaluate((t) => document.documentElement.setAttribute('data-theme', t), theme)
       await page.raw.emulateMedia({ forcedColors: 'active' })

@@ -179,7 +179,7 @@ describe('PageBar without a shell', () => {
     ).not.toContain('basis-full')
   })
 
-  test('tabs take { handle, label } and draw a tab strip bound to the handle', () => {
+  test('tabs take { state, label } and draw a tab strip bound to the handle', () => {
     const view = memoryHandle<string>('view', 'a', {
       kind: 'enum',
       options: [
@@ -229,7 +229,7 @@ describe('PageBar without a shell', () => {
     })
     render(
       <Page>
-        <PageBar tabs={{ handle: view, label: 'View' }} />
+        <PageBar tabs={{ state: view, label: 'View' }} />
       </Page>,
     )
     expect(band()).not.toBeNull()
