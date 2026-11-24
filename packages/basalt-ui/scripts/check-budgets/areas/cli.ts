@@ -59,11 +59,12 @@ export const rows: readonly RowDef[] = [
   // 12869 -> 12905 (bench-theme-attributes, Issue 3105): `tokens:css --accents <names>` emits the accent sheet, one :root[data-accent] block per named accent (cli/tokens-css.ts +33, cli/help.ts +3). Consumer: an app that offers its readers an accent picker.
   // 12947 -> 12970 (trial 2 kit defects): shot detect reads the frames the rest shot draws in their empty phase (measure.ts +9, detect.ts +13, types.ts +1).
   // 12905 -> 12947 (shot-overlap): `shot`'s measurer clips each text box by its clipping ancestors and its own ellipsis before the overlap test (measure.ts, +42).
+  // 12970 -> 13272 (ga-agent-layer, Issue 3167): `init --profile app` installs lucide-react for the icon provider its root templates mount (init/steps.ts +13); `shot detect --facts <dir>` counts the words, phrases and constants a page says in several places (shot/facts.ts +208, shot/detect.ts +79, help.ts +2). Consumer: a basalt-design page whose fact count was a shell one-liner.
   {
     id: 'cli-lines',
     order: 110,
     label: 'CLI non-test lines (src/cli/**)',
-    ceiling: 12970,
+    ceiling: 13272,
     measure: () =>
       totalLines(
         walkFiles(join(PKG_ROOT, 'src/cli'), /\.tsx?$/).filter((p) => !/\.test\.tsx?$/.test(p)),
@@ -187,6 +188,13 @@ export const raises: Raises = {
       to: 12947,
       consumer:
         '`basalt-ui shot` rounds on the schedule page (Issue 3103): text a scroller clips or an ellipsis cuts is measured as the box the reader sees, not its full run',
+      repo: 'basalt-ui',
+    },
+    {
+      from: 12970,
+      to: 13272,
+      consumer:
+        '`init --profile app` mounts the lucide icon defaults and installs lucide-react; `shot detect --facts <dir>` replaces the shell fact count the basalt-design skill carried',
       repo: 'basalt-ui',
     },
   ],
