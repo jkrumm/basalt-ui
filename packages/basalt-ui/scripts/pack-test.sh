@@ -696,4 +696,7 @@ done
 ./node_modules/.bin/oxlint -c .oxlintrc.json --deny-warnings src
 echo "blocks: $(echo $BLOCKS | wc -w | tr -d ' ') added; tsc and oxlint (app preset, deny warnings) clean"
 
+echo "==> consumers: the tarball through init, build and render, app and site (scripts/pack-consumers.sh)"
+bash "$PWD_PKG/scripts/pack-consumers.sh" "$ABS_TGZ"
+
 echo "PACK TEST PASSED"
