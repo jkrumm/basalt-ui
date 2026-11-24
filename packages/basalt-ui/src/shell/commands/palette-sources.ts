@@ -6,7 +6,7 @@ import type { AnyRouter } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 import { persisted } from '../../core/persisted'
 import type { IconComponent, NavTarget } from '../../core/ports'
-import { isInAppPath } from '../../core/url'
+import { isInAppPath, safeUrl } from '../../core/url'
 import { targetHref } from '../../router/nav-target'
 
 /** A secondary action of a result: a trailing button, and `Mod+Enter` for the first one. */
@@ -64,6 +64,7 @@ function isRecent(value: unknown): value is Recent {
     typeof id === 'string' &&
     typeof title === 'string' &&
     typeof to === 'string' &&
+    (isInAppPath(to) || safeUrl(to, 'untrusted') !== null) &&
     (kind === undefined || typeof kind === 'string') &&
     (detail === undefined || typeof detail === 'string')
   )
@@ -109,8 +110,13 @@ export function rememberRecent(
 export function openResult(router: AnyRouter, to: string | NavTarget): void {
   const href = typeof to === 'string' ? to : targetHref(router, to)
   if (href === undefined) return
-  if (isInAppPath(href)) void router.navigate({ href } as never)
-  else window.location.assign(href)
+  if (isInAppPath(href)) {
+    void router.navigate({ href } as never)
+    return
+  }
+  // A source's rows are data from a search: only a URL the untrusted policy admits leaves the app.
+  const safe = safeUrl(href, 'untrusted')
+  if (safe !== null) window.location.assign(safe)
 }
 
 export type SourceRows = { source: PaletteSource; results: readonly PaletteResult[] }
