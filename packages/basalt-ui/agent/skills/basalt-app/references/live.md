@@ -98,7 +98,7 @@ export function useLive(): void {
 ## Settle, reload, persist, multi-tab
 
 - Settle: a synced value adopts the server's copy only after its own write window (2 s) has passed; `createSyncedState` owns the gate, `pauseWhileMutating` covers just the PUT in flight.
-- Reload: `channel.frames()` throws `ChannelReset` on a `reset`; a loop catches it, reloads the list once, then continues. A page that cannot trust its list reloads on `reset: 'gap'` too.
+- Reload: `channel.frames()` throws an error whose `name` is `'ChannelReset'` on a `reset`; a loop catches it, reloads the list once, then continues. A page that cannot trust its list reloads on `reset: 'gap'` too.
 - Persist: device preferences follow the person through `persisted.setStorage(adapter)`; the recipe is `node_modules/basalt-ui/docs/recipes/storage-adapter.md`. Cache snapshots are an app concern, and a persister needs `shouldDehydrateQuery`.
 - Multi-tab: each tab owns its channel (the hub closes 1 s after the last subscriber, so StrictMode and route swaps do not churn the socket). There is no leader election; cross-tab preference changes ride `persisted`'s storage event.
 
