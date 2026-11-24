@@ -84,7 +84,7 @@ describe('closure', () => {
     const peers = requiredPeers(closureOf(['ui/date-picker', 'table'], graph))
     expect(peers.get('react-day-picker')).toBe('basalt-ui/ui/date-picker')
     expect(peers.get('@tanstack/react-table')).toBe('basalt-ui/table')
-    expect(peers.get('@base-ui/react')).toBe('basalt-ui/controls')
+    expect(peers.get('@base-ui/react')).toBe('basalt-ui/cards')
     expect(peers.has('shiki')).toBe(false)
   })
 
