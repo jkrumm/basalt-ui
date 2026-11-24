@@ -20,9 +20,16 @@ describe('table.css', () => {
     expect(withoutComments).not.toMatch(/@(source|apply|import|theme|utility|variant|plugin)\b/)
   })
 
-  test('every rule sits in the basalt.table layer', () => {
+  test('every rule sits in the basalt.table layer, after the order statement', () => {
     const outside = withoutComments.replace(/@layer basalt\.table \{[\s\S]*\}\s*$/, '').trim()
-    expect(outside).toBe('')
+    expect(outside).toBe('@layer theme, base, basalt, components, utilities;')
+  })
+
+  test('states the layer order tailwind.css declares, so a chunk linked first keeps basalt above base', () => {
+    const tailwind = readFileSync(new URL('../css/tailwind.css', import.meta.url), 'utf8')
+    const order = /@layer [a-z, ]+;/.exec(tailwind)?.[0]
+    expect(order).toBeDefined()
+    expect(withoutComments.trimStart().startsWith(order ?? '')).toBe(true)
   })
 
   test('a pinned or tick cell takes the surface the table sits on, never the bare canvas', () => {
@@ -80,8 +87,8 @@ describe('table.css', () => {
   // on the phone card, four container blocks (bench-table-reading); 6,807 with the list layout's one-line
   // rows and the gallery card's skipped paint (bench-view-layouts); 6,866 with the unclipped message row of an
   // empty or failed grid (Issue 3088); 6,931 with a grid table's cards at the container's width, one rule in
-  // each of the four card tiers (Issue 3091); 6,959 with the three hover rules behind (hover: hover) (Issue 3206); 7,919 with the phone list row beside the fields grid; 8,005 with the inset ring of its Details door and the touch floor of a footer pick.
-  test('stays small: under 8,050 bytes gzipped', () => {
-    expect(gzipSync(SHEET).length).toBeLessThan(8050)
+  // each of the four card tiers (Issue 3091); 6,959 with the three hover rules behind (hover: hover) (Issue 3206); 7,919 with the phone list row beside the fields grid; 8,005 with the inset ring of its Details door and the touch floor of a footer pick; 8,098 with the layer order stated first, so a chunk linked before the app's stylesheet keeps `basalt` above Tailwind's `base` (Issue 3231).
+  test('stays small: under 8,150 bytes gzipped', () => {
+    expect(gzipSync(SHEET).length).toBeLessThan(8150)
   })
 })

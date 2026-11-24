@@ -11,7 +11,9 @@
  *
  * Utilities sit above `basalt` in the layer order, so the few declarations that fight a part's
  * utility (cell hairline and nowrap) are `!important`, which layers invert in our favour.
+ * The order comes first, so a sheet linked before the app's keeps `basalt` above `base`.
  */
+@layer theme, base, basalt, components, utilities;
 @layer basalt.table {
   [data-slot='table-scroller'] {
     container: table / inline-size;
