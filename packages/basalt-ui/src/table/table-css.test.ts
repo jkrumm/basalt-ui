@@ -80,8 +80,8 @@ describe('table.css', () => {
   // on the phone card, four container blocks (bench-table-reading); 6,807 with the list layout's one-line
   // rows and the gallery card's skipped paint (bench-view-layouts); 6,866 with the unclipped message row of an
   // empty or failed grid (Issue 3088); 6,931 with a grid table's cards at the container's width, one rule in
-  // each of the four card tiers (Issue 3091); 6,959 with the three hover rules behind (hover: hover) (Issue 3206); 7,919 with the phone list row beside the fields grid.
-  test('stays small: under 7,950 bytes gzipped', () => {
-    expect(gzipSync(SHEET).length).toBeLessThan(7950)
+  // each of the four card tiers (Issue 3091); 6,959 with the three hover rules behind (hover: hover) (Issue 3206); 7,919 with the phone list row beside the fields grid; 7,963 with the inset ring of its Details door.
+  test('stays small: under 8,000 bytes gzipped', () => {
+    expect(gzipSync(SHEET).length).toBeLessThan(8000)
   })
 })
