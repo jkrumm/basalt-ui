@@ -110,7 +110,7 @@ describe('PageBar records', () => {
 
   test('close goes back to the list, the parent when records name no close', async () => {
     await mount()
-    const close = await screen.findByRole('link', { name: 'Back' })
+    const close = await screen.findByRole('link', { name: 'Close record' })
     expect(close.getAttribute('href')).toBe('/')
   })
 })
