@@ -86,8 +86,7 @@ describe('placement', () => {
     expect(read(dir, 'AGENTS.md')).toContain(BEGIN)
   })
 
-  // flips in: v3-sk-5-rules (the v3 AGENTS block template names where skills and rules live)
-  it.failing('inv 14b: the block names the skills and rules it points at', async () => {
+  it('inv 14b: the block names the skills and rules it points at', async () => {
     const dir = installed()
     await cli(['sync'], dir)
     const block = read(dir, 'AGENTS.md')
