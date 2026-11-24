@@ -345,6 +345,8 @@ export type PlotContext<T, X extends ChartX = ChartX> = {
   yLog?: boolean
   /** Internal: the x scale kept a gutter right of the last points for the end labels (`endLabelGutter`), so each sits beside its line's end. */
   endRoom?: boolean
+  /** Internal: `auto` names the lines with end labels on the narrow class too ({@link phoneNamesFit}); the legend gives way to them there. */
+  phoneNames?: boolean
 }
 
 /** The marks a `marks` function returns: TanStack marks from the allowed `@tanstack/charts/*`

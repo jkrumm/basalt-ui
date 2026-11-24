@@ -446,6 +446,15 @@ export type ChartCardProps = Omit<FrameState, 'phase'> & {
    * row the card takes the row's height and the box grows into it, so the cards of a row end level.
    */
   height?: 'auto' | 'tall' | 'short' | 'fill' | undefined
+  /**
+   * Runs the plot to the card's edges on any size: the chart box leaves the inset's side padding, so it is as
+   * wide as the card, and the inset drops its gutter and rounded sides to stay one surface under it. The
+   * figure, the legend and the footer keep the card's edge. A phone card whose plot answers the page
+   * (a trend, a long series) takes it for the 12 px each side it gives back.
+   *
+   * @default false
+   */
+  bleed?: boolean | undefined
 } & (
     | (FrameHead & { chart: BoxSlot; panes?: undefined })
     /**

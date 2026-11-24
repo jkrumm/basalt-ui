@@ -1,0 +1,10 @@
+/*
+ * The `phone-density` fixture's Tailwind v4 entry, compiled WITH preflight like `charts-card.css`.
+ * `phone-density.layout.test.ts` compiles it into a temp directory.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './phone-density-fixture.tsx';
+@source '../../../src/charts';
+@source '../../../src/ui';
+@source '../../../src/core';
+@source '../../../src/cards';

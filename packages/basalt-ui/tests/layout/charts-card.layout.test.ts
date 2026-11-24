@@ -354,8 +354,9 @@ layout('ChartCard hover readout and card legend', () => {
           // The x value sits under the plot, centred on the x rule (a clamp at the edge aside).
           expect(xLabel.t).toBeGreaterThanOrEqual(xRule.b - 0.5)
           expect(Math.abs((xLabel.l + xLabel.r) / 2 - xRule.l)).toBeLessThan(1.5)
-          // The y value sits left of the plot, centred on the y rule.
-          expect(yLabel.r).toBeLessThanOrEqual(yRule.l + 0.5)
+          // The y value sits left of the plot, centred on the y rule; on a phone the labels are inside the plot, so it starts at the plot's edge.
+          if (viewport.width <= 480) expect(yLabel.l).toBeGreaterThanOrEqual(yRule.l - 0.5)
+          else expect(yLabel.r).toBeLessThanOrEqual(yRule.l + 0.5)
           expect(Math.abs((yLabel.t + yLabel.b) / 2 - yRule.t)).toBeLessThan(2)
           // Both read in an ink the scheme sets, never transparent.
           expect(seen.fill).not.toBe('none')

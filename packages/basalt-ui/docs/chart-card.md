@@ -32,6 +32,7 @@ ChartCard(props: ChartCardProps): ReactElement
   controls?: ControlsSlot<"widget">
   menu?: CardMenu
   height?: "auto" | "fill" | "tall" | "short"  // The chart box: `auto` (default) half the card width between 192 and 420 px; `tall` the same with a 288 px floor, for the chart that answers the page and needs its axis at 390; `short` 160 px; `fill` the card's remainder in a parent that sets the height
+  bleed?: boolean  // Runs the plot to the card's edges on any size: the chart box leaves the inset's side padding, so it is as wide as the card, and the inset drops its gutter and rounded sides to stay one surface under it; default false
   title?: string
   subtitle?: string
   icon?: IconComponent

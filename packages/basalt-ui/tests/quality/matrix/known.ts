@@ -161,26 +161,6 @@ export const KNOWN: readonly KnownFinding[] = [
     item: /svg ".*outline contrast 1\.74:1/,
     owner: 'charts: focusable plot ring contrast',
   },
-  // /kit/bar-list-series draws n41's five first-try models: the chart's own legend wraps at 390 under a
-  // coarse pointer and its toggles' hit areas overlap across the wrap.
-  {
-    route: '/kit/bar-list-series',
-    assertion: 'axe',
-    item: /^target-size \(serious\)/,
-    owner: 'charts: a wrapped interactive legend overlaps its toggles at 390 (coarse pointer)',
-  },
-  {
-    route: '/kit/bar-list-series',
-    assertion: 'focusNotObscured',
-    item: /fieldset>button ".*": covered at .* by button$/,
-    owner: 'charts: a wrapped interactive legend overlaps its toggles at 390 (coarse pointer)',
-  },
-  {
-    route: '/kit/bar-list-series',
-    assertion: 'hitOverlap',
-    item: /^\d+:button\[\] x \d+:button\[\] \(/,
-    owner: 'charts: a wrapped interactive legend overlaps its toggles at 390 (coarse pointer)',
-  },
   // /table is the v3 DataTable exemplar (v3-table-t5-exemplar); its other findings are fixed in src/table.
   {
     route: '/table',
