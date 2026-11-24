@@ -12,7 +12,7 @@ export type TableIslandProps = {
   rows: readonly SiteRow[]
   /** The locale numbers and dates read in. Default `en`. */
   locale?: string
-  /** Overrides of the table's English words, by key: `{ 'table.pager': 'Seiten' }`. */
+  /** Overrides of the table's English words, by key: `{ "table.empty": "Keine Zeilen." }`. */
   messages?: IslandMessages
 }
 

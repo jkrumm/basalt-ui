@@ -33,7 +33,7 @@ export type ChartIslandProps = {
   series: readonly ChartSeriesSpec[]
   /** The locale numbers and dates read in. Default `en`. */
   locale?: string
-  /** Overrides of the chart's English words, by key: `{ 'charts.unavailable': 'Keine Daten' }`. */
+  /** Overrides of the chart's English words, by key: `{ "charts.unavailable": "Keine Daten" }`. */
   messages?: IslandMessages
 }
 
