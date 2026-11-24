@@ -84,8 +84,9 @@ export type CommonOptions = {
   /** `false` turns sorting off for this column. */
   sortable?: false
   /**
-   * The icon drawn before the header text (any component with the `IconComponent` shape). Every kind
-   * but `custom` and `actions` draws its own by default; `false` draws none.
+   * The icon drawn before the header text (any component with the `IconComponent` shape), where header
+   * icons are on (the grid look, or `headerIcons: true`). Every kind but `custom` and `actions` has its own
+   * by default; `false` draws none.
    */
   headerIcon?: IconComponent | false
   /** What the column answers, one or two sentences: one mark after the header label opens it as a hint. */
@@ -245,7 +246,7 @@ export type DateOptions<T = unknown> = CommonOptions &
 export type RelativeTimeOptions<T = unknown> = CommonOptions &
   DateFilterOptions &
   CellIconOption<T> & {
-    /** The relative time is a time: drawn in the mono face with tabular numerals, in the cell and on its phone card line. */
+    /** The relative time is an id-like time: drawn in the mono face with tabular numerals, in the cell and on its phone card line. Default: the body face with tabular numerals. */
     mono?: boolean | undefined
   }
 export type StatusOptions<O extends string = string, T = unknown> = CommonOptions &

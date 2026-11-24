@@ -136,6 +136,19 @@ describe('the free width', () => {
     expect(plan.columns.filter((p) => p.flex).map((p) => p.capPx)).toEqual([null, null])
   })
 
+  test('a column sized to its content keeps its cap in the reading look', () => {
+    const plan = planTable(
+      [c.entity('name', { width: 'content' }), c.text('note'), c.number('a')],
+      {
+        ...quiet,
+        contentCh: { name: 12 },
+      },
+    )
+    const [name, note] = plan.columns
+    expect(name?.capPx).not.toBeNull()
+    expect(note?.capPx).toBeNull()
+  })
+
   test('the grid look keeps the cap of its kind', () => {
     const plan = planTable(columns, { ...quiet, look: 'grid' })
     expect(plan.columns.filter((p) => p.flex).every((p) => p.capPx !== null)).toBe(true)

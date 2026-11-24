@@ -82,10 +82,10 @@ export type PlannedColumn = {
   widthPx: number
   /**
    * A text-like column (title, text, link, person, tags) not resized by a reader and not sized to a short
-   * value: it shares the free width of its table, from `widthPx` up to `capPx` (no cap in the reading look).
+   * value: it shares the free width of its table, from `widthPx` up to `capPx` (the reading look has none, except for a column sized to its content).
    */
   flex: boolean
-  /** The widest a flexible column grows in px (`null`: no cap, or not flexible). The reading look has none: it fills its container. */
+  /** The widest a flexible column grows in px (`null`: no cap, or not flexible). The reading look has none, so it fills its container; a column sized to its content keeps its cap. */
   capPx: number | null
   /**
    * Kept by `phone: 'columns'`: the identity, the card's `value`, its first `meta` and the actions.
@@ -353,7 +353,10 @@ export function planInputs(inputs: readonly PlanInput[], options: PlanOptions = 
     visible: visible[index]!,
     widthPx: widths[index]!,
     flex: flexible[index]!,
-    capPx: flexible[index] && grid ? capWidthPx(c, widths[index]!) : null,
+    capPx:
+      flexible[index] && (grid || (c.content !== undefined && c.content.short === undefined))
+        ? capWidthPx(c, widths[index]!)
+        : null,
     cardDetail: c.cardFirst === true && c.card[0] === 'detail',
     phoneKeep:
       index === identity ||
