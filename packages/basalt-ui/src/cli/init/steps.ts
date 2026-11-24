@@ -202,6 +202,14 @@ function formatsWithPrettier(root: string): boolean {
   )
 }
 
+/**
+ * Runtime packages the scaffold imports that no basalt peer names, with the range `init` installs them at:
+ * the icon provider `main.tpl` and `__root.start.tpl` mount. A version the app already declares is kept.
+ */
+const SCAFFOLD_DEPS: Readonly<Partial<Record<Profile, Readonly<Record<string, string>>>>> = {
+  app: { 'lucide-react': '^1.74.0' },
+}
+
 /** What `init` installs: runtime peers into `dependencies`, the lint and build tools into `devDependencies`. */
 export type PeerPlan = {
   runtime: Record<string, string>
@@ -244,7 +252,12 @@ export function peerPlan(pkgRoot: string, profile: Profile, oxfmt: boolean): Pee
   }
   if (oxfmt) dev['oxfmt'] = spec('oxfmt')
   for (const name of BUILD_PEERS[profile]) dev[name] = spec(name)
-  const runtime = Object.fromEntries(RUNTIME_PEERS[profile].map((n) => [n, spec(n)]))
+  const scaffold = SCAFFOLD_DEPS[profile] ?? {}
+  Object.assign(ranges, scaffold)
+  const runtime = {
+    ...Object.fromEntries(RUNTIME_PEERS[profile].map((n) => [n, spec(n)])),
+    ...scaffold,
+  }
   return { runtime, dev, ranges }
 }
 

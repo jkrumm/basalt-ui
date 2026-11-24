@@ -24,6 +24,7 @@ import type { Manifest, Profile } from '../manifest'
 import { COMMAND_OPTIONS } from '../help'
 import { SESSION_NOTE } from '../agent-note'
 import { FLAGS, init } from './index'
+import { peerPlan } from './steps'
 import type { InitDeps } from './index'
 
 const repos: string[] = []
@@ -466,6 +467,7 @@ describe('init: the budget, the install and the seeds', () => {
       '@tanstack/react-query',
       '@tanstack/react-router',
       '@tanstack/router-plugin',
+      'lucide-react',
       'oxlint',
       'oxfmt',
     ]) {
@@ -474,6 +476,25 @@ describe('init: the budget, the install and the seeds', () => {
     const prettier = repo({ '.prettierignore': 'dist\n' })
     const kept = await runInit(['--profile', 'app', '--root', 'src'], prettier)
     expect(kept.commands.flat().join(' ')).not.toContain('oxfmt')
+  })
+
+  it('installs lucide-react for the app profile only, and keeps the version an app declares', async () => {
+    const { commands } = await runInit(['--profile', 'app', '--root', 'src'], repo())
+    expect(commands.flat()).toContain('lucide-react@^1.74.0')
+    expect(peerPlan(packageRoot(), 'app', false).runtime).toHaveProperty('lucide-react', '^1.74.0')
+    for (const profile of PROFILES.filter((p) => p !== 'app')) {
+      expect(peerPlan(packageRoot(), profile, false).runtime, profile).not.toHaveProperty(
+        'lucide-react',
+      )
+    }
+    const declared = repo()
+    put(
+      declared,
+      'package.json',
+      JSON.stringify({ name: 'fixture', dependencies: { 'lucide-react': '^0.460.0' } }),
+    )
+    const kept = await runInit(['--profile', 'app', '--root', 'src'], declared)
+    expect(kept.commands.flat().join(' ')).not.toContain('lucide-react')
   })
 
   it('--no-install runs no command and prints it', async () => {
