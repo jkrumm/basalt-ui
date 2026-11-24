@@ -152,7 +152,8 @@ SCRATCH3=""
 SCRATCH4=""
 SCRATCH5=""
 SCRATCH6=""
-trap 'rm -rf "$SCRATCH" "$SCRATCH2" "$SCRATCH3" "$SCRATCH4" "$SCRATCH5" "$SCRATCH6"; rm -f "$LISTFILE"' EXIT
+SCRATCH7=""
+trap 'rm -rf "$SCRATCH" "$SCRATCH2" "$SCRATCH3" "$SCRATCH4" "$SCRATCH5" "$SCRATCH6" "$SCRATCH7"; rm -f "$LISTFILE"' EXIT
 cd "$SCRATCH"
 echo '{ "name": "scratch", "private": true, "type": "module" }' >package.json
 # vite is pinned to the package's own dev version: an unpinned `vite` resolves to the registry's
@@ -510,8 +511,8 @@ JS
 node --import "$PKGDIR/scripts/css-noop-register.mjs" controls.mjs
 
 echo "==> page type-checks, bundles and renders with no router installed (the parts profile)"
-SCRATCH6=$(mktemp -d)
-cd "$SCRATCH6"
+SCRATCH7=$(mktemp -d)
+cd "$SCRATCH7"
 echo '{ "name": "scratch-no-router", "private": true, "type": "module" }' >package.json
 # The parts profile installs no router. `InnerNav` builds its hrefs through the field handle's
 # `useHref()`, so nothing `basalt-ui/page` reaches, in its JS or its .d.ts, may import
