@@ -20,22 +20,22 @@ describe('DataPanel: the server HTML is the final layout', () => {
     const html = renderToString(
       <DataPanel title="Open tasks" phase="loading" bodySize={{ rows: 6 }} body={list} />,
     )
-    // the five data rows, one tallest card each
-    expect(html).toContain('--panel-cards:540px')
+    // the five data rows, one tallest row each
+    expect(html).toContain('--panel-cards:370px')
     expect(html).toContain('@max-regular:min-h-(--panel-cards)')
     expect(html).toContain('height:calc(6 * var(--basalt-row-h, 2rem))')
   })
 
-  test('cardHeight sizes the phone floor: five 92 px cards, not five 108 px ones', () => {
+  test('cardHeight sizes the phone floor: five 66 px rows, not five 74 px ones', () => {
     const html = renderToString(
       <DataPanel
         title="Open tasks"
         phase="loading"
-        bodySize={{ rows: 6, cardHeight: 92 }}
+        bodySize={{ rows: 6, cardHeight: 66 }}
         body={list}
       />,
     )
-    expect(html).toContain('--panel-cards:460px')
+    expect(html).toContain('--panel-cards:330px')
   })
 
   test('the loading skeleton folds to cards by container query, one markup for both widths', () => {
@@ -48,7 +48,7 @@ describe('DataPanel: the server HTML is the final layout', () => {
 
   test('a ready frame holds the declared rows at the row token, whatever the pointer, and the same phone floor as loading', () => {
     const html = renderToString(<DataPanel title="Open tasks" bodySize={{ rows: 6 }} body={list} />)
-    expect(html).toContain('--panel-cards:540px')
+    expect(html).toContain('--panel-cards:370px')
     expect(html).toContain('@max-regular:min-h-(--panel-cards)')
     // the row token is CSS: a coarse pointer's taller row is the server's height too
     expect(html).toContain('height:calc(6 * var(--basalt-row-h, 2rem))')
