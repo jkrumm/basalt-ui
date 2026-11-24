@@ -797,6 +797,51 @@ describe('init: with sync', () => {
   })
 })
 
+describe('init: the viewport meta and the seeded viewports', () => {
+  const META =
+    '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />'
+  const PAGE =
+    '<!doctype html>\n<html lang="en">\n  <head>\n    <meta charset="UTF-8" />\n    <title>app</title>\n  </head>\n  <body>\n    <div id="root"></div>\n  </body>\n</html>\n'
+  const argv = ['--profile', 'app', '--root', 'src']
+
+  it('adds the viewport meta to an index.html that has none, once, in the head, and no zoom lock anywhere', async () => {
+    const dir = createVite()
+    put(dir, 'index.html', PAGE)
+    expect((await runInit(argv, dir)).code).toBe(0)
+    const html = read(dir, 'index.html')
+    expect(html.split(META).length - 1).toBe(1)
+    expect(html.indexOf(META)).toBeGreaterThan(html.indexOf('<head>'))
+    expect(html.indexOf(META)).toBeLessThan(html.indexOf('</head>'))
+    // The agent files name the lock to forbid it; only the app's own files must not carry one.
+    for (const [path, text] of Object.entries(snapshot(dir))) {
+      if (path.startsWith('.claude/')) continue
+      expect(text).not.toContain('maximum-scale')
+      expect(text).not.toContain('user-scalable')
+    }
+  })
+
+  it('keeps an index.html that already has a viewport meta, unchanged', async () => {
+    const dir = createVite()
+    const own = PAGE.replace(
+      '<title>',
+      '<meta name="viewport" content="width=device-width, initial-scale=1.0" />\n    <title>',
+    )
+    put(dir, 'index.html', own)
+    expect((await runInit(argv, dir)).code).toBe(0)
+    expect(read(dir, 'index.html')).toBe(own)
+  })
+
+  it('seeds the manifest viewports, and keeps an owner-edited list on a second init', async () => {
+    const dir = createVite()
+    expect((await runInit(argv, dir)).code).toBe(0)
+    expect(manifestOf(dir).viewports).toEqual(['1800x1200', '390x844'])
+    const edited = { ...manifestOf(dir), viewports: ['1800x1200'] }
+    put(dir, '.basalt/manifest.json', `${JSON.stringify(edited, null, 2)}\n`)
+    expect((await runInit(argv, dir)).code).toBe(0)
+    expect(manifestOf(dir).viewports).toEqual(['1800x1200'])
+  })
+})
+
 describe('init: twice produces no diff', () => {
   it.each(PROFILES)('%s', async (profile) => {
     const dir = repo({

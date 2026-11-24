@@ -28,6 +28,7 @@ import { isSiblingApp } from '../resolver'
 import { sync } from '../sync'
 import { claimPrefix } from '../sync/sibling'
 import { tokensCss } from '../tokens-css'
+import { DEFAULT_VIEWPORTS } from '../shot/types'
 
 export type Runner = (argv: string[], dir: string) => boolean
 
@@ -158,7 +159,7 @@ export function declareManifest(ctx: Ctx): { error: string } | null {
       managed: {},
       deepRender: [],
       authoredContent: [],
-      viewports: [],
+      viewports: [...DEFAULT_VIEWPORTS],
       tokens: [],
       rest: {},
     } satisfies Manifest)
@@ -544,6 +545,25 @@ export function seedDesign(ctx: Ctx): void {
   const text = template.replace(/\{\{(\w+)\}\}/g, (all, key: string) => vars[key] ?? all)
   writeText(ctx.root, 'DESIGN.md', text)
   say('wrote DESIGN.md')
+}
+
+/** The phone contract: `viewport-fit=cover` for the safe-area insets, and no zoom lock. */
+const VIEWPORT_META = /<meta\s[^>]*name=["']viewport["']/i
+const VIEWPORT_TAG =
+  '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />'
+
+/** Adds the viewport meta as the first tag of an app's index.html that has none; a viewport meta already there is kept. */
+export function placeViewportMeta(ctx: Ctx): void {
+  if (ctx.args.profile !== 'app') return
+  const app = resolveAppDir(ctx.root)
+  if ('error' in app) return
+  const rel = app.rel === '' ? 'index.html' : `${app.rel}/index.html`
+  const html = readText(ctx.root, rel)
+  if (html === null || VIEWPORT_META.test(html)) return
+  const head = /<head\b[^>]*>/i.exec(html)
+  if (head === null) return void ctx.todo.push(`add ${VIEWPORT_TAG} to the <head> of ${rel}`)
+  const at = head.index + head[0].length
+  writeText(ctx.root, rel, `${html.slice(0, at)}\n    ${VIEWPORT_TAG}${html.slice(at)}`)
 }
 
 export function appName(root: string): string {
