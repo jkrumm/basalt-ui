@@ -457,6 +457,23 @@ describe('init: the budget, the install and the seeds', () => {
     expect(changed[0]).toMatch(/^peers: oxlint \^1\.90\.0 is outside .*installing \d+\.\d+\.\d+$/)
   })
 
+  it('reinstalls a ranged peer declared outside its range and keeps one inside it', async () => {
+    const dir = repo()
+    put(
+      dir,
+      'package.json',
+      JSON.stringify({
+        name: 'fixture',
+        devDependencies: { tailwindcss: '^3.4.17', '@tailwindcss/vite': '^4.3.9' },
+      }),
+    )
+    const { commands, log } = await runInit(['--profile', 'app', '--root', 'src'], dir)
+    const args = commands.flat()
+    expect(args.some((arg) => arg.startsWith('tailwindcss@'))).toBe(true)
+    expect(args.some((arg) => arg.startsWith('@tailwindcss/vite@'))).toBe(false)
+    expect(log).toContain('peers: tailwindcss ^3.4.17 is outside what basalt-ui supports')
+  })
+
   it('installs every peer the app profile needs, and no oxfmt for a Prettier repo', async () => {
     const { commands } = await runInit(['--profile', 'app', '--root', 'src'], repo())
     const all = commands.flat().map((s) => s.replace(/@[\d~^].*$/, ''))
