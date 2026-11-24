@@ -19,6 +19,8 @@ type Account = {
   stage: Stage
   arr: number
   since: string
+  /** The chance the deal renews, 0 to 1. */
+  odds: number
 }
 
 const NAMES = [
@@ -49,6 +51,7 @@ const ACCOUNTS: Account[] = Array.from({ length: 24 }, (_, i) => ({
   stage: STAGES[(i * 5 + 1) % STAGES.length]!,
   arr: 4_800 + ((i * 7919) % 91_000),
   since: `202${3 + (i % 3)}-${String((i % 12) + 1).padStart(2, '0')}-1${i % 9}`,
+  odds: ((i * 37) % 100) / 100,
 }))
 
 /**
@@ -133,6 +136,16 @@ function LayoutsRoute(): ReactElement {
       c.person('owner'),
       c.money('arr', { header: 'Annual revenue', currency: 'USD', footer: 'sum' }),
       c.date('since', { header: 'Customer since' }),
+      c.progress('odds', { header: 'Renewal odds', filter: 'range', footer: 'mean' }),
+      c.custom('segment', {
+        header: 'Segment',
+        render: (a) => (a.arr >= 50_000 ? 'Enterprise' : 'Growth'),
+        sortValue: (a) => a.arr,
+        search: (a) => (a.arr >= 50_000 ? 'Enterprise' : 'Growth'),
+        filter: 'text',
+        card: 'meta',
+        priority: 3,
+      }),
     ],
     data: accounts,
     getRowId: (a) => a.id,

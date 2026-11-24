@@ -32,14 +32,7 @@ const store = defineControls({
   },
 })
 
-type Entry = Project & { win: number }
-const ENTRIES: readonly Entry[] = PROJECTS.map((p) => ({
-  ...p,
-  win: p.open === 0 ? 0 : p.running / p.open,
-}))
-const stageOf = (p: Entry): string => (p.running > 0 ? 'Running' : p.open > 0 ? 'Ready' : 'Idle')
-
-const c = col<Entry>()
+const c = col<Project>()
 
 const AGAINST = 'the 7 days before'
 
@@ -58,7 +51,7 @@ const SPACE = c.text('space', {
   card: 'subtitle',
 })
 
-/** The figures of a row: with the name, the ten columns of the console's table, then the win odds and the stage. */
+/** The figures of a row: with the name, the ten columns of the console's table, no `custom`. */
 const FIGURES = [
   c.meter('open', {
     header: 'Now',
@@ -153,23 +146,6 @@ const FIGURES = [
     headerIcon: false,
     card: 'meta',
   }),
-  c.progress('win', {
-    header: 'Win odds',
-    filter: 'range',
-    help: 'Share of the open rows that are running now.',
-    priority: 3,
-    headerIcon: false,
-    card: 'meta',
-  }),
-  c.custom('stage', {
-    header: 'Stage',
-    render: (p) => stageOf(p),
-    sortValue: (p) => stageOf(p),
-    search: (p) => `${stageOf(p)} ${p.tag}`,
-    filter: 'text',
-    card: 'meta',
-    priority: 3,
-  }),
 ]
 
 /**
@@ -181,7 +157,7 @@ const FIGURES = [
 function ProjectsRoute(): ReactElement {
   const values = store.useValues()
   const phrase = values.search.trim().toLowerCase()
-  const searched = ENTRIES.filter((p) => phrase === '' || p.name.includes(phrase))
+  const searched = PROJECTS.filter((p) => phrase === '' || p.name.includes(phrase))
   const rows = searched.filter((p) => matchesQuick(p, values.view))
   const countOf = (quick: Quick): number => searched.filter((p) => matchesQuick(p, quick)).length
 
