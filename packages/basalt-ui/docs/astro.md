@@ -38,7 +38,7 @@ every head. At `astro:build:done` it runs the island check (below).
 The sheet is `basalt-ui/static.css`, then the token sheets `.basalt/manifest.json` records, then the
 `@source` lines of everything the site's own imports reach (`basalt-ui/charts`, `basalt-ui/ui/dialog`, the MDX
 tags): the closure `basalt()` computes for a Vite app, so a dialog island brings the button it draws, with an
-`@source not` line for each primitive nothing reaches. The paths resolve from the installed package, so a hoisted workspace install works the same and no
+`@source not` line for each primitive nothing reaches (never `alert` or `table`, which `static.css` sources). The paths resolve from the installed package, so a hoisted workspace install works the same and no
 `@source` line is written by hand. It is rewritten on every build and dev start; a new import is picked up
 on the next one. `basaltAstro({ sources: false })` injects `basalt-ui/static.css` instead, for a site that
 lists its own sources.
