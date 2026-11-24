@@ -36,8 +36,23 @@ export const SHIPPED_RULES: readonly string[] = [
   'basalt-charts',
 ]
 
+/** The rule a `site` root takes beside `basalt-tokens`; an app session never loads it. */
+export const SITE_RULES: readonly string[] = ['basalt-site']
+
 /** The five rule files together, never more (every session loads them: concept section 6). */
 export const RULES_TOTAL_BUDGET = 230
+
+/**
+ * A `site` install's whole layer: the tokens and site rules, the site skill and the site block
+ * (`placesAgentFile` in src/cli/sync/render.ts decides the set).
+ */
+export const SITE_LAYER_FILES: readonly string[] = [
+  'agent/rules/basalt-tokens.md',
+  'agent/rules/basalt-site.md',
+  'agent/skills/basalt-site/SKILL.md',
+  'agent/templates/AGENTS-block.site.md.tpl',
+]
+export const SITE_LAYER_TOTAL_BUDGET = 150 // tokens 44, site rule 34, skill 43, block 25
 
 // ──────────────────────────────────────────────────────────────────────────────
 // check-coverage — 7-assertion coverage gate
@@ -60,6 +75,9 @@ export const AGENT_LINE_BUDGETS: Readonly<Record<string, number>> = {
   'agent/skills/basalt-charts/SKILL.md': 25,
   'agent/templates/AGENTS-block.md.tpl': 50, // imports nothing; names every skill
   'agent/templates/AGENTS-block.tokens.md.tpl': 15, // the tokens-profile variant
+  'agent/rules/basalt-site.md': 34,
+  'agent/skills/basalt-site/SKILL.md': 43,
+  'agent/templates/AGENTS-block.site.md.tpl': 25, // the site-profile variant: names the site set only
   // Outside the layer total: a subagent loads only when invoked, not into every session.
   'agent/reviewer/basalt-design-reviewer.md': 31, // the thin wrapper; agent/reviewer/rubric.md carries the items
   'agent/templates/DESIGN.md.tpl': 36,
@@ -75,6 +93,8 @@ export const AGENT_BYTE_BUDGETS: Readonly<Record<string, number>> = {
   'agent/skills/basalt-design/SKILL.md': 6_951,
   'agent/skills/basalt-charts/SKILL.md': 7_972,
   'agent/templates/AGENTS-block.md.tpl': 4_618,
+  'agent/skills/basalt-site/SKILL.md': 4_076,
+  'agent/templates/AGENTS-block.site.md.tpl': 2_295,
   'agent/reviewer/rubric.md': 18_443,
 }
 
@@ -155,17 +175,17 @@ export function checkCoverage(flags: readonly string[] = [], pkgRoot: string = P
   // ── Assertion 2: agent/rules/ lists exactly the five shipped rule files, inside the total ──
   const rulesDir = resolve(pkgRoot, 'agent/rules')
   const onDisk = existsSync(rulesDir) ? readdirSync(rulesDir).toSorted() : []
-  const wanted = SHIPPED_RULES.map((rule) => `${rule}.md`).toSorted()
+  const wanted = [...SHIPPED_RULES, ...SITE_RULES].map((rule) => `${rule}.md`).toSorted()
   for (const name of wanted.filter((n) => !onDisk.includes(n))) {
     failures.push(`Missing rule file: agent/rules/${name}`)
   }
   for (const name of onDisk.filter((n) => !wanted.includes(n))) {
     failures.push(
-      `Unexpected file in agent/rules/: ${name} (the shipped tree is exactly five rules)`,
+      `Unexpected file in agent/rules/: ${name} (the shipped tree is the five app rules and the site rule)`,
     )
   }
   const rulesTotal = onDisk
-    .filter((n) => n.endsWith('.md'))
+    .filter((n) => n.endsWith('.md') && !SITE_RULES.includes(n.replace(/\.md$/, '')))
     .reduce((sum, n) => sum + readFileSync(resolve(rulesDir, n), 'utf8').split('\n').length - 1, 0)
   if (rulesTotal > RULES_TOTAL_BUDGET) {
     failures.push(
@@ -295,7 +315,11 @@ export function checkCoverage(flags: readonly string[] = [], pkgRoot: string = P
   // assertion, so its absence is reported here. The block imports nothing (an `@` import line)
   // and never names the file that would suppress it.
   const blockRel = 'agent/templates/AGENTS-block.md.tpl'
-  for (const rel of [blockRel, 'agent/templates/AGENTS-block.tokens.md.tpl']) {
+  for (const rel of [
+    blockRel,
+    'agent/templates/AGENTS-block.tokens.md.tpl',
+    'agent/templates/AGENTS-block.site.md.tpl',
+  ]) {
     const abs = resolve(pkgRoot, rel)
     if (!existsSync(abs)) {
       failures.push(`${rel}: missing`)
@@ -319,6 +343,15 @@ export function checkCoverage(flags: readonly string[] = [], pkgRoot: string = P
     failures.push(
       `agent layer (rules + skills + AGENTS block): ${layerTotal} lines total exceeds the ` +
         `${AGENT_LAYER_TOTAL_BUDGET}-line budget`,
+    )
+  }
+  const siteTotal = SITE_LAYER_FILES.reduce((sum, rel) => {
+    const abs = resolve(pkgRoot, rel)
+    return existsSync(abs) ? sum + readFileSync(abs, 'utf8').split('\n').length - 1 : sum
+  }, 0)
+  if (siteTotal > SITE_LAYER_TOTAL_BUDGET) {
+    failures.push(
+      `site agent layer: ${siteTotal} lines total exceeds the ${SITE_LAYER_TOTAL_BUDGET}-line budget`,
     )
   }
 

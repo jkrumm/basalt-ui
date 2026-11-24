@@ -32,6 +32,7 @@ describe('carried guards', () => {
     expect(readdirSync(join(PKG_ROOT, 'agent/rules')).toSorted()).toEqual([
       'basalt-charts.md',
       'basalt-page.md',
+      'basalt-site.md',
       'basalt-state.md',
       'basalt-tokens.md',
       'basalt-ui.md',

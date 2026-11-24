@@ -165,7 +165,7 @@ const check6 = (name: string): Check => ({
 })
 
 /** The skills an agent enters through; the block names them, the rest load from their own header. */
-const ENTRY_SKILLS = ['basalt-design', 'basalt-app']
+const ENTRY_SKILLS = ['basalt-design', 'basalt-app', 'basalt-site']
 
 const check7 = (name: string): Check => ({
   id: 7,

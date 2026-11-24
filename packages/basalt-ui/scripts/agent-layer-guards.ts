@@ -13,6 +13,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 
 import { COMMAND_OPTIONS } from '../src/cli/help'
+import { placesAgentFile } from '../src/cli/sync/render'
 
 export const PKG_ROOT = resolve(import.meta.dir, '..')
 
@@ -126,6 +127,26 @@ export function docFiles(): SourceFile[] {
 
 export function blockText(): string {
   return readFileSync(join(PKG_ROOT, 'agent/templates/AGENTS-block.md.tpl'), 'utf8')
+}
+
+/** The block a `site` install receives. */
+export function siteBlockText(): string {
+  return readFileSync(join(PKG_ROOT, 'agent/templates/AGENTS-block.site.md.tpl'), 'utf8')
+}
+
+/** Each block with the skills its profile is placed: the app block names the app set, the site block the site set. */
+export function blockSkillLines(): string[] {
+  const names = skillNames()
+  return [
+    ...skillLines(
+      blockText(),
+      names.filter((n) => placesAgentFile('app', n)),
+    ),
+    ...skillLines(
+      siteBlockText(),
+      names.filter((n) => placesAgentFile('site', n)),
+    ),
+  ]
 }
 
 /** The directories under agent/skills/. */
@@ -566,7 +587,7 @@ export function allFindings(): string[] {
   const agent = agentFiles()
   const docs = docFiles()
   return [
-    ...skillLines(blockText(), skillNames()).map((f) => 'skill-lines: ' + f),
+    ...blockSkillLines().map((f) => 'skill-lines: ' + f),
     ...appsPaths(agent).map((f) => 'apps-paths: ' + f),
     ...historyFindings(agent.filter((f) => /\.(md|tpl)$/.test(f.path))).map(
       (f) => 'history ' + f.id + ': ' + f.file + ':' + f.line + ': ' + f.text,
