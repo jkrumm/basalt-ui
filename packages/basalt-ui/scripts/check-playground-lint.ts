@@ -6,14 +6,14 @@
  * nothing, and no other gate sees it.
  *
  * The scanners are the engine's own (`src/cli/lint/engine.ts`), called with the playground as the
- * project, so the verdict is the one a consumer's `basalt-ui lint` gives. The playground carries no
- * `.basalt` manifest and defines no `--extra` names.
+ * project, so the verdict is the one a consumer's `basalt-ui lint` gives. The token outputs its
+ * `.basalt/manifest.json` declares are generated sheets, never linted.
  *
  * Usage: bun packages/basalt-ui/scripts/check-playground-lint.ts [<project dir>]   (default: apps/playground)
  * Exit 0 clean; 1 with one `<file>:<line> <id>: <message>` line per finding.
  */
 import { spawnSync } from 'node:child_process'
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, relative, resolve } from 'node:path'
 
@@ -23,7 +23,13 @@ import { renderStylelintConfig } from '../src/lint/stylelint/render'
 
 const PACKAGE = resolve(import.meta.dirname, '..')
 const PLAYGROUND = resolve(PACKAGE, '..', '..', 'apps', 'playground')
-const GENERATED_SHEETS = new Set(['src/accents.css'])
+/** The `tokens:css` outputs of the install: `init` and `sync` write them, `doctor` check 10 pins them. */
+const generatedSheets = (root: string): Set<string> => {
+  const path = join(root, '.basalt/manifest.json')
+  if (!existsSync(path)) return new Set()
+  const manifest = JSON.parse(readFileSync(path, 'utf8')) as { tokens?: { out: string }[] }
+  return new Set((manifest.tokens ?? []).map((t) => t.out))
+}
 
 type StylelintResult = {
   source: string
@@ -82,9 +88,8 @@ function runStylelint(project: Project, files: readonly string[]): Finding[] {
 
 export function checkPlaygroundLint(root: string = PLAYGROUND): Finding[] {
   const project: Project = { root, manifest: null, roots: [['src', 'app']] }
-  // The playground has no manifest; its one generated sheet (`tokens:css --accents`) is skipped as a
-  // consumer's `tokens` output in `.basalt/manifest.json` is.
-  const files = rootFiles(project).filter((f) => !GENERATED_SHEETS.has(f))
+  const generated = generatedSheets(root)
+  const files = rootFiles(project).filter((f) => !generated.has(f))
   return [
     ...runCheckTokens(project, files),
     ...runStylelint(
