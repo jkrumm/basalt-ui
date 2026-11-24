@@ -105,7 +105,7 @@ Columns: `No directive` is the static HTML: `clean`, `differs` from the client:o
 | autocomplete | Autocomplete, AutocompleteInput, AutocompleteContent, AutocompleteItem | clean | client:visible | 152.0 kB | 80.8 kB | 32.3 kB | Needs the island to work: suggestions need JS; the typed text is the static picture. client:idle above the fold, client:visible below, up to 80.8 kB further. |
 | file-upload | FileUpload | clean | client:visible | 85.2 kB | 14.0 kB | 32.3 kB | Needs the island to work: the picker and drop zone need JS. client:idle above the fold, client:visible below, up to 14.0 kB further. |
 | field | Form, Field, FieldLabel, FieldDescription, FieldError, Fieldset, FieldsetLegend | clean | client:visible | 92.7 kB | 21.5 kB | 32.3 kB | Static picture first, the island adds behaviour: Base UI validates on blur and submit with JS; labels are static (FieldLabel, FieldDescription and FieldError render through Field). client:visible, up to 21.5 kB further (client:idle above the fold). |
-| form-layout | FormSection, FormRow, FormField, FormFooter | clean | client:visible | 112.7 kB | 41.5 kB | 32.3 kB | Static picture first, the island adds behaviour: the footer tracks dirty and submitting state with JS; the fields are static. client:visible, up to 41.5 kB further (client:idle above the fold). |
+| form-layout | FormSection, FormRow, FormField, FormFooter | clean | client:visible | 113.8 kB | 42.6 kB | 32.3 kB | Static picture first, the island adds behaviour: the footer tracks dirty and submitting state with JS; the fields are static. client:visible, up to 42.6 kB further (client:idle above the fold). |
 | stepper | Stepper | clean | no directive | 77.3 kB | 6.1 kB | 32.3 kB | The static HTML is the whole part, 0 bytes of JavaScript: the static step list is the whole part; steps are buttons only with onStepChange. |
 
 ## Several islands on one page
@@ -115,11 +115,11 @@ Every part of a family on one page, each its own island, in one mode: the JavaSc
 | Family | Parts | no directive | client:visible | client:idle | client:load | client:only |
 |-|-|-|-|-|-|-|
 | ui | 27 | 0 | 131.4 kB | 244.2 kB | 244.1 kB | 244.1 kB |
-| cards | 9 | 0 | 129.2 kB | 142.7 kB | 142.6 kB | 142.6 kB |
+| cards | 9 | 0 | 130.4 kB | 142.7 kB | 142.6 kB | 142.6 kB |
 | charts | 8 | 0 | 205.7 kB | 223.6 kB | 223.5 kB | 223.5 kB |
 | table | 4 | 0 | 334.9 kB | 348.5 kB | 348.5 kB | 348.5 kB |
 | content | 5 | 0 | 271.7 kB | 272.9 kB | 272.9 kB | 272.9 kB |
-| page | 19 | 0 | 199.1 kB | 280.6 kB | 280.5 kB | 364.5 kB |
+| page | 19 | 0 | 199.1 kB | 280.6 kB | 280.5 kB | 365.6 kB |
 | forms | 18 | 0 | 184.2 kB | 248.6 kB | 248.6 kB | 248.6 kB |
 
 ## Charts: is the static picture correct?
@@ -227,12 +227,12 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 - autocomplete: the shared sheet gains the Schedule and Calendar classes (Issue 3103): +39 B gzip on every part
 - file-upload: the shared sheet gains the Schedule and Calendar classes (Issue 3103): +39 B gzip on every part
 - field: the shared sheet gains the Schedule and Calendar classes (Issue 3103): +39 B gzip on every part
-- form-layout: the shared sheet gains the Schedule and Calendar classes (Issue 3103): +39 B gzip on every part
+- form-layout: phase.ts gains the settled-empty rule (settledEmpty, resolveFrame) every frame page imports; a few bytes on the form, cards and page families
 - stepper: the shared sheet gains the Schedule and Calendar classes (Issue 3103): +39 B gzip on every part
 - family ui: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
-- family cards: event list period headings, avatar actors, connector rail and folded bodies (Issue 3109, plan row bench-record-parts): the Avatar primitive joins the part
+- family cards: phase.ts gains the settled-empty rule (settledEmpty, resolveFrame) every frame page imports; a few bytes on the form, cards and page families
 - family table: one list engine behind Select, Combobox and the command palette (Issue 3102): shared option row and group header, loader states, create row, and a searchable Select on Base UI Combobox
-- family page: one list engine behind Select, Combobox and the command palette (Issue 3102): shared option row and group header, loader states, create row, and a searchable Select on Base UI Combobox
+- family page: phase.ts gains the settled-empty rule (settledEmpty, resolveFrame) every frame page imports; a few bytes on the form, cards and page families
 - family forms: one list engine behind Select, Combobox and the command palette (Issue 3102): shared option row and group header, loader states, create row, and a searchable Select on Base UI Combobox
 
 ## Findings
