@@ -44,6 +44,17 @@ describe('useOverlayRoot', () => {
     expect(result.current.root.open).toBe(false)
   })
 
+  test('a close the sheet starts can be canceled like any other', () => {
+    const { result } = renderHook(() =>
+      useOverlayRoot<Details & { cancel: () => void }>({
+        defaultOpen: true,
+        onOpenChange: (_open, details) => details.cancel(),
+      }),
+    )
+    act(() => result.current.overlay.setOpen(false))
+    expect(result.current.root.open).toBe(true)
+  })
+
   test('a controlled root never moves on its own', () => {
     const { result } = renderHook(() => useOverlayRoot<Details>({ open: true }))
     act(() => result.current.overlay.setOpen(false))

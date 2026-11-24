@@ -56,12 +56,17 @@ export function useOverlay(): OverlayState | null {
 
 /** The event details of a change no Base UI event started (Done under a calendar): shaped like Base UI's. */
 function closePress(open: boolean): Record<string, unknown> {
+  let canceled = false
   return {
     reason: open ? 'trigger-press' : 'close-press',
     event: new Event('click'),
-    cancel: () => {},
+    cancel: () => {
+      canceled = true
+    },
     allowPropagation: () => {},
-    isCanceled: false,
+    get isCanceled() {
+      return canceled
+    },
     isPropagationAllowed: false,
     trigger: undefined,
   }
