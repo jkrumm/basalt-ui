@@ -51,10 +51,11 @@ describe('exports map', () => {
     }
   })
 
-  test('./ui/* hides guards, test helpers and the slot table', () => {
+  test('./ui/* hides guards, test helpers, the slot table and the old stub barrel', () => {
     for (const key of [
       './ui/*.guard',
       './ui/guard-completeness',
+      './ui/index',
       './ui/primitive.contract',
       './ui/slots',
     ]) {

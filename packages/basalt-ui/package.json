@@ -264,6 +264,7 @@
     },
     "./ui/*.guard": null,
     "./ui/guard-completeness": null,
+    "./ui/index": null,
     "./ui/primitive.contract": null,
     "./ui/slots": null,
     "./shell": {
