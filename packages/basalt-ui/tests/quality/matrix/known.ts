@@ -97,13 +97,6 @@ export const KNOWN_CHIPS: readonly string[] = await loadCycleChips()
 export const KNOWN: readonly KnownFinding[] = [
   ...(await loadCycleKnown()),
   {
-    route: '*',
-    assertion: 'ringWalk',
-    item: /nav\[shell-rail\]>div\[shell-rail-resize\] "[^"]*": no focus outline/,
-    owner:
-      "shell: the rail's width handle shows focus as a colour on a 1px bar, never an outline. The 80-stop walk reached it only after the expression scenarios left the playground's nav (105 links down to 3); the fix row gives it a ring and removes this line",
-  },
-  {
     route: '/overview',
     assertion: 'ringWalk',
     // The pseudo catalog prints `Filters` as `[Ƒîļţéŕš~~~]`.
