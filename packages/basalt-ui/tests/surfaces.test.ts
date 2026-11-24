@@ -12,12 +12,13 @@ import { RULE_NAMES, SURFACES } from '../src/surfaces'
 const RULES_DIR = join(import.meta.dir, '..', 'agent/rules')
 
 describe('SURFACES', () => {
-  test('RULE_NAMES are exactly the shipped agent/rules/basalt-<name>.md files', () => {
+  test('RULE_NAMES and the site rule are exactly the shipped agent/rules/basalt-<name>.md files', () => {
     const onDisk = readdirSync(RULES_DIR)
       .filter((f) => /^basalt-[a-z]+\.md$/.test(f))
       .map((f) => f.slice('basalt-'.length, -'.md'.length))
       .toSorted()
-    expect<string[]>([...RULE_NAMES].toSorted()).toEqual(onDisk)
+    // `site` is the site profile's own rule (src/cli/sync/render.ts `SITE_AGENT_SET`), not a doctrine row's.
+    expect<string[]>([...RULE_NAMES, 'site'].toSorted()).toEqual(onDisk)
   })
 
   test('no subpath is labelled headless while it renders React parts', () => {

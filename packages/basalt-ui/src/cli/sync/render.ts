@@ -2,7 +2,7 @@
  * Renders what `sync` places, in memory, as bytes the engine compares with the tree: the managed
  * agent files, the AGENTS block and (through the `presetFiles` seam) generated preset files.
  *
- * Shipped layout, relative to the package root:
+ * Shipped layout, relative to the package root (which file a root receives: `AGENT_SETS`):
  *   agent/rules/basalt-*.md                              -> .claude/rules/
  *   agent/skills/basalt-<name>/ (every file)             -> .claude/skills/
  *   agent/agents/basalt-*.md, agent/reviewer/basalt-*.md -> .claude/agents/
@@ -16,7 +16,7 @@ import { join, relative, resolve, sep } from 'node:path'
 
 import { renderRulePaths } from '../index'
 import { hooksObject, mergeSettings, SETTINGS_PATH, SHIM } from '../lint/settings'
-import type { Manifest } from '../manifest'
+import type { Manifest, Profile } from '../manifest'
 import { renderTokens } from '../tokens-css'
 import { REPO, renameRefs, siblingName } from './sibling'
 import type { Sibling } from './sibling'
@@ -28,12 +28,89 @@ import type { Sibling } from './sibling'
 export type Unit = { path: string; content: string; generated?: boolean; source?: string }
 export type PresetFiles = (manifest: Manifest) => Unit[]
 
-/** Rule roots: every declared non-`tokens` root, sorted so a reorder is no drift; `src` if none. */
-export function ruleRoots(manifest: Manifest): string[] {
+/** Every declared non-`tokens` root with its profile, normalised; `src` at the manifest's profile if none. */
+function profiledRoots(manifest: Manifest): [string, Profile][] {
   const roots = Object.entries(manifest.roots)
     .filter(([, profile]) => profile !== 'tokens')
-    .map(([root]) => root.replace(/^(?:\.\/)+/, '').replace(/\/+$/, '') || '.')
-  return roots.length > 0 ? [...new Set(roots)].toSorted() : ['src']
+    .map(([root, profile]): [string, Profile] => [
+      root.replace(/^(?:\.\/)+/, '').replace(/\/+$/, '') || '.',
+      profile,
+    ])
+  return roots.length > 0 ? roots : [['src', manifest.profile]]
+}
+
+/** Rule roots: every declared non-`tokens` root, sorted so a reorder is no drift; `src` if none. */
+export function ruleRoots(manifest: Manifest): string[] {
+  return [...new Set(profiledRoots(manifest).map(([root]) => root))].toSorted()
+}
+
+/**
+ * Which shipped agent files a profile receives, by name: a rule's file stem, a skill's directory, a
+ * subagent's file stem. A `site` root is a content site on Astro: the tokens law, its own rule and
+ * its own skill, and nothing about the app frame, the router, charts or tables it does not build. Every
+ * profile from `bridge` up takes every file but the site ones; `tokens` takes none.
+ */
+export const SITE_AGENT_SET: ReadonlySet<string> = new Set(['basalt-tokens', 'basalt-site'])
+const SITE_ONLY: ReadonlySet<string> = new Set(['basalt-site'])
+
+/** Whether a root of `profile` receives the shipped agent file named `stem`. */
+export function placesAgentFile(profile: Profile, stem: string): boolean {
+  if (profile === 'tokens') return false
+  return profile === 'site' ? SITE_AGENT_SET.has(stem) : !SITE_ONLY.has(stem)
+}
+
+/** The basalt lint ids the shipped preset of `profile` turns off: a placed rule never cites one. */
+export function offLintIds(pkgRoot: string, profile: Profile): Set<string> {
+  const path = resolve(pkgRoot, `configs/oxlint-${profile}.json`)
+  if (!existsSync(path)) return new Set()
+  const rules = (JSON.parse(readFileSync(path, 'utf8')) as { rules?: Record<string, unknown> })
+    .rules
+  return new Set(
+    Object.entries(rules ?? {})
+      .filter(
+        ([id, level]) =>
+          id.startsWith('basalt/') && (Array.isArray(level) ? level[0] : level) === 'off',
+      )
+      .map(([id]) => id.slice('basalt/'.length)),
+  )
+}
+
+const TRAILING_TAGS = /((?:\s*\[[a-z]+:[^\]\s]+\])+)\s*$/
+const ONE_TAG = /\[([a-z]+):([^\]\s]+)\]/g
+
+/**
+ * A rule's text without the `[lint:<id>]` tags of `off` ids. A bullet left with no tag goes with
+ * them: the rule it stated does not run at that profile, so it is no law there.
+ */
+export function withoutOffTags(text: string, off: ReadonlySet<string>): string {
+  if (off.size === 0) return text
+  const lines = text.split('\n')
+  const out: string[] = []
+  for (let at = 0; at < lines.length;) {
+    if (!/^[-*]\s/.test(lines[at] ?? '')) {
+      out.push(lines[at] ?? '')
+      at++
+      continue
+    }
+    let end = at + 1
+    while (end < lines.length && /^\s+\S/.test(lines[end] ?? '')) end++
+    const bullet = lines.slice(at, end)
+    at = end
+    const last = bullet.length - 1
+    const tail = bullet[last] ?? ''
+    const tags = TRAILING_TAGS.exec(tail)
+    if (tags === null) {
+      out.push(...bullet)
+      continue
+    }
+    const kept = [...(tags[1] ?? '').matchAll(ONE_TAG)]
+      .filter(([, kind, id]) => !(kind === 'lint' && off.has(id ?? '')))
+      .map(([tag]) => tag)
+    if (kept.length === 0) continue
+    bullet[last] = `${tail.slice(0, tags.index)} ${kept.join(' ')}`
+    out.push(...bullet)
+  }
+  return out.join('\n')
 }
 
 /** Every declared root is `tokens` (or none is declared at profile `tokens`): no agent layer, no lint, no hook. */
@@ -70,28 +147,38 @@ export function renderManaged(
   sibling: Sibling | null = null,
 ): Unit[] {
   if (tokensOnly(manifest)) return []
-  const roots = ruleRoots(manifest).map((root) =>
+  const declared = profiledRoots(manifest)
+  const placed = (root: string): string =>
     sibling === null || sibling.appRel === ''
       ? root
       : root === '.'
         ? sibling.appRel
-        : `${sibling.appRel}/${root}`,
-  )
+        : `${sibling.appRel}/${root}`
+  const siteOff = offLintIds(pkgRoot, 'site')
+  /** The text a rule renders to: keyed on the roots that receive it, the site-off tags gone where every one is a site. */
+  const ruleText = (text: string, receivers: readonly [string, Profile][]): string => {
+    const roots = [...new Set(receivers.map(([root]) => placed(root)))].toSorted()
+    const site = receivers.every(([, profile]) => profile === 'site')
+    return renderRulePaths(site ? withoutOffTags(text, siteOff) : text, roots)
+  }
   const place = (from: string, dest: string, nested: boolean, rules = false): Unit[] =>
-    basaltFiles(resolve(pkgRoot, from), nested).map((rel) => {
+    basaltFiles(resolve(pkgRoot, from), nested).flatMap((rel) => {
+      const stem = (rel.split('/')[0] ?? '').replace(/\.md$/, '')
+      const receivers = declared.filter(([, profile]) => placesAgentFile(profile, stem))
+      if (receivers.length === 0) return []
       const text = readFileSync(resolve(pkgRoot, from, rel), 'utf8')
       const source = `${from}/${rel}`
       if (sibling === null || dest === 'agents') {
         return {
           path: `.claude/${dest}/${rel}`,
-          content: rules ? renderRulePaths(text, roots) : text,
+          content: rules ? ruleText(text, receivers) : text,
           source,
         }
       }
       const [head = '', ...tail] = rel.split('/')
       const renamed = [siblingName(head.replace(/\.md$/, ''), sibling.prefix), ...tail].join('/')
       const content = rules
-        ? renderRulePaths(text, roots)
+        ? ruleText(text, receivers)
         : renameRefs(text, sibling.prefix, skillNames(pkgRoot))
       return {
         source,
@@ -117,7 +204,8 @@ export function renderBlock(
   version: string,
   sibling: Sibling | null = null,
 ): string | null {
-  const template = resolve(pkgRoot, 'agent/templates/AGENTS-block.md.tpl')
+  const site = profiledRoots(manifest).every(([, profile]) => profile === 'site')
+  const template = resolve(pkgRoot, site ? SITE_BLOCK_TEMPLATE : BLOCK_TEMPLATE)
   if (!existsSync(template)) return null
   const vars: Record<string, string> = { BASALT_VERSION: version, PROFILE: manifest.profile }
   const fill = (_: string, key: string): string => vars[key] ?? `{{${key}}}`
@@ -129,6 +217,8 @@ export function renderBlock(
 
 export const HOOK_TEMPLATE = 'agent/templates/hook.mjs.tpl'
 const BLOCK_TEMPLATE = 'agent/templates/AGENTS-block.md.tpl'
+/** The block of an install whose every root is a `site`: it names the site set only. */
+const SITE_BLOCK_TEMPLATE = 'agent/templates/AGENTS-block.site.md.tpl'
 
 /**
  * What `init` places beside the agent files, rendered for `sync` so a later release reaches it: the
@@ -203,5 +293,7 @@ export function shippedSources(pkgRoot: string): string[] {
     }).flatMap((unit) => (unit.source === undefined ? [] : [unit.source])),
   )
   const presets = profiles.map((profile) => `configs/oxlint-${profile}.json`)
-  return [...new Set([...sources, BLOCK_TEMPLATE, HOOK_TEMPLATE, ...presets])].toSorted()
+  return [
+    ...new Set([...sources, BLOCK_TEMPLATE, SITE_BLOCK_TEMPLATE, HOOK_TEMPLATE, ...presets]),
+  ].toSorted()
 }

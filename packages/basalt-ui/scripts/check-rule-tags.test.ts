@@ -19,6 +19,7 @@ const fence = '```'
 const sources: TagSources = {
   lintIds: new Set(['color-literal', 'import-boundary']),
   typeNames: new Set(['PageBarProps']),
+  buildIds: new Set(['island-directive']),
 }
 const doc = (...body: string[]): string =>
   ['---', 'source: basalt-ui', '---', '<!-- generated -->', '# T', '', ...body].join('\n')
@@ -33,6 +34,7 @@ describe('checkRuleTags', () => {
       '',
       '- Use it. [lint:color-literal] [lint:import-boundary]',
       '- Typed. [type:PageBarProps]',
+      '- Built. [build:island-directive]',
       '',
       fence + 'ts',
       'not a bullet',
@@ -46,7 +48,7 @@ describe('checkRuleTags', () => {
       {
         line: 7,
         message:
-          "bullet does not end in [lint:<id>] or [type:<name>] and is not under 'not guarded:'",
+          "bullet does not end in [lint:<id>], [type:<name>] or [build:<id>] and is not under 'not guarded:'",
       },
     ])
   })
@@ -74,7 +76,7 @@ describe('checkRuleTags', () => {
       {
         line: 15,
         message:
-          "bullet does not end in [lint:<id>] or [type:<name>] and is not under 'not guarded:'",
+          "bullet does not end in [lint:<id>], [type:<name>] or [build:<id>] and is not under 'not guarded:'",
       },
     ])
   })
@@ -142,10 +144,17 @@ describe('the shipped rules', () => {
     expect(checkAllRuleFiles().messages).toEqual([])
   })
 
-  test('are exactly the five files', () => {
+  test('a build tag names a check basaltAstro() runs', () => {
+    expect(run('- Built. [build:nope]').failures).toEqual([
+      { line: 7, message: '[build:nope] is not a check basaltAstro() runs' },
+    ])
+  })
+
+  test('are exactly the six files', () => {
     expect(ruleFiles().map((f) => f.split('/').pop())).toEqual([
       'basalt-charts.md',
       'basalt-page.md',
+      'basalt-site.md',
       'basalt-state.md',
       'basalt-tokens.md',
       'basalt-ui.md',

@@ -10,6 +10,7 @@
  *   `basalt-ui/ui/<name>`), read by the TypeScript checker from the entry files the exports map
  *   names (`entry-exports.ts`). A name only a `contract.ts` or `core/*` declares does not count: a
  *   consumer could not import it.
+ * - `[build:<id>]` must be a check `basaltAstro()` runs at build time (`ASTRO_BUILD_CHECKS`).
  * - `tests/types/rule-tags.type-test.ts` imports every tagged name from its entry by the published
  *   specifier, so the package typecheck compiles each one against the built `.d.ts`. It is generated
  *   here (`--write`) and the check fails when it is stale.
@@ -21,6 +22,7 @@
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 
+import { ASTRO_BUILD_CHECKS } from '../src/astro/islands'
 import { tableOf } from '../src/lint/factory'
 import plugin from '../src/lint/index'
 import { entryExports, homesOf } from './entry-exports'
@@ -30,6 +32,8 @@ export const TYPE_TEST = 'tests/types/rule-tags.type-test.ts'
 
 export type TagSources = {
   readonly lintIds: ReadonlySet<string>
+  /** Every build check the Astro integration runs; absent: none. */
+  readonly buildIds?: ReadonlySet<string>
   /** Every name a published entry exports. */
   readonly typeNames: ReadonlySet<string>
 }
@@ -37,7 +41,7 @@ export type TagSources = {
 export type TagFailure = { line: number; message: string }
 export type TagReport = { failures: TagFailure[]; typeNames: string[] }
 
-const TAG = String.raw`\[(?:lint:[a-z][a-z0-9-]*|type:[A-Za-z_$][\w$]*)\]`
+const TAG = String.raw`\[(?:(?:lint|build):[a-z][a-z0-9-]*|type:[A-Za-z_$][\w$]*)\]`
 const TAG_RE = new RegExp(TAG, 'g')
 /** A bullet ENDS in its tags: one or more tags, then nothing. */
 const TRAILING_TAGS_RE = new RegExp(`(?:\\s*${TAG})+\\s*$`)
@@ -66,7 +70,7 @@ export function checkRuleTags(markdown: string, sources: TagSources): TagReport 
         failures.push({
           line,
           message:
-            "bullet does not end in [lint:<id>] or [type:<name>] and is not under 'not guarded:'",
+            "bullet does not end in [lint:<id>], [type:<name>] or [build:<id>] and is not under 'not guarded:'",
         })
       }
       return
@@ -76,6 +80,10 @@ export function checkRuleTags(markdown: string, sources: TagSources): TagReport 
       if (kind === 'lint') {
         if (!sources.lintIds.has(name)) {
           failures.push({ line, message: `[lint:${name}] is not a key of the lint rule table` })
+        }
+      } else if (kind === 'build') {
+        if (!(sources.buildIds?.has(name) ?? false)) {
+          failures.push({ line, message: `[build:${name}] is not a check basaltAstro() runs` })
         }
       } else if (!sources.typeNames.has(name)) {
         failures.push({ line, message: `[type:${name}] is not exported from a published entry` })
@@ -147,6 +155,7 @@ export function loadSources(
 ): TagSources {
   return {
     lintIds: new Set(Object.keys(tableOf(plugin))),
+    buildIds: new Set(ASTRO_BUILD_CHECKS),
     typeNames: new Set([...entries.values()].flatMap((names) => [...names])),
   }
 }

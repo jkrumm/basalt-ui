@@ -8,17 +8,16 @@ import { describe, expect, it } from 'bun:test'
 import {
   agentFiles,
   appsPaths,
-  blockText,
+  blockSkillLines,
   claimFindings,
   docFiles,
   historyFindings,
   skillLines,
-  skillNames,
 } from '../../scripts/agent-layer-guards'
 
 describe('agent layer guard: skill bullets', () => {
   it('gives every skill under agent/skills a bullet in the AGENTS block (real tree)', () => {
-    expect(skillLines(blockText(), skillNames())).toEqual([])
+    expect(blockSkillLines()).toEqual([])
   })
 
   it('reports a skill with no bullet, a short bullet and a missing literal (seeded)', () => {
