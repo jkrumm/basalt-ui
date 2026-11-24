@@ -5,9 +5,12 @@
   "type": "module",
   "scripts": {
     "build": "bun scripts/gen-pages.ts && astro build",
+    "build:site": "astro build --config astro.site.config.mjs",
+    "site-pages": "bun scripts/site-pages.ts",
     "typecheck": "bun scripts/gen-pages.ts && astro check"
   },
   "dependencies": {
+    "@astrojs/mdx": "8.1.6",
     "@astrojs/react": "7.1.9",
     "@base-ui/react": "~1.9.0",
     "@tailwindcss/vite": "4.3.5",

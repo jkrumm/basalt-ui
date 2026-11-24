@@ -1,0 +1,13 @@
+---
+// The changelog recipe: releases as data, one `SiteChangelog`.
+import { SiteChangelog } from 'basalt-ui/static'
+import Layout from '../layouts/Layout.astro'
+import { RELEASES } from '../data/releases'
+---
+
+<Layout title="Changelog" description="What changed in each release.">
+  <div class="mx-auto max-w-4xl px-4 py-10 @regular:px-6">
+    <h1 class="mb-8 font-head text-display font-semibold">Changelog</h1>
+    <SiteChangelog releases={RELEASES} />
+  </div>
+</Layout>
