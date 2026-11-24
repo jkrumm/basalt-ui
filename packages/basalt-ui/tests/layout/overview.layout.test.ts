@@ -1,7 +1,7 @@
 /**
  * The playground overview route (docs/v3/issues/g1/v3-playground-overview.json) in real Chrome at
- * 1440, 768, 390 and 320: no horizontal overflow, the strip, both widget cards, the chart card and
- * the data panel render, exactly one card shows the override cue, and `Filters (n)` replaces the
+ * 1440, 768, 390 and 320: no horizontal overflow, the strip, both widget cards, the chart card, the
+ * bar list and the event list render, exactly one card shows the override cue, and `Filters (n)` replaces the
  * pill row below `@regular`. axe finds nothing serious or critical.
  *
  * Self-contained like `controls-filter-set`: `overview.css` is compiled with the Tailwind CLI into a
@@ -100,7 +100,7 @@ layout('playground overview route', () => {
       test('no horizontal overflow, every region renders', async () => {
         const page = await open(viewport)
         expectNoHorizontalOverflow(await page.horizontalOverflow(), 'overview', viewport)
-        for (const slot of ['stat-group', 'stat-card', 'data-panel', 'bar-list', 'event-list']) {
+        for (const slot of ['stat-group', 'stat-card', 'bar-list', 'event-list']) {
           expect(await count(page, `[data-slot="${slot}"]`), `${slot} renders`).toBeGreaterThan(0)
         }
         expect(await count(page, '[data-slot="chart-box"]'), 'chart card renders').toBe(1)
