@@ -49,7 +49,7 @@ const SHIPPED = ['bridge', 'parts', 'app'] as const
 type Shipped = (typeof SHIPPED)[number]
 
 /** The `tw-off-law` forms that exist from `parts` upward: silent at bridge, firing at parts. */
-const PARTS_ONLY = ['surface-recipe', 'app-colour', 'app-colour-arbitrary', 'fixed-width']
+const PARTS_ONLY = ['surface-recipe', 'app-color', 'app-color-arbitrary', 'fixed-width']
 
 // ── the fixture blocks ───────────────────────────────────────────────────────────────────────────
 
@@ -317,7 +317,7 @@ describe('the bought rules fire through the preset', () => {
   const OFFENDERS: { rule: string; file: string; code: string }[] = [
     {
       rule: 'no-raw-colors',
-      file: 'raw-colour',
+      file: 'raw-color',
       code: `export const a = <div className="bg-red-500" />`,
     },
     {
@@ -528,7 +528,7 @@ describe('zones and roots', () => {
     }
   })
 
-  it('zone E turns the colour forms off for an ejected file and keeps the rest of tw-off-law', () => {
+  it('zone E turns the color forms off for an ejected file and keeps the rest of tw-off-law', () => {
     const config = generated({
       ...base,
       profile: 'app',
@@ -549,10 +549,10 @@ describe('zones and roots', () => {
         .filter((d) => d.filename === file && d.code === 'basalt(tw-off-law)')
         .map((d) => d.message)
     const named = (file: string, text: string): boolean => forms(file).some((m) => m.includes(text))
-    // App code outside zone E still reports every colour form.
-    expect(named('src/page.tsx', 'own colour in app code')).toBe(true)
-    // The ejected file keeps no colour form, and still reports the alpha on a pre-mixed token and `!`.
-    expect(named('src/components/ui/card.tsx', 'own colour in app code')).toBe(false)
+    // App code outside zone E still reports every color form.
+    expect(named('src/page.tsx', 'own color in app code')).toBe(true)
+    // The ejected file keeps no color form, and still reports the alpha on a pre-mixed token and `!`.
+    expect(named('src/components/ui/card.tsx', 'own color in app code')).toBe(false)
     expect(named('src/components/ui/card.tsx', 'pre-mixed token')).toBe(true)
     expect(named('src/components/ui/card.tsx', 'cascade')).toBe(true)
   })

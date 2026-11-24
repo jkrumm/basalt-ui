@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 /**
- * The legacy-name gate (Issue 1703): fails on a `vx` token spelling or a `mantine` mention outside the allowlist
+ * The legacy-name gate (Issues 1703, 3201): fails on a `vx` token spelling, a `mantine` mention or a British
+ * spelling (`colour`, `favourite`) outside the allowlist
  * in `scripts/legacy-names.ts`, in the source tree and in the packed tarball.
  *
  * Usage: bun scripts/check-legacy-names.ts                      every tracked file of the repo
@@ -74,14 +75,14 @@ if (import.meta.main) {
   const where = at === -1 ? 'the source tree' : 'the packed tarball'
   if (findings.length === 0) {
     console.log(
-      `✓ legacy names: no vx spelling or Mantine mention in ${where} outside the allowlist`,
+      `✓ legacy names: no vx spelling, Mantine mention or British spelling in ${where} outside the allowlist`,
     )
     process.exit(0)
   }
   for (const f of findings) console.error(`${f.path}:${f.line}: ${f.kind}: ${f.text}`)
   console.error(
     `✖ legacy names: ${findings.length} finding(s) in ${where}. A vx spelling: run \`bun scripts/rename-legacy.ts\`; ` +
-      'a Mantine mention: rewrite it; history that must keep its words: an entry in scripts/legacy-names.ts.',
+      'a Mantine mention: rewrite it; a British spelling (colour, favourite): the American one; history that must keep its words: an entry in scripts/legacy-names.ts.',
   )
   process.exit(1)
 }

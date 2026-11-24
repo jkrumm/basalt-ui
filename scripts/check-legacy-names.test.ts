@@ -35,6 +35,20 @@ describe('scan', () => {
     expect(scan('apps/playground/src/a.ts', "'1YVxB+QVxL3'; devx; avx-")).toEqual([])
   })
 
+  test('a British spelling is a finding in a shipped file, in an identifier, a rule id or prose', () => {
+    for (const text of ['FavouriteToggle', 'basalt/colour-literal', '// the series colour']) {
+      expect(scan('packages/basalt-ui/src/a.ts', text).map((f) => f.kind)).toEqual(['british'])
+    }
+    expect(scan('apps/playground/src/a.tsx', 'favourites={store}').map((f) => f.kind)).toEqual([
+      'british',
+    ])
+  })
+
+  test('a British spelling in a repo-internal record or a migration row is allowed', () => {
+    expect(scan('docs/v3/DIRECTION.md', 'the series colour')).toEqual([])
+    expect(scan('packages/basalt-ui/migrations/areas/page.json', 'FavouriteToggle')).toEqual([])
+  })
+
   test('a Mantine mention is a finding in any case', () => {
     expect(scan('packages/basalt-ui/src/a.ts', '// MANTINE')[0]?.kind).toBe('mantine')
   })
