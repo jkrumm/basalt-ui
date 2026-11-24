@@ -26,12 +26,12 @@ const fleet = (
   <StatGroup variant="strip" label="Fleet health">
     <StatCell
       icon={ServerGlyph}
-      label="Services healthy"
+      title="Services healthy"
       value="5 / 6"
       status={{ tone: 'warn', label: '1 degraded' }}
       chart={(box) => (
         <Sparkline
-          series={HEALTHY}
+          points={HEALTHY}
           height={box.height}
           reference={6}
           label="Healthy services per day"
@@ -40,20 +40,20 @@ const fleet = (
     />
     <StatCell
       icon={RocketGlyph}
-      label="Deploys"
+      title="Deploys"
       value={164}
       delta={{ value: '+12%', polarity: 'up-good', label: BASE }}
-      chart={(box) => <Sparkline series={DEPLOYS} height={box.height} label="Deploys per day" />}
+      chart={(box) => <Sparkline points={DEPLOYS} height={box.height} label="Deploys per day" />}
     />
     <StatCell
       icon={AlertGlyph}
-      label="Failure rate"
+      title="Failure rate"
       value="11.0"
       unit="%"
       delta={{ value: '+2.4 pts', polarity: 'up-bad', label: BASE }}
       chart={(box) => (
         <Sparkline
-          series={FAILURE}
+          points={FAILURE}
           height={box.height}
           reference={10}
           label="Failure rate per day, target 10 %"
@@ -62,12 +62,12 @@ const fleet = (
     />
     <StatCell
       icon={ClockGlyph}
-      label="Median duration"
+      title="Median duration"
       value={174}
       unit="s"
       delta={{ value: '-14 s', polarity: 'up-bad', label: BASE }}
       chart={(box) => (
-        <Sparkline series={MEDIAN} height={box.height} label="Median deploy duration per day" />
+        <Sparkline points={MEDIAN} height={box.height} label="Median deploy duration per day" />
       )}
     />
   </StatGroup>
@@ -87,7 +87,7 @@ const X_LABELS = ['Oct 29', 'Nov 4', 'Today'] as const
 function ShippedTrend({ height }: { height: number | 'fill' }): ReactElement {
   return (
     <Sparkline
-      series={PER_DAY}
+      points={PER_DAY}
       height={height}
       axisLabels={X_LABELS}
       label={`Shipped per day, ${PER_DAY.length} days`}

@@ -27,7 +27,7 @@ Priority columns of a table: none, no table on this page (the row list carries n
 | 60 backlog books  | genre per book                      | BarList                           | a ranked split of a total                              |
 | 2 in progress     | page of pages                       | rows at the end of the books list | two items, no chart needed                             |
 
-## Colour: meaning
+## Color: meaning
 
 - accent (blue): each finished book's pace, the one measure the question asks about.
 - ink step (dark grey): the median rule and its label.

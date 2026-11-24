@@ -131,7 +131,7 @@ export function ExprN87Scenario({ shotState, fixture }: ScenarioProps): ReactEle
       <StatGroup variant="cards" label="Before wiping the card">
         <StatCell
           icon={CloudUpload}
-          label="Unsynced finals"
+          title="Unsynced finals"
           info="Photos missing from a sync target. Zero is safe to wipe."
           value={unsynced}
           status={
@@ -150,7 +150,7 @@ export function ExprN87Scenario({ shotState, fixture }: ScenarioProps): ReactEle
         />
         <StatCell
           icon={Archive}
-          label="Orphaned raws"
+          title="Orphaned raws"
           info="Raw files that match no final. Any above zero is a leftover."
           value={orphans.value}
           status={orphans.status}
@@ -162,7 +162,7 @@ export function ExprN87Scenario({ shotState, fixture }: ScenarioProps): ReactEle
         />
         <StatCell
           icon={Trash2}
-          label="Expired trash"
+          title="Expired trash"
           info="Entries kept longer than the retention. Emptying them brings it to zero."
           value={trash.length}
           status={
@@ -175,7 +175,7 @@ export function ExprN87Scenario({ shotState, fixture }: ScenarioProps): ReactEle
         />
         <StatCell
           icon={FileWarning}
-          label="Sidecar errors"
+          title="Sidecar errors"
           info="Files that cannot be read, counted in full, while the table lists only some."
           value={lib.unreadable}
           status={

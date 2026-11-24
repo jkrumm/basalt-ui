@@ -24,7 +24,7 @@ Parts: the strip (three answers), the failure list and the bill list (the why an
 
 Table priority 1 and 2 columns (name 40 ch, state 20 ch, reason 26 ch, bill 14 ch: about 340 + 184 + 232 + 136 px) sit in a full-width card, so no column drops at 1800. No gap as wide as a card, no dead lower half, the two columns of row 2 end level (950).
 
-## Colour: meaning
+## Color: meaning
 
 - blue (accent): the bill a schema change repeats, on the bill row and the older-schema state in the table. One class.
 - red (status): an entry the sweep failed on or cannot reach, the State column only.

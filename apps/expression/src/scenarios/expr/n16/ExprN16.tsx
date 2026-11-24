@@ -1,5 +1,5 @@
 import { useFormat } from 'basalt-ui'
-import type { Empty, Phase, Status } from 'basalt-ui/cards'
+import type { Empty, Phase, Verdict } from 'basalt-ui/cards'
 import { StatCell, StatGroup } from 'basalt-ui/cards'
 import { CartesianChart, ChartCard, useChartFocus } from 'basalt-ui/charts'
 import { CardGrid, Page, PageBar } from 'basalt-ui/page'
@@ -21,14 +21,14 @@ const signed = (n: number, digits = 1): string => {
 const plain = (n: number): string => n.toFixed(1)
 
 /** A verdict on what share of the loss was lean mass. */
-function leanStatus(share: number | null): Status | undefined {
+function leanStatus(share: number | null): Verdict | undefined {
   if (share === null) return undefined
   if (share <= 0.25) return { tone: 'good', label: 'Mostly fat' }
   if (share <= 0.4) return { tone: 'warn', label: 'Lean slipping' }
   return { tone: 'bad', label: 'Losing lean' }
 }
 
-function paceStatus(gap: number): Status {
+function paceStatus(gap: number): Verdict {
   if (gap > 0.1) return { tone: 'warn', label: 'Behind plan' }
   if (gap < -0.1) return { tone: 'neutral', label: 'Faster than plan' }
   return { tone: 'good', label: 'On plan' }
@@ -192,24 +192,24 @@ export function ExprN16Scenario({ shotState, fixture }: ScenarioProps) {
       <PageBar title="Cut progress: weight against plan" />
       <StatGroup variant="strip" label="Cut progress">
         <StatCell
-          label="Weekly rate"
-          qualifier="last 4 weeks"
+          title="Weekly rate"
+          subtitle="last 4 weeks"
           value={live ? signed(cut.rate, 2) : null}
           unit="kg/wk"
           {...rateFacts}
           phase={phase}
         />
         <StatCell
-          label="Lean mass"
-          qualifier="since first reading"
+          title="Lean mass"
+          subtitle="since first reading"
           value={live && lastReading !== undefined ? signed(lastReading.leanDelta) : null}
           unit="kg"
           {...leanFacts}
           phase={phase}
         />
         <StatCell
-          label="To goal"
-          qualifier={`${plain(cut.goal)} kg`}
+          title="To goal"
+          subtitle={`${plain(cut.goal)} kg`}
           value={live ? plain(Math.max(0, remaining)) : null}
           unit="kg"
           {...goalFacts}
@@ -225,7 +225,7 @@ export function ExprN16Scenario({ shotState, fixture }: ScenarioProps) {
           {...weightFacts}
           chart={() => (
             <CartesianChart
-              ariaLabel={`Body weight over ${cut.days.length} days: daily weigh-ins, their 7-day mean and the planned path to ${plain(cut.goal)} kg`}
+              label={`Body weight over ${cut.days.length} days: daily weigh-ins, their 7-day mean and the planned path to ${plain(cut.goal)} kg`}
               data={cut.days}
               x={{ value: (d) => d.at, ...xAxis }}
               y={{
@@ -285,7 +285,7 @@ export function ExprN16Scenario({ shotState, fixture }: ScenarioProps) {
           {...fatFacts}
           chart={() => (
             <CartesianChart
-              ariaLabel={`Fat mass and lean mass change across ${cut.readings.length} skinfold readings`}
+              label={`Fat mass and lean mass change across ${cut.readings.length} skinfold readings`}
               data={cut.readings}
               x={{ value: (r) => r.at, ...xAxis }}
               y={{

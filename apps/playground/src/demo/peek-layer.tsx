@@ -105,7 +105,7 @@ export function PeekLayer(): ReactElement | null {
           tag={`#${peek.open.id}`}
           {...(peek.fullPage !== null && {
             fullPage: peek.fullPage,
-            favourite: {
+            favorite: {
               id: `${peek.open.kind}-${peek.open.id}`,
               label: titleOf(peek.open),
               icon: ICONS[peek.open.kind],
@@ -129,7 +129,7 @@ export function PeekLayer(): ReactElement | null {
           tag={`#${dock.open.id}`}
           {...(dock.fullPage !== null && {
             fullPage: dock.fullPage,
-            favourite: {
+            favorite: {
               id: `${dock.open.kind}-${dock.open.id}`,
               label: titleOf(dock.open),
               icon: ICONS[dock.open.kind],

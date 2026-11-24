@@ -13,7 +13,7 @@
 - `?fixture=over`: 45 of 140 slipped (32.1 %, past the limit), 52 due. `?fixture=clear`: nothing due, next item 21 Nov (zero cue and the empty cause with its next step).
 - `?shot-state=loading|empty|error`: every part draws the same slots; empty is a learner with no items and no sessions; items and sessions are two sources with their own retry.
 
-## Colour: meaning
+## Color: meaning
 
 - accent (the brand blue): forgotten or shaky, on the bars (`highlight`), the tint behind them and the dots of the table's Confidence column. Nothing else takes it.
 - ink steps: the other bars, the sparkline, the overdue meters.

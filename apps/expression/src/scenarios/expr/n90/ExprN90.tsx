@@ -83,7 +83,7 @@ export function ExprN90Scenario({ shotState, fixture }: ScenarioProps) {
       <StatGroup variant="cards" label="Run summary">
         <StatCell
           icon={Server}
-          label="Stayed remote"
+          title="Stayed remote"
           value={ready ? pct(s.share) : null}
           unit={ready ? `of ${f.number(s.total)} runs` : ''}
           delta={
@@ -99,7 +99,7 @@ export function ExprN90Scenario({ shotState, fixture }: ScenarioProps) {
           empty={empty}
           chart={(box) => (
             <Sparkline
-              series={share}
+              points={share}
               height={box.height}
               label="Daily share kept"
               format={(v) => pct(v / 100)}
@@ -108,7 +108,7 @@ export function ExprN90Scenario({ shotState, fixture }: ScenarioProps) {
         />
         <StatCell
           icon={Undo2}
-          label="Taken back to local"
+          title="Taken back to local"
           value={ready ? s.back : null}
           unit={ready ? 'runs' : ''}
           delta={
@@ -139,11 +139,11 @@ export function ExprN90Scenario({ shotState, fixture }: ScenarioProps) {
           ]}
           phase={runsPhase}
           empty={empty}
-          chart={(box) => <Sparkline series={backDaily} height={box.height} label="Daily count" />}
+          chart={(box) => <Sparkline points={backDaily} height={box.height} label="Daily count" />}
         />
         <StatCell
           icon={Pause}
-          label="Held now"
+          title="Held now"
           value={ready ? (hold?.minutes ?? 0) : null}
           unit={ready ? 'min' : ''}
           status={

@@ -118,7 +118,7 @@ function OrdersChart({ list }: { list: ListResult }): ReactElement {
       figure={{ value: list.data?.length ?? null, unit: 'orders', period: 'in range' }}
       chart={(box) => (
         <Bars<Day>
-          ariaLabel="Orders placed per day"
+          label="Orders placed per day"
           data={days}
           x={{ value: (d) => d.day }}
           height={box.height}
@@ -143,13 +143,13 @@ function Fulfilment(): ReactElement {
     <StatGroup variant="strip" label="Fulfilment">
       <StatCell
         phase={stats}
-        label="Awaiting shipment"
+        title="Awaiting shipment"
         value={stats.data?.awaiting ?? null}
         sub="Polled every 5 s"
       />
       <StatCell
         phase={stats}
-        label="Late"
+        title="Late"
         value={stats.data?.late ?? null}
         status={{ tone: 'bad', label: 'Over 48 h' }}
       />
@@ -281,7 +281,7 @@ function OrdersBody(): ReactElement {
     <Page area="cycle-state-3-orders">
       <PageBar
         title="Orders"
-        tabs={{ handle: orders.field.view, label: 'Orders view' }}
+        tabs={{ state: orders.field.view, label: 'Orders view' }}
         controls={FILTERS}
         connection={connection}
         refresh={{ scope: 'page', ...freshness.button }}

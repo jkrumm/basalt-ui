@@ -139,19 +139,19 @@ export function ExprC10Scenario({ shotState, fixture }: ScenarioProps) {
       <PageBar title="Leaked key reach" />
       <StatGroup variant="strip" label="Reach of the leaked key">
         <StatCell
-          label="Reachable"
+          title="Reachable"
           value={settled ? reached.length : null}
           unit={settled ? `of ${rows.length - 1} resources` : ''}
           phase={phase === 'loading' ? 'loading' : 'ready'}
         />
         <StatCell
-          label="Farthest"
+          title="Farthest"
           value={settled ? farthest : null}
           unit={settled ? (farthest === 1 ? 'hop' : 'hops') : ''}
           phase={phase === 'loading' ? 'loading' : 'ready'}
         />
         <StatCell
-          label="Affected"
+          title="Affected"
           value={settled ? affected : null}
           unit={settled ? `of ${reached.length} reachable` : ''}
           phase={phase === 'loading' ? 'loading' : 'ready'}

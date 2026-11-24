@@ -33,7 +33,7 @@
 
 No two parts answer one question; no table, so no 480 px column sum; no gap as wide as a card in the first 1200 px (the cards end at 972).
 
-## Colour: meaning
+## Color: meaning
 
 - accent (blue): the recovery score, its line, today's dot and the push-day verdict
 - ink steps: HRV, sleep, resting heart rate, stress, body battery, the 25, 50, 75 rules and the 40 and 70 rules

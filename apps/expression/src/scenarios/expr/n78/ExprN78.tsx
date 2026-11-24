@@ -102,7 +102,7 @@ export function ExprN78Scenario({ shotState, fixture }: ScenarioProps) {
       <StatGroup variant="cards" label="Summary">
         <StatCell
           icon={Mail}
-          label="Mailboxes syncing"
+          title="Mailboxes syncing"
           value={rows.length - away.length}
           unit={`of ${rows.length}`}
           status={
@@ -119,7 +119,7 @@ export function ExprN78Scenario({ shotState, fixture }: ScenarioProps) {
         />
         <StatCell
           icon={ArrowLeftRight}
-          label="Messages in and out"
+          title="Messages in and out"
           value={f.number(messages)}
           delta={
             change === undefined
@@ -131,7 +131,7 @@ export function ExprN78Scenario({ shotState, fixture }: ScenarioProps) {
                 }
           }
           chart={(box) => (
-            <Sparkline series={perDay} height={box.height} label="Trend, all addresses" />
+            <Sparkline points={perDay} height={box.height} label="Trend, all addresses" />
           )}
           rows={[
             { label: 'In', value: f.number(sum(rows, (r) => r.in30)) },
@@ -142,7 +142,7 @@ export function ExprN78Scenario({ shotState, fixture }: ScenarioProps) {
         />
         <StatCell
           icon={Hourglass}
-          label="Backlog"
+          title="Backlog"
           unit="jobs"
           value={f.number(pending)}
           rows={[
@@ -154,7 +154,7 @@ export function ExprN78Scenario({ shotState, fixture }: ScenarioProps) {
         />
         <StatCell
           icon={AlertTriangle}
-          label="Failures"
+          title="Failures"
           value={f.number(failed)}
           status={
             hit.length > 0

@@ -108,7 +108,7 @@ export function ExprN12Scenario({ shotState, fixture }: ScenarioProps) {
             }
             chart={() => (
               <Bars
-                ariaLabel="Minutes asleep per night over 30 nights, stacked by deep, light and REM, against the 7 hour need"
+                label="Minutes asleep per night over 30 nights, stacked by deep, light and REM, against the 7 hour need"
                 data={nights}
                 focus={focus}
                 x={{ value: (n) => n.date }}
@@ -155,7 +155,7 @@ export function ExprN12Scenario({ shotState, fixture }: ScenarioProps) {
               return (
                 <StatCell
                   key={s}
-                  label={LABEL[s]}
+                  title={LABEL[s]}
                   phase={frame}
                   value={value}
                   unit="min"

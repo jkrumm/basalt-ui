@@ -20,7 +20,7 @@
 | Wallets (table)        | verdict, change in dollars, fresh tokens  | 1028,72 748x308  | the same focus; P1 and P2 columns: wallet, verdict, change, tokens        |
 | Spend per day (lines)  | when did the rise and the new spend begin | 1028,396 748x538 | the accent meaning (answering wallets), the window break rule             |
 
-## Colour: meaning
+## Color: meaning
 
 - accent blue: the wallets that answer (grew most, new); bars, table verdict dots, daily lines.
 - dark ink: the last window; pale grey: the window before and the rest of the spend per day.

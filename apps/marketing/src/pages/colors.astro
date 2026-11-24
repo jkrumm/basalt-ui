@@ -3,7 +3,7 @@ import { SiteArticle } from 'basalt-ui/static'
 import Layout from '../layouts/Layout.astro'
 import { LABELS } from '../lib/site'
 
-/** Every colour role a page reads, grouped by job. The values are derived; this page only shows them. */
+/** Every color role a page reads, grouped by job. The values are derived; this page only shows them. */
 const groups = [
   { id: 'surfaces', title: 'Surfaces', roles: ['canvas', 'card', 'inset', 'raised', 'hover', 'selected'] },
   { id: 'ink', title: 'Ink', roles: ['ink', 'ink-muted', 'ink-faint', 'hairline', 'input'] },
@@ -15,8 +15,8 @@ const groups = [
 const toc = groups.map((g) => ({ id: g.id, label: g.title, level: 2 }))
 ---
 
-<Layout title="Colours | Basalt UI" description="The basalt colour roles in light and dark: surfaces, ink, accent, status and chart series, all derived from one accent seed.">
-  <SiteArticle title="Colours" description="Every colour is a role, derived from one accent seed. Switch the scheme in the header: each swatch follows." toc={toc} tocLabel={LABELS.toc}>
+<Layout title="Colors | Basalt UI" description="The basalt color roles in light and dark: surfaces, ink, accent, status and chart series, all derived from one accent seed.">
+  <SiteArticle title="Colors" description="Every color is a role, derived from one accent seed. Switch the scheme in the header: each swatch follows." toc={toc} tocLabel={LABELS.toc}>
     <p>
       A page names a role, never a value: <code>var(--basalt-card)</code> in CSS, <code>bg-card</code> in a class. The palette is generated with contrast guaranteed, so a retune changes every role at once.
     </p>

@@ -17,7 +17,7 @@ The two cards have different x axes (month against azimuth), so they stay two ca
 
 At 390 the month card comes first and carries the answer above the fold (hero, pill, bars); the ridge card follows.
 
-## Colour: meaning
+## Color: meaning
 
 - brand accent: usable hours behind the ridge (the bars, the legend swatch). Only series in the accent.
 - pale ink step: ridge cost (the lost part of each stack).

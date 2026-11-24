@@ -160,7 +160,7 @@ export function ExprN09Scenario({ shotState, fixture }: ScenarioProps) {
           chart={() => (
             <CartesianChart
               height="fill"
-              ariaLabel="Next run of each job on a log time axis, 24 hours marked"
+              label="Next run of each job on a log time axis, 24 hours marked"
               data={jobs}
               focus={focus}
               tooltip={false}

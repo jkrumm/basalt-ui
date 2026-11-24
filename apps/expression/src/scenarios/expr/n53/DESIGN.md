@@ -22,12 +22,12 @@
 
 - 40 plan rows (key, title, state, waits on, filed, closed): a graph that waits on itself, so ChainView over the same rows on one `useChartFocus` beside DataTable.
 
-## Colour: meaning
+## Color: meaning
 
 - accent: the row that can start next (the status dot in the Can start cell and the Start next state).
 - status red: the blocked row, one dot in the Blocked cell and one state in the table.
 - ink steps: every other state (done, open, waiting).
-- warn edge: ChainView's own colour for an edge out of an unfinished row (kit-owned).
+- warn edge: ChainView's own color for an edge out of an unfinished row (kit-owned).
 
 ## Fixtures
 

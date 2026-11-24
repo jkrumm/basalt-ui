@@ -19,7 +19,7 @@ A scatter of the second classifier's confidence against the first's, one dot per
 
 Table width: priority 1 and 2 columns (Message, Case, First / second, Outcome) estimated at 168 + 184 + 240 + 96 = 688 px, inside the 696 px a 700 px step holds; the table stays a table in the 718 px cell. Form and Received are priority 3 and show on the phone card. The content ends at y 712 of 1200: the surface is sized to one scatter and twelve rows, nothing else answers the question.
 
-## Colour: meaning
+## Color: meaning
 
 - blue (accent): disagreement when both are sure
 - red (status): spam delivered, the one state that needs action

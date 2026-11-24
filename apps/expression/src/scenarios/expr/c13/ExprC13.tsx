@@ -156,7 +156,7 @@ export function ExprC13Scenario({ shotState, fixture }: ScenarioProps) {
             }
             chart={(box) => (
               <CartesianChart
-                ariaLabel="Alerts closed automatically above the axis and escalated to a person below it, per day, last 30 days"
+                label="Alerts closed automatically above the axis and escalated to a person below it, per day, last 30 days"
                 data={days}
                 x={{
                   value: (d) => d.date,
@@ -259,7 +259,7 @@ export function ExprC13Scenario({ shotState, fixture }: ScenarioProps) {
             title="Closed by source"
             subtitle="30 days"
             items={sources}
-            rows={5}
+            bodyRows={5}
             phase={phase}
             empty={hasDays ? null : { cause: 'Sources appear with the first alert.' }}
             format={(v) => fmt.number(v)}

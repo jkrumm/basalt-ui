@@ -35,7 +35,7 @@ export const NAV: readonly SiteNavItem[] = [
     menu: [
       {
         entries: [
-          { href: "/colors", label: "Colours", description: "The derived palette, light and dark" },
+          { href: "/colors", label: "Colors", description: "The derived palette, light and dark" },
           {
             href: "/typography",
             label: "Typography",
@@ -65,7 +65,7 @@ export const FOOTER: readonly SiteLinkGroup[] = [
   {
     title: "Tokens",
     links: [
-      { href: "/colors", label: "Colours" },
+      { href: "/colors", label: "Colors" },
       { href: "/typography", label: "Typography" },
       { href: "/spacing", label: "Spacing" },
     ],
@@ -83,7 +83,7 @@ export const FOOTER: readonly SiteLinkGroup[] = [
 export const LABELS = {
   nav: "Main",
   menu: "Menu",
-  scheme: "Colour scheme",
+  scheme: "Color scheme",
   schemes: { light: "Light", dark: "Dark", auto: "System" },
   copy: "Copy code",
   copied: "Copied",

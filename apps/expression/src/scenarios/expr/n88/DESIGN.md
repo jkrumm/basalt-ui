@@ -18,7 +18,7 @@
 
 No two parts answer one question; the table keeps only the measures no figure says. Five columns sum to under 800 px at its width.
 
-## Accent and colour
+## Accent and color
 
 - accent: the light seat (two chart lines only, the series blue). Everything else is ink steps.
 - blue: the light seat. dark ink: the lead seat. No status hue is spent: no state on the page needs action, every pill is neutral.

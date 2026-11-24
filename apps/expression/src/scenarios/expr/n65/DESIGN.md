@@ -31,7 +31,7 @@ At 390 the order is the two answer cards, the outcomes, the commits, the frictio
 - Idle capacity, hours for each of 56 days: bars, weekends paler; the 21.5 h and 0 h days are named, the most-dropped week is tinted.
 - Fixture names: none for the rest state; `?fixture=surge` puts Gate flake at 142 reports and one week at 58 dropped.
 
-## Colour: meaning
+## Color: meaning
 
 - accent (blue): the fastest riser's bar, and nothing else.
 - status red: dropped Issues (segments, the share's status dot).

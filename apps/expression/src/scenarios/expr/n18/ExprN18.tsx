@@ -95,7 +95,7 @@ export function ExprN18Scenario({ shotState, fixture }: ScenarioProps): ReactEle
             }
             chart={() => (
               <CartesianChart
-                ariaLabel="Hours waited this week for each of five reasons, finished and still open"
+                label="Hours waited this week for each of five reasons, finished and still open"
                 data={rows}
                 focus={focus}
                 x={{ value: (r) => r.label, format: (k) => SHORT[String(k)] ?? String(k) }}

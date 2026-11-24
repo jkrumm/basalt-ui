@@ -23,10 +23,10 @@ Six parts, one shared `useChartFocus` over the 288 readings: the five measure ch
 
 The CPU card spans the two rows beside it, so its chart is tall; the table sits full width because a half-width cell folds it into cards (its priority 1 and 2 columns sum to more than 480 px) and drops the priority 3 columns.
 
-## Colour: meaning
+## Color: meaning
 
 - Status red: a machine past its limit on that card (CPU from 85 %, memory or disk from 90 %, load above its core count). It is also the table's one status hue (Busy, Nearly full).
-- Ink steps, dark to pale: one step per machine, the same on every card. The silent machine is a grey band on the CPU chart, not a colour.
+- Ink steps, dark to pale: one step per machine, the same on every card. The silent machine is a grey band on the CPU chart, not a color.
 - No accent: nothing here is chosen by the owner; the answer is the state.
 - Quiet fixture: every delta is neutral and no line is red.
 

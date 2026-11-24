@@ -18,7 +18,7 @@ Two columns at `@wide`, one stack at a narrower container. The left chart card f
 
 Fail checks: no two parts answer one question; the table has four rows and shares half a row; no gap wider than a card in the first 1200 px; every part joins the one focus. The table's priority 1 columns are two (name with its due date as a sub line, amount), well under 480 px.
 
-## colour: meaning
+## color: meaning
 
 - accent blue: spending this month (the Spent line and the daily bars)
 - dark ink, dashed: spent plus what is due, and the one-off dot

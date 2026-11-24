@@ -155,7 +155,7 @@ export function ExprN14Scenario({ shotState, fixture }: ScenarioProps): ReactEle
         ]}
         chart={() => (
           <Bars
-            ariaLabel="Net worth at 24 month-ends, stacked by cash, depot and other accounts"
+            label="Net worth at 24 month-ends, stacked by cash, depot and other accounts"
             data={months}
             x={x}
             y={{ format: compactMoney }}
@@ -224,7 +224,7 @@ export function ExprN14Scenario({ shotState, fixture }: ScenarioProps): ReactEle
               ]}
               chart={() => (
                 <Lines
-                  ariaLabel="Depot value against money paid in, 24 month-ends"
+                  label="Depot value against money paid in, 24 month-ends"
                   data={months}
                   x={x}
                   y={{ format: compactMoney }}
@@ -261,7 +261,7 @@ export function ExprN14Scenario({ shotState, fixture }: ScenarioProps): ReactEle
             phase={phase}
             empty={months.length === 0 ? EMPTY : null}
             items={accounts}
-            rows={3}
+            bodyRows={3}
             max={Math.max(shown ? total(shown) : 1, 1)}
             format={money}
           />

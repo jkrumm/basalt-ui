@@ -38,7 +38,7 @@ const COLUMNS = [
     label: 'Restarts per day, last 7 days',
     priority: 3,
     render: (r, box) => (
-      <Sparkline label={`${r.name}: restarts per day`} series={r.perDay} height={box.height} />
+      <Sparkline label={`${r.name}: restarts per day`} points={r.perDay} height={box.height} />
     ),
   }),
   c.meter('peakPct', { header: 'Peak memory, % of limit', max: 100, priority: 1 }),
@@ -54,7 +54,7 @@ const COLUMNS = [
       ) : (
         <Sparkline
           label={`${r.name}: memory in percent of its limit`}
-          series={r.pct}
+          points={r.pct}
           height={box.height}
           reference={{ min: NEAR, max: 100 }}
         />

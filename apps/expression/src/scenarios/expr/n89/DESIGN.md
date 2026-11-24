@@ -6,7 +6,7 @@
 - The figures that answer: 44 % of the added waits judged needed with the queue time the rest cost (clause one); 14.6 GB for the heaviest step against the next one (clause two); 5 days at zero for the clean-up counter.
 - `DESIGN.md` of the playground: neutral by default, one accent. `accent: a wait judged not needed`. Every other series sits in an ink step.
 
-## Colour: meaning
+## Color: meaning
 
 - blue accent: a wait judged not needed
 - dark ink: needed (waits), highest run (memory)

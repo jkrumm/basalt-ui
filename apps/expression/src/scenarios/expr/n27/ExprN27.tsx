@@ -97,7 +97,7 @@ export function ExprN27Scenario({ shotState, fixture }: ScenarioProps): ReactEle
         label: 'Weekly value',
         render: (row, box) => (
           <Sparkline
-            series={row.trend}
+            points={row.trend}
             height={box.height}
             cap={row.cap}
             label={`${row.name}, weekly value`}
@@ -165,13 +165,13 @@ export function ExprN27Scenario({ shotState, fixture }: ScenarioProps): ReactEle
             chart={() =>
               counted ? (
                 <Sparkline
-                  series={fx.slid.byWeek}
+                  points={fx.slid.byWeek}
                   height={56}
                   label="Measures that slid each week"
                 />
               ) : null
             }
-            xLabels={counted ? fx.axisLabels : undefined}
+            axisLabels={counted ? fx.axisLabels : undefined}
             footer={[
               { label: 'Worst change', value: counted ? change(worst) : '' },
               { label: 'Steady', value: counted ? steady : '' },
@@ -196,13 +196,13 @@ export function ExprN27Scenario({ shotState, fixture }: ScenarioProps): ReactEle
             chart={() =>
               counted ? (
                 <Sparkline
-                  series={fx.better.byWeek}
+                  points={fx.better.byWeek}
                   height={56}
                   label="Measures that got better each week"
                 />
               ) : null
             }
-            xLabels={counted ? fx.axisLabels : undefined}
+            axisLabels={counted ? fx.axisLabels : undefined}
             footer={[
               { label: 'Best change', value: counted ? change(best) : '' },
               { label: 'Not measured', value: counted ? unmeasured : '' },

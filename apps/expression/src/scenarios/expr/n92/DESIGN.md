@@ -28,7 +28,7 @@ The row ends flush; the stat card stretches to the panel's height (blank area un
 
 default, extreme, all-balanced, no-weight, no-data, one-lift. `?shot-state=` loading, empty, error.
 
-## Colour: meaning
+## Color: meaning
 
 - neutral grey: balanced. amber: borderline. red: imbalanced and critical (word tells which). Accent unused.
 

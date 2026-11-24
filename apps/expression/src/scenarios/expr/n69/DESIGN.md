@@ -28,7 +28,7 @@ Checks against the rules:
 
 `?fixture=` names: `quiet` (every account just reset, all zeros), `extreme` (Birch full on both windows with every seat taken, Drift left its whole last week unused so a cell reads 100 past the ramp's 50), `none` (no account can take a lead: the strip says so). No name draws the rest state; `?shot-state=` draws loading, empty and error.
 
-## Colour: meaning
+## Color: meaning
 
 - accent (blue dot): the account that takes the next lead, in the strip and the Routing column.
 - warn (amber): fills before its reset: the Routing word, the strip's lock-out, the over-cap zone and the "Will fill" grid cell. One state, one hue.

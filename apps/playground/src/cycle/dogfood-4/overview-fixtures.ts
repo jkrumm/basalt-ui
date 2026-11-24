@@ -60,7 +60,7 @@ export type OverviewStat = {
   sub: string
   series?: readonly number[]
   bars?: readonly number[]
-  xLabels: readonly [string, string, string]
+  axisLabels: readonly [string, string, string]
   footer: readonly [{ label: string; value: string }, { label: string; value: string }]
   /** The list the card opens; none: the whole list. */
   state: WorkState | undefined
@@ -77,7 +77,7 @@ export const OVERVIEW_STATS: readonly OverviewStat[] = [
     delta: { value: 1, higherIsBetter: true },
     sub: 'in 3 projects, 1 more checking',
     series: [2, 3, 3, 4, 5, 4, 4, 3],
-    xLabels: X_LABELS,
+    axisLabels: X_LABELS,
     footer: [
       { label: 'Oldest', value: '4 h' },
       { label: 'Queue', value: 'Open' },
@@ -92,7 +92,7 @@ export const OVERVIEW_STATS: readonly OverviewStat[] = [
     delta: { value: -3, higherIsBetter: false },
     sub: 'on you 1',
     series: [4, 5, 5, 4, 3, 2, 2, 1],
-    xLabels: X_LABELS,
+    axisLabels: X_LABELS,
     footer: [
       { label: 'Oldest', value: '3 h' },
       { label: 'Projects', value: '1' },
@@ -107,7 +107,7 @@ export const OVERVIEW_STATS: readonly OverviewStat[] = [
     delta: { value: 0, higherIsBetter: false },
     sub: '1 ready, 3 held',
     series: [4, 6, 5, 7, 6, 5, 5, 4],
-    xLabels: X_LABELS,
+    axisLabels: X_LABELS,
     footer: [
       { label: 'Oldest', value: '30 min' },
       { label: 'Projects', value: '3' },
@@ -122,7 +122,7 @@ export const OVERVIEW_STATS: readonly OverviewStat[] = [
     delta: { value: 4, higherIsBetter: true },
     sub: '8 in the 7 days before',
     bars: [1, 1, 0, 2, 1, 3, 4],
-    xLabels: X_LABELS,
+    axisLabels: X_LABELS,
     footer: [
       { label: 'Best day', value: '4' },
       { label: 'Last day', value: '4' },

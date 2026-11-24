@@ -17,7 +17,7 @@ One focus over source-by-day cells (8 sources x 14 days). The grid shows when, t
 
 Checks: no two parts answer one question twice (grid = time, list = amount and tag state); no full-width part; no card-wide gap; both parts join the focus. The BarList card ends 108 px above the chart card: BarList has no fill-height, named as a kit gap.
 
-## Colour: meaning
+## Color: meaning
 
 - accent blue: untagged mail (segments, legend). Amber dot: untagged mail older than 7 days (the one state that needs a hand). Ink steps: tagged mail, the heat ramp, the 3x annotation.
 

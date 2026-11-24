@@ -26,7 +26,7 @@ Table sums at the half-width cell: priority 1 and 2 columns are entity 18ch, met
 - `?fixture=answered`: every annotation has its reply, so the unanswered figure is a measured 0 and nothing takes the status hue.
 - `?shot-state=loading|empty|error`: loading holds both tables at their row counts and the cells at their tracks; empty prints dashes and one sentence per table; error is the kit's arm with Retry.
 
-## Colour: meaning
+## Color: meaning
 
 - amber: an annotation with no reply. Nothing else takes a hue; verdicts, replies and the meters sit in ink steps.
 

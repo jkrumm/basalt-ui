@@ -26,7 +26,7 @@ const CUT = { light: BASALT.inkFaint, dark: BASALT.inkMuted }
 const band = (b: Bin): string => `${b.lo.toFixed(2)} to ${b.hi.toFixed(2)}`
 /** A bar is drawn over its whole band, so it is centred on the band's middle. */
 const mid = (b: Bin): number => (b.lo + b.hi) / 2
-// cycle-expression-3: refLines and engine rules on a band x take no value between bands, so no cut-off rule sits on a bar boundary; the colour split and a tag on the first kept bar say it, and the tags are engine marks because the kit has no label mark
+// cycle-expression-3: refLines and engine rules on a band x take no value between bands, so no cut-off rule sits on a bar boundary; the color split and a tag on the first kept bar say it, and the tags are engine marks because the kit has no label mark
 // cycle-expression-3: a binned numeric x gets one tick per bar and no tick-count knob, so only the bands that start on a quarter print a label
 const quarterLabel = (b: Bin): string => (milli(b.lo) % 250 === 0 ? b.lo.toFixed(2) : '')
 
@@ -169,7 +169,7 @@ export function ExprC11Scenario({ shotState, fixture }: ScenarioProps) {
             chart={() => (
               <CartesianChart
                 data={bins}
-                ariaLabel={`Chunks per relevance band, ${kept} kept at or above ${cutoff.toFixed(2)}`}
+                label={`Chunks per relevance band, ${kept} kept at or above ${cutoff.toFixed(2)}`}
                 x={{
                   value: mid,
                   format: (v) => {
@@ -257,7 +257,7 @@ export function ExprC11Scenario({ shotState, fixture }: ScenarioProps) {
             chart={() => (
               <CartesianChart
                 data={recencyBins}
-                ariaLabel="Kept and cut chunks per recency band"
+                label="Kept and cut chunks per recency band"
                 x={{
                   value: mid,
                   format: (v) => {

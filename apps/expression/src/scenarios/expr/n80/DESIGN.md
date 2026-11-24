@@ -28,7 +28,7 @@
 
 Table columns: priority 1 and 2 (Model, Rank, First audio, US$/min, Total) sum about 544 px by the kit's formula, so the table needs the 880 px cell it has.
 
-## Colour: meaning
+## Color: meaning
 
 - accent blue: the model a blind listen prefers for its preset (strip has none; chart dots and legend).
 - ink step: every other model.

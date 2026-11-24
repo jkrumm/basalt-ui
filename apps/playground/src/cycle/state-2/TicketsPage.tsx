@@ -129,7 +129,7 @@ function TicketsChart({ list }: { list: ListResult }): ReactElement {
       figure={{ value: list.data?.length ?? null, unit: 'tickets', period: 'in range' }}
       chart={(box) => (
         <Bars<Day>
-          ariaLabel="Tickets opened per day"
+          label="Tickets opened per day"
           data={days}
           x={{ value: (d) => d.day }}
           height={box.height}
@@ -154,13 +154,13 @@ function Queue(): ReactElement {
     <StatGroup variant="strip" label="Queue">
       <StatCell
         phase={queue}
-        label="Open tickets"
+        title="Open tickets"
         value={queue.data?.open ?? null}
         sub="Polled every 5 s"
       />
       <StatCell
         phase={queue}
-        label="Breaching SLA"
+        title="Breaching SLA"
         value={queue.data?.breaching ?? null}
         status={{ tone: 'bad', label: 'Over 4 h' }}
       />
@@ -303,7 +303,7 @@ function TicketsBody(): ReactElement {
     <Page area="cycle-state-2-tickets">
       <PageBar
         title="Tickets"
-        tabs={{ handle: tickets.field.view, label: 'Tickets view' }}
+        tabs={{ state: tickets.field.view, label: 'Tickets view' }}
         controls={FILTERS}
         connection={connection}
         refresh={{ scope: 'page', ...freshness.button }}

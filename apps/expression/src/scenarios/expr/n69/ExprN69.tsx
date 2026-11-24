@@ -256,7 +256,7 @@ function FleetTrend({
 }): ReactElement {
   return (
     <Sparkline
-      series={series}
+      points={series}
       height={height}
       format={formatPercent}
       label="Fleet mean, oldest first"
@@ -312,7 +312,7 @@ export function ExprN69Scenario({ shotState, fixture }: ScenarioProps) {
       <StatGroup variant="strip" label="Answers">
         <StatCell
           icon={RouteGlyph}
-          label="Next lead"
+          title="Next lead"
           value={next?.name ?? null}
           sub={next === undefined ? '' : `As of ${clock(next.readAt)}`}
           subMono
@@ -331,7 +331,7 @@ export function ExprN69Scenario({ shotState, fixture }: ScenarioProps) {
         />
         <StatCell
           icon={FillGlyph}
-          label="Fills before reset"
+          title="Fills before reset"
           value={fills?.name ?? null}
           sub={fills === undefined ? '' : stamp(fills.fullAt ?? NOW)}
           subMono
@@ -359,7 +359,7 @@ export function ExprN69Scenario({ shotState, fixture }: ScenarioProps) {
         />
         <StatCell
           icon={LeftoverGlyph}
-          label="Unused on average"
+          title="Unused on average"
           value={ready ? v.unusedMean : null}
           unit="%"
           delta={{

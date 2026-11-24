@@ -28,7 +28,7 @@ Four weekly windows, newest first in the data, drawn oldest to newest. One `useC
 
 No part is full width for four marks; the lower 160 px is empty by the card heights.
 
-## Colour: meaning
+## Color: meaning
 
 - Accent blue: the class that rose (line, table dot, figure status dot). One meaning, chosen from the data.
 - Ink steps: every other class line and the two total panes (dark for totals, mid for repos).

@@ -23,7 +23,7 @@
 
 The lower 470 px of the frame is empty: the question has no other part. All three parts end at y 728 in every phase.
 
-## Colour: meaning
+## Color: meaning
 
 - accent (brand): the last 24 hours bar and its legend entry. Nothing else.
 - ink step (mid grey): every other day.

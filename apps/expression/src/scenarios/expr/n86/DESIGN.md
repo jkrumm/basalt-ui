@@ -15,11 +15,11 @@
 
 Priority 1 and 2 columns (Check, Result, Detail, Findings, Days since last run) sum well past 480 px; the table runs full width. No part restates another: the strip counts, the table lists. The page ends at y 848, content-sized.
 
-## Colour, one meaning each
+## Color, one meaning each
 
 - blue (accent): found work (strip status dot, table status dot).
 - red (status hue): failed.
-- ink steps: clean, skipped, never run, every meter. No series file group: no mark of mine needs a series colour.
+- ink steps: clean, skipped, never run, every meter. No series file group: no mark of mine needs a series color.
 
 ## Surface notes
 

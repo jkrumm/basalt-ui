@@ -22,7 +22,7 @@ Strip of three cells answers the three clauses. Below, the step list (what each 
 
 Known kit gap seen: a band of about 110 px under the step list at 1800, the list's card stretched to the chart card's height.
 
-## Colour: meaning
+## Color: meaning
 
 - blue: a run that stayed remote
 - dark ink: no room on the remote host (bar segment, chart dots, legend)

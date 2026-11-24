@@ -95,7 +95,7 @@ const ROLLHOOK = 'rollhook'
 const DEFAULT: readonly Draft[] = [
   {
     key: 'r',
-    title: 'Move the series colours into the token layer',
+    title: 'Move the series colors into the token layer',
     project: BASALT,
     state: 'queued',
     after: [],

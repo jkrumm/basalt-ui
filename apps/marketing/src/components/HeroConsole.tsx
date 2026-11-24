@@ -17,8 +17,8 @@ export function HeroConsole(): ReactElement {
         subtitle="this week"
         value={34}
         delta={{ value: "+17%", polarity: "up-good" }}
-        chart={(box) => <Sparkline series={DEPLOYS} height={box.height} label="Deploys per week" />}
-        xLabels={["Jul", "Aug", "Sep"]}
+        chart={(box) => <Sparkline points={DEPLOYS} height={box.height} label="Deploys per week" />}
+        axisLabels={["Jul", "Aug", "Sep"]}
         footer={[
           { label: "Rollbacks", value: 1 },
           { label: "Services", value: 6 },
@@ -31,9 +31,9 @@ export function HeroConsole(): ReactElement {
         unit="s"
         delta={{ value: "-4 s", polarity: "up-bad" }}
         chart={(box) => (
-          <Sparkline series={BUILD} height={box.height} label="Median build per week" />
+          <Sparkline points={BUILD} height={box.height} label="Median build per week" />
         )}
-        xLabels={["Jul", "Aug", "Sep"]}
+        axisLabels={["Jul", "Aug", "Sep"]}
         footer={[
           { label: "Cache hits", value: "92%" },
           { label: "Runners", value: 3 },
@@ -48,12 +48,12 @@ export function FleetStrip(): ReactElement {
   return (
     <StatGroup variant="strip" label="Fleet this week">
       <StatCell
-        label="Services healthy"
+        title="Services healthy"
         value="6 / 6"
         status={{ tone: "good", label: "all up" }}
         chart={(box) => (
           <Sparkline
-            series={[5, 6, 6, 5, 6, 6, 6]}
+            points={[5, 6, 6, 5, 6, 6, 6]}
             height={box.height}
             reference={6}
             label="Healthy services per day"
@@ -61,12 +61,12 @@ export function FleetStrip(): ReactElement {
         )}
       />
       <StatCell
-        label="Deploys"
+        title="Deploys"
         value={34}
         delta={{ value: "+17%", polarity: "up-good", label: "vs last week" }}
       />
       <StatCell
-        label="Median build"
+        title="Median build"
         value={174}
         unit="s"
         delta={{ value: "-4 s", polarity: "up-bad", label: "vs last week" }}

@@ -18,7 +18,7 @@ The track reads along time, so it takes the row's full width; the two lists sit 
 
 Priority 1 and 2 columns of both tables sum under 480 px, so both stay tables at 750 px. Nothing is full width for four rows or one mark, no gap is card-wide, and every part joins the one focus. At 390 the card comes first (answer above the fold), the lists stack under it as cards, every column reachable (`card: 'value'` puts the meter on the card face).
 
-## Colour: meaning
+## Color: meaning
 
 - accent blue: an internet outage
 - dark ink: a gateway outage

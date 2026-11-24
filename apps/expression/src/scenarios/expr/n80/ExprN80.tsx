@@ -127,7 +127,7 @@ export function ExprN80Scenario({ shotState, fixture }: ScenarioProps): ReactEle
             <StatCell
               key={preset}
               icon={PRESET_ICON[preset]}
-              label={PRESET_NAME[preset]}
+              title={PRESET_NAME[preset]}
               info="The one a blind listen prefers for this preset. Verbatim is the share of its samples a speech-to-text round trip read back word for word."
               phase={phase}
               empty={

@@ -43,7 +43,7 @@ const COLUMNS = [
     priority: 1,
     options: STATES,
     labels: STATE_LABEL,
-    // cycle-expression-10: a status dot has a tone, not a series colour, so the three decided states
+    // cycle-expression-10: a status dot has a tone, not a series color, so the three decided states
     // share the neutral dot and the verdict word tells them apart (the bars draw them in three steps).
     tone: (state) => (state === 'waiting' ? 'accent' : 'neutral'),
   }),
@@ -142,11 +142,11 @@ export function ExprN43Scenario({ shotState, fixture }: ScenarioProps) {
                 chart={(box) => (
                   <Sparkline
                     height={box.height}
-                    series={perDay}
+                    points={perDay}
                     label="Specs and Reports that came in per day over 14 days"
                   />
                 )}
-                xLabels={['14 days ago', '7 days ago', 'Today']}
+                axisLabels={['14 days ago', '7 days ago', 'Today']}
                 {...cameShown}
               />
             </div>

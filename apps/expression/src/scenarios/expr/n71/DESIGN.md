@@ -20,7 +20,7 @@ Assumption: "more keepers" means more of the judged photos get 4 stars or more, 
 
 Row 1 ends flush at 548. No part is full width for under four rows; the first 1200 px has no card-wide gap. At 390 the order is the answer card, the rating chart, storage, bodies, lenses; the rate and the 225 are in the first screen.
 
-## Colour: meaning
+## Color: meaning
 
 - accent (brand): keeper bars and the Keepers zone, nothing else.
 - amber (status): the Behind zone of the Meter, the one state that needs action.

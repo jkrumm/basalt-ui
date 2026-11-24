@@ -23,7 +23,7 @@ At 390 the strip comes first (answers above the fold), then the bars, then the t
 
 Checks: no two parts answer one question; no full-width part of four rows; no card-wide gap in the first 1200 px; every part joins. The lower 300 px of the frame is empty page, not a card band (the bar list takes its rows' height).
 
-## Colour: meaning
+## Color: meaning
 
 - blue (accent): Issues that closed with a measured gain (bar segment and legend only)
 - ink, dark: dropped as noise

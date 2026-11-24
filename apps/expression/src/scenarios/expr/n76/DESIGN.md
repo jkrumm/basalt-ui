@@ -22,7 +22,7 @@
 
 No gap wider than 12 px; both columns end at one height.
 
-## Colour: meaning
+## Color: meaning
 
 - accent (blue): now, the latest hour and the items being fetched
 - status red: needs a hand, a failure to retry or a pause with no reason recorded

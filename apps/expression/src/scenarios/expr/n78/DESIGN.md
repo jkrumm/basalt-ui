@@ -21,7 +21,7 @@ Round 1 dropped the heat grid and the in/out bar list of round 0: they listed th
 
 The lower half of the frame is empty: six mailboxes are six rows, and a part added to fill it would restate the table. The table shows all nine data columns at 1800 in one line per row; at 390 each row is a card with every column, the address and provider on the title line.
 
-## Colour: meaning
+## Color: meaning
 
 - status red: a mailbox that is not syncing (state dot, "need a look" count, "with failures" count)
 - ink steps: bars of size (silence, pending, failed); nothing else is drawn

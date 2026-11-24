@@ -46,7 +46,7 @@ function StatStatesRoute(): ReactElement {
       <StatGroup variant="cards" label="Link health">
         <StatCell
           icon={Gauge}
-          label="Downstream"
+          title="Downstream"
           value={first === undefined ? null : Math.round(first.down * 10) / 10}
           unit="Mbit/s"
           meter={{ label: 'Downstream', value: first?.down ?? null, max: 100 }}
@@ -55,7 +55,7 @@ function StatStatesRoute(): ReactElement {
         />
         <StatCell
           icon={Timer}
-          label="Upstream"
+          title="Upstream"
           value={first === undefined ? null : Math.round(first.up * 10) / 10}
           unit="Mbit/s"
           delta={{ value: '+1.2', polarity: 'up-good', label: 'vs last week' }}

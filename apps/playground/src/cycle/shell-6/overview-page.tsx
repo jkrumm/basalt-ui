@@ -76,7 +76,7 @@ export function OverviewPage({ data }: { data: Overview | undefined }): ReactEle
       />
       <StatGroup variant="strip" label="Health">
         <StatCell
-          label="Deploys"
+          title="Deploys"
           phase={ready ? 'ready' : 'loading'}
           value={ready ? now.deploys : null}
           delta={{
@@ -89,7 +89,7 @@ export function OverviewPage({ data }: { data: Overview | undefined }): ReactEle
           }}
         />
         <StatCell
-          label="Success rate"
+          title="Success rate"
           phase={ready ? 'ready' : 'loading'}
           value={ready && !empty ? rate(now).toFixed(1) : null}
           unit="%"
@@ -101,14 +101,14 @@ export function OverviewPage({ data }: { data: Overview | undefined }): ReactEle
           }}
         />
         <StatCell
-          label="Median duration"
+          title="Median duration"
           phase={ready ? 'ready' : 'loading'}
           value={ready && !empty ? now.medianS : null}
           unit="s"
           sub={ready && !empty ? `Prior ${days} days: ${prior.medianS} s` : ''}
         />
         <StatCell
-          label="Failing services"
+          title="Failing services"
           phase={ready ? 'ready' : 'loading'}
           value={ready ? (data?.failing ?? 0) : null}
           unit={ready ? `of ${data?.services ?? 0}` : ''}

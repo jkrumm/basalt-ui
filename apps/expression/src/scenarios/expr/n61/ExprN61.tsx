@@ -103,12 +103,12 @@ export function ExprN61Scenario({ shotState, fixture }: ScenarioProps) {
           }}
           sub={longest?.id ?? ''}
           subMono
-          xLabels={['Oldest', 'Dashed line, one week', 'Newest']}
+          axisLabels={['Oldest', 'Dashed line, one week', 'Newest']}
           chart={(box) => (
             <Sparkline
               height={box.height}
               label="Time waited by each Issue, oldest first"
-              series={rows.map((r) => ({ value: r.days }))}
+              points={rows.map((r) => ({ value: r.days }))}
               reference={LATE_HOURS / 24}
               cap={CAP_DAYS}
             />

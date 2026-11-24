@@ -3,7 +3,7 @@
  *
  * Run AFTER a playground build (`bun --filter @basalt-ui/playground build`). Serves `dist/` on an
  * ephemeral port with a single-page fallback, opens Google Chrome, and writes one PNG per route,
- * colour scheme and viewport to `.evidence/v3-shots/<route-slug>--<light|dark>--<WxH>.png`.
+ * color scheme and viewport to `.evidence/v3-shots/<route-slug>--<light|dark>--<WxH>.png`.
  *
  * The scheme is chosen by writing localStorage `basalt:scheme` BEFORE the document loads (an init
  * script), so the boot script paints the right scheme from the first frame and no toggle click is

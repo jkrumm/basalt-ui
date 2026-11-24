@@ -70,7 +70,7 @@ Measures and their words: cost (US$, "cost"), tokens ("tokens"), usage records (
 
 Helpers and maps (`rg -n 'UNPRICED|NONE|PARTS|cellName|cellReading|spanReading|text\(f'`): `UNPRICED.label` reaches the viewer in the legend and, for an unpriced cell, in the focus reading, which only exists on focus. `cellName` and `spanReading` print the focus period and the announcement, which is the live region and not a slot on the frame. `PARTS` labels the hours list rows only.
 
-## Colour
+## Color
 
 - ink ramp: size of the measure in a cell (light to dark); one hue family on the page.
 - mid grey: cells with records but no cost.

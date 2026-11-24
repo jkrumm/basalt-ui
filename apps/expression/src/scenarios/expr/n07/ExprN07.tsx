@@ -78,7 +78,7 @@ function NightList({
           >
             <span className={`${CELL} font-mono`}>{n.label}</span>
             <span className={CELL}>
-              {/* cycle-expression-5: Swatch takes only a series group the provider registers, so the list cannot reuse the bar colours; the best night's accent dot and a neutral dot for the grey steps stand in. */}
+              {/* cycle-expression-5: Swatch takes only a series group the provider registers, so the list cannot reuse the bar colors; the best night's accent dot and a neutral dot for the grey steps stand in. */}
               <Status tone={kind === 'best' ? 'accent' : 'neutral'}>{KIND_LABEL[kind]}</Status>
             </span>
             <span
@@ -156,7 +156,7 @@ export function ExprN07Scenario({ shotState, fixture }: ScenarioProps): ReactEle
           chart={(box) => (
             <CartesianChart<Night>
               height={box.height}
-              ariaLabel="Dark hours for each of the next ten nights, by verdict"
+              label="Dark hours for each of the next ten nights, by verdict"
               data={nights}
               focus={focus}
               x={{

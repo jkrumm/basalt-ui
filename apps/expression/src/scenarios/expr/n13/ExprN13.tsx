@@ -102,9 +102,9 @@ export function ExprN13Scenario({ shotState, fixture }: ScenarioProps) {
         label: 'Cost per month, December to November',
         render: (r, box) => (
           <Sparkline
-            series={r.monthly}
+            points={r.monthly}
             height={box.height}
-            ariaLabel={`${r.payee}, cost per month, December to November`}
+            label={`${r.payee}, cost per month, December to November`}
           />
         ),
       }),
@@ -142,9 +142,9 @@ export function ExprN13Scenario({ shotState, fixture }: ScenarioProps) {
               {...(rows.length === 0 ? {} : { delta })}
               chart={(box) => (
                 <Sparkline
-                  series={totals}
+                  points={totals}
                   height={box.height}
-                  ariaLabel="Total cost per month, December to November"
+                  label="Total cost per month, December to November"
                   axisLabels={[MONTHS[0], MONTHS[6], MONTHS[11]]}
                   format={(v) => money(v, 0)}
                 />
@@ -173,7 +173,7 @@ export function ExprN13Scenario({ shotState, fixture }: ScenarioProps) {
                 <CartesianChart<Row>
                   // cycle-expression-4: a chart with `focus` is wrapped in a div that does not fill the card box, so `height="fill"` fell back to 320 px and clipped; the box is `short` (160) and the chart states it
                   height={160}
-                  ariaLabel="Change in monthly cost per charge since December, largest rise first"
+                  label="Change in monthly cost per charge since December, largest rise first"
                   data={rows}
                   x={{ value: (r) => r.payee }}
                   y={{

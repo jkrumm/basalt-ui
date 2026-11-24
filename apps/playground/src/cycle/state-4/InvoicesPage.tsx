@@ -125,7 +125,7 @@ function InvoicesChart({ list }: { list: ListResult }): ReactElement {
       figure={{ value: list.data?.length ?? null, unit: 'invoices', period: 'in range' }}
       chart={(box) => (
         <Bars<Day>
-          ariaLabel="Invoiced amount per day"
+          label="Invoiced amount per day"
           data={perDay(list.data ?? [])}
           x={{ value: (d) => d.day }}
           height={box.height}
@@ -150,14 +150,14 @@ function Receivables(): ReactElement {
     <StatGroup variant="strip" label="Receivables">
       <StatCell
         phase={stats}
-        label="Outstanding"
+        title="Outstanding"
         value={stats.data?.outstanding ?? null}
         unit="EUR"
         sub="Polled every 5 s"
       />
       <StatCell
         phase={stats}
-        label="Overdue"
+        title="Overdue"
         value={stats.data?.overdue ?? null}
         status={{ tone: 'bad', label: 'Past 30 days' }}
       />
@@ -286,7 +286,7 @@ function InvoicesBody(): ReactElement {
     <Page area="cycle-state-4-invoices">
       <PageBar
         title="Invoices"
-        tabs={{ handle: field.view, label: 'Invoices view' }}
+        tabs={{ state: field.view, label: 'Invoices view' }}
         controls={FILTERS}
         connection={connection}
         refresh={{ scope: 'page', ...freshness.button }}

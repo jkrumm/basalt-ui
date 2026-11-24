@@ -158,7 +158,7 @@ export function ExprN36Scenario({ shotState, fixture }: ScenarioProps) {
       <PageBar title="Open merge requests" />
       <StatGroup variant="cards" label="Your queue">
         <StatCell
-          label="Waiting on you"
+          title="Waiting on you"
           info={`Reviews you owe. Overdue after ${SLOW_AFTER_HOURS} hours.`}
           value={waiting.length}
           delta={waitingDelta(waiting.length, shotState === 'empty' ? 0 : data.waitingYesterday)}
@@ -175,9 +175,9 @@ export function ExprN36Scenario({ shotState, fixture }: ScenarioProps) {
           ]}
         />
         <StatCell
-          label="Yours, stuck"
+          title="Yours, stuck"
           info={`Your merge requests with a failed pipeline, or open over ${SLOW_AFTER_HOURS} hours and short of approvals.`}
-          qualifier={shotState === 'loading' ? undefined : `of ${mine.length} open`}
+          subtitle={shotState === 'loading' ? undefined : `of ${mine.length} open`}
           value={stuck.length}
           phase={phase}
           rows={[

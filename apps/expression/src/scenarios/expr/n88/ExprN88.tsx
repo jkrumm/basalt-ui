@@ -189,11 +189,11 @@ export function ExprN88Scenario({ shotState, fixture }: ScenarioProps) {
                 value: ready && lead.costUsd !== null ? f.money(lead.costUsd, 'USD') : '',
               },
             ]}
-            chartHeight={120}
+            height={120}
             chart={(box) => (
               <Sparkline
                 label="Cost by day, the lead as the line"
-                series={data.days.map((d) => d.lightCost)}
+                points={data.days.map((d) => d.lightCost)}
                 height={box.height}
                 reference={lead.costUsd ?? 'mean'}
                 format={(v) => f.money(v, 'USD')}
@@ -211,11 +211,11 @@ export function ExprN88Scenario({ shotState, fixture }: ScenarioProps) {
               moved === null || light.movedUp === null ? '' : `${light.movedUp} of ${light.issues}`
             }
             footer={[{ label: 'Break-even', value: ready ? 'Not measured' : '' }]}
-            chartHeight={96}
+            height={96}
             chart={(box) => (
               <Sparkline
                 label="Moved-up share by day"
-                series={data.days.map((d) => d.lightMoved)}
+                points={data.days.map((d) => d.lightMoved)}
                 height={box.height}
                 format={(v) => f.percent(v / 100)}
               />

@@ -236,7 +236,7 @@ export function ExprN77Scenario({ shotState, fixture }: ScenarioProps) {
               formatValue={formatCount}
               formatLegend={formatCount}
               tickCols={narrow ? STEP_DAYS : DAYS}
-              legend={{ label: 'Jobs per cell, the top colour from 4' }}
+              legend={{ label: 'Jobs per cell, the top color from 4' }}
               tooltip={false}
               focus={focus}
             />
