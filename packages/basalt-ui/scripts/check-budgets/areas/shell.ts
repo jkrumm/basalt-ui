@@ -76,8 +76,8 @@ export const rows: readonly RowDef[] = [
     // 144400 -> 146600 (Issue 2939): 146457 B measured; the panel anatomy the Dock and the aside draw and the Dock's dragged width.
     // 146600 -> 161800 (Issue 3106): 161405 B measured; the workspace switcher (menu radios, avatar), the Favourites section (`SortableList`) and the rail's width handle.
     // 161800 -> 169000 (Issue 3102): 168504 B measured; the palette draws its rows and group headers through the list engine.
-    // 169000 -> 178000 (Issue 3205): 177779 B measured; the two phone nav trial variants, one lazy chunk this row counts and an app loads only when a variant is picked.
-    ceiling: 178000,
+    // 169000 -> 181000 (Issue 3205): 180751 B measured; the two phone nav trial variants and the palette's phone sheet, lazy chunks this row counts and an app loads only when a variant is picked.
+    ceiling: 181000,
     measure: () => measureSource(reExportAll({ shell: 'shell/index' })),
   },
   {
@@ -90,8 +90,8 @@ export const rows: readonly RowDef[] = [
     // 30983 B with the hotkeys library, which only the palette binds through (Issue 2570).
     // 31500 -> 31700 (Issue 3106): 31514 B measured; the shell it is measured over grew.
     // 31700 -> 39200 (Issue 3102): 38670 B measured; the list engine's rows, group headers and state rows.
-    // 39200 -> 40500 (Issue 3205): 40318 B measured; the palette opens as a bottom sheet on a phone under a trial nav.
-    ceiling: 40500,
+    // 39200 -> 43500 (Issue 3205): 43289 B measured; the palette opens as a bottom sheet on a phone under a trial nav, a lazy chunk this row counts (inline it cost 13 KB more in every page's palette island, astro-matrix.json).
+    ceiling: 43500,
     measure: async () =>
       (await measureSource(`${SHELL_WITHOUT_PALETTE}\n${PALETTE}`)) -
       (await measureSource(SHELL_WITHOUT_PALETTE)),
@@ -111,7 +111,7 @@ export const raises: Raises = {
   'shell-subpath': [
     {
       from: 169000,
-      to: 178000,
+      to: 181000,
       consumer:
         'the phone nav trial the owner judges on his phone (Issue 3205): a bar of nav sections with a tray (A) or a short drawer (B), and More sliding the app aside to reveal the rail, behind one seam, loaded with lazy() only when the playground picks one; the variant he does not pick is deleted after his answer and this row ratchets back',
       repo: 'basalt-ui',
@@ -169,9 +169,9 @@ export const raises: Raises = {
   'shell-palette-marginal': [
     {
       from: 39200,
-      to: 40500,
+      to: 43500,
       consumer:
-        'the phone nav trial (Issue 3205): under a trial variant the command palette opens as a bottom sheet on a phone, its search field at the top above the keyboard',
+        'the phone nav trial (Issue 3205): under a trial variant the command palette opens as a bottom sheet on a phone, its search field at the top above the keyboard; the sheet is a lazy chunk, which this row counts and a page loads only when it opens',
       repo: 'basalt-ui',
     },
     {

@@ -1,5 +1,5 @@
 import { useRouter } from '@tanstack/react-router'
-import { useContext, useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactElement } from 'react'
 import { requestMainFocus } from '../../common/focus'
 import { useIsomorphicLayoutEffect } from '../../common/isomorphic-layout-effect'
@@ -7,7 +7,6 @@ import { navFor } from '../../router/nav/registry'
 import { Autocomplete, AutocompleteInput } from '../../ui/combobox'
 import { useSizeClass } from '../../page/use-size-class'
 import { Dialog, DialogContent } from '../../ui/dialog'
-import { Sheet, SheetContent } from '../../ui/sheet'
 import { OptionListBody, useListHighlight, useOptionList } from '../../core/list/engine'
 import type { ListGroup, ListItems, ListOption } from '../../core/list/options'
 import { PopupFrame } from '../../core/list/popup'
@@ -24,8 +23,10 @@ import { defaultRank } from './rank'
 import type { PaletteItem, RankFn } from './rank'
 import { ShortcutOverlay } from './shortcut-overlay'
 
-/** The palette's own strings, English until the shell's message keys land. */
-const PALETTE_TEXT = { search: 'Search' } as const
+/** The palette as a bottom sheet, loaded only when a trial phone nav opens it on a phone. */
+const LazyPaletteSheet = lazy(async () => ({
+  default: (await import('./palette-sheet')).PaletteSheet,
+}))
 
 export type CommandPaletteProps = {
   commands: CommandSet
@@ -217,17 +218,11 @@ export function CommandPalette({
     return (
       <>
         <ShortcutOverlay commands={commands} />
-        <Sheet open={open} onOpenChange={setOpen} placement="bottom">
-          <SheetContent
-            title={PALETTE_TEXT.search}
-            initialFocus={() =>
-              document.querySelector<HTMLElement>('[data-slot="command-palette"] input')
-            }
-            className="h-[min(85dvh,640px)] max-h-[min(85dvh,640px)] pb-[max(env(safe-area-inset-bottom),var(--shell-safe-bottom,0px))]"
-          >
+        <Suspense fallback={null}>
+          <LazyPaletteSheet open={open} onOpenChange={setOpen}>
             {body}
-          </SheetContent>
-        </Sheet>
+          </LazyPaletteSheet>
+        </Suspense>
       </>
     )
   }
