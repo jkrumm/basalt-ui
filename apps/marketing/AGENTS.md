@@ -7,31 +7,8 @@ works here, so a shortcut taken on this site becomes theirs. Root `AGENTS.md` ho
 
 ## How it is wired
 
-- `astro.config.mjs`: `integrations: [react(), basaltAstro(), starlight(...)]`. `basaltAstro()` from
-  `basalt-ui/astro` adds `@tailwindcss/vite`, injects `basalt-ui/static.css` on every page, registers
-  the three faces with the Astro Fonts API and inlines the scheme script and the parts' listeners in the head.
-  Never add `tailwindcss()` to `vite.plugins` by hand: the integration adds it once.
-- `src/layouts/Layout.astro` is the one layout for non-docs pages: `<BasaltFonts />` in the head,
-  `SiteHeader`, `SiteFooter`, `ThemeSwitch`. Links and every visible word live in `src/lib/site.ts`;
-  a part takes its words as props, never from basalt.
-- `/docs/*` is Starlight (`src/content/docs/docs/`), themed by `basalt-ui/starlight.css` in
-  `customCss`. `src/components/starlight/` overrides `Head` (fonts), `ThemeProvider` (basalt's scheme
-  script) and `ThemeSelect` (basalt's `ThemeSwitch`), so docs and site share one stored scheme.
-- `/guides/*` are MDX files under `src/guides/` rendered in `SiteArticle` with
-  `siteMdxComponents(...)` as their components; raw Markdown is styled by element through
-  `.basalt-prose`, and `<SiteCallout>`, `<Steps>` and `<Figure>` need no import.
-- `/` is built from the landing blocks (`SiteHero`, `SiteBento`, `SiteComparison`, `SiteQuestionList`,
-  `SiteCallToAction`); its words and data live in `src/lib/landing.ts`. `src/components/` holds React
-  compositions of basalt parts that render with no directive (the hero's stat cards).
-- `/charts` holds the site's one hand-written island (`src/islands/`). `src/styles/site.css` adds the
-  `@source` lines for the chart, card and table classes the islands use.
-- MDX pages take `Tabs`, `Tab`, `Form`, `Field` and `SubmitButton` from `siteMdxComponents(...)`, which render
-  with no JavaScript; `DataTable` and `Chart` are the package's `basalt-ui/astro/mdx/*.astro` tags, added to
-  `components` by the page. `/guides/interactive-content` is held at zero module JavaScript (it is not in
-  `SCRIPTED`); `/guides/islands-in-mdx` carries the two islands.
-- A fence in a guide is highlighted by Starlight's expressive-code, whose copy-button module script
-  `plugins/guide-static-code.mjs` removes from `src/guides/` pages (the site's `SiteCodeBlock` button stays);
-  the docs keep it. The integration must follow `starlight()` in `integrations`.
+The Astro integration, the layout, the Starlight overrides, the guides and the landing blocks are wired in
+`src/AGENTS.md` (section How it is wired): read it before changing `astro.config.mjs`, a layout or a guide.
 
 ## Rules for a page
 
