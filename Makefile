@@ -190,11 +190,17 @@ quality-matrix: browser-shell ## Quality matrix in a real browser: make quality-
 # the routes whose render imports a changed file run (BASALT_MATRIX_ROUTES, the log names them and why), up to 48 cells; a
 # module of the shell, a token sheet, a manifest or a file the graph cannot place runs the 24-cell smoke set; the matrix's
 # own harness, or no merge base, runs it whole; no page reached, nothing. `make quality-matrix` and `make check` run it whole.
+# A route that already passed at the same content (scripts/green-cache.ts: the files its render reaches, the matrix's own code and
+# the manifests, unchanged) is not run again; a pass is recorded only when the step exits 0. The whole-matrix targets never read it.
 quality-matrix-fast: ## Quality matrix: only the routes the branch's changes reach, the smoke set for a shared change, whole for a harness change (BASE=<ref>, default origin/master)
 	@sel="$$(bun scripts/matrix-select.ts --base $(or $(BASE),origin/master))" || exit $$?; \
 	case "$$sel" in \
 		skip) exit 0;; \
-		routes\ *) $(MAKE) --no-print-directory quality-matrix BASALT_MATRIX_ROUTES="$${sel#routes }";; \
+		routes\ *) pages="$${sel#routes }"; \
+			todo="$$(bun scripts/green-cache.ts plan quality "$$pages")" || todo="$$pages"; \
+			if [ -z "$$todo" ]; then exit 0; fi; \
+			$(MAKE) --no-print-directory quality-matrix BASALT_MATRIX_ROUTES="$$todo" || exit $$?; \
+			bun scripts/green-cache.ts record quality "$$todo";; \
 		*) $(MAKE) --no-print-directory quality-matrix;; \
 	esac
 
@@ -227,7 +233,11 @@ astro-matrix-fast:
 	@sel="$$(bun scripts/matrix-select.ts --astro --base $(or $(BASE),origin/master))" || exit $$?; \
 	case "$$sel" in \
 		skip) exit 0;; \
-		parts\ *) $(MAKE) --no-print-directory astro-matrix-run ASTRO_PARTS="$${sel#parts }";; \
+		parts\ *) parts="$${sel#parts }"; \
+			todo="$$(bun scripts/green-cache.ts plan astro "$$parts")" || todo="$$parts"; \
+			if [ -z "$$todo" ]; then exit 0; fi; \
+			$(MAKE) --no-print-directory astro-matrix-run ASTRO_PARTS="$$todo" || exit $$?; \
+			bun scripts/green-cache.ts record astro "$$todo";; \
 		*) $(MAKE) --no-print-directory astro-matrix-run;; \
 	esac
 

@@ -57,13 +57,13 @@ export const ASTRO_INPUTS: readonly string[] = [
 ]
 
 /** The quality matrix's own code: a change to it can move every cell. */
-const QUALITY_HARNESS: readonly string[] = [
+export const QUALITY_HARNESS: readonly string[] = [
   'packages/basalt-ui/tests/quality',
   'packages/basalt-ui/tests/support',
 ]
 
 /** The Astro matrix's own code: a change to it can move every part, and runs the smoke set locally (never every part). */
-const ASTRO_HARNESS: readonly string[] = [
+export const ASTRO_HARNESS: readonly string[] = [
   'apps/playground-astro/scripts',
   'apps/playground-astro/astro.config.mjs',
   'apps/playground-astro/package.json',
@@ -72,10 +72,10 @@ const ASTRO_HARNESS: readonly string[] = [
   'apps/playground-astro/src/parts/types.ts',
   'apps/playground-astro/src/parts/findings.ts',
 ]
-const ASTRO_RECORD = 'docs/v3/verdicts/astro-matrix.json'
+export const ASTRO_RECORD = 'docs/v3/verdicts/astro-matrix.json'
 
 /** The package files outside src that shape its dist (the `build` script of its package.json): the build config and the post-build rewrites. */
-const BUILD_SHAPE: readonly string[] = [
+export const BUILD_SHAPE: readonly string[] = [
   'packages/basalt-ui/package.json',
   'packages/basalt-ui/tsup.config.ts',
   'packages/basalt-ui/tsconfig.json',
@@ -127,7 +127,7 @@ const ADDITIVE: readonly string[] = [INFO, REGISTRY, 'apps/playground/src/demo/s
 /** Files the graph reads; a changed file of another kind (an image, a font, a config) it cannot place. */
 const READABLE = /\.(?:[cm]?[jt]sx?|css|mdx|md|json|astro)$/
 /** A manifest, lockfile or compiler config: it reaches every page without an import edge. */
-const MANIFEST =
+export const MANIFEST =
   /(?:^|\/)(?:package\.json|bun\.lock|bunfig\.toml|tsconfig[^/]*\.json|vite\.config\.ts|index\.html)$/
 
 /** A test or test-only module: no page imports one, deleted or not. */
