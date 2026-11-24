@@ -68,13 +68,15 @@ type Overview = { days: readonly Day[]; projects: typeof PROJECTS; events: typeo
 const OVERVIEW: Overview = { days: DAYS, projects: PROJECTS, events: EVENTS }
 const NO_OVERVIEW: Overview = { days: [], projects: [], events: [] }
 
-type Frame = { phase: QueryStateLike }
+/** A frame's phase and its empty state: the stat frames count the range's requests, so no traffic is empty. */
+type Frame = { phase: QueryStateLike; empty: { cause: string } | null }
 
 // #region stat-group
-const health = ({ phase }: Frame) => (
+const health = ({ phase, empty }: Frame) => (
   <StatGroup variant="strip" label="Service health">
     <StatCell
       phase={phase}
+      empty={empty}
       title="Uptime"
       subtitle="30 days"
       value="99.98"
@@ -83,6 +85,7 @@ const health = ({ phase }: Frame) => (
     />
     <StatCell
       phase={phase}
+      empty={empty}
       title="p95"
       value={182}
       unit="ms"
@@ -90,6 +93,7 @@ const health = ({ phase }: Frame) => (
     />
     <StatCell
       phase={phase}
+      empty={empty}
       title="Open incidents"
       value={0}
       status={{ tone: 'good', label: 'None open' }}
@@ -99,9 +103,10 @@ const health = ({ phase }: Frame) => (
 // #endregion
 
 // #region stat-card
-const requests = ({ phase }: Frame) => (
+const requests = ({ phase, empty }: Frame) => (
   <StatCard
     phase={phase}
+    empty={empty}
     title="Requests"
     subtitle="follows the page range"
     value={12840}
@@ -109,9 +114,10 @@ const requests = ({ phase }: Frame) => (
     controls={filterSlot([spec(overview.widget.requests.range, 'Range')])}
   />
 )
-const errors = ({ phase }: Frame) => (
+const errors = ({ phase, empty }: Frame) => (
   <StatCard
     phase={phase}
+    empty={empty}
     title="Errors"
     subtitle="own range"
     value={212}
@@ -200,7 +206,10 @@ const tabs: NonNullable<ComponentProps<typeof PageBar>['tabs']> = {
 function OverviewRoute(): ReactElement {
   const [tab] = overview.field.tab.use()
   const query = useFixture(['overview'], OVERVIEW, NO_OVERVIEW)
-  const frame: Frame = { phase: query }
+  const frame: Frame = {
+    phase: query,
+    empty: query.data?.days.length === 0 ? { cause: 'No traffic in this range yet.' } : null,
+  }
   return (
     <Page area="overview">
       <PageBar tabs={tabs} controls={filterSlot([spec(globals.field.range, 'Range')])} />

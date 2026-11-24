@@ -5,7 +5,7 @@
  */
 import { queryOptions, useQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
-import { DataPanel, StepRail } from 'basalt-ui/cards'
+import { DataPanel, EventList, StepRail } from 'basalt-ui/cards'
 import type { CardMenu, FrameHead, Phase, QueryStateLike } from 'basalt-ui/cards'
 import { shotState, useConnection, useFreshness } from 'basalt-ui/data'
 import { CardGrid, Page, PageBar } from 'basalt-ui/page'
@@ -39,8 +39,23 @@ const FORCED: Record<'loading' | 'error', Phase> = {
   error: { tag: 'error', message: 'The deploy service answered 502 Bad Gateway.' },
 }
 
-/** No incident is open: the panel shows its empty state at rest. */
-const NO_INCIDENTS: readonly { id: string; title: string }[] = []
+/** The month's incidents, newest first: both closed. */
+const INCIDENTS = [
+  {
+    id: 'inc-12',
+    at: DEPLOYS_NOW - 3 * 86_400_000,
+    actor: 'Lin',
+    title: 'closed: search answered 503 after 2.8.1',
+    chips: ['search'],
+  },
+  {
+    id: 'inc-11',
+    at: DEPLOYS_NOW - 9 * 86_400_000,
+    actor: 'Ada',
+    title: 'closed: billing webhooks retried for 40 minutes',
+    chips: ['billing'],
+  },
+]
 
 const TONES = { Live: 'good', Failed: 'bad', 'Rolled back': 'warn' } as const
 
@@ -76,7 +91,7 @@ const LAST_DEPLOY_MENU: CardMenu = [
 function StatesRoute(): ReactElement {
   const result = shotState(useQuery(deploysQuery))
   const [phase] = store.field.phase.use()
-  const incidents = useFixture(['kit-states', 'incidents'], NO_INCIDENTS)
+  const incidents = useFixture(['kit-states', 'incidents'], INCIDENTS, [])
   const connection = useConnection()
   const freshness = useFreshness([deploysQuery.queryKey])
   const rows = phase === 'empty' ? [] : result.data
@@ -133,7 +148,7 @@ function StatesRoute(): ReactElement {
               ? { cause: 'Nothing deployed yet: a merge to main starts one.' }
               : null
           }
-          bodySize={{ height: 264 }}
+          bodySize={{ height: 336 }}
           body={() => {
             const last = result.data?.[0]
             return last === undefined ? null : (
@@ -141,21 +156,16 @@ function StatesRoute(): ReactElement {
             )
           }}
         />
-        <DataPanel
-          title="Open incidents"
-          subtitle="last 30 days"
+        <EventList
+          title="Incidents"
+          now={DEPLOYS_NOW}
           phase={incidents}
-          bodySize={{ height: 264 }}
           empty={
             incidents.data?.length === 0
-              ? {
-                  cause:
-                    'An incident opens when a probe fails twice; the last one closed 3 days ago.',
-                  action: { label: 'Open the incident log', href: '/kit/states' },
-                }
+              ? { cause: 'No incident in 30 days: one opens when a probe fails twice.' }
               : null
           }
-          body={() => null}
+          items={incidents.data ?? []}
         />
       </CardGrid>
     </Page>
