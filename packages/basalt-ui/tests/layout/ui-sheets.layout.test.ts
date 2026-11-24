@@ -263,6 +263,9 @@ layout('list overlays on a phone', () => {
       expect(
         await page.raw.locator('[data-testid="us-combo"] [data-slot="combobox-input"]').innerText(),
       ).toContain('Option 12')
+      expect(await page.raw.evaluate(() => document.activeElement?.getAttribute('data-slot'))).toBe(
+        'combobox-input',
+      )
     })
 
     test('axe passes with the combobox sheet open', async () => {
@@ -285,6 +288,10 @@ layout('list overlays on a phone', () => {
       await page.raw.waitForSelector(`${SHEET} [data-slot="popover-content"]`)
       await page.settle()
       expect(await count(page, SHEET)).toBe(1)
+      expect(await axeViolations(page)).toEqual([])
+      await page.raw.keyboard.press('Escape')
+      await page.raw.waitForSelector(SHEET, { state: 'detached' })
+      expect(await focusSlot(page)).toBe('Tall')
     })
 
     test('a DatePicker opens a calendar sheet with Done; Done closes and focus returns', async () => {
@@ -363,8 +370,10 @@ layout('list overlays on a phone', () => {
       expect(geo.top).toBeLessThan(geo.vh * 0.6)
       // a snapped sheet is 90dvh tall and rests with its top at half, so its foot is past the viewport
       expect(geo.bottom).toBeGreaterThan(geo.vh)
+      expect(await axeViolations(page)).toEqual([])
       await page.raw.keyboard.press('Escape')
       await page.raw.waitForSelector(SHEET, { state: 'detached' })
+      expect(await focusSlot(page)).toBe('Open dock')
     })
   })
 

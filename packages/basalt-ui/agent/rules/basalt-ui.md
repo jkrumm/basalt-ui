@@ -34,6 +34,7 @@ Compose the shipped surface; each bullet names the lint id or type that holds it
 
 not guarded:
 
+- A Select, Combobox, Menu, DatePicker, form Dialog, the palette and a Dock open as a bottom sheet on a phone by themselves (compact width, coarse pointer); never branch on the viewport to swap one, and put a Menu's destructive row last. `present="popup"` or `present="sheet"` forces one; a Popover lifts into a sheet only when it does not fit.
 - Icons draw at 16 px (`size-icon`) with the 1.5 px stroke of the shipped glyphs: `<LucideProvider size={16} strokeWidth={1.5} absoluteStrokeWidth>` once at each React root, which the `init` root templates mount; keep it when you edit the root.
 - Read `node_modules/basalt-ui/docs/<name>.md` before guessing an import or a prop; a missing export is a recipe in `docs/recipes/`, never a local copy.
 - Never `shadcn add` a primitive basalt ships; to change one, eject it with `basalt-ui eject <name> --reason`.

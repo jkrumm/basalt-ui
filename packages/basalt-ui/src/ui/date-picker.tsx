@@ -54,7 +54,7 @@ export const datePickerParts = ['date-picker', 'date-range-picker'] as const
  * through `calendar-grid` alone and never loads `ui/calendar`.
  */
 const CALENDAR_ROOT =
-  'relative w-fit text-sm text-foreground select-none [--cell:--spacing(9)] pointer-coarse:[--cell:--spacing(11)]'
+  'relative mx-auto w-fit text-sm text-foreground select-none [--cell:--spacing(9)] pointer-coarse:[--cell:--spacing(11)]'
 
 type Layout = VariantProps<typeof datePickerVariants> & {
   /** Layout only (`w-48`, `flex-1`). Height belongs to `size`. */
