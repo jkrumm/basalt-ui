@@ -1,4 +1,4 @@
-/** `StatCard` `xLabels`: the card draws the label row, so the chart slot gets the plot alone. */
+/** `StatCard` `axisLabels`: the card draws the label row, so the chart slot gets the plot alone. */
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, mock, test } from 'bun:test'
 import { StatCard } from './stat-card'
@@ -7,7 +7,7 @@ afterEach(cleanup)
 
 const box = (): HTMLElement | null => document.querySelector('[data-slot="stat-chart"]')
 
-describe('StatCard xLabels', () => {
+describe('StatCard axisLabels', () => {
   test('three labels sit under the plot, which gets 56 px', () => {
     const chart = mock((_box: { height: number | 'fill'; phase: string }) => <svg />)
     render(
@@ -19,7 +19,7 @@ describe('StatCard xLabels', () => {
     expect(box()?.lastElementChild).toBe(row as Element)
   })
 
-  test('chartHeight sizes the box, the plot under labels and the inset: a one-line chart leaves no band', () => {
+  test('height sizes the box, the plot under labels and the inset: a one-line chart leaves no band', () => {
     const chart = mock((_box: { height: number | 'fill'; phase: string }) => <svg />)
     const { container } = render(<StatCard title="Rate" value={38} chart={chart} height={20} />)
     expect(chart.mock.calls[0]?.[0]).toEqual({ height: 20, phase: 'ready' })
