@@ -2,7 +2,7 @@
  * Surfaces coverage.
  *
  * Asserts:
- *  2. Every shipped rule (SHIPPED_RULES, the v3 five) is on disk, and agent/rules/ holds no other file.
+ *  2. Every shipped rule (SHIPPED_RULES, the v3 five, and SITE_RULES) is on disk, and agent/rules/ holds no other file.
  *  3. Every doctrine skill (deduped via SKILL_NAMES) maps to an on-disk
  *     agent/skills/{skill}/SKILL.md (skills ship in the npm package, placed by init/sync).
  *  4. Every non-#, non-'.' JS-subpath SURFACES key has a package.json exports entry.
@@ -18,7 +18,11 @@ import { join } from 'node:path'
 
 import { SKILL_NAMES, SURFACES } from '../packages/basalt-ui/src/surfaces'
 import type { DoctrineSpec } from '../packages/basalt-ui/src/surfaces'
-import { checkCoverage, SHIPPED_RULES } from '../packages/basalt-ui/scripts/check-coverage'
+import {
+  checkCoverage,
+  SHIPPED_RULES,
+  SITE_RULES,
+} from '../packages/basalt-ui/scripts/check-coverage'
 import { subpathFamilies } from '../packages/basalt-ui/scripts/export-keys'
 
 const root = join(import.meta.dir, '..')
@@ -55,9 +59,9 @@ describe('rule file coverage', () => {
     })
   }
 
-  it('agent/rules/ lists exactly the five shipped files', () => {
+  it('agent/rules/ lists exactly the five shipped files and the site rule', () => {
     expect(readdirSync(join(pkgRoot, 'agent/rules')).toSorted()).toEqual(
-      SHIPPED_RULES.map((rule) => `${rule}.md`).toSorted(),
+      [...SHIPPED_RULES, ...SITE_RULES].map((rule) => `${rule}.md`).toSorted(),
     )
   })
 })
