@@ -74,4 +74,28 @@ describe('TableIsland', () => {
     const html = renderToString(<TableIsland label="Runs" columns={columns} rows={rows} />)
     for (const word of ['Tempo', 'Long', '8.4', '21.1']) expect(html).toContain(word)
   })
+
+  test('a locale formats the numbers of the table in that locale', () => {
+    const html = renderToString(
+      <TableIsland
+        label="Runs"
+        columns={columns}
+        rows={[{ name: 'Long', km: 1234.5 }]}
+        locale="de-DE"
+      />,
+    )
+    expect(html).toContain('1.234,5')
+  })
+
+  test('a messages override replaces the English words of the table chrome', () => {
+    const html = renderToString(
+      <TableIsland
+        label="Runs"
+        columns={columns}
+        rows={[]}
+        messages={{ 'table.empty': 'Keine Zeilen.' }}
+      />,
+    )
+    expect(html).toContain('Keine Zeilen.')
+  })
 })

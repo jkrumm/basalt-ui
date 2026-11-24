@@ -19,5 +19,7 @@
   "SiteTab",
   "SiteTabs",
   "ThemeSwitch",
-  "siteMdxComponents"
+  "siteMdxComponents",
+  "siteScript",
+  "themeScript"
 ]

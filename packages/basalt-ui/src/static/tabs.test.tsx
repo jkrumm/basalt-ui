@@ -77,6 +77,26 @@ describe('siteScript tabs', () => {
     expect(document.querySelector('[data-basalt-tabs]')?.hasAttribute('data-picked')).toBe(true)
   })
 
+  test('under dir="rtl" ArrowLeft moves to the next tab and ArrowRight to the previous', () => {
+    // happy-dom derives no computed direction from `dir`; the inline style stands in for what a browser computes.
+    const group = document.querySelector<HTMLElement>('[data-basalt-tabs]') as HTMLElement
+    group.setAttribute('dir', 'rtl')
+    group.style.direction = 'rtl'
+    const [bun, npm] = tabs()
+    key(bun as HTMLElement, 'ArrowLeft')
+    expect(tabs().map((t) => t.getAttribute('aria-selected'))).toEqual(['false', 'true', 'false'])
+    key(npm as HTMLElement, 'ArrowRight')
+    expect(tabs().map((t) => t.getAttribute('aria-selected'))).toEqual(['true', 'false', 'false'])
+  })
+
+  test('in ltr ArrowRight moves to the next tab', () => {
+    const [bun, npm] = tabs()
+    key(bun as HTMLElement, 'ArrowRight')
+    expect(tabs().map((t) => t.getAttribute('aria-selected'))).toEqual(['false', 'true', 'false'])
+    key(npm as HTMLElement, 'ArrowLeft')
+    expect(tabs().map((t) => t.getAttribute('aria-selected'))).toEqual(['true', 'false', 'false'])
+  })
+
   test('the arrow keys, Home and End move the selection and the focus, and wrap', () => {
     const [bun, , pnpm] = tabs()
     key(bun as HTMLElement, 'ArrowLeft')

@@ -2,7 +2,6 @@
   "basalt-ui#persisted",
   "basalt-ui/content#Markdown",
   "basalt-ui/router#field",
-  "basalt-ui/theme-script#themeScript",
   "basalt-ui/tokens#BP",
   "basalt-ui/tokens#CONTAINER_CLASSES",
   "basalt-ui/tokens#CONTAINER_GRID_BREAKPOINTS",

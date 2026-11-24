@@ -5,18 +5,23 @@
 import { SiteDataTable } from '../../static/data-table.js'
 import type { SiteColumn, SiteRow } from '../../static/data-table.js'
 import { TableIsland } from './table-island.js'
+import type { IslandMessages } from './messages.js'
 
 interface Props {
   label: string
   columns: SiteColumn[]
   rows: SiteRow[]
+  /** The locale numbers and dates read in. Default `en`. */
+  locale?: string
+  /** Overrides of the table's English words, by key. Read by the interactive table only. */
+  messages?: IslandMessages
   interactive?: boolean
   load?: 'visible' | 'idle'
 }
-const { interactive = false, load = 'visible', label, columns, rows } = Astro.props
+const { interactive = false, load = 'visible', label, columns, rows, locale, messages } = Astro.props
 const data = { label, columns, rows }
 ---
 
-{!interactive && <SiteDataTable {...data} />}
-{interactive && load === 'visible' && <TableIsland {...data} client:visible />}
-{interactive && load === 'idle' && <TableIsland {...data} client:idle />}
+{!interactive && <SiteDataTable {...data} locale={locale} />}
+{interactive && load === 'visible' && <TableIsland {...data} locale={locale} messages={messages} client:visible />}
+{interactive && load === 'idle' && <TableIsland {...data} locale={locale} messages={messages} client:idle />}
