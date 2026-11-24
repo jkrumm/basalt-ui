@@ -139,8 +139,10 @@ bun run build   # tsup && tsc --emitDeclarationOnly && copy-assets && fix-esm-ex
 2. `apps/playground/tsconfig.json` declares no `paths`, so its `tsc` resolves `basalt-ui/*` through
    node_modules → `exports` → `dist/**/*.d.ts`, while Vite aliases the RUNNING playground to `src/`.
    A new export or a widened signature is invisible to `bun run typecheck` until you build.
-3. The playground only ever exercises `src/`. **The pack-test is what proves the published artifact
-   resolves** — it is the dist gate, and it runs in CI.
+3. The playground runs its scripts from `src/`, but its stylesheets (`basalt-ui/*.css`) and the
+   graph `basalt()` reads for `.basalt/sources.css` come from `dist/`: after a change to a package
+   stylesheet or to the classes a part writes, build before trusting the playground. **The pack-test
+   is what proves the published artifact resolves** — it is the dist gate, and it runs in CI.
 
 ## Dependencies
 
