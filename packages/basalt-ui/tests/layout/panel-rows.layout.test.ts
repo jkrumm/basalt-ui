@@ -112,7 +112,7 @@ layout('a DataPanel sized by rows shows whole rows', () => {
     })
   }
 
-  test('a phone card keeps a title, a subtitle and six meta values and leaves the rest to its detail', async () => {
+  test('a phone row keeps a title and two meta values and leaves the rest to its detail', async () => {
     const page = await open(PHONE)
     const cells = await page.raw.evaluate(() => {
       const row = document.querySelector('[data-testid="pr-panel"] tbody tr')!
@@ -121,7 +121,7 @@ layout('a DataPanel sized by rows shows whole rows', () => {
       )
     })
     expect(cells.length).toBe(9)
-    expect(cells.filter(Boolean).length).toBe(8)
+    expect(cells.filter(Boolean).length).toBe(3)
   })
 
   test('the desktop table still draws every column', async () => {

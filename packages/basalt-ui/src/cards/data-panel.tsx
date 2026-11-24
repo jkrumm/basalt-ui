@@ -47,11 +47,11 @@ const rowsHeightCss = (rows: number): string =>
   `calc(${Math.max(0, Math.round(rows))} * var(--basalt-row-h, 2rem))`
 
 /**
- * The tallest phone card the kit draws: a title, a sub line, a value and a meter, 108 px at 390 px
- * (measured in cycle 13; a card with no meter is 92 px). Until a list is measured, a loading frame of a
- * `rows` body gives each data row one card this tall, so it never ends shorter than the loaded list.
+ * The tallest phone row the kit draws: a title, two muted values and the answer, 66 px at 390 px, 74 px
+ * where `onRowActivate` adds the Details door. Until a list is measured, a loading frame of a
+ * `rows` body gives each data row one row this tall, so it never ends shorter than the loaded list.
  */
-const CARD_TALL = 108
+const CARD_TALL = 74
 
 /** One phone card's px in a `rows` body: the `cardHeight` it names, else {@link CARD_TALL}. */
 const cardHeightOf = (size: DataPanelProps['bodySize']): number =>
@@ -338,12 +338,12 @@ function PanelHead(
  * fewer rows than that takes the height of its rows once measured (the desktop box keeps the declared
  * height until then), so no blank row is left under the last, or the whole stretched box when a grid row grew the panel; a table
  * with more rows than the box shows whole rows, cut after the last that fits. Where the table folds to phone
- * cards the cards are taller than a row (108 px with a meter, 92 px without), so the box is as tall as
- * the N data cards and a shorter list ends at its last card: every card is whole at 390 px. A loading
- * frame has no cards to measure: until a list has been measured it gives each data row one card (108 px, or `bodySize.cardHeight`),
+ * cards the rows are taller than a table row (66 px, 74 px with a Details door), so the box is as tall as
+ * the N data rows and a shorter list ends at its last row: every row is whole at 390 px. A loading
+ * frame has no cards to measure: until a list has been measured it gives each data row one row (74 px, or `bodySize.cardHeight`),
  * then the height it had; the panel never runs the body in loading, so it cannot see that a table is `phone: 'columns'`: such a
  * table keeps its rows at 390 px, and its caller passes `bodySize.cardHeight` as that row (33 at the default density), or the
- * loading frame runs one 108 px card per row. A table body with `height="fill"`
+ * loading frame runs one 74 px row per row. A table body with `height="fill"`
  * takes the box's height and scrolls inside it, so a chart focus brings its joined row into view. The
  * box clips with `overflow: clip`, never `hidden`, so a table head that sticks to the page keeps sticking.
  *

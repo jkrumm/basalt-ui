@@ -238,36 +238,20 @@ layout('the projects table at 1800', () => {
 })
 
 layout('the projects table at 390', () => {
-  test('reads as cards with the same facts, the lamp says its word', async () => {
+  test('reads as a list row: the name, two values and the answer, the rest behind the tap', async () => {
     const page = await open(PHONE)
     const card = await page.raw.evaluate((root) => {
       const row = document.querySelector<HTMLElement>(`${root} tbody tr:not([data-group])`)!
-      const word = row.querySelector<HTMLElement>('[data-slot="table-lamp-word"]')
       return {
         display: getComputedStyle(row).display,
         // every column the card draws: a cell on screen, by its column id
         shown: [...row.querySelectorAll<HTMLElement>('td[data-col]')]
           .filter((td) => td.getBoundingClientRect().width > 0)
           .map((td) => td.getAttribute('data-col')),
-        wordWidth: word?.getBoundingClientRect().width ?? 0,
       }
     }, TABLE)
     expect(card.display).toBe('grid')
-    expect(card.shown.toSorted()).toEqual(
-      [
-        'name',
-        'open',
-        'shipped',
-        'lastShipAt',
-        'cycleMs',
-        'waitMs',
-        'production',
-        'clean',
-        'planDone',
-        'leads',
-      ].toSorted(),
-    )
-    expect(card.wordWidth).toBeGreaterThan(0)
+    expect(card.shown.toSorted()).toEqual(['name', 'open', 'shipped', 'lastShipAt'].toSorted())
     expectNoHorizontalOverflow(await page.horizontalOverflow(), 'kit-projects', PHONE)
   })
 

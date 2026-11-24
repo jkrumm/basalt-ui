@@ -107,7 +107,7 @@ export type DataPanelProps = FrameHead &
     legend?: readonly LegendEntry[]
     /**
      * Required: the loading card draws its final shape. `cardHeight` is the px of one phone card of the `rows` body
-     * (default 108, a card with a meter; pass 92 for a list of cards with none, or the row height of a table that
+     * (default 74, the phone list row with its Details door; pass 66 for a list without one, or the row height of a table that
      * stays rows on a phone), so a loading frame under `@regular` ends where the loaded list does.
      */
     bodySize: { rows: number; cardHeight?: number | undefined } | { height: number }
