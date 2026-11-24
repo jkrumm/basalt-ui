@@ -14,10 +14,6 @@
  * `basalt.tokens.ts`, the series file `tokens:css --extra` reads, is the one file that writes raw
  * colour pairs, and is not read at all.
  *
- * A `light` or `dark` string of a series entry inside a `defineSeries({ name: { light, dark } })`
- * call is the colour pair the series file exists to hold, and is not reported; a hex beside it, in
- * a sibling object of the same file or in a component still is.
- *
  * A CSS named colour (`'white'`, `'steelblue'`) is a literal where it is written into a colour slot:
  * a canvas `strokeStyle`, `fillStyle` or `shadowColor` assignment, a style-object key such as
  * `color`, `backgroundColor`, `fill` or `stroke`, or an SVG `fill` / `stroke` attribute (through a
@@ -166,31 +162,6 @@ const keyName = (property: Node): string | undefined => {
   return typeof key['value'] === 'string' ? key['value'] : undefined
 }
 
-const isDefineSeriesCall = (node: Node | undefined): boolean => {
-  if (node?.type !== 'CallExpression') return false
-  const callee = node['callee'] as Node
-  if (callee.type === 'Identifier') return callee['name'] === 'defineSeries'
-  if (callee.type !== 'MemberExpression') return false
-  const property = callee['property'] as Node
-  return !callee['computed'] && property['name'] === 'defineSeries'
-}
-
-/** `defineSeries({ <name>: { light: <node>, dark: ... } })`: the pair of one series entry. */
-function isSeriesColourPair(node: Node): boolean {
-  const pair = parentOf(node)
-  if (pair?.type !== 'Property' || pair['value'] !== node) return false
-  const side = keyName(pair)
-  if (side !== 'light' && side !== 'dark') return false
-  const pairObject = parentOf(pair)
-  const entry = pairObject && parentOf(pairObject)
-  if (pairObject?.type !== 'ObjectExpression' || entry?.type !== 'Property') return false
-  const seriesMap = parentOf(entry)
-  if (seriesMap?.type !== 'ObjectExpression') return false
-  const call = parentOf(seriesMap)
-  if (!call || !isDefineSeriesCall(call)) return false
-  return (call['arguments'] as Node[])[0] === seriesMap
-}
-
 /** True when a string is written into a colour slot: `ctx.fillStyle = …`, `{ color: … }`, `<rect fill=… />`. */
 function inColourSlot(literal: Node): boolean {
   let at = literal
@@ -231,7 +202,7 @@ export const colourLiteralForm: AstForm = {
       : {
           Literal(node) {
             const text = node['value']
-            if (typeof text !== 'string' || isModuleSource(node) || isSeriesColourPair(node)) return
+            if (typeof text !== 'string' || isModuleSource(node)) return
             // A test passes a colour word as input (`{ color: 'red' }`); a hex is still a literal there.
             if (/^#\d{3,4}$/.test(text.trim()) && isReferenceValue(node)) return
             if (/^#[\w-]+$/.test(text.trim()) && isAnchorValue(node)) return
