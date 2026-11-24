@@ -365,6 +365,14 @@ export function generatedTreeIgnores(args: Pick<Args, 'profile' | 'roots'>): str
   return args.roots.map((root) => `${root === '.' ? 'src' : root}/routeTree.gen.ts`)
 }
 
+/** A sibling app's new `.oxfmtrc.json` copies the repo root's settings: oxfmt reads the nearest file. */
+function rootFormatterSettings(ctx: Ctx): Record<string, unknown> | null {
+  const text = isSiblingApp(ctx.root) ? readText(findRepoRoot(ctx.root), '.oxfmtrc.json') : null
+  const config = text === null ? {} : parseJsonc(text)
+  if (config === null) return null
+  return Object.fromEntries(Object.entries(config).filter(([key]) => key !== 'ignorePatterns'))
+}
+
 function ignoreFile(ctx: Ctx): void {
   const ignored = [...FORMATTER_IGNORE, ...generatedTreeIgnores(ctx.args)]
   const missing = (text: string): string[] =>
@@ -382,10 +390,15 @@ function ignoreFile(ctx: Ctx): void {
   }
 
   if (oxfmt === null) {
+    const settings = rootFormatterSettings(ctx)
+    if (settings === null)
+      return void ctx.todo.push(
+        `copy the root .oxfmtrc.json settings here, and add to ignorePatterns: ${ignored.join(', ')}`,
+      )
     writeText(
       ctx.root,
       '.oxfmtrc.json',
-      `${JSON.stringify({ ignorePatterns: ignored }, null, 2)}\n`,
+      `${JSON.stringify({ ...settings, ignorePatterns: ignored }, null, 2)}\n`,
     )
     return say('wrote .oxfmtrc.json (ignorePatterns for the managed paths)')
   }
