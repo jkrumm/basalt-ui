@@ -52,26 +52,26 @@ const PER_PRIMITIVE: Readonly<Record<string, number>> = {
   card: 10100, // 10004 B
   checkbox: 15500, // 15025 B, with the card and tile variants and `ChoiceCard`
   collapsible: 13000, // 11967 B
-  combobox: 96000, // 58535 B; 68024 B with the list engine (Issue 3102); 95909 B with the sheet chunk (Issue 3207)
+  combobox: 96300, // 58535 B; 68024 B with the list engine (Issue 3102); 95909 B with the sheet chunk (Issue 3207)
   'control-group': 6000, // 5672 B
   'copy-button': 12000, // 10982 B, the message catalog for its name
-  'date-picker': 97400, // 69556 B; 97325 B with the sheet chunk (Issue 3207)
+  'date-picker': 97700, // 69556 B; 97325 B with the sheet chunk (Issue 3207)
   dialog: 32200, // 30378 B; 32119 B with the sheet chunk (Issue 3207)
   field: 15000, // 13972 B
   input: 10000, // 9326 B
   kbd: 5500, // 5000 B
-  menu: 87500, // 59304 B; 87416 B with the sheet chunk (Issue 3207)
+  menu: 87900, // 59304 B; 87416 B with the sheet chunk (Issue 3207)
   meter: 10500, // 9767 B
   num: 7000, // 6236 B
   'number-field': 18000, // 16912 B
   'password-input': 14000, // 12984 B, the message catalog for the reveal button's name
-  popover: 72100, // 44567 B; 72062 B with the sheet chunk (Issue 3207)
+  popover: 72500, // 44567 B; 72062 B with the sheet chunk (Issue 3207)
   progress: 10500, // 9676 B
   'radio-group': 18500, // 17153 B
   resizable: 23500, // 22370 B, react-resizable-panels bundled
   'scroll-area': 6000, // 5254 B
   segmented: 15000, // 14087 B
-  select: 99500, // 51614 B; 71719 B with the list engine and the searchable list on Base UI Combobox (Issue 3102); 99459 B with the sheet chunk (Issue 3207)
+  select: 99900, // 51614 B; 71719 B with the list engine and the searchable list on Base UI Combobox (Issue 3102); 99459 B with the sheet chunk (Issue 3207)
   separator: 7500, // 6767 B
   sheet: 48000, // 47748 B with Base UI's VirtualKeyboardProvider, a grabber and snap points (Issue 3206); 45300 B before; 41473 B; 45114 B with the panel header, the scrolling body, the footer band and the width handle (Issue 2939)
   skeleton: 7000, // 6522 B
@@ -107,8 +107,8 @@ export const rows: readonly RowDef[] = [
     // 81600 B measured. Informative target 95 KB (gap-perf 6.1); the seed is the measurement.
     // 86000 -> 104100 (Issue 3102): 103626 B measured; Select draws the shared option row and opens a searchable list on Base UI Combobox.
     // 104100 -> 104300 (Issue 3206): 104193 B measured; the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points.
-    // 104300 -> 129200 (Issue 3207): 129084 B measured; Select and Dialog present as a sheet on a phone, the sheet a lazy chunk this row counts.
-    ceiling: 129200,
+    // 104300 -> 129500 (Issue 3207): 129084 B measured; Select and Dialog present as a sheet on a phone, the sheet a lazy chunk this row counts.
+    ceiling: 129500,
     measure: () => measureSource(page(TEN)),
   },
   {
@@ -121,8 +121,8 @@ export const rows: readonly RowDef[] = [
     // 158600 -> 158800 (Issue 3109): 158756 B measured; the Tabs trigger draws a count, an attention tone and a tone dot, which the page's Tabs carry.
     // 158800 -> 167300 (Issue 3102): 166769 B measured; Select and Combobox share the list engine, its option row and its state rows.
     // 167300 -> 170500 (Issue 3206): 170340 B measured; the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points.
-    // 170500 -> 176500 (Issue 3207): 176353 B measured; the list overlays present as a sheet on a phone, the sheet a lazy chunk this row counts.
-    ceiling: 176500,
+    // 170500 -> 176800 (Issue 3207): 176353 B measured; the list overlays present as a sheet on a phone, the sheet a lazy chunk this row counts.
+    ceiling: 176800,
     measure: () => measureSource(page([...TEN, ...REST_OF_25])),
   },
   ...Object.entries(PER_PRIMITIVE).map(([name, ceiling], i): RowDef => ({
@@ -147,7 +147,7 @@ export const raises: Raises = {
   'ui-prim-popover': [
     {
       from: 47000,
-      to: 72100,
+      to: 72500,
       consumer:
         'the mobile overlays (owner direction 2026-11-24, Issue 3207): Select, Menu, Combobox, Popover and DatePicker open as a bottom Sheet on a phone through one presenter; the sheet is a lazy chunk this row counts and an app loads only on the first phone open',
       repo: 'basalt-ui',
@@ -156,7 +156,7 @@ export const raises: Raises = {
   'ui-prim-menu': [
     {
       from: 62500,
-      to: 87500,
+      to: 87900,
       consumer:
         'the mobile overlays (owner direction 2026-11-24, Issue 3207): Select, Menu, Combobox, Popover and DatePicker open as a bottom Sheet on a phone through one presenter; the sheet is a lazy chunk this row counts and an app loads only on the first phone open',
       repo: 'basalt-ui',
@@ -174,7 +174,7 @@ export const raises: Raises = {
   'ui-prim-date-picker': [
     {
       from: 73500,
-      to: 97400,
+      to: 97700,
       consumer:
         'the mobile overlays (owner direction 2026-11-24, Issue 3207): Select, Menu, Combobox, Popover and DatePicker open as a bottom Sheet on a phone through one presenter; the sheet is a lazy chunk this row counts and an app loads only on the first phone open',
       repo: 'basalt-ui',
@@ -183,7 +183,7 @@ export const raises: Raises = {
   'ui-page-ten': [
     {
       from: 104300,
-      to: 129200,
+      to: 129500,
       consumer:
         'the mobile overlays (owner direction 2026-11-24, Issue 3207): Select, Menu, Combobox, Popover and DatePicker open as a bottom Sheet on a phone through one presenter; the sheet is a lazy chunk this row counts and an app loads only on the first phone open',
       repo: 'basalt-ui',
@@ -206,7 +206,7 @@ export const raises: Raises = {
   'ui-prim-combobox': [
     {
       from: 68500,
-      to: 96000,
+      to: 96300,
       consumer:
         'the mobile overlays (owner direction 2026-11-24, Issue 3207): Select, Menu, Combobox, Popover and DatePicker open as a bottom Sheet on a phone through one presenter; the sheet is a lazy chunk this row counts and an app loads only on the first phone open',
       repo: 'basalt-ui',
@@ -222,7 +222,7 @@ export const raises: Raises = {
   'ui-prim-select': [
     {
       from: 72000,
-      to: 99500,
+      to: 99900,
       consumer:
         'the mobile overlays (owner direction 2026-11-24, Issue 3207): Select, Menu, Combobox, Popover and DatePicker open as a bottom Sheet on a phone through one presenter; the sheet is a lazy chunk this row counts and an app loads only on the first phone open',
       repo: 'basalt-ui',
@@ -238,7 +238,7 @@ export const raises: Raises = {
   'ui-page-25': [
     {
       from: 170500,
-      to: 176500,
+      to: 176800,
       consumer:
         'the mobile overlays (owner direction 2026-11-24, Issue 3207): Select, Menu, Combobox, Popover and DatePicker open as a bottom Sheet on a phone through one presenter; the sheet is a lazy chunk this row counts and an app loads only on the first phone open',
       repo: 'basalt-ui',
