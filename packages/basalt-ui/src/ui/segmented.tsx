@@ -18,12 +18,12 @@ import { scopeClass, useControlScope } from '../core/control-scope'
  * segmentedVariants({ size: 'sm' })
  */
 export const segmentedVariants = cva(
-  'group/segmented relative inline-flex max-w-full items-stretch overflow-x-auto rounded-ctrl bg-accent p-0.5 [scrollbar-width:none] pointer-coarse:min-h-11',
+  'group/segmented relative inline-flex max-w-full items-stretch overflow-x-auto rounded-ctrl bg-accent p-0.5 [scrollbar-width:none]',
   {
     variants: {
       size: {
         md: 'min-h-ctl',
-        sm: 'min-h-6',
+        sm: 'min-h-6 pointer-coarse:min-h-ctl',
       },
       fill: {
         true: 'flex w-full',
