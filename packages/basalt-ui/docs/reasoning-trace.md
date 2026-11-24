@@ -3,7 +3,7 @@ name: ReasoningTrace
 use when: 'the reasoning and tool calls behind a model reply, from another runtime than partView reads'
 never when: 'the steps are a process the person drives (use a StepRail or a Stepper)'
 subpath: basalt-ui/ai
-peers: ['@base-ui/react', react-markdown, rehype-sanitize, remark-gfm, remend]
+peers: ['@base-ui/react', '@shikijs/langs', '@shikijs/themes', pele, react-markdown, rehype-sanitize, remark-gfm, remend, shiki]
 slots: [ai-trace]
 ---
 

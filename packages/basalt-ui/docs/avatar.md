@@ -3,7 +3,7 @@ name: Avatar
 use when: 'a person or a company needs a face in a table cell, a record header, a row or a card: round for a person, a rounded square for an object'
 never when: 'the image is content (use an `<img>` with its own alt), or a status is the message (use Status)'
 subpath: basalt-ui/ui/avatar
-peers: ['@base-ui/react']
+peers: []
 slots: [avatar, avatar-stack]
 ---
 

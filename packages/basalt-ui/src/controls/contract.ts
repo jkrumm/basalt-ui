@@ -78,7 +78,7 @@ export type FilterSetProps = {
 }
 
 /** The bound field is `state`; `handle` is a deprecated alias for one minor. */
-export type ViewTabsProps<T extends string = string> =
+export type ViewTabsBinding<T extends string = string> =
   | { state: ControlHandle<T>; handle?: undefined }
   | {
       /** @deprecated Use `state`; removed in the next minor. */

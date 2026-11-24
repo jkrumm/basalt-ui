@@ -31,7 +31,7 @@ ChartCard(props: ChartCardProps): ReactElement
   footer?: FootFacts
   controls?: ControlsSlot<"widget">
   menu?: CardMenu
-  height?: "fill" | "auto" | "tall" | "short"  // The chart box: `auto` (default) half the card width between 192 and 420 px; `tall` the same with a 288 px floor, for the chart that answers the page and needs its axis at 390; `short` 160 px; `fill` the card's remainder in a parent that sets the height
+  height?: "auto" | "fill" | "tall" | "short"  // The chart box: `auto` (default) half the card width between 192 and 420 px; `tall` the same with a 288 px floor, for the chart that answers the page and needs its axis at 390; `short` 160 px; `fill` the card's remainder in a parent that sets the height
   title?: string
   subtitle?: string
   icon?: IconComponent

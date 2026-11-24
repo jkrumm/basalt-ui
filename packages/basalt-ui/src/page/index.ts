@@ -12,6 +12,7 @@ export { EmptyState } from './empty-state'
 export { OverlayHost } from './overlay-host'
 export { defineOverlays } from './define-overlays'
 export { useSizeClass } from './use-size-class'
+export type { SizeClass } from './use-size-class'
 export { Prose } from './prose'
 export { Callout } from './callout'
 export { Toc } from './toc'
@@ -39,3 +40,25 @@ export type { FavouriteToggleProps } from './favourites'
 export type { FavouriteEntry, FavouriteInput, FavouritesStore } from './contract'
 export { Peek } from './peek'
 export type { PeekProps } from './peek'
+export type {
+  InnerNavGroup,
+  InnerNavItem,
+  InnerNavProps,
+  MDXComponents,
+  PageAction,
+  PageActionMobile,
+  PageAsideProps,
+  PageBarProps,
+  PageButtonAction,
+  PageIdentity,
+  PageLayout,
+  PageLayoutOption,
+  PageProps,
+  PageSearch,
+  PageSettings,
+  PageTabBadge,
+  PageTabs,
+  PageTextAction,
+  SectionProps,
+  SplitPageProps,
+} from './contract'

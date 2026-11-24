@@ -3,7 +3,7 @@ name: createFormat
 use when: 'code outside React needs formatted text (a model module, a server function, a chart label builder)'
 never when: 'a component can call `useFormat`, which reads the provider''s locale and time zone'
 subpath: basalt-ui
-peers: ['@tanstack/react-router-devtools', pele, rehype-sanitize, remark-gfm, remend, shiki]
+peers: []
 slots: []
 ---
 

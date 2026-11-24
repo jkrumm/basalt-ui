@@ -1,1 +1,13 @@
-["createFormat", "externalField", "notify", "persisted", "setFormatDefaults", "useFormat", "useNow"]
+[
+  "BasaltProvider",
+  "IntlScope",
+  "createFormat",
+  "externalField",
+  "notify",
+  "persisted",
+  "setAppearance",
+  "setFormatDefaults",
+  "setScheme",
+  "useFormat",
+  "useNow"
+]

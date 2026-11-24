@@ -3,7 +3,7 @@ name: SLOTS
 use when: 'a test or a browser-lane assertion selects a part, or checks that a module renders the parts it declares'
 never when: 'the selector should be a role or an accessible name (prefer `getByRole`), or the code runs in an app bundle'
 subpath: basalt-ui/testing
-peers: []
+peers: ['@axe-core/playwright']
 slots: []
 ---
 

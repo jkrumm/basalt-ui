@@ -3,7 +3,7 @@ name: quality
 use when: 'a browser test must prove a route is accessible, never scrolls the document sideways and keeps focus visible and unobscured'
 never when: 'the test runs in jsdom or happy-dom (these read layout and computed colour), or checks the markup of a single component'
 subpath: basalt-ui/testing
-peers: []
+peers: ['@axe-core/playwright']
 slots: []
 ---
 

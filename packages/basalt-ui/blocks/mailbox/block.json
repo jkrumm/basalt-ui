@@ -8,7 +8,6 @@
     "basalt-ui/ai",
     "basalt-ui/cards",
     "basalt-ui/controls",
-    "basalt-ui/core/ports",
     "basalt-ui/form",
     "basalt-ui/page",
     "basalt-ui/router",

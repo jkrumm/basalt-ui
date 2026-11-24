@@ -30,9 +30,22 @@
       "from": "basalt-ui#createChannel",
       "to": "basalt-ui/data#createChannel",
       "note": "one home for the stream client; the root no longer exports it"
+    },
+    {
+      "id": "data-live-views",
+      "kind": "moved",
+      "from": "basalt-ui/core/ports#ChannelStatus, ConnectionView, FreshnessView",
+      "to": "basalt-ui/data#ChannelStatus, ConnectionView, FreshnessView",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "the types `useConnection`, `useFreshness` and a channel report import from the data subpath beside them",
+      "verify": "tsc"
     }
   ],
-  "tokens": { "renamed": [], "valueShifts": [] },
+  "tokens": {
+    "renamed": [],
+    "valueShifts": []
+  },
   "storage": [],
   "urls": [],
   "attrs": [],

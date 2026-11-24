@@ -3,7 +3,7 @@ name: expectCatalog
 use when: 'a test file holds the `defineCatalog` product of an app to the sample, limit and hostile-URL contract'
 never when: 'the code runs in an app bundle, or the question is the look of a block (use a layout or screenshot test)'
 subpath: basalt-ui/testing
-peers: []
+peers: ['@axe-core/playwright']
 slots: []
 ---
 

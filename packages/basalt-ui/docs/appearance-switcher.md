@@ -18,7 +18,7 @@ the accent a swatch row. It keys on its container, so it fits a settings row and
 
 ```ts
 AppearanceSwitcher({ accents, rows, defaultFrame, className, }: AppearanceSwitcherProps): ReactElement
-  accents?: readonly ("violet" | "teal" | "green" | "orange" | "blue" | "rose")[]  // The accents this app ships (`basalt-ui tokens:css --accents`), its base accent first: picking the first clears `data-accent`
+  accents?: readonly ("blue" | "violet" | "rose" | "orange" | "green" | "teal")[]  // The accents this app ships (`basalt-ui tokens:css --accents`), its base accent first: picking the first clears `data-accent`
   rows?: readonly AppearanceRow[]  // The rows to show, in this order
   defaultFrame?: "panel" | "flush"  // The `frame` the app's `AppShell` takes, shown while the reader chose none
   className?: string  // Layout only (`w-full`, `max-w-md`)

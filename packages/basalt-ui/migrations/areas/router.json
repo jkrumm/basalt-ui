@@ -11,9 +11,22 @@
       "manual": true,
       "note": "the type of every bound `state` or `handle` prop imports from the router subpath beside `defineControls` and `field`; the root keeps a deprecated alias for one minor; `PushField` (the type of `InnerNav state`) is new on the same subpath",
       "verify": "tsc"
+    },
+    {
+      "id": "router-provider-root",
+      "kind": "moved",
+      "from": "basalt-ui/core/provider#BasaltProvider",
+      "to": "basalt-ui#BasaltProvider",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "`basalt-ui/router` keeps re-exporting the same provider beside `routerDefaults`; the eject path `basalt-ui/core/provider` no longer resolves; `NavConfig`, `NavBadges` and `NavBadge` are new types on the router subpath",
+      "verify": "tsc"
     }
   ],
-  "tokens": { "renamed": [], "valueShifts": [] },
+  "tokens": {
+    "renamed": [],
+    "valueShifts": []
+  },
   "storage": [],
   "urls": [],
   "attrs": [],

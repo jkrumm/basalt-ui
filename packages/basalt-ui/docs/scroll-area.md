@@ -3,7 +3,7 @@ name: ScrollArea
 use when: 'a bounded region (a log, a list in a panel) scrolls on its own and must stay keyboard-reachable'
 never when: 'the page itself scrolls (the shell owns one scrollport), or the content is a long list (use VirtualList)'
 subpath: basalt-ui/ui/scroll-area
-peers: ['@base-ui/react']
+peers: []
 slots: [scroll-area]
 ---
 

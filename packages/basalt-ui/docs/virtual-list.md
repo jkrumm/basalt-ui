@@ -3,7 +3,7 @@ name: VirtualList
 use when: 'a list is long enough (hundreds of rows) that mounting every row costs more than the user sees'
 never when: 'the list is short or paged (render it plainly)'
 subpath: basalt-ui/ui/virtual-list
-peers: ['@base-ui/react']
+peers: ['@tanstack/react-virtual']
 slots: [virtual-list]
 ---
 

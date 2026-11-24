@@ -3,7 +3,7 @@ name: ControlGroup
 use when: 'controls that together make one request: a field and the select that scopes it, a search and its submit'
 never when: 'the controls are filters of a list (use FilterSet), or one field with a unit or a button of its own (use Input start and end, or InputGroup)'
 subpath: basalt-ui/ui/control-group
-peers: ['@base-ui/react']
+peers: []
 slots: [button-group, control-group, input-group, input-addon]
 ---
 

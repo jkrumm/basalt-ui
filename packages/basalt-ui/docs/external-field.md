@@ -3,7 +3,7 @@ name: externalField
 use when: 'a filter, mode or selection lives in a store another module owns (a Zustand slice, a module singleton) and a basalt control must show and change it'
 never when: 'the value should survive a reload (use `persisted`) or a shared link (use a router field)'
 subpath: basalt-ui
-peers: ['@tanstack/react-router-devtools', pele, rehype-sanitize, remark-gfm, remend, shiki]
+peers: []
 slots: []
 ---
 

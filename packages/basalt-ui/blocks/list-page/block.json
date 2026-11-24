@@ -6,7 +6,6 @@
   "imports": [
     "basalt-ui",
     "basalt-ui/cards",
-    "basalt-ui/core/ports",
     "basalt-ui/page",
     "basalt-ui/table",
     "basalt-ui/ui/sortable-list",

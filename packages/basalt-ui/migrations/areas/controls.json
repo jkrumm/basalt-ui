@@ -264,9 +264,22 @@
       "from": "basalt-ui/controls#ViewTabs.handle",
       "to": "state",
       "note": "a bound `ControlHandle` is `state` on every part that takes one; `handle` stays a deprecated alias for one minor"
+    },
+    {
+      "id": "controls-slot-types",
+      "kind": "moved",
+      "from": "basalt-ui/core/ports#ControlsSlot, FormLike",
+      "to": "basalt-ui/controls#ControlsSlot, FormLike",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "the type `filterSlot` fills and the structural form `useFormDraft` takes import from the controls subpath",
+      "verify": "tsc"
     }
   ],
-  "tokens": { "renamed": [], "valueShifts": [] },
+  "tokens": {
+    "renamed": [],
+    "valueShifts": []
+  },
   "storage": [
     {
       "key": "basalt:<key> (a URL field's persist mirror)",

@@ -122,6 +122,76 @@
       "manual": true,
       "note": "not migrated: a keyed-map draft is outside useFormDraft",
       "verify": "none"
+    },
+    {
+      "id": "state-core-explicit-list",
+      "kind": "removed",
+      "from": "basalt-ui/core/*",
+      "to": "basalt-ui/core/<module> for the modules an ejected primitive imports (cn, control-scope, format, link, list/*, messages/*, panel, persisted, phase, phase-boundary, ports, retry-owner, zoned and the rest the exports map lists)",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "the wildcard is an explicit list held to the eject seeds by tests/exports-map.test.ts; every other core module (frame-arm, provider, scheme, provider-props, write-batch, …) is unpublished; a type that lived there is importable from its entry",
+      "verify": "node: import.meta.resolve(\"basalt-ui/core/frame-arm\") throws ERR_PACKAGE_PATH_NOT_EXPORTED"
+    },
+    {
+      "id": "state-core-ports-root",
+      "kind": "moved",
+      "from": "basalt-ui/core/ports#NavTarget, LinkComponent, IconComponent, FieldLike, DetailHost, DetailEntry, RecordSequence, DragLike, DragData, DragEdge, Box, BoxSlot",
+      "to": "basalt-ui#NavTarget, LinkComponent, IconComponent, FieldLike, DetailHost, DetailEntry, RecordSequence, DragLike, DragData, DragEdge, Box, BoxSlot",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "the ports every subpath's props name are root types; `core/ports` stays for an ejected primitive only",
+      "verify": "tsc"
+    },
+    {
+      "id": "state-core-scheme-root",
+      "kind": "moved",
+      "from": "basalt-ui/core/scheme#setScheme",
+      "to": "basalt-ui#setScheme",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "the scheme writer is a root export; `basalt-ui/core/scheme` no longer resolves",
+      "verify": "tsc"
+    },
+    {
+      "id": "state-core-appearance-root",
+      "kind": "moved",
+      "from": "basalt-ui/core/appearance#setAppearance",
+      "to": "basalt-ui#setAppearance",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "density, frame and accent are written through the root export; `core/appearance` stays for an ejected SwatchPicker",
+      "verify": "tsc"
+    },
+    {
+      "id": "state-core-intl-root",
+      "kind": "moved",
+      "from": "basalt-ui/core/provider-props#IntlScope",
+      "to": "basalt-ui#IntlScope",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "a subtree formats under its own locale, zone or messages through the root `IntlScope`; `core/provider-props` no longer resolves",
+      "verify": "tsc"
+    },
+    {
+      "id": "state-index-stub",
+      "kind": "removed",
+      "from": "basalt-ui/ui/index",
+      "to": "basalt-ui/ui/<name>",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "the empty stub barrel is deleted; a primitive imports from its own module",
+      "verify": "node: import.meta.resolve(\"basalt-ui/ui/index\") throws"
+    },
+    {
+      "id": "state-guard-modules-unpublished",
+      "kind": "removed",
+      "from": "basalt-ui/ui/<name>.guard, basalt-ui/ui/primitive.contract, basalt-ui/ui/guard-completeness, basalt-ui/ui/slots",
+      "to": "basalt-ui/testing#SLOTS for the slot table; the guards travel with `basalt-ui eject`",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "test and guard modules ship in the tarball for eject and sync but no longer resolve as primitives",
+      "verify": "node: import.meta.resolve(\"basalt-ui/ui/button.guard\") throws"
     }
   ],
   "tokens": {

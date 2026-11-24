@@ -3,7 +3,7 @@ name: AppShell
 use when: 'an app has more than one destination and wants one rail, header and tab bar from a single `defineNav`'
 never when: 'the app is one screen or keeps its own frame (use Page, PageBar and Section inside your own main)'
 subpath: basalt-ui/shell
-peers: ['@base-ui/react', '@tanstack/react-hotkeys', '@tanstack/react-router']
+peers: ['@atlaskit/pragmatic-drag-and-drop', '@base-ui/react', '@tanstack/react-hotkeys', '@tanstack/react-router']
 slots: [page-breadcrumb-leaf, page-breadcrumb-parent]
 ---
 
@@ -29,7 +29,7 @@ shows its nav label, and a path no route matches shows `Not found`, in the crumb
 
 ```ts
 AppShell<Id extends string = string>({ nav, brand, badges, blocks, globalControls, globalActions, settings, account, search, workspace, favourites, storageKey, compactHeader, chrome, frame, children, }: AppShellProps<Id>): ReactElement
-  nav: NavConfig
+  nav: ShellNav
   brand: ShellBrand
   badges?: Partial<Record<Id, NavBadge>>
   blocks?: readonly SidebarBlock[]

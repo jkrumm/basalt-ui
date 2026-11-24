@@ -699,7 +699,7 @@ const PACKAGE_BANS: readonly PackageBan[] = [
     packages: ['next-themes', 'remix-themes', 'use-dark-mode'],
     names: { 'usehooks-ts': ['useDarkMode', 'useTernaryDarkMode'] },
     subject: (source) => `${source} keeps a scheme of its own`,
-    fix: "BasaltProvider owns the scheme: pass its scheme prop and switch it with setScheme from basalt-ui/core/scheme; basalt's tokens key on [data-theme], and a scheme store of the app's own writes a class or a key no token reads",
+    fix: "BasaltProvider owns the scheme: pass its scheme prop and switch it with setScheme from basalt-ui; basalt's tokens key on [data-theme], and a scheme store of the app's own writes a class or a key no token reads",
     next: 'Tokens switch per scheme, so a component reads no scheme to pick a class',
   },
 ]

@@ -3,7 +3,7 @@ name: settled
 use when: 'a test must read the tree after a popup opened, a navigation ran or a query settled'
 never when: 'the test uses fake timers (it polls real ones), or a `findBy*` on the one element is enough'
 subpath: basalt-ui/testing
-peers: []
+peers: ['@axe-core/playwright']
 slots: []
 ---
 

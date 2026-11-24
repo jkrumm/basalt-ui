@@ -3,7 +3,7 @@ name: Status
 use when: 'one entity has a verdict word with a dot (Healthy, Degraded) in a row or a header'
 never when: 'the word carries a count or a change (use CountBadge or DeltaBadge), or no word fits (a dot alone never ships)'
 subpath: basalt-ui/ui/status
-peers: ['@base-ui/react']
+peers: []
 slots: [status, swatch]
 ---
 

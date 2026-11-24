@@ -3,7 +3,7 @@ name: Skeleton
 use when: 'a one-line placeholder holds the place of loading text in a hand-built layout'
 never when: 'a basalt part already draws its own loading state (give it `phase`), or the wait is an action (use a Spinner or a Button `loading`)'
 subpath: basalt-ui/ui/skeleton
-peers: ['@base-ui/react']
+peers: []
 slots: [skeleton, spinner]
 ---
 

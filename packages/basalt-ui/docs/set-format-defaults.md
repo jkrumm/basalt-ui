@@ -3,7 +3,7 @@ name: setFormatDefaults
 use when: 'the app has one page locale or time zone and charts must print dates in it before any component mounts (call it once at startup, beside `routerDefaults`).'
 never when: 'only text in components needs the locale (use `useFormat` or `createFormat`, which take it per call), or a server renders many locales.'
 subpath: basalt-ui
-peers: ['@tanstack/react-router-devtools', pele, rehype-sanitize, remark-gfm, remend, shiki]
+peers: []
 slots: []
 ---
 

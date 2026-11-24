@@ -2,7 +2,7 @@
 
 > Maintaining this package? Read `packages/basalt-ui/MAINTAINING.md` first (repo-only — not in the tarball).
 
-React 19 framework on Base UI and Tailwind 4: `BasaltProvider` (`basalt-ui/router`), app shell, TanStack Charts
+React 19 framework on Base UI and Tailwind 4: `BasaltProvider` (`basalt-ui`, re-exported by `basalt-ui/router`), app shell, TanStack Charts
 chart system with a three-tier `--basalt-*` CSS-variable token system, and TanStack adapter batteries.
 Toolchain: Bun runtime, oxlint + oxfmt, conventional commits (empty scope), `master` branch.
 
@@ -24,12 +24,12 @@ Everything else is internal: `./guard`, `./data/virtual`, `./llms.txt` and `./pa
 | `basalt-ui/router`       | headless      |
 | `basalt-ui/data`         | headless      |
 | `basalt-ui/form`         | ui            |
-| `basalt-ui/page`         | headless      |
-| `basalt-ui/cards`        | headless      |
-| `basalt-ui/motion`       | headless      |
-| `basalt-ui/ai`           | headless      |
-| `basalt-ui/ui/*`         | headless      |
-| `basalt-ui/core/*`       | headless      |
+| `basalt-ui/page`         | ui            |
+| `basalt-ui/cards`        | ui            |
+| `basalt-ui/motion`       | ui            |
+| `basalt-ui/ai`           | ui            |
+| `basalt-ui/ui/*`         | ui            |
+| `basalt-ui/core/*`       | ui            |
 | `basalt-ui/shell`        | ui            |
 | `basalt-ui/lint`         | build-tooling |
 | `basalt-ui/stylelint`    | build-tooling |

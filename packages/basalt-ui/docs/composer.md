@@ -3,7 +3,7 @@ name: Composer
 use when: 'a person writes a message that is sent: a chat prompt, a reply, a mail body'
 never when: 'the text is a field of a form that saves with the form (use Textarea), or a search box (use Input)'
 subpath: basalt-ui/ai
-peers: ['@base-ui/react', react-markdown, rehype-sanitize, remark-gfm, remend]
+peers: ['@base-ui/react', '@shikijs/langs', '@shikijs/themes', pele, react-markdown, rehype-sanitize, remark-gfm, remend, shiki]
 slots: [composer, composer-files, composer-footer, composer-input]
 ---
 

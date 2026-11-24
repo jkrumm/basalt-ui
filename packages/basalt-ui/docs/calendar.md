@@ -3,7 +3,7 @@ name: Calendar
 use when: 'a month is shown inline: a mini month beside a schedule, or a page''s day picker with no field'
 never when: 'a form field picks a day (use `DatePicker`), or the page shows events by the hour (use `Schedule` from `basalt-ui/cards`)'
 subpath: basalt-ui/ui/calendar
-peers: ['@base-ui/react']
+peers: [react-day-picker]
 slots: [calendar]
 ---
 
