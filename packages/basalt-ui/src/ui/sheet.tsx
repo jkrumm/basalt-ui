@@ -94,6 +94,17 @@ export const sheetContentVariants = cva(
   },
 )
 
+/** The pill on a bottom sheet's top edge: it says the panel drags, and it is a drag handle in itself. */
+const GRABBER = (
+  <div
+    data-panel="grabber"
+    aria-hidden="true"
+    className="flex h-6 shrink-0 touch-none items-end justify-center pb-1"
+  >
+    <span className="h-1 w-9 rounded-full bg-line" />
+  </div>
+)
+
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
 export const sheetParts = ['sheet-trigger', 'sheet-content', 'sheet-title', 'sheet-close'] as const
 
@@ -355,17 +366,6 @@ function KeyboardAware({
     <>{children}</>
   )
 }
-
-/** The pill on a bottom sheet's top edge: it says the panel drags, and it is a drag handle in itself. */
-const GRABBER = (
-  <div
-    data-panel="grabber"
-    aria-hidden="true"
-    className="flex h-6 shrink-0 touch-none items-end justify-center pb-1"
-  >
-    <span className="h-1 w-9 rounded-full bg-line" />
-  </div>
-)
 
 /**
  * The sheet's heading. `SheetContent` renders it from its `title`.
