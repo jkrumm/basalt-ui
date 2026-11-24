@@ -1,74 +1,43 @@
+/**
+ * The landing page is the tour: the stops of the nav's `tour` section in order, each a card that
+ * links to its page and names the parts it proves.
+ */
 import { Link, createFileRoute } from '@tanstack/react-router'
-import { Page, PageBar, Section } from 'basalt-ui/page'
-import { PEEK_RECORDS } from '../demo/peek-records'
-import { SCENARIO_INFO } from '../scenarios/scenario-info'
+import { CardGrid, Page } from 'basalt-ui/page'
+import { Card } from 'basalt-ui/ui/card'
+import type { ReactElement } from 'react'
+import { NAV } from '../demo/nav-model'
+import { TOUR } from '../demo/tour'
 
-/** The landing page: the shell recipes in one line each, then every scenario a human opens. */
-function IndexRoute() {
+const STOPS = (NAV.sections.find((section) => section.id === 'tour')?.items ?? []).filter(
+  (item) => item.id !== 'home',
+)
+
+function IndexRoute(): ReactElement {
   return (
     <Page area="home">
-      <PageBar title="Playground" />
-      <Section title="Recipes">
-        <ul className="m-0 flex list-none flex-col gap-1.5 p-0 text-sm">
-          <li>
-            <span className="font-medium">add-page</span>
-            <span className="text-muted-foreground"> — a file route plus one nav entry.</span>
-          </li>
-          <li>
-            <span className="font-medium">app-shell</span>
-            <span className="text-muted-foreground">
-              {' '}
-              — one AppShell in the `_app` layout route.
-            </span>
-          </li>
-          <li>
-            <Link to="/shell" className="font-medium underline-offset-4 hover:underline">
-              Shell
-            </Link>
-            <span className="text-muted-foreground"> — a page bar and a docked aside.</span>
-          </li>
-        </ul>
-      </Section>
-      {/* #region peek-list */}
-      {/* A plain link to a record: the root layout's one `usePeek` opens it beside this list; a modifier click opens its page. */}
-      <Section title="Open a record in the peek">
-        <ul className="m-0 flex list-none flex-col gap-1.5 p-0 text-sm">
-          {PEEK_RECORDS.map((record) => (
-            <li key={record.id}>
-              <Link
-                to="/peek/$id"
-                params={{ id: record.id }}
-                className="font-medium underline-offset-4 hover:underline"
-              >
-                {record.title}
-              </Link>
-              <span className="text-muted-foreground"> — {record.state}</span>
-            </li>
-          ))}
-        </ul>
-      </Section>
-      {/* #endregion */}
-      <Section title="Open a scenario">
-        <ul className="m-0 flex list-none flex-col gap-1.5 p-0 text-sm">
-          {SCENARIO_INFO.map(({ id, title, blurb }) => (
-            <li key={id}>
-              <Link
-                to="/scenarios/$name"
-                params={{ name: id }}
-                className="font-medium underline-offset-4 hover:underline"
-              >
-                {title}
-              </Link>
-              <span className="text-muted-foreground"> — {blurb}</span>
-            </li>
-          ))}
-        </ul>
-      </Section>
+      <CardGrid min="narrow">
+        {STOPS.map((item, index) => {
+          const stop = TOUR[item.id]
+          return (
+            <Card key={item.id} render={<Link {...item.link} />}>
+              <div className="flex flex-col gap-1">
+                <span className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <span className="text-muted-foreground tabular-nums">{index + 1}</span>
+                  {item.label}
+                </span>
+                <span className="text-sm text-muted-foreground">{stop?.line}</span>
+                <span className="font-mono text-xs text-muted-foreground">{stop?.parts}</span>
+              </div>
+            </Card>
+          )
+        })}
+      </CardGrid>
     </Page>
   )
 }
 
 export const Route = createFileRoute('/')({
-  staticData: { title: 'Playground' },
+  staticData: { title: 'Tour' },
   component: IndexRoute,
 })

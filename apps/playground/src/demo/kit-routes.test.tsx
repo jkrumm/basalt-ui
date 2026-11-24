@@ -72,8 +72,37 @@ function navPaths(section: string): string[] {
   return (found?.items ?? []).map((item) => String(item.link.to))
 }
 
-describe('the Kit nav', () => {
-  test('names one destination per capability, ahead of the recipes and the trial evidence', () => {
+describe('the nav', () => {
+  test('opens on the tour, its stops in order, and folds the rest', () => {
+    expect(navPaths('tour')).toEqual([
+      '/',
+      '/shell',
+      '/ref/parts',
+      '/table',
+      '/kit/board',
+      '/ref/suppliers/$id',
+      '/ref/settings',
+      '/kit/forms/whole',
+      '/overview',
+      '/charts',
+      '/kit/content',
+      '/kit/states',
+      '/kit/mobile-nav',
+    ])
+    expect(NAV.sections.map((s) => s.id)).toEqual([
+      'tour',
+      'reference',
+      'kit',
+      'kit-forms',
+      'recipes',
+    ])
+    for (const section of NAV.sections.slice(1)) {
+      expect('defaultCollapsed' in section && section.defaultCollapsed).toBe(true)
+    }
+    expect(NAV.sections.reduce((n, s) => n + s.items.length, 0)).toBeLessThanOrEqual(40)
+  })
+
+  test('names one Kit destination per capability, ahead of the recipes', () => {
     expect(navPaths('kit')).toEqual([
       '/kit/controls',
       '/kit/aside',
@@ -84,13 +113,10 @@ describe('the Kit nav', () => {
       '/kit/interval-track',
       '/kit/bar-list-series',
       '/kit/stat-states',
-      '/kit/board',
       '/kit/layouts',
       '/kit/chain',
       '/kit/library',
       '/kit/motion',
-      '/kit/avatars',
-      '/kit/mobile-nav',
       '/kit/overlays',
     ])
     expect(navPaths('kit-forms')).toEqual([
@@ -99,22 +125,12 @@ describe('the Kit nav', () => {
       '/kit/forms/lists',
       '/kit/forms/dates',
       '/kit/forms/buttons',
-      '/kit/forms/whole',
     ])
     expect(navPaths('recipes')).toEqual([
       '/recipes/view-switch',
       '/recipes/saved-views',
       '/recipes/two-pane',
     ])
-    const ids = NAV.sections.map((s) => s.id)
-    const trial = ids.filter(
-      (id) => id.startsWith('trial') || id.startsWith('fleet') || id === 'scenarios',
-    )
-    expect(ids.indexOf('kit')).toBeLessThan(Math.min(...trial.map((id) => ids.indexOf(id))))
-    expect(ids.indexOf('kit-forms')).toBe(ids.indexOf('kit') + 1)
-    for (const section of NAV.sections.filter((s) => trial.includes(s.id))) {
-      expect(section.label).toStartWith('Trial evidence')
-    }
   })
 })
 
@@ -249,14 +265,11 @@ describe('the routed recipes', () => {
 })
 
 describe('the reference pages', () => {
-  test('the nav names one page per archetype, the record by its first supplier', () => {
+  test('the nav names the archetypes the tour does not', () => {
     expect(navPaths('reference')).toEqual([
-      '/ref/parts',
       '/ref/notes',
       '/ref/mail',
-      '/ref/suppliers/$id',
       '/ref/schedule',
-      '/ref/settings',
       '/ref/flow',
       '/ref/assistant',
     ])

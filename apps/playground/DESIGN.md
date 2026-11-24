@@ -3,7 +3,7 @@
 > Seeded from basalt-ui's `agent/templates/DESIGN.md.tpl`, then owned here — `sync` never touches
 > it again, and no version is stamped here (run `basalt-ui doctor` for the version; a number written
 > into a file is frozen at scaffold time). It records this app's **deltas only**: the law lives in
-> `.claude/rules/basalt-*.md`, and the precedence between this file, those rules and the skills is
+> the repo root's `.claude/rules/basalt-v3-playground-*.md`, and the precedence between this file, those rules and the skills is
 > stated once in the managed `AGENTS.md` block.
 
 ## Identity

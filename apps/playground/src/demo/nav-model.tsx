@@ -7,8 +7,9 @@
  * generated route tree. It is PURE (no registration, no global), so this file imports nothing from
  * `routes/` and either side can read it without a cycle.
  *
- * Destinations: the overview pages, then the Kit (one page per capability), its Forms group and the routed recipes, then the
- * trial evidence (the cycle apps and the scenarios built from `SCENARIO_INFO`), labelled as such.
+ * Destinations: the Tour first (the landing page and its stops, in order; `demo/tour.ts` holds each stop's line),
+ * then the Reference pages, the Kit (one page per capability), its Forms group and the routed recipes,
+ * each folded until opened. Trial builds and test fixtures have no entry (apps/playground/AGENTS.md).
  * Settings is the shell's `settings` menu, not a nav item.
  */
 import { linkOptions } from '@tanstack/react-router'
@@ -17,11 +18,15 @@ import {
   Boxes,
   CalendarDays,
   ChartColumn as Chart,
+  ChartLine,
+  Compass,
   Factory,
+  FileText,
+  Kanban,
   Notebook,
-  FlaskConical as Flask,
   Image,
   LayoutDashboard as Dashboard,
+  Layers,
   Mail,
   MessagesSquare,
   PanelLeft as Layout,
@@ -32,48 +37,104 @@ import {
   TextCursorInput as Form,
   Workflow,
 } from 'lucide-react'
-import { SCENARIO_INFO } from '../scenarios/scenario-info'
 
 export const NAV = defineNav({
   sections: [
+    // The tour: the landing page, then one page per way of using v3, in the order the landing lists them.
     {
-      id: 'overview',
-      label: 'Overview',
+      id: 'tour',
+      label: 'Tour',
       items: [
         {
           id: 'home',
-          label: 'Home',
-          icon: Dashboard,
+          label: 'Start',
+          icon: Compass,
           mobile: 'tab',
           link: linkOptions({ to: '/' }),
-        },
-        {
-          id: 'cards',
-          label: 'Cards',
-          icon: Chart,
-          mobile: 'tab',
-          link: linkOptions({ to: '/cards' }),
-        },
-        {
-          id: 'table',
-          label: 'Table',
-          icon: Table,
-          mobile: 'more',
-          link: linkOptions({ to: '/table' }),
         },
         {
           id: 'shell',
           label: 'Shell',
           icon: Layout,
-          mobile: 'tab',
+          mobile: 'more',
           link: linkOptions({ to: '/shell' }),
         },
         {
-          id: 'widgets',
-          label: 'Widgets',
-          icon: Dashboard,
+          id: 'ref-parts',
+          label: 'Parts',
+          icon: Boxes,
+          mobile: 'tab',
+          link: linkOptions({ to: '/ref/parts' }),
+        },
+        {
+          id: 'table',
+          label: 'Ledger',
+          icon: Table,
           mobile: 'more',
+          link: linkOptions({ to: '/table' }),
+        },
+        {
+          id: 'board',
+          label: 'Board',
+          icon: Kanban,
+          mobile: 'more',
+          link: linkOptions({ to: '/kit/board' }),
+        },
+        {
+          id: 'ref-supplier',
+          label: 'Supplier',
+          icon: Factory,
+          mobile: 'more',
+          link: linkOptions({ to: '/ref/suppliers/$id', params: { id: 'sup-1' } }),
+        },
+        {
+          id: 'ref-settings',
+          label: 'Settings',
+          icon: Sliders,
+          mobile: 'tab',
+          link: linkOptions({ to: '/ref/settings' }),
+        },
+        {
+          id: 'forms',
+          label: 'Forms',
+          icon: Form,
+          mobile: 'more',
+          link: linkOptions({ to: '/kit/forms/whole' }),
+        },
+        {
+          id: 'dashboard',
+          label: 'Dashboard',
+          icon: Dashboard,
+          mobile: 'tab',
           link: linkOptions({ to: '/overview' }),
+        },
+        {
+          id: 'charts',
+          label: 'Charts',
+          icon: ChartLine,
+          mobile: 'more',
+          link: linkOptions({ to: '/charts' }),
+        },
+        {
+          id: 'content',
+          label: 'Content',
+          icon: FileText,
+          mobile: 'more',
+          link: linkOptions({ to: '/kit/content' }),
+        },
+        {
+          id: 'states',
+          label: 'States',
+          icon: Layers,
+          mobile: 'more',
+          link: linkOptions({ to: '/kit/states' }),
+        },
+        {
+          id: 'phone',
+          label: 'Phone',
+          icon: Smartphone,
+          mobile: 'more',
+          link: linkOptions({ to: '/kit/mobile-nav' }),
         },
       ],
     },
@@ -81,14 +142,9 @@ export const NAV = defineNav({
     {
       id: 'reference',
       label: 'Reference',
+      collapsible: true,
+      defaultCollapsed: true,
       items: [
-        {
-          id: 'ref-parts',
-          label: 'Parts',
-          icon: Boxes,
-          mobile: 'more',
-          link: linkOptions({ to: '/ref/parts' }),
-        },
         {
           id: 'ref-notes',
           label: 'Notes',
@@ -104,25 +160,11 @@ export const NAV = defineNav({
           link: linkOptions({ to: '/ref/mail' }),
         },
         {
-          id: 'ref-supplier',
-          label: 'Supplier',
-          icon: Factory,
-          mobile: 'more',
-          link: linkOptions({ to: '/ref/suppliers/$id', params: { id: 'sup-1' } }),
-        },
-        {
           id: 'ref-schedule',
           label: 'Schedule',
           icon: CalendarDays,
           mobile: 'more',
           link: linkOptions({ to: '/ref/schedule' }),
-        },
-        {
-          id: 'ref-settings',
-          label: 'Inventory settings',
-          icon: Sliders,
-          mobile: 'more',
-          link: linkOptions({ to: '/ref/settings' }),
         },
         {
           id: 'ref-flow',
@@ -144,6 +186,8 @@ export const NAV = defineNav({
     {
       id: 'kit',
       label: 'Kit',
+      collapsible: true,
+      defaultCollapsed: true,
       items: [
         {
           id: 'kit-controls',
@@ -209,13 +253,6 @@ export const NAV = defineNav({
           link: linkOptions({ to: '/kit/stat-states' }),
         },
         {
-          id: 'kit-board',
-          label: 'Board',
-          icon: Layout,
-          mobile: 'more',
-          link: linkOptions({ to: '/kit/board' }),
-        },
-        {
           id: 'kit-layouts',
           label: 'Layouts',
           icon: Table,
@@ -244,20 +281,6 @@ export const NAV = defineNav({
           link: linkOptions({ to: '/kit/motion' }),
         },
         {
-          id: 'kit-avatars',
-          label: 'Avatars',
-          icon: Layout,
-          mobile: 'more',
-          link: linkOptions({ to: '/kit/avatars' }),
-        },
-        {
-          id: 'kit-mobile-nav',
-          label: 'Mobile nav',
-          icon: Smartphone,
-          mobile: 'more',
-          link: linkOptions({ to: '/kit/mobile-nav' }),
-        },
-        {
           id: 'kit-overlays',
           label: 'Overlays',
           icon: Layout,
@@ -270,6 +293,8 @@ export const NAV = defineNav({
     {
       id: 'kit-forms',
       label: 'Kit: Forms',
+      collapsible: true,
+      defaultCollapsed: true,
       items: [
         {
           id: 'kit-forms-inputs',
@@ -306,19 +331,14 @@ export const NAV = defineNav({
           mobile: 'more',
           link: linkOptions({ to: '/kit/forms/buttons' }),
         },
-        {
-          id: 'kit-forms-whole',
-          label: 'Whole forms',
-          icon: Form,
-          mobile: 'more',
-          link: linkOptions({ to: '/kit/forms/whole' }),
-        },
       ],
     },
     // The recipes a doc page copies, each rendered as a page.
     {
       id: 'recipes',
       label: 'Recipes',
+      collapsible: true,
+      defaultCollapsed: true,
       items: [
         {
           id: 'recipe-view-switch',
@@ -342,227 +362,6 @@ export const NAV = defineNav({
           link: linkOptions({ to: '/recipes/two-pane' }),
         },
       ],
-    },
-    // Trial evidence: the pages the state and dogfood cycles built, kept as they were judged.
-    {
-      id: 'trial-cycles',
-      label: 'Trial evidence: state and dogfood cycles',
-      collapsible: true,
-      items: [
-        {
-          id: 'cycle-state-2',
-          label: 'Tickets (state cycle 2)',
-          icon: Table,
-          mobile: 'more',
-          link: linkOptions({ to: '/cycle/state-2' }),
-        },
-        {
-          id: 'cycle-state-3',
-          label: 'Orders (state cycle 3)',
-          icon: Table,
-          mobile: 'more',
-          link: linkOptions({ to: '/cycle/state-3' }),
-        },
-        {
-          id: 'cycle-state-4',
-          label: 'Invoices (state cycle 4)',
-          icon: Table,
-          mobile: 'more',
-          link: linkOptions({ to: '/cycle/state-4' }),
-        },
-        {
-          id: 'cycle-dogfood',
-          label: 'Flow (dogfood cycle)',
-          icon: Dashboard,
-          mobile: 'more',
-          link: linkOptions({ to: '/cycle/dogfood' }),
-        },
-        {
-          id: 'cycle-dogfood-2',
-          label: 'Flow (dogfood cycle 2)',
-          icon: Dashboard,
-          mobile: 'more',
-          link: linkOptions({ to: '/cycle/dogfood-2' }),
-        },
-        {
-          id: 'cycle-dogfood-3',
-          label: 'Flow (dogfood cycle 3)',
-          icon: Dashboard,
-          mobile: 'more',
-          link: linkOptions({ to: '/cycle/dogfood-3' }),
-        },
-        {
-          id: 'cycle-dogfood-4',
-          label: 'Overview (dogfood cycle 4)',
-          icon: Dashboard,
-          mobile: 'more',
-          link: linkOptions({ to: '/cycle/dogfood-4' }),
-        },
-        {
-          id: 'cycle-dogfood-5',
-          label: 'Overview (dogfood cycle 5)',
-          icon: Dashboard,
-          mobile: 'more',
-          link: linkOptions({ to: '/cycle/dogfood-5' }),
-        },
-      ],
-    },
-    // Shell cycle 2 (docs/v3/cycles/shell-2.md): the fleet app's three pages.
-    {
-      id: 'fleet',
-      label: 'Trial evidence: fleet, shell cycle 2',
-      collapsible: true,
-      items: [
-        {
-          id: 'fleet-overview',
-          label: 'Fleet overview',
-          icon: Dashboard,
-          mobile: 'more',
-          link: linkOptions({ to: '/cycle/shell-2' }),
-        },
-        {
-          id: 'fleet-services',
-          label: 'Services',
-          icon: Table,
-          mobile: 'more',
-          link: linkOptions({ to: '/cycle/shell-2/services' }),
-        },
-        {
-          id: 'fleet-settings',
-          label: 'Fleet settings',
-          icon: Layout,
-          mobile: 'more',
-          link: linkOptions({ to: '/cycle/shell-2/settings' }),
-        },
-      ],
-    },
-    // Shell cycle 3 (docs/v3/cycles/shell-3.md): the fleet app's three pages, rebuilt.
-    {
-      id: 'fleet-3',
-      label: 'Trial evidence: fleet, shell cycle 3',
-      collapsible: true,
-      items: [
-        {
-          id: 'fleet-3-overview',
-          label: 'Fleet overview',
-          icon: Dashboard,
-          mobile: 'more',
-          link: linkOptions({ to: '/cycle/shell-3' }),
-        },
-        {
-          id: 'fleet-3-services',
-          label: 'Services',
-          icon: Table,
-          mobile: 'more',
-          link: linkOptions({ to: '/cycle/shell-3/services' }),
-        },
-        {
-          id: 'fleet-3-settings',
-          label: 'Fleet settings',
-          icon: Layout,
-          mobile: 'more',
-          link: linkOptions({ to: '/cycle/shell-3/settings' }),
-        },
-      ],
-    },
-    // Shell cycle 4 (docs/v3/cycles/shell-4.md): the fleet app's three pages, rebuilt.
-    {
-      id: 'fleet-4',
-      label: 'Trial evidence: fleet, shell cycle 4',
-      collapsible: true,
-      items: [
-        {
-          id: 'fleet-4-overview',
-          label: 'Fleet overview',
-          icon: Dashboard,
-          mobile: 'more',
-          link: linkOptions({ to: '/cycle/shell-4' }),
-        },
-        {
-          id: 'fleet-4-services',
-          label: 'Services',
-          icon: Table,
-          mobile: 'more',
-          link: linkOptions({ to: '/cycle/shell-4/services' }),
-        },
-        {
-          id: 'fleet-4-settings',
-          label: 'Fleet settings',
-          icon: Layout,
-          mobile: 'more',
-          link: linkOptions({ to: '/cycle/shell-4/settings' }),
-        },
-      ],
-    },
-    // Shell cycle 5 (docs/v3/cycles/shell-5.md): the fleet app's three pages, rebuilt.
-    {
-      id: 'fleet-5',
-      label: 'Trial evidence: fleet, shell cycle 5',
-      collapsible: true,
-      items: [
-        {
-          id: 'fleet-5-overview',
-          label: 'Fleet overview',
-          icon: Dashboard,
-          mobile: 'more',
-          link: linkOptions({ to: '/cycle/shell-5' }),
-        },
-        {
-          id: 'fleet-5-services',
-          label: 'Services',
-          icon: Table,
-          mobile: 'more',
-          link: linkOptions({ to: '/cycle/shell-5/services' }),
-        },
-        {
-          id: 'fleet-5-settings',
-          label: 'Fleet settings',
-          icon: Layout,
-          mobile: 'more',
-          link: linkOptions({ to: '/cycle/shell-5/settings' }),
-        },
-      ],
-    },
-    // Shell cycle 6 (owner review 2): the fleet app's three pages, rebuilt.
-    {
-      id: 'fleet-6',
-      label: 'Trial evidence: fleet, shell cycle 6',
-      collapsible: true,
-      items: [
-        {
-          id: 'fleet-6-overview',
-          label: 'Fleet overview',
-          icon: Dashboard,
-          mobile: 'more',
-          link: linkOptions({ to: '/cycle/shell-6' }),
-        },
-        {
-          id: 'fleet-6-services',
-          label: 'Services',
-          icon: Table,
-          mobile: 'more',
-          link: linkOptions({ to: '/cycle/shell-6/services' }),
-        },
-        {
-          id: 'fleet-6-settings',
-          label: 'Fleet settings',
-          icon: Layout,
-          mobile: 'more',
-          link: linkOptions({ to: '/cycle/shell-6/settings' }),
-        },
-      ],
-    },
-    // One entry per scenario in the registry.
-    {
-      id: 'scenarios',
-      label: 'Trial evidence: scenarios',
-      collapsible: true,
-      items: SCENARIO_INFO.map(({ id, title }) => ({
-        id: `scenario-${id}`,
-        label: title,
-        icon: Flask,
-        link: linkOptions({ to: '/scenarios/$name', params: { name: id } }),
-      })),
     },
   ],
 })
