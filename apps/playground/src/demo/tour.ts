@@ -51,6 +51,6 @@ export const TOUR: Readonly<Record<string, TourStop>> = {
   },
   phone: {
     line: 'Every stop at 390 wide: four tabs and More. This page switches the phone nav variants.',
-    parts: 'useSizeClass, the tab bar, the aside as a sheet',
+    parts: 'the tab bar, More, the phone nav variants',
   },
 }
