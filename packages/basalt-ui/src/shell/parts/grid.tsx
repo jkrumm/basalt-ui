@@ -51,6 +51,8 @@ import type { AsideDock, AsideSheetState } from '../../page/core/docking'
 import type { ShellFrame, SizeClass } from '../contract'
 import { MOTION_DURATION_MS } from '../../tokens/motion'
 import { SHELL_MAIN_ID } from './a11y'
+import type { PhoneNavVariant } from './mobile/variant'
+import { SAFE } from './mobile/variants/safe'
 import { PRINT_FRAME, PRINT_MAIN, PRINT_OFF, PRINT_SURFACE } from './print'
 
 // ---- Rail state ---------------------------------------------------------------------------------
@@ -214,6 +216,8 @@ export type ShellGridProps = {
   dockWidth: number
   /** The width of the open rail, in px: the default unless the reader dragged it. */
   railOpenWidth?: number
+  /** A trial phone nav (Issue 3205); `tabs`, the shipped bar, adds nothing to the root. */
+  phoneNav?: PhoneNavVariant
   children: ReactNode
 }
 
@@ -265,6 +269,7 @@ export function ShellGrid({
   asideWidth,
   dockWidth,
   railOpenWidth = RAIL_EXPANDED_PX,
+  phoneNav = 'tabs',
   children,
 }: ShellGridProps): ReactElement {
   const shifting = useDockShift(dockWidth)
@@ -282,6 +287,7 @@ export function ShellGrid({
       data-frame={frame}
       data-titlebar={titlebar ? '' : undefined}
       data-compact-header={compactHeader}
+      data-phone-nav={phoneNav === 'tabs' ? undefined : phoneNav}
       style={style}
       className={cn(
         'group/shell grid h-dvh w-full grid-cols-[var(--shell-rail-w)_minmax(0,1fr)] grid-rows-[var(--shell-top-h)_minmax(0,1fr)_auto] bg-background font-sans text-foreground',
@@ -296,6 +302,16 @@ export function ShellGrid({
         'data-[rail=expanded]:md:[--shell-rail-w:var(--shell-rail-open-w)] data-[rail=collapsed]:md:[--shell-rail-w:--spacing(16)] data-[rail=collapsed]:xl:[--shell-rail-w:--spacing(16)]',
         '[@media(max-height:30rem)_and_(orientation:landscape)]:max-md:[--shell-header-h:clamp(2.25rem,9dvh,3rem)]',
         'data-[compact-header=hidden]:max-md:[--shell-header-h:0px]',
+        // A trial phone nav (Issue 3205): its bar is fixed over main, so main ends in a spacer as tall
+        // as the bar (`--shell-phone-clear`); the frame keeps off all four safe-area insets; More
+        // slides the whole root right (`--phone-sidebar-x`) over the rail it reveals.
+        phoneNav !== 'tabs' && [
+          SAFE,
+          'max-md:pt-(--phone-safe-t) max-md:ps-(--phone-safe-l) max-md:pe-(--phone-safe-r)',
+          '[--shell-phone-clear:calc(--spacing(17)+var(--phone-safe-b))]',
+          'max-md:relative max-md:z-10 max-md:translate-x-[var(--phone-sidebar-x,0px)] max-md:transition-[translate,box-shadow] max-md:duration-slow max-md:ease-standard',
+          'data-phone-sidebar:shadow-overlay data-phone-dragging:transition-none motion-reduce:transition-none',
+        ],
         PRINT_FRAME,
       )}
     >
@@ -417,6 +433,7 @@ export function ShellMain({
           : 'outline-none',
         // Under a shell the gutter is the shell's: `Page` declares its own default for use without one.
         '[&_[data-slot=page]]:[--page-gutter:var(--shell-gutter)]',
+        "group-data-phone-nav/shell:max-md:after:block group-data-phone-nav/shell:max-md:after:h-(--shell-phone-clear) group-data-phone-nav/shell:max-md:after:content-['']",
         PRINT_MAIN,
       )}
     >

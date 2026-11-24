@@ -5,8 +5,8 @@
  */
 import type { ReactElement } from 'react'
 import { cn } from '../../core/cn'
-import { TabBar } from './mobile'
-import type { TabBarProps } from './mobile'
+import { PhoneNav } from './mobile'
+import type { PhoneNavProps } from './mobile'
 import { PRINT_OFF } from './print'
 import { Rail } from './rail'
 import type { RailProps } from './rail'
@@ -19,10 +19,10 @@ export function RailMount(props: RailProps): ReactElement {
   )
 }
 
-export function TabBarMount(props: TabBarProps): ReactElement {
+export function TabBarMount(props: PhoneNavProps): ReactElement {
   return (
     <div className={cn('[grid-area:footer] md:hidden', PRINT_OFF)}>
-      <TabBar {...props} />
+      <PhoneNav {...props} />
     </div>
   )
 }
