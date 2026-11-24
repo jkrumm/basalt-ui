@@ -19,8 +19,8 @@ import { createRoot } from 'react-dom/client'
 import type { Root } from 'react-dom/client'
 import { Page } from '../../../../../src/page/page'
 import { AppShell } from '../../../../../src/shell/app-shell'
-import type { AppShellProps } from '../../../../../src/shell/contract'
 import type { FixtureSpec, ItemSpec } from '../../spec'
+import { defineNav } from '../../../../support/router-nav'
 
 const RESET = document.createElement('style')
 RESET.textContent =
@@ -123,7 +123,7 @@ export async function mount(spec: FixtureSpec, container: HTMLElement): Promise<
   else document.documentElement.dataset['density'] = step
 
   const icons = spec.icons ?? true
-  const nav = {
+  const nav = defineNav({
     sections: spec.sections.map((section) => ({
       id: slug(section.label),
       label: section.label,
@@ -132,7 +132,7 @@ export async function mount(spec: FixtureSpec, container: HTMLElement): Promise<
       items: section.items.map((item) => toItem(item, icons)),
     })),
     mobile: { ...spec.nav },
-  } as unknown as AppShellProps['nav']
+  })
 
   const badges: Record<string, { count: number }> = {}
   const visit = (items: readonly ItemSpec[]): void => {
