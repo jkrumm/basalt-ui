@@ -5,11 +5,14 @@ import { requestMainFocus } from '../../common/focus'
 import { useIsomorphicLayoutEffect } from '../../common/isomorphic-layout-effect'
 import { navFor } from '../../router/nav/registry'
 import { Autocomplete, AutocompleteInput } from '../../ui/combobox'
+import { useSizeClass } from '../../page/use-size-class'
 import { Dialog, DialogContent } from '../../ui/dialog'
+import { Sheet, SheetContent } from '../../ui/sheet'
 import { OptionListBody, useListHighlight, useOptionList } from '../../core/list/engine'
 import type { ListGroup, ListItems, ListOption } from '../../core/list/options'
 import { PopupFrame } from '../../core/list/popup'
 import { RailControlProvider } from '../parts/grid'
+import { usePhoneNav } from '../parts/mobile/variant'
 import { currentArea } from './area'
 import { useChordBindings } from './bindings'
 import { parseChordSequence } from './chord'
@@ -20,6 +23,9 @@ import { navCommands } from './nav-commands'
 import { defaultRank } from './rank'
 import type { PaletteItem, RankFn } from './rank'
 import { ShortcutOverlay } from './shortcut-overlay'
+
+/** The palette's own strings, English until the shell's message keys land. */
+const PALETTE_TEXT = { search: 'Search' } as const
 
 export type CommandPaletteProps = {
   commands: CommandSet
@@ -155,56 +161,82 @@ export function CommandPalette({
   const byId = new Map(rows.map((item) => [item.id, item]))
   const list = useOptionList({ source: toListItems(rows), query: '', open })
   const highlight = useListHighlight()
+  const phoneNav = usePhoneNav()
+  const sizeClass = useSizeClass()
+  const phoneSheet = phoneNav !== 'tabs' && sizeClass === 'compact'
+
+  const body = (
+    <div data-slot="command-palette">
+      <Autocomplete
+        items={list.values as readonly string[]}
+        mode="none"
+        inline
+        open
+        autoHighlight="always"
+        value={query}
+        onValueChange={setQuery}
+        itemToStringValue={list.textOf}
+      >
+        <AutocompleteInput aria-label="Search commands" placeholder={placeholder} />
+        <PopupFrame
+          kind="autocomplete"
+          slot="autocomplete-content"
+          className="relative max-h-80 overflow-y-auto outline-none"
+          container={listHost ?? undefined}
+        >
+          <OptionListBody
+            list={list}
+            size="lg"
+            kind="autocomplete"
+            highlight={highlight}
+            virtual={undefined}
+            checked={false}
+            trailing={(option) => {
+              const steps = byId.get(option.value)?.steps ?? []
+              return steps.length > 0 ? <ChordKeys steps={steps} /> : null
+            }}
+            onRowClick={(option) => {
+              const item = byId.get(option.value)
+              if (item !== undefined) choose(item)
+            }}
+          />
+        </PopupFrame>
+      </Autocomplete>
+      {/* The popup's positioner is pulled back into the flow: the palette is a list, not a dropdown. */}
+      <div
+        ref={setListHost}
+        data-slot="command-palette-list"
+        className="mt-2 [&>*>*]:static! [&>*>*]:transform-none! [&>*>*]:translate-none!"
+      />
+    </div>
+  )
+
+  // A trial phone nav (Issue 3205) opens search as a bottom sheet on a phone: the input sits at its
+  // top, above the keyboard, and the rows scroll under it.
+  if (phoneSheet) {
+    return (
+      <>
+        <ShortcutOverlay commands={commands} />
+        <Sheet open={open} onOpenChange={setOpen} placement="bottom">
+          <SheetContent
+            title={PALETTE_TEXT.search}
+            initialFocus={() =>
+              document.querySelector<HTMLElement>('[data-slot="command-palette"] input')
+            }
+            className="h-[min(85dvh,640px)] max-h-[min(85dvh,640px)] pb-[max(env(safe-area-inset-bottom),var(--shell-safe-bottom,0px))]"
+          >
+            {body}
+          </SheetContent>
+        </Sheet>
+      </>
+    )
+  }
 
   return (
     <>
       <ShortcutOverlay commands={commands} />
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent title="Command palette">
-          <div data-slot="command-palette">
-            <Autocomplete
-              items={list.values as readonly string[]}
-              mode="none"
-              inline
-              open
-              autoHighlight="always"
-              value={query}
-              onValueChange={setQuery}
-              itemToStringValue={list.textOf}
-            >
-              <AutocompleteInput aria-label="Search commands" placeholder={placeholder} />
-              <PopupFrame
-                kind="autocomplete"
-                slot="autocomplete-content"
-                className="relative max-h-80 overflow-y-auto outline-none"
-                container={listHost ?? undefined}
-              >
-                <OptionListBody
-                  list={list}
-                  size="lg"
-                  kind="autocomplete"
-                  highlight={highlight}
-                  virtual={undefined}
-                  checked={false}
-                  trailing={(option) => {
-                    const steps = byId.get(option.value)?.steps ?? []
-                    return steps.length > 0 ? <ChordKeys steps={steps} /> : null
-                  }}
-                  onRowClick={(option) => {
-                    const item = byId.get(option.value)
-                    if (item !== undefined) choose(item)
-                  }}
-                />
-              </PopupFrame>
-            </Autocomplete>
-            {/* The popup's positioner is pulled back into the flow: the palette is a list, not a dropdown. */}
-            <div
-              ref={setListHost}
-              data-slot="command-palette-list"
-              className="mt-2 [&>*>*]:static! [&>*>*]:transform-none! [&>*>*]:translate-none!"
-            />
-          </div>
-        </DialogContent>
+        <DialogContent title="Command palette">{body}</DialogContent>
       </Dialog>
     </>
   )

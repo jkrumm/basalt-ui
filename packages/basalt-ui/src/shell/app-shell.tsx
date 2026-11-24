@@ -47,6 +47,7 @@ import {
 } from './parts/grid'
 import type { AsideClaim } from './parts/grid'
 import { BrandZone, Header } from './parts/header'
+import { usePhoneNav } from './parts/mobile'
 import { RailMount, TabBarMount } from './parts/mounts'
 import { usePrintScheme } from './parts/print'
 
@@ -202,6 +203,8 @@ export function AppShell<Id extends string = string>({
   useRouteFocus(pathname)
 
   const sizeClass = useSizeClass()
+  // A trial phone nav (Issue 3205): `tabs`, the shipped bar, unless the playground picked one.
+  const phoneNav = usePhoneNav()
   const rail = useRailState(storageKey, sizeClass)
   const railWidth = useRailWidthState(storageKey)
   const favouritesApi = useFavouritesApi(favourites, storageKey)
@@ -251,6 +254,20 @@ export function AppShell<Id extends string = string>({
       </>
     )
 
+  const phoneProps = {
+    runtime,
+    badges: badges as AppShellProps['badges'],
+    blocks,
+    globalActions,
+    settings,
+    account,
+    workspace,
+  }
+  const aside =
+    claim !== undefined && sizeClass === 'compact' && !emptyRecord(claim) ? (
+      <AsideSheet claim={claim} />
+    ) : null
+
   const header = (
     <Header
       brand={brand}
@@ -258,11 +275,7 @@ export function AppShell<Id extends string = string>({
       globalControls={globalControls}
       actions={actions}
       globalActions={globalActions}
-      asideTrigger={
-        claim !== undefined && sizeClass === 'compact' && !emptyRecord(claim) ? (
-          <AsideSheet claim={claim} />
-        ) : null
-      }
+      asideTrigger={aside}
       sizeClass={sizeClass}
       workspace={workspace}
       chrome={chrome}
@@ -285,6 +298,7 @@ export function AppShell<Id extends string = string>({
                   asideWidth={model.width}
                   dockWidth={dockModel.width}
                   railOpenWidth={railWidth.width}
+                  phoneNav={phoneNav}
                 >
                   <SkipLink />
                   <RouteAnnouncer message={announcement} />
@@ -305,15 +319,7 @@ export function AppShell<Id extends string = string>({
                     <AsideRegion claim={regionClaim} model={model} regionRef={setOverlaySlot} />
                     <DockRegion model={dockModel} regionRef={setDockSlot} />
                   </ShellSurface>
-                  <TabBarMount
-                    runtime={runtime}
-                    badges={badges as AppShellProps['badges']}
-                    blocks={blocks}
-                    globalActions={globalActions}
-                    settings={settings}
-                    account={account}
-                    workspace={workspace}
-                  />
+                  <TabBarMount {...phoneProps} variant={phoneNav} brand={brand} search={search} />
                 </ShellGrid>
               </ShellDockContext>
             </ShellOverlayContext>

@@ -41,7 +41,7 @@ export const MOBILE_TEXT = {
 } as const
 
 /** A destination's own row height: above the 44 px touch floor, below nothing. */
-const ROW =
+export const ROW =
   'flex min-h-12 w-full items-center gap-3 px-4 text-start text-sm text-foreground outline-none focus-ring touch-manipulation hover:bg-accent aria-disabled:opacity-50 aria-disabled:hover:bg-transparent'
 
 /** The scroller of a surface: its rows scroll inside it and never chain to the page. */
@@ -153,7 +153,11 @@ function DestinationRow({ row, depth, close }: DestinationProps): ReactElement {
 }
 
 /** Depth-first: a parent, then its children as indented rows, so nesting survives to the phone. */
-function destinationRows(rows: readonly PhoneRow[], depth: number, close: () => void): ReactNode[] {
+export function destinationRows(
+  rows: readonly PhoneRow[],
+  depth: number,
+  close: () => void,
+): ReactNode[] {
   return rows.flatMap((row) => [
     <DestinationRow key={row.id} row={row} depth={depth} close={close} />,
     ...destinationRows(row.children, depth + 1, close),
