@@ -39,8 +39,6 @@ export type {
   SiteLink,
   SiteLinkGroup,
   SiteMenuEntry,
-  SiteMenuImage,
-  SiteMenuSection,
   SiteNavItem,
   SiteNavMenu,
   TocEntry,
