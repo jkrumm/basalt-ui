@@ -67,19 +67,27 @@ const bodyRows = (container: HTMLElement): HTMLElement[] => [
 // happy-dom measures every box as 0, which virtual-core reads as "nothing visible": give the port
 // a 600 px viewport (15 rows of the 40 px fallback row).
 const VIEWPORT = 600
-const original = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight')
+// virtual-core reads offsetHeight up to 3.19.5 and clientHeight from 3.19.6 on.
+const sizeProps = ['offsetHeight', 'clientHeight'] as const
+const originals = sizeProps.map(
+  (p) => [p, Object.getOwnPropertyDescriptor(HTMLElement.prototype, p)] as const,
+)
 beforeEach(() => {
-  Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
-    configurable: true,
-    get(this: HTMLElement) {
-      return this.dataset['slot'] === 'virtual-list' ? VIEWPORT : 0
-    },
-  })
+  for (const p of sizeProps) {
+    Object.defineProperty(HTMLElement.prototype, p, {
+      configurable: true,
+      get(this: HTMLElement) {
+        return this.dataset['slot'] === 'virtual-list' ? VIEWPORT : 0
+      },
+    })
+  }
 })
 afterEach(() => {
   cleanup()
-  if (original) Object.defineProperty(HTMLElement.prototype, 'offsetHeight', original)
-  else delete (HTMLElement.prototype as { offsetHeight?: number }).offsetHeight
+  for (const [p, original] of originals) {
+    if (original) Object.defineProperty(HTMLElement.prototype, p, original)
+    else Reflect.deleteProperty(HTMLElement.prototype, p)
+  }
 })
 
 describe('virtual body', () => {
