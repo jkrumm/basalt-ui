@@ -257,6 +257,13 @@ export const NAV = defineNav({
           mobile: 'more',
           link: linkOptions({ to: '/kit/mobile-nav' }),
         },
+        {
+          id: 'kit-overlays',
+          label: 'Overlays',
+          icon: Layout,
+          mobile: 'more',
+          link: linkOptions({ to: '/kit/overlays' }),
+        },
       ],
     },
     // The kit's forms: every shipped control in its states, then three whole forms on TanStack Form.
