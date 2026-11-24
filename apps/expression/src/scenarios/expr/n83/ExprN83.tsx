@@ -66,7 +66,7 @@ type View = {
   formatValue: (v: number) => string
 }
 
-/** A colour cap just over the third-largest cell, so the one batch past it clips to the top step and names its true value on the cell. */
+/** A color cap just over the third-largest cell, so the one batch past it clips to the top step and names its true value on the cell. */
 function capOf(values: readonly number[]): number {
   const sorted = values.toSorted((a, b) => a - b)
   const p = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.97))] ?? 1

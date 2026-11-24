@@ -287,7 +287,7 @@ function Matrix(): ReactElement {
   )
 }
 
-const STAGE_COLOURS = [
+const STAGE_COLORS = [
   { value: 'neutral', label: 'Grey' },
   { value: 'brand', label: 'Blue' },
   { value: 'good', label: 'Green' },
@@ -298,27 +298,27 @@ const STAGE_COLOURS = [
   { value: 'chart-2', label: 'Series 2' },
 ] as const
 
-function Colour(): ReactElement {
+function Color(): ReactElement {
   const stage = useSpecimen<SwatchToken | undefined>('good')
   const label = useSpecimen<SwatchToken | undefined>('brand')
   return (
     <Pair>
       <FormField
-        label="Stage colour"
-        description="Named palette tokens, never a free colour."
+        label="Stage color"
+        description="Named palette tokens, never a free color."
         field={stage}
       >
-        <SwatchPicker aria-label="Stage colour" options={STAGE_COLOURS} />
+        <SwatchPicker aria-label="Stage color" options={STAGE_COLORS} />
       </FormField>
       <FormField
-        label="Label colour"
+        label="Label color"
         description="In a menu, for a field with little room."
         field={label}
       >
         <SwatchPicker
-          aria-label="Label colour"
+          aria-label="Label color"
           display="menu"
-          options={STAGE_COLOURS}
+          options={STAGE_COLORS}
           className="w-fit"
         />
       </FormField>
@@ -376,11 +376,8 @@ function ChoicesRoute(): ReactElement {
       >
         <Matrix />
       </Section>
-      <Section
-        title="Colour"
-        summary="One colour of the palette, as swatches in place or in a menu."
-      >
-        <Colour />
+      <Section title="Color" summary="One color of the palette, as swatches in place or in a menu.">
+        <Color />
       </Section>
       <Section
         title="Instant apply"

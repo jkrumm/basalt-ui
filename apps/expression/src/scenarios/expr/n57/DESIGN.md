@@ -20,7 +20,7 @@ Usable hours are the half hours inside astronomical darkness with the moon down 
 
 Priority 1 and 2 columns of the table: Site (entity with sky as sub), Drive (meter), Best (number), about 400 px, under the 480 px limit. No part is full width, no gap as wide as a card.
 
-## Colour: meaning
+## Color: meaning
 
 - brand blue: usable hours (the heat ramp)
 - ink steps: cloud lines (total darkest, layers lighter), the usable window (darker) and the moon-up span (paler) in the detail chart, drive meter

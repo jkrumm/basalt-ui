@@ -27,8 +27,8 @@ const store = defineControls({
     search: field.string(''),
     rows: field.enum(['groups', 'flat'], 'groups').labels({ groups: 'Groups', flat: 'Flat' }),
     height: field
-      .enum(['compact', 'comfortable'], 'compact')
-      .labels({ compact: 'Compact', comfortable: 'Comfortable' }),
+      .enum(['dense', 'comfortable'], 'dense')
+      .labels({ dense: 'Compact', comfortable: 'Comfortable' }),
   },
 })
 
@@ -76,7 +76,7 @@ const FIGURES = [
     card: 'meta',
     render: (p, box) => (
       <Sparkline
-        series={p.shipped}
+        points={p.shipped}
         height={box.height}
         label={`${p.name}: shipped per 6 hours, last 7 days`}
       />

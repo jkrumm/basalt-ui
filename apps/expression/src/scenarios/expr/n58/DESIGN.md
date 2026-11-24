@@ -22,7 +22,7 @@
 - Spend (hourly, 30 days, six sources, machine, model; 5,052 rows): the past week by the hour in the chart, the week and the machine and model in the table.
 - Review bot doubles in the last 3 days (+127 %); one hour is US$3.58 against a US$1.00 cap; zero hours are the nights. The drained fixture has one US$100 hour.
 
-## One colour, one meaning
+## One color, one meaning
 
 - blue: the Team pool alone (line, dashed carry-on).
 - red (status): a pool that runs out or is empty, the one state that needs action; the pill beside it is the same fact's rate.

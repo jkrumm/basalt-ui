@@ -125,7 +125,7 @@ export function ExprN73Scenario({ shotState, fixture }: ScenarioProps) {
           <div className="@wide:col-span-2">
             <StatGroup variant="cards" label="Queue figures">
               <StatCell
-                label="Due now"
+                title="Due now"
                 value={dueRows.length}
                 unit="items"
                 rows={[
@@ -136,8 +136,8 @@ export function ExprN73Scenario({ shotState, fixture }: ScenarioProps) {
                 empty={items.length === 0 ? { cause: 'Empty. Add an item.' } : null}
               />
               <StatCell
-                label="Slipped share"
-                qualifier="of learned"
+                title="Slipped share"
+                subtitle="of learned"
                 value={share}
                 unit="%"
                 delta={{
@@ -166,7 +166,7 @@ export function ExprN73Scenario({ shotState, fixture }: ScenarioProps) {
           </div>
           <StatGroup variant="cards" label="Session figures">
             <StatCell
-              label="Last session"
+              title="Last session"
               value={idle}
               unit="days ago"
               sub={lastDay}
@@ -176,7 +176,7 @@ export function ExprN73Scenario({ shotState, fixture }: ScenarioProps) {
                 <Sparkline
                   height={box.height}
                   label="Sessions per day, last eight weeks"
-                  series={daily}
+                  points={daily}
                 />
               )}
               rows={[

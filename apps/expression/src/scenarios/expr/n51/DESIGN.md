@@ -24,7 +24,7 @@ Table width: priority 1 and 2 columns (merchant with date, amount, vs usual) hol
 | 391 charges, date, merchant, amount, category or none, merchant median | points on a time axis, one value (times median) each | dot chart, `CartesianChart`, y capped at 4x | the reader finds the outliers; the 10x charge is the kit's capped caret |
 | the flagged subset                                                     | rows with several attributes                         | `DataTable` in a `DataPanel`                | exact amounts and dates                                                 |
 
-## Colour: meaning
+## Color: meaning
 
 - accent blue: charge unusual for its merchant (dots, the zone above 2x)
 - pale ink: charge in range

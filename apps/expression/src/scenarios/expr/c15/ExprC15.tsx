@@ -3,9 +3,9 @@ import { text } from '@tanstack/charts/text'
 import { useFormat } from 'basalt-ui'
 import { CartesianChart, ChartCard, useChartFocus } from 'basalt-ui/charts'
 import type { ChartFocus } from 'basalt-ui/charts'
-import type { ChartFigure, Empty, FootFacts } from 'basalt-ui/charts'
+import type { ChartFigure } from 'basalt-ui/charts'
 import { DataPanel } from 'basalt-ui/cards'
-import type { Delta, Phase } from 'basalt-ui/cards'
+import type { Delta, Phase, Empty, FootFacts } from 'basalt-ui/cards'
 import { Page, PageBar } from 'basalt-ui/page'
 import { alpha, BASALT } from 'basalt-ui/tokens'
 import { Num } from 'basalt-ui/ui/num'
@@ -143,7 +143,7 @@ export function ExprC15Scenario({ shotState, fixture }: ScenarioProps) {
               chart={(box) => (
                 <CartesianChart<Sender>
                   height={box.height}
-                  ariaLabel="Open rate against mails a week for each sender"
+                  label="Open rate against mails a week for each sender"
                   summary={`${senders.length} senders; ${muted.length} mail ${MIN_PER_WEEK} or more a week and are opened under ${MAX_OPEN_PCT}%.`}
                   data={senders}
                   focus={focus}

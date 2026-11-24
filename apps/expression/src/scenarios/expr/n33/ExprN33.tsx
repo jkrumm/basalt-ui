@@ -154,7 +154,7 @@ export function ExprN33Scenario({ shotState, fixture }: ScenarioProps) {
       <PageBar title="Project hygiene" />
       <StatGroup variant="strip" label="Hygiene">
         <StatCell
-          label="Failing probes"
+          title="Failing probes"
           value={measured ? (ready ? failed.length : 0) : null}
           unit={measured ? `of ${rows.probes.length}` : undefined}
           sub={
@@ -167,13 +167,13 @@ export function ExprN33Scenario({ shotState, fixture }: ScenarioProps) {
           phase={stripPhase}
         />
         <StatCell
-          label="Open findings"
+          title="Open findings"
           value={measured ? (ready ? rows.findings.length : 0) : null}
           sub={measured ? (ready ? `${urgent} critical or high` : 'critical or high') : undefined}
           phase={stripPhase}
         />
         <StatCell
-          label="Longest open"
+          title="Longest open"
           value={measured ? (ready ? (oldest?.ageDays ?? null) : 0) : null}
           unit="days"
           sub={

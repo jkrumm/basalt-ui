@@ -30,7 +30,7 @@ type NightRow = Night & { agree: string } & Record<ModelKey, number>
 const c = col<NightRow>()
 
 /** The warm outlier takes the accent; the other two models take the ink steps in model order. */
-function colourOf(model: ModelKey, outlier: ModelKey) {
+function colorOf(model: ModelKey, outlier: ModelKey) {
   if (model === outlier) return FROST_SERIES.warm
   return MODELS.filter((m) => m !== outlier)[0] === model ? FROST_SERIES.first : FROST_SERIES.second
 }
@@ -118,7 +118,7 @@ export function ExprN39Scenario({ shotState, fixture }: ScenarioProps) {
       mark: 'line',
       key: m,
       label: MODEL_NAME[m],
-      color: colourOf(m, outlier.model),
+      color: colorOf(m, outlier.model),
       y: (h) => h.temp[m],
     })),
     {

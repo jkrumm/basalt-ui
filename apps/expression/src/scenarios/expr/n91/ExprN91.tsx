@@ -197,7 +197,7 @@ export function ExprN91Scenario({ shotState, fixture }: ScenarioProps) {
       <StatGroup variant="cards" label="Enrichment pass">
         <StatCell
           icon={Library}
-          label="Enriched"
+          title="Enriched"
           value={ready ? lib.enriched : undefined}
           unit={ready ? `of ${f.number(lib.total)} entries` : undefined}
           delta={
@@ -210,7 +210,7 @@ export function ExprN91Scenario({ shotState, fixture }: ScenarioProps) {
               : HELD
           }
           chart={(box) => (
-            <Sparkline series={spark} height={box.height} label="Running total enriched each day" />
+            <Sparkline points={spark} height={box.height} label="Running total enriched each day" />
           )}
           rows={[
             { label: KIND_LABEL.waiting, value: ready ? lib.waiting : '' },
@@ -221,7 +221,7 @@ export function ExprN91Scenario({ shotState, fixture }: ScenarioProps) {
         />
         <StatCell
           icon={TriangleAlert}
-          label="Failed"
+          title="Failed"
           value={ready ? lib.failed : undefined}
           delta={
             ready
@@ -234,7 +234,7 @@ export function ExprN91Scenario({ shotState, fixture }: ScenarioProps) {
           }
           chart={(box) => (
             <Sparkline
-              series={failedPerDay}
+              points={failedPerDay}
               cap={failureCap(failedPerDay)}
               height={box.height}
               label="Failures each day"
@@ -249,7 +249,7 @@ export function ExprN91Scenario({ shotState, fixture }: ScenarioProps) {
         />
         <StatCell
           icon={Coins}
-          label="Still to bill"
+          title="Still to bill"
           value={ready && billed !== null ? usd(billed) : undefined}
           delta={
             ready && billed !== null && lib.spent > 0

@@ -88,7 +88,7 @@ export function ExprN53Scenario({ shotState, fixture }: ScenarioProps) {
       <PageBar title="Ledger rewrite plan" />
       <StatGroup variant="cards" label="Progress, blockers and next row">
         <StatCell
-          label="Plan progress"
+          title="Plan progress"
           phase={phase}
           value={hasRows ? s.done : null}
           unit={`of ${s.total}`}
@@ -118,7 +118,7 @@ export function ExprN53Scenario({ shotState, fixture }: ScenarioProps) {
           ]}
         />
         <StatCell
-          label="Blocked"
+          title="Blocked"
           phase={phase}
           value={hasRows ? s.blocked.length : null}
           status={worst ? { tone: 'bad', label: worst.title } : undefined}
@@ -132,7 +132,7 @@ export function ExprN53Scenario({ shotState, fixture }: ScenarioProps) {
           ]}
         />
         <StatCell
-          label="Can start"
+          title="Can start"
           phase={phase}
           value={hasRows ? s.ready.length : null}
           sub={

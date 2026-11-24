@@ -1,7 +1,7 @@
 /**
  * Lift balance (scenario expr-n92): are the four lift pairs inside their healthy ranges, and which
  * sits furthest out. A `StatCard` answers both clauses; a `DataPanel` holds one zoned `Meter` per
- * pair, the furthest first, so the verdict is a word under the marker and not a colour.
+ * pair, the furthest first, so the verdict is a word under the marker and not a color.
  */
 import type { ReactElement } from 'react'
 import { DataPanel, StatCard } from 'basalt-ui/cards'

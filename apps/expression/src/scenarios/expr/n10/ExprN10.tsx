@@ -97,7 +97,7 @@ export function ExprN10Scenario({ shotState, fixture }: ScenarioProps): ReactEle
       ]}
       chart={() => (
         <CartesianChart
-          ariaLabel="Wind speed of four forecast models over 72 hours with the ensemble 10 to 90 percent band"
+          label="Wind speed of four forecast models over 72 hours with the ensemble 10 to 90 percent band"
           summary={
             parting
               ? `The models part from ${dayTime(parting.from)} to ${dayTime(parting.to)}, up to ${kt(widest.spread)} knots apart.`
@@ -175,7 +175,7 @@ export function ExprN10Scenario({ shotState, fixture }: ScenarioProps): ReactEle
                 fill: alpha(BASALT.ink, 0.1),
               }),
             ]
-            // cycle-expression-5: the kit dims no series per datum, so the models a table row does not point at are veiled with a card-coloured line over each.
+            // cycle-expression-5: the kit dims no series per datum, so the models a table row does not point at are veiled with a card-colored line over each.
             if (model !== null) {
               for (const m of MODELS) {
                 if (m.key === model) continue

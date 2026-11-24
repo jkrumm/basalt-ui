@@ -174,7 +174,7 @@ export function ExprN85Scenario({ shotState, fixture }: ScenarioProps) {
       <StatGroup variant="cards" label="Totals">
         <StatCell
           icon={CirclePlus}
-          label="Opened"
+          title="Opened"
           value={hasRows ? opened30 : null}
           unit="Issues"
           phase={phase}
@@ -183,7 +183,7 @@ export function ExprN85Scenario({ shotState, fixture }: ScenarioProps) {
         />
         <StatCell
           icon={Target}
-          label="Measured gain"
+          title="Measured gain"
           value={hasRows ? gain30 : null}
           phase={phase}
           delta={held ? HELD : shareDelta(pts(gain7, gain30), gain30)}
@@ -191,7 +191,7 @@ export function ExprN85Scenario({ shotState, fixture }: ScenarioProps) {
         />
         <StatCell
           icon={Trash2}
-          label="Dropped as noise"
+          title="Dropped as noise"
           value={hasRows ? dropped30 : null}
           phase={phase}
           delta={held ? HELD : shareDelta(pts(dropped7, dropped30), dropped30)}
@@ -199,7 +199,7 @@ export function ExprN85Scenario({ shotState, fixture }: ScenarioProps) {
         />
         <StatCell
           icon={CircleDot}
-          label="Still open"
+          title="Still open"
           value={hasRows ? open30 : null}
           phase={phase}
           status={noData ? undefined : { tone: 'neutral', label: held ? '' : todayWord }}

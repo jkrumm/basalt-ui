@@ -6,7 +6,7 @@
  * `?screen=` switches every frame to one phase for the shots. Every workaround carries a
  * `cycle-dogfood-2:` comment naming its finding.
  */
-import type { Phase } from 'basalt-ui'
+import type { Phase } from 'basalt-ui/cards'
 import { StatCard } from 'basalt-ui/cards'
 import { ChartCard, Lines, Sparkline } from 'basalt-ui/charts'
 import { filterSlot, spec } from 'basalt-ui/controls'
@@ -70,13 +70,13 @@ function StatRow({ phase }: { phase: Phase }): ReactElement {
             phase={phase}
             chart={(box) => (
               <Sparkline
-                ariaLabel={`${stat.title}, ${values.length} samples, latest ${values.at(-1) ?? 0}`}
-                series={values}
+                label={`${stat.title}, ${values.length} samples, latest ${values.at(-1) ?? 0}`}
+                points={values}
                 height={box.height}
                 {...(stat.series?.target === undefined ? {} : { reference: stat.series.target })}
               />
             )}
-            xLabels={stat.xLabels}
+            axisLabels={stat.axisLabels}
             footer={stat.footer}
             onClick={show}
             menu={[
@@ -108,7 +108,7 @@ function InFlightChart({ phase }: { phase: Phase }): ReactElement {
       height="short"
       chart={(box) => (
         <Lines
-          ariaLabel="Working, waiting and queued Issues per day, last 14 days"
+          label="Working, waiting and queued Issues per day, last 14 days"
           data={FLOW_TREND}
           height={box.height}
           x={{ value: (d) => d.day }}

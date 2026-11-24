@@ -131,7 +131,7 @@ export function ExprN84Scenario({ shotState, fixture }: ScenarioProps) {
       <StatGroup variant="cards" label="Keys">
         <StatCell
           icon={Users}
-          label={KEY_NAME.team}
+          title={KEY_NAME.team}
           swatch={N84_SERIES.outside}
           value={ready ? money(summary.team) : null}
           delta={capDelta(summary.team)}
@@ -141,7 +141,7 @@ export function ExprN84Scenario({ shotState, fixture }: ScenarioProps) {
         />
         <StatCell
           icon={KeyRound}
-          label={KEY_NAME.gateway}
+          title={KEY_NAME.gateway}
           swatch={N84_SERIES.gateway}
           value={ready ? money(summary.gateway) : null}
           delta={capDelta(summary.gateway)}
@@ -151,7 +151,7 @@ export function ExprN84Scenario({ shotState, fixture }: ScenarioProps) {
         />
         <StatCell
           icon={CircleOff}
-          label={KEY_NAME.nokey}
+          title={KEY_NAME.nokey}
           value={ready ? money(summary.nokey) : null}
           delta={{
             value: signed(summary.nokey - summary.nokeyBefore),

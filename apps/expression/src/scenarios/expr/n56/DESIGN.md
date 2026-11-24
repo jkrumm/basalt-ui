@@ -17,7 +17,7 @@ Two parts side by side at a wide container (`CardGrid min="regular"`), stacked a
 
 Table width: priority 1 and 2 columns are Hour (about 64 px), Height and period (about 136), Limit (88), Wind (96): about 384 px, under 480. `phone: 'scroll'` keeps it a table; without it the five-column version folded to cards at 750 px.
 
-## Colour: meaning
+## Color: meaning
 
 - dark ink: harbour height
 - pale ink: the four offshore points

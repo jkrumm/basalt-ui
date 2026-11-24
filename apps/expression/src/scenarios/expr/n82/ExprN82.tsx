@@ -255,7 +255,7 @@ export function ExprN82Scenario({ shotState, fixture }: ScenarioProps) {
         <StatCell
           key={x.key}
           icon={x.icon}
-          label={x.label}
+          title={x.label}
           info={x.info}
           value={now ? now[x.key] : null}
           delta={{ value: now ? signed(now[x.key] - typical[x.key]) : '', polarity: 'neutral' }}

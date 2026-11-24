@@ -134,7 +134,7 @@ export function ExprN42Scenario({ shotState, fixture }: ScenarioProps) {
       <PageBar title="Router health, last 24 hours" />
       <StatGroup variant="strip" label="Router status">
         <StatCell
-          label="Router status"
+          title="Router status"
           info="Healthy while CPU and memory both stay under the limit drawn on the chart."
           value={summary === null ? null : summary.over.length === 0 ? 'Healthy' : 'Overloaded'}
           status={
@@ -152,10 +152,10 @@ export function ExprN42Scenario({ shotState, fixture }: ScenarioProps) {
           subMono={!noReadings}
           phase={phase}
         />
-        <StatCell label="CPU" value={summary?.now.cpu ?? null} unit="%" phase={phase} />
-        <StatCell label="Memory" value={summary?.now.mem ?? null} unit="%" phase={phase} />
+        <StatCell title="CPU" value={summary?.now.cpu ?? null} unit="%" phase={phase} />
+        <StatCell title="Memory" value={summary?.now.mem ?? null} unit="%" phase={phase} />
         <StatCell
-          label="Uptime"
+          title="Uptime"
           value={router === null ? null : uptimeText(router.uptimeMinutes)}
           sub={
             router === null

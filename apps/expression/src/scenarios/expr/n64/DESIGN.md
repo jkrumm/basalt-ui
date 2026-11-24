@@ -16,7 +16,7 @@
 
 No part answers another part's question; every part is inside the 1200 px fold. Cards 1 and the table end 24 px apart (539 and 563 px), the kit gives the chart card no way to match a panel's height. At 390 the order is bars, heatmap, table, so the answer and the cache finding come before the 14 day cards.
 
-## Colour: meaning
+## Color: meaning
 
 - ink steps (dark, mid, pale): the target that took the picks (iu, me, iu-api)
 - blue (the accent): a day another target than iu led, painted on that target's segment

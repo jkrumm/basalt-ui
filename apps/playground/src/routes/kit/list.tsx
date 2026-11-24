@@ -165,21 +165,21 @@ function ListRoute(): ReactElement {
       />
       <StatGroup variant="flush" label="Shown photos">
         <StatCell
-          label="Picked"
+          title="Picked"
           value={rows.length === 0 ? null : pickedShare}
           unit="%"
           sub="Of the photos in this view"
         />
         <StatCell
-          label="Views, 14 days"
+          title="Views, 14 days"
           value={views}
           sub="Across the shown photos"
           chart={(box) => (
-            <Sparkline series={viewsPerDay(rows)} height={box.height} label="Views per day" />
+            <Sparkline points={viewsPerDay(rows)} height={box.height} label="Views per day" />
           )}
         />
-        <StatCell label="Views per photo" value={medianViews} sub="Median over 14 days" />
-        <StatCell label="Newest" value={newest} sub="Day taken" />
+        <StatCell title="Views per photo" value={medianViews} sub="Median over 14 days" />
+        <StatCell title="Newest" value={newest} sub="Day taken" />
       </StatGroup>
       <DataTable table={t} />
       <Sheet state={store.field.settings}>

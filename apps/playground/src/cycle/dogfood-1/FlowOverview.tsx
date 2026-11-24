@@ -5,7 +5,7 @@
  * page gives the one chart card (`TimeChart` in a card). `?screen=` switches every frame to one
  * phase for the shots. Every workaround carries a `cycle-dogfood-1:` comment naming its finding.
  */
-import type { ControlHandle } from 'basalt-ui'
+import type { ControlHandle } from 'basalt-ui/router'
 import { StatCard } from 'basalt-ui/cards'
 import { ChartCard, Lines, Sparkline } from 'basalt-ui/charts'
 import { filterSlot, spec } from 'basalt-ui/controls'
@@ -83,10 +83,10 @@ function StatTrend({ stat }: { stat: FlowStat }): ReactElement {
           the Sparkline draws Thu 12:00 and Fri 00:00 as past samples. dogfood-1.5 is closed by
           `axisLabels`; the bar variant draws as a line (`MiniBars` is not exported). */}
       <Sparkline
-        ariaLabel={`${stat.title}, ${values.length} samples, latest ${values.at(-1) ?? 0}`}
-        series={values}
+        label={`${stat.title}, ${values.length} samples, latest ${values.at(-1) ?? 0}`}
+        points={values}
         height="fill"
-        axisLabels={stat.xLabels}
+        axisLabels={stat.axisLabels}
         {...(stat.series?.target === undefined ? {} : { reference: stat.series.target })}
       />
     </div>
@@ -150,7 +150,7 @@ function InFlightChart({ screen }: { screen: Screen }): ReactElement {
       phase={phaseOf(screen)}
       chart={() => (
         <Lines
-          ariaLabel="Working, waiting and queued Issues per day, last 14 days"
+          label="Working, waiting and queued Issues per day, last 14 days"
           data={FLOW_TREND}
           x={{ value: (d) => d.day }}
           series={[

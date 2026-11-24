@@ -144,7 +144,7 @@ export function ExprN98Scenario({ shotState, fixture }: ScenarioProps) {
               empty={idle ? { cause: '\u2014' } : null}
               value={ready ? f.money(summary.hidden, 'USD') : null}
               sub={ready ? `${summary.unpriced} of ${summary.entries} entries, at estimate` : ''}
-              chartHeight={40}
+              height={40}
               chart={() => (
                 <Meter
                   label="Unpriced spend against planned spend"

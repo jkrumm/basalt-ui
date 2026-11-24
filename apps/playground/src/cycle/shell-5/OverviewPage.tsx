@@ -77,16 +77,16 @@ export function OverviewPage(): ReactElement {
         ]}
       />
       <StatGroup variant="strip" label="Fleet health">
-        <StatCell label="Services" value={SERVICES.length} sub={`${down} not healthy`} />
-        <StatCell label="Deploys" value={deploys.length} sub={periodLabel} />
+        <StatCell title="Services" value={SERVICES.length} sub={`${down} not healthy`} />
+        <StatCell title="Deploys" value={deploys.length} sub={periodLabel} />
         <StatCell
-          label="Failure rate"
+          title="Failure rate"
           value={percent(failed, deploys.length)}
           unit="%"
           sub="failed or rolled back"
         />
         <StatCell
-          label="Median duration"
+          title="Median duration"
           value={median(deploys.map((d) => d.durationS))}
           unit="s"
         />

@@ -243,7 +243,7 @@ export function ExprN19Scenario({ shotState, fixture }: ScenarioProps): ReactEle
       <PageBar title="Backup radio path, last 7 days" />
       <StatGroup variant="strip" label="Wi-Fi failover">
         <StatCell
-          label="Failover over Wi-Fi today"
+          title="Failover over Wi-Fi today"
           phase={stripPhase}
           value={sum === null ? null : sum.carries ? 'Carries' : 'Does not carry'}
           sub={
@@ -261,7 +261,7 @@ export function ExprN19Scenario({ shotState, fixture }: ScenarioProps): ReactEle
               })}
         />
         <StatCell
-          label="Too weak this week"
+          title="Too weak this week"
           phase={stripPhase}
           value={sum === null ? null : hoursOf(sum.weakMinutes)}
           unit="h"

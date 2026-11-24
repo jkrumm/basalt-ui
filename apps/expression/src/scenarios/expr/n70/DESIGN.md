@@ -23,11 +23,11 @@ Two parts side by side at a regular container and stacked at a narrow one, shari
 
 Table check: priority 1 and 2 columns are Event, Net, Status, Reimbursed, Paid; Paid sits at priority 3 and Bookings at 3, so the half-width table keeps Event, Net, Status and Reimbursed and the phone card carries all six.
 
-## Colour
+## Color
 
 - accent: events over the limit (bars, legend entry, table status dot)
 - ink steps: net within the limit, reimbursed share, limit rule
-- status hue: none; waiting is a word and a 0 % tick, never a colour
+- status hue: none; waiting is a word and a 0 % tick, never a color
 
 ## Facts, one place each
 

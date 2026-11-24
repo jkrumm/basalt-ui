@@ -183,7 +183,7 @@ export function ExprN55Scenario({ shotState, fixture }: ScenarioProps) {
         <div className="flex flex-col gap-3">
           <StatGroup variant="cards" label="Review at a glance">
             <StatCell
-              label="Revisions"
+              title="Revisions"
               value={ready ? revisions.length : null}
               status={
                 ready && last !== undefined
@@ -209,7 +209,7 @@ export function ExprN55Scenario({ shotState, fixture }: ScenarioProps) {
               ]}
             />
             <StatCell
-              label="Verdict wait"
+              title="Verdict wait"
               value={ready && wait !== undefined ? wait.hours : null}
               unit="h"
               sub={
@@ -229,7 +229,7 @@ export function ExprN55Scenario({ shotState, fixture }: ScenarioProps) {
               ]}
             />
             <StatCell
-              label="Unanswered"
+              title="Unanswered"
               value={ready ? unansweredOf(scope) : null}
               unit={ready ? `of ${scope.length} annotations` : ''}
               sub={ready ? (picked === null ? 'Whole Spec' : picked.name) : ''}

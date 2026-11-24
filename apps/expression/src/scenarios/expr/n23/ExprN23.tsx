@@ -145,7 +145,7 @@ export function ExprN23Scenario({ shotState, fixture }: ScenarioProps): ReactEle
       <PageBar title="Homelab monitors" />
       <StatGroup variant="strip" label="Monitor health">
         <StatCell
-          label="Down"
+          title="Down"
           value={ready ? down.length : null}
           unit={ready ? `of ${leaves.length}` : undefined}
           status={
@@ -159,8 +159,8 @@ export function ExprN23Scenario({ shotState, fixture }: ScenarioProps): ReactEle
           phase={phase}
         />
         <StatCell
-          label="Slow"
-          qualifier={`over ${SLOW_MS} ms`}
+          title="Slow"
+          subtitle={`over ${SLOW_MS} ms`}
           value={ready ? slow.length : null}
           status={
             ready
@@ -173,8 +173,8 @@ export function ExprN23Scenario({ shotState, fixture }: ScenarioProps): ReactEle
           phase={phase}
         />
         <StatCell
-          label="Flaky"
-          qualifier={`under ${f.percent(FLAKY_BELOW / 100, { maximumFractionDigits: 1 })}, 1 day`}
+          title="Flaky"
+          subtitle={`under ${f.percent(FLAKY_BELOW / 100, { maximumFractionDigits: 1 })}, 1 day`}
           value={ready ? flaky.length : null}
           delta={
             ready && flaky.length > 0
@@ -189,7 +189,7 @@ export function ExprN23Scenario({ shotState, fixture }: ScenarioProps): ReactEle
           phase={phase}
         />
         <StatCell
-          label="Paused or in maintenance"
+          title="Paused or in maintenance"
           value={ready ? parked.length : null}
           sub={ready ? leadName(parked, 'Everything is running') : ''}
           phase={phase}

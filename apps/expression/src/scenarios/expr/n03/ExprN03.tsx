@@ -241,7 +241,7 @@ export function ExprN03Scenario({ shotState, fixture }: ScenarioProps): ReactEle
           ]}
           chart={() => (
             <CartesianChart
-              ariaLabel="Weekly training load over nine weeks against the target band"
+              label="Weekly training load over nine weeks against the target band"
               summary={`This week ${fmt.number(current.total)} AU planned, ${distance(current.total)}; the eight-week average is ${fmt.number(average)} AU.`}
               data={weeks}
               focus={weekFocus}
@@ -306,7 +306,7 @@ export function ExprN03Scenario({ shotState, fixture }: ScenarioProps): ReactEle
           ]}
           chart={() => (
             <CartesianChart
-              ariaLabel="Training load per day this week, done and planned"
+              label="Training load per day this week, done and planned"
               data={thisWeek}
               focus={dayFocus}
               x={{ value: (d) => d.day, ticks: [...DAY_NAMES] }}

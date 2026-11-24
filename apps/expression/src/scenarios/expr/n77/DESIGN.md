@@ -20,7 +20,7 @@ Two parts answer the one question and join one focus (`useChartFocus` over the h
 
 The right column ends at the heat card's height in the ready, loading, empty and error frames. At 390 the order is the heat card, the Apps table, then the unfinished list; the three heights match between ready and loading (470, 392, 288).
 
-## Colour: meaning
+## Color: meaning
 
 - status red: a job that failed (cell ramp 1 to 4+; the figure status dot only while a failed cell is focused).
 - ink steps: clean (mid), past the cap (pale), no deploy (palest), each a flat fill with its own legend swatch drawn the way its cells look; no glyphs, so swatch and cell are one thing.
@@ -30,7 +30,7 @@ The right column ends at the heat card's height in the ready, loading, empty and
 
 - default: 200 jobs, three quiet days, billing 3 failures in a row on 12 Nov then recovered, 2 running and 1 queued, web listed from 10 Nov only.
 - `?fixture=clean`: the same list with no failed job: figure 0 failures in a row, status "No failures", every table row 100 and 0.
-- `?fixture=storm`: the extreme: web fails 19 times on 19 Nov; the colour domain is capped at 4, the ramp ends "4+" and the cell prints its true value; the table shows 65.6 for web.
+- `?fixture=storm`: the extreme: web fails 19 times on 19 Nov; the color domain is capped at 4, the ramp ends "4+" and the cell prints its true value; the table shows 65.6 for web.
 - `?shot-state=loading|empty|error`: every slot held (footer label kept, value empty), an empty cause per part, one Retry for the one source.
 
 ## Fact count
@@ -54,7 +54,7 @@ Measures and their words: a job that did not land: "failed" (cell reading, Faile
 | landed share per app                                 | Apps table meter (`rg -n landedPct`: one column)                                                                   |
 | window: 14 days                                      | page title only; the columns carry the days                                                                        |
 | cap: 200 newest jobs                                 | card subtitle; the legend names the cells it cuts                                                                  |
-| unit and top colour of the ramp                      | legend title "Jobs per cell, the top colour from 4" and end label "4+"                                             |
+| unit and top color of the ramp                       | legend title "Jobs per cell, the top color from 4" and end label "4+"                                              |
 | empty sentences                                      | one per part, each with its own cause and step; one Retry for the one failing source                               |
 
 Helper greps run: `rg -n 'reading\(|outcome\(|stateLabel\(|appName|dayName\(|spanOutcome'`: `outcome` reaches the figure status and the announcement (the same counts, the readout and the live region); `appName` is the row label, the focused period and the announcement.

@@ -96,7 +96,7 @@ export function ExprN17Scenario({ shotState, fixture }: ScenarioProps): ReactEle
           ]}
           chart={() => (
             <CartesianChart
-              ariaLabel="Memory pressure against its limit, one sample a minute for 24 hours"
+              label="Memory pressure against its limit, one sample a minute for 24 hours"
               data={rows}
               x={{ value: (s) => s.at }}
               y={{ title: 'Pressure, %', domain: [0, 100] }}
@@ -157,7 +157,7 @@ export function ExprN17Scenario({ shotState, fixture }: ScenarioProps): ReactEle
             ...(held > 0 ? [{ label: 'Free', value: Math.max(0, TOTAL_GB - held) }] : []),
           ]}
           max={TOTAL_GB}
-          rows={5}
+          bodyRows={5}
           format={gb}
         />
       </CardGrid>

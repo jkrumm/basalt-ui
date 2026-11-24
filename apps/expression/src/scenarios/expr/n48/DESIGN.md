@@ -23,4 +23,4 @@ Who opens it: an athlete looking back on the year. The question: on which days d
 | Hours by month         | how long did I train each month       | 1280,72 496x487  | holds every session of the month              |
 | Sessions               | duration and distance of each session | 1280,572 496x372 | one row is one mark                           |
 
-Colour: accent blue: winter day (Dec to Feb); ink step: other day; mid step, hollow: the longest break.
+Color: accent blue: winter day (Dec to Feb); ink step: other day; mid step, hollow: the longest break.

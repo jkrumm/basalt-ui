@@ -33,7 +33,7 @@ export function PhotoDetail({ photo }: { photo: Photo }): ReactElement {
         value={photo.views}
         chart={(box) => (
           <Sparkline
-            series={photo.perDay}
+            points={photo.perDay}
             height={box.height}
             axisLabels={VIEW_DAYS}
             label={`Views per day of ${photo.title}, 14 days`}

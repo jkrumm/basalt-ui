@@ -26,7 +26,7 @@
 
 The table's three columns (model, spent, billed through) are all priority 1 or 2 and render as a table at 493 px, as the 1800 shot shows; the key column moves to the phone table's third slot at 390.
 
-## Colour: meaning
+## Color: meaning
 
 - ink (dark): the team key and spend before the cutover.
 - ink (pale): the gateway key.

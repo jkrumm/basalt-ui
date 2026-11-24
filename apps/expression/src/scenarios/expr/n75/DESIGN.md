@@ -23,7 +23,7 @@ Parts: two answer cards (funnel, verdict), the traffic behind them, the inquiry 
 | Traffic card | how many visitors, any empty day | 265,628 1510×320  | none: denominator of the funnel, shows the zero day |
 | Inquiry list | which messages are which verdict | 265,968 1510×~360 | verdict focus                                       |
 
-Accent: the request-sent bar (one class). Everything else sits in ink steps. Status hue: none. Colour: meaning, blue: request sent; dark ink: visitors; mid ink: steps reached and inquiry counts; pale ink: views.
+Accent: the request-sent bar (one class). Everything else sits in ink steps. Status hue: none. Color: meaning, blue: request sent; dark ink: visitors; mid ink: steps reached and inquiry counts; pale ink: views.
 
 ## Fact count
 

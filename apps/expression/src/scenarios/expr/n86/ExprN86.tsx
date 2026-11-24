@@ -108,14 +108,14 @@ export function ExprN86Scenario({ shotState, fixture }: ScenarioProps) {
       <StatGroup variant="cards" label="Result counts">
         <StatCell
           icon={CircleCheck}
-          label="Clean"
+          title="Clean"
           value={settled ? count(rows, 'clean') : null}
           delta={share(count(rows, 'clean'))}
           phase={phase}
         />
         <StatCell
           icon={SearchCheck}
-          label="Found work"
+          title="Found work"
           value={settled ? count(rows, 'found') : null}
           delta={share(count(rows, 'found'))}
           status={
@@ -125,7 +125,7 @@ export function ExprN86Scenario({ shotState, fixture }: ScenarioProps) {
         />
         <StatCell
           icon={TriangleAlert}
-          label="Skipped or failed"
+          title="Skipped or failed"
           value={settled ? count(rows, 'skipped', 'failed') : null}
           delta={share(count(rows, 'skipped', 'failed'))}
           status={ready && failed > 0 ? { tone: 'bad', label: `${failed} failed` } : undefined}
@@ -133,7 +133,7 @@ export function ExprN86Scenario({ shotState, fixture }: ScenarioProps) {
         />
         <StatCell
           icon={CircleDashed}
-          label="Never run"
+          title="Never run"
           value={settled ? count(rows, 'never') : null}
           delta={share(count(rows, 'never'))}
           phase={phase}

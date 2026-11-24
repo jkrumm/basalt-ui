@@ -67,7 +67,7 @@ export function ExprN50Scenario({ shotState, fixture }: ScenarioProps) {
         priority: 3,
         render: (p, box) => (
           <Sparkline
-            series={p.daily}
+            points={p.daily}
             height={box.height}
             label={`${p.name}, Issues shipped per day`}
           />

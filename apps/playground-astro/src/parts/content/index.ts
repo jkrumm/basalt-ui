@@ -8,7 +8,7 @@ export const PARTS: readonly PartEntry[] = [
     module: 'content/markdown',
     covers: ['Markdown'],
     interaction: 'enhance',
-    why: 'the code is coloured in the static HTML; mermaid fences need JS',
+    why: 'the code is colored in the static HTML; mermaid fences need JS',
   },
   {
     id: 'code-block',
@@ -16,7 +16,7 @@ export const PARTS: readonly PartEntry[] = [
     module: 'content/code-block',
     covers: ['CodeBlock'],
     interaction: 'enhance',
-    why: 'the code is coloured in the static HTML; the copy button needs JS',
+    why: 'the code is colored in the static HTML; the copy button needs JS',
   },
   {
     id: 'article-layout',

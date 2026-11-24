@@ -68,12 +68,12 @@ function StatRow({ phase }: { phase: Phase }): ReactElement {
             chart={(box) => (
               <Sparkline
                 label={`${stat.title}, ${values.length} samples, latest ${values.at(-1) ?? 0}`}
-                series={values}
+                points={values}
                 height={box.height}
                 {...(stat.series?.target === undefined ? {} : { reference: stat.series.target })}
               />
             )}
-            xLabels={stat.xLabels}
+            axisLabels={stat.axisLabels}
             footer={stat.footer}
             onClick={show}
           />

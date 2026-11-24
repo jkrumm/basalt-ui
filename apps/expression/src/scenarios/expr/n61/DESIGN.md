@@ -24,7 +24,7 @@ The three parts share one `useChartFocus` over the Issues: pointing at a state r
 Table priority 1 and 2 columns: Issue (title) and State at priority 1, Waiting at priority 2, the rest at priority 3; full width at 1800, so no column is dropped; at 390 the rows become cards and every column is a line on its card.
 Gaps: no gap as wide as a card in the first 1200 px. The cards of the first row end 32 px apart (kit gap: no option to align a StatCard and a BarList to one height).
 
-## Colour: meaning
+## Color: meaning
 
 - status red: an Issue held past a week (verdict dot in the hero and the State column), the one state that needs a hand.
 - ink steps: everything else; no accent is spent, since the answer is a name and a number, not a series.

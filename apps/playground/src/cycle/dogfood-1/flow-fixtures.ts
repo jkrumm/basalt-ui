@@ -192,7 +192,7 @@ export type FlowStat = {
     target?: number
   }
   bars?: { values: readonly number[]; labels: readonly string[] }
-  xLabels: readonly [string, string, string]
+  axisLabels: readonly [string, string, string]
   footer: readonly [{ label: string; value: string }, { label: string; value: string }]
 }
 
@@ -220,7 +220,7 @@ export const FLOW_STATS: readonly FlowStat[] = [
       futureFrom: 7,
       target: 6,
     },
-    xLabels: ['Mon', 'Now', 'Sun'],
+    axisLabels: ['Mon', 'Now', 'Sun'],
     footer: [
       { label: 'Peak', value: '5 leads' },
       { label: 'Idle slots', value: '2' },
@@ -237,7 +237,7 @@ export const FLOW_STATS: readonly FlowStat[] = [
       values: [6, 5, 5, 4, 5, 4, 3],
       labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     },
-    xLabels: ['Mon', 'Thu', 'Sun'],
+    axisLabels: ['Mon', 'Thu', 'Sun'],
     footer: [
       { label: 'Oldest', value: '3 h ago' },
       { label: 'On a person', value: '2' },
@@ -254,7 +254,7 @@ export const FLOW_STATS: readonly FlowStat[] = [
       values: [3, 5, 4, 8, 6, 9, 7],
       labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     },
-    xLabels: ['Mon', 'Thu', 'Today'],
+    axisLabels: ['Mon', 'Thu', 'Today'],
     footer: [
       { label: 'By the chain', value: '4' },
       { label: 'By the pace', value: '3' },
@@ -271,7 +271,7 @@ export const FLOW_STATS: readonly FlowStat[] = [
       values: [1, 2, 2, 4, 5, 7, 9, 12],
       labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'Now'],
     },
-    xLabels: ['Mon', 'Thu', 'Now'],
+    axisLabels: ['Mon', 'Thu', 'Now'],
     footer: [
       { label: 'Per day', value: '1.7' },
       { label: 'Healed', value: '2' },

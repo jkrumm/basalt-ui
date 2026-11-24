@@ -6,7 +6,7 @@
 - Figures: 3 of 90 days missing (22 Oct to 24 Oct); the median vigorous day (19 min) as a rule on the minutes pane; peak day 8 Oct, 238 min; median 7,372 steps.
 - Identity: the shipped console card; neutral ink steps, one accent (the brand tint) spent on the gap.
 
-## Colour: meaning
+## Color: meaning
 
 - brand tint: days with no reading (a zone on both panes).
 - dark ink: vigorous minutes. pale ink: moderate minutes. mid ink: steps and the median rule.

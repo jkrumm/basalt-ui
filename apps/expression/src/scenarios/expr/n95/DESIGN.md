@@ -45,7 +45,7 @@ The card ends at y 958 of 1200; the page holds one question, so the rest is empt
 - Empty (`?shot-state=empty`, `?fixture=fresh`): the card says the cause and the step in one sentence; legend and footer labels hold their place.
 - Error: the host's "Could not load counts per state", one cause line, one Retry.
 
-## Colour: meaning
+## Color: meaning
 
 - Brand blue: the worst peak (one bar, from `highlight`).
 - Pale ink: every other peak.

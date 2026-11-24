@@ -665,7 +665,7 @@ const NOTE_SEEDS: readonly NoteSeed[] = [
     'Fluidra lowers the ISO A couplings by 6 % on orders over 100 pieces. Next order goes in at the new price.',
   ],
   [
-    'Terminal block colour change',
+    'Terminal block color change',
     'memo',
     'sup-5',
     'EL-5042',

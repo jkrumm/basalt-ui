@@ -35,7 +35,7 @@ No table: a table of the periods would restate the bars. The empty space under t
 
 Unrated also appears in the legend (the name of the grey segment) and in the focus readout, which replaces the rest reading while a bar is focused.
 
-## Colour: meaning
+## Color: meaning
 
 - accent: the unrated shots of the run that fell furthest behind (one meaning)
 - dark ink: kept; mid ink: rejected; pale ink: unrated outside the run

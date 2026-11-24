@@ -13,9 +13,9 @@ export function Demo(): ReactElement {
         delta={{ value: '-1', polarity: 'up-good' }}
         status={{ tone: 'warn', label: '1 degraded' }}
         chart={(box) => (
-          <Sparkline series={WEEK} height={box.height} label="Healthy services per day" />
+          <Sparkline points={WEEK} height={box.height} label="Healthy services per day" />
         )}
-        xLabels={['Fri', 'Mon', 'Thu']}
+        axisLabels={['Fri', 'Mon', 'Thu']}
         footer={[
           { label: 'Open', value: 1 },
           { label: 'Fixed', value: 4 },

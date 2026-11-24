@@ -89,7 +89,7 @@ export function ExprN79Scenario({ shotState, fixture }: ScenarioProps) {
       <StatGroup variant="cards" label="Headline counts">
         <StatCell
           icon={Wrench}
-          label="Fixes landed"
+          title="Fixes landed"
           value={ready ? now.total : null}
           delta={
             empty
@@ -104,7 +104,7 @@ export function ExprN79Scenario({ shotState, fixture }: ScenarioProps) {
         />
         <StatCell
           icon={GitBranch}
-          label="Repos with a fix"
+          title="Repos with a fix"
           value={ready ? now.repos : null}
           delta={
             empty
@@ -118,7 +118,7 @@ export function ExprN79Scenario({ shotState, fixture }: ScenarioProps) {
           phase={phase()}
         />
         <StatCell
-          label="Landing less often"
+          title="Landing less often"
           value={ready ? fallingNow : null}
           unit={`of ${CLASS_KEYS.length} classes`}
           phase={phase()}

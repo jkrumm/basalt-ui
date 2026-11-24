@@ -26,7 +26,7 @@
 
 No part answers the same question twice, no gap wider than a card, every part joins the one focus. At 390 the cards stack and the weeks table drops, since its verdict is the zone on the load chart and its volume, intensity and recovery are the three drawn series.
 
-## Colour: meaning
+## Color: meaning
 
 - blue: the lift that stopped rising (Press line, end label, legend swatch); the only accent.
 - status red (tint, dot, pill): weeks where intensity ran ahead of recovery.

@@ -19,7 +19,7 @@ _The owner writes this: what the app is for, who reads it, the tone it keeps. Ag
 
 ## Series
 
-The colour of a metric is authored once, as a `{ light, dark }` pair in src/basalt.tokens.ts. A
+The color of a metric is authored once, as a `{ light, dark }` pair in src/basalt.tokens.ts. A
 series earns a hue for a trend, a status or a split a reader must tell apart; the rest stay neutral.
 
 | Series     | Key | Why it earned a hue |

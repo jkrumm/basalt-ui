@@ -17,13 +17,13 @@
     "color-no-hex": [
       true,
       {
-        "message": "A hex colour `%s` is authored colour. Use a `--basalt-*` colour token (`var(--basalt-ink)`), or `color-mix` over one."
+        "message": "A hex color `%s` is authored color. Use a `--basalt-*` color token (`var(--basalt-ink)`), or `color-mix` over one."
       }
     ],
     "color-named": [
       "never",
       {
-        "message": "The named colour `%s` is authored colour. Use a `--basalt-*` colour token, or `color-mix` over one."
+        "message": "The named color `%s` is authored color. Use a `--basalt-*` color token, or `color-mix` over one."
       }
     ],
     "function-disallowed-list": [
@@ -41,7 +41,7 @@
         "light-dark"
       ],
       {
-        "message": "`%s()` writes a colour by hand. Use the `--basalt-*` colour token of the property's role (a surface for a background, an ink for text), or `color-mix(in oklab, var(--basalt-token) 40%, transparent)` over that token for an alpha; a token already switches per scheme."
+        "message": "`%s()` writes a color by hand. Use the `--basalt-*` color token of the property's role (a surface for a background, an ink for text), or `color-mix(in oklab, var(--basalt-token) 40%, transparent)` over that token for an alpha; a token already switches per scheme."
       }
     ],
     "declaration-property-value-disallowed-list": [
@@ -69,7 +69,7 @@
         ]
       },
       {
-        "message": "Disallowed `%s: %s`. By property: padding, margin, gap and inset (top, right, bottom, left) take a --basalt-rhythm-* token (--basalt-rhythm-1 to -3), 0, auto or %, and font size a --basalt-text-* token, never a raw length or calc(); background, border, outline and shadow take the colour role of their surface, never a status, chart or brand colour: a status colour or tint is Status, Lozenge, DeltaBadge or a Num tone, a chart colour belongs to a chart kind, and only a brand tint is var(--basalt-selected) or a surface token; color-mix runs over --basalt tokens or transparent only; color takes a text role (Status or Num tone from parts; text-good or text-brand at bridge), never a fill-only role (chart, seq, the brand fill, a status tint); grid-template, grid-template-columns and -rows, grid-auto-columns and -rows size tracks by fr, auto or minmax(0,1fr), never a raw length; transition and animation take their time and easing from the motion scale: var(--basalt-dur-*) and var(--basalt-ease-*), never a literal time, a cubic-bezier, steps or linear timing function, or an easing keyword (0s and 0ms, the reduced-motion end state, stay legal)."
+        "message": "Disallowed `%s: %s`. By property: padding, margin, gap and inset (top, right, bottom, left) take a --basalt-rhythm-* token (--basalt-rhythm-1 to -3), 0, auto or %, and font size a --basalt-text-* token, never a raw length or calc(); background, border, outline and shadow take the color role of their surface, never a status, chart or brand color: a status color or tint is Status, Lozenge, DeltaBadge or a Num tone, a chart color belongs to a chart kind, and only a brand tint is var(--basalt-selected) or a surface token; color-mix runs over --basalt tokens or transparent only; color takes a text role (Status or Num tone from parts; text-good or text-brand at bridge), never a fill-only role (chart, seq, the brand fill, a status tint); grid-template, grid-template-columns and -rows, grid-auto-columns and -rows size tracks by fr, auto or minmax(0,1fr), never a raw length; transition and animation take their time and easing from the motion scale: var(--basalt-dur-*) and var(--basalt-ease-*), never a literal time, a cubic-bezier, steps or linear timing function, or an easing keyword (0s and 0ms, the reduced-motion end state, stay legal)."
       }
     ],
     "declaration-property-value-allowed-list": [
@@ -118,7 +118,7 @@
         "/\\[\\s*class\\s*[~*^]=\\s*[\"']?dark/"
       ],
       {
-        "message": "Never select `%s`. A `data-slot` or `.mantine-*` selector reaches into a component: use the component's own prop or variant, or eject it (basalt-ui eject <name>). A `data-theme` or `.dark` selector forks a colour per scheme: tokens switch per scheme, so use a `--basalt-*` token instead."
+        "message": "Never select `%s`. A `data-slot` or `.mantine-*` selector reaches into a component: use the component's own prop or variant, or eject it (basalt-ui eject <name>). A `data-theme` or `.dark` selector forks a color per scheme: tokens switch per scheme, so use a `--basalt-*` token instead."
       }
     ],
     "at-rule-disallowed-list": [
@@ -134,7 +134,7 @@
         "tailwind"
       ],
       {
-        "message": "`%s` adds to or rebuilds what the package owns: a utility class, a theme colour, a variant, the classes of a plugin, a class list the class rules check or a tailwind.config file that declares them. Take colour from Status, Lozenge, DeltaBadge or a Num tone (the palette is derived, never declared per app); tokens switch per scheme, so a `@variant dark` fork is a `--basalt-*` token instead (add the token instead of forking); long-form text is `Prose` from basalt-ui/page, never a typography plugin; compose the shipped component and its variants, or a `--basalt-*` token in a module stylesheet. A `@custom-media` names a viewport query: key on the container, `@container` with a named size (`@narrow`, `@regular`, `@wide`). `@tailwind` is Tailwind v3's layer directive: the package owns the layers, so the one basalt stylesheet import is all a module needs, and no layer is written."
+        "message": "`%s` adds to or rebuilds what the package owns: a utility class, a theme color, a variant, the classes of a plugin, a class list the class rules check or a tailwind.config file that declares them. Take color from Status, Lozenge, DeltaBadge or a Num tone (the palette is derived, never declared per app); tokens switch per scheme, so a `@variant dark` fork is a `--basalt-*` token instead (add the token instead of forking); long-form text is `Prose` from basalt-ui/page, never a typography plugin; compose the shipped component and its variants, or a `--basalt-*` token in a module stylesheet. A `@custom-media` names a viewport query: key on the container, `@container` with a named size (`@narrow`, `@regular`, `@wide`). `@tailwind` is Tailwind v3's layer directive: the package owns the layers, so the one basalt stylesheet import is all a module needs, and no layer is written."
       }
     ]
   }

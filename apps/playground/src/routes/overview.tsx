@@ -65,19 +65,19 @@ const EVENTS = [
 const health = (
   <StatGroup variant="strip" label="Service health">
     <StatCell
-      label="Uptime"
-      qualifier="30 days"
+      title="Uptime"
+      subtitle="30 days"
       value="99.98"
       unit="%"
       status={{ tone: 'good', label: 'Above the 99.9 % target' }}
     />
     <StatCell
-      label="p95"
+      title="p95"
       value={182}
       unit="ms"
       delta={{ value: '-4%', polarity: 'up-bad', label: 'vs prior 7 days' }}
     />
-    <StatCell label="Open incidents" value={0} status={{ tone: 'good', label: 'None open' }} />
+    <StatCell title="Open incidents" value={0} status={{ tone: 'good', label: 'None open' }} />
   </StatGroup>
 )
 // #endregion

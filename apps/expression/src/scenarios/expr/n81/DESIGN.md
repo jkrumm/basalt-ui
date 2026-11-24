@@ -25,7 +25,7 @@
 
 Table sum: the Items cell is 1004 px wide, over the 800 px at which every column shows, so the 480 px rule for a half-width table does not bind. At 390 the table is phone cards in the panel's own scroll box (Item, Status, Confidence, Practised); Sessions sits in the row's detail. `phone: 'columns'` clipped its third column at 390.
 
-## colour: meaning
+## color: meaning
 
 - blue: the most practised item (Practice only).
 - red: a review past due (Reviews only).

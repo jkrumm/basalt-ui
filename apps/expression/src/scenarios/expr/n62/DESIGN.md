@@ -20,7 +20,7 @@ The wind and gust lines share one time axis and one card with the rider's range 
 
 Nothing answers one question twice: the wind card holds range and gust, the table holds the per-window figures, the direction card the sector. At 390 the order is wind, windows, direction.
 
-## Colours
+## Colors
 
 - accent (brand tint): a rideable window, zone fill and the Steady or Gusty verdict dot
 - status red: offshore, as the zone on the wind card, the dots on the direction card and the table verdict

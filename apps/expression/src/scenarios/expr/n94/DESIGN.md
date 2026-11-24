@@ -19,7 +19,7 @@ Side by side at the wide container, stacked at 390 with the chart first. Both en
 
 14 detector records of one shape: the table is the records view, the chart is the ranking.
 
-## Colour: meaning
+## Color: meaning
 
 - accent (brand): a detector past the mute line, set by the bar series highlight; one class.
 - mid ink: a detector on or under the line. Dark ink: the mute line. Status amber: Ask again, the one state that needs a hand. No other hue.
