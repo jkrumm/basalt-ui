@@ -47,14 +47,14 @@ const PANEL = cn(
   // The platform's popover box, reset: a card under the trigger, in the top layer.
   'm-0 w-max max-w-[calc(100vw-2rem)] overflow-auto rounded-card border border-border bg-popover p-3 text-foreground shadow-overlay',
   // Without anchor positioning: centred under the header bar.
-  'inset-auto top-15 left-1/2 -translate-x-1/2',
-  // With it: under the trigger, flipped to its right edge when the panel would leave the screen.
-  'supports-[anchor-name:--a]:left-[anchor(left)] supports-[anchor-name:--a]:top-[calc(anchor(bottom)+0.5rem)] supports-[anchor-name:--a]:translate-x-0',
+  'inset-auto inset-x-0 top-15 mx-auto',
+  // With it: under the trigger, flipped to its end edge when the panel would leave the screen.
+  'supports-[anchor-name:--a]:end-auto supports-[anchor-name:--a]:mx-0 supports-[anchor-name:--a]:start-[anchor(start)] supports-[anchor-name:--a]:top-[calc(anchor(bottom)+0.5rem)]',
   'supports-[anchor-name:--a]:[position-try-fallbacks:flip-inline]',
   // Enter and exit in the top layer: the closed state is the exit; a panel leaves toward the one that opens.
-  'opacity-0 -translate-y-1 transition-[opacity,translate,display,overlay] duration-fast ease-enter transition-discrete',
+  'opacity-0 -translate-y-1 transition-[opacity,translate,display,overlay] duration-fast ease-enter transition-discrete rtl:[--site-dir:-1]',
   'open:opacity-100 open:translate-y-0 starting:open:opacity-0 starting:open:-translate-y-1',
-  '[li:has(~li_:popover-open)_&:not(:popover-open)]:-translate-x-3 [li:has(:popover-open)~li_&:not(:popover-open)]:translate-x-3',
+  '[li:has(~li_:popover-open)_&:not(:popover-open)]:translate-x-[calc(var(--site-dir,1)*-0.75rem)] [li:has(:popover-open)~li_&:not(:popover-open)]:translate-x-[calc(var(--site-dir,1)*0.75rem)]',
   'motion-reduce:translate-x-0 motion-reduce:translate-y-0',
 )
 
