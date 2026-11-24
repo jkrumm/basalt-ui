@@ -172,7 +172,7 @@ export function ArticleLayout({
             {toc && (
               <div ref={triggerRef} className="sticky top-2 z-10 flex justify-end @wide:hidden">
                 <Popover open={tocOpen} onOpenChange={setTocOpen}>
-                  <PopoverTrigger className="rounded-ctrl bg-popover px-2 py-1 text-xs font-medium text-muted-foreground shadow-raised hover:text-foreground">
+                  <PopoverTrigger className="relative rounded-ctrl bg-popover px-2 py-1 text-xs font-medium text-muted-foreground shadow-raised after:absolute after:inset-x-0 after:top-1/2 after:h-full after:-translate-y-1/2 hover:text-foreground pointer-coarse:after:min-h-11 forced-colors:border">
                     {tocLabel}
                   </PopoverTrigger>
                   <PopoverContent aria-label={tocLabel} side="bottom" align="end">
@@ -190,13 +190,13 @@ export function ArticleLayout({
           </div>
 
           {toc && (
-            <div className="col-start-2 row-start-2 sticky top-6 hidden max-h-[calc(100vh-6rem)] self-start overflow-y-auto @wide:block">
+            <div className="col-start-2 row-start-2 sticky top-6 -m-1 hidden max-h-[calc(100vh-6rem)] self-start overflow-y-auto p-1 @wide:block">
               <Toc containerRef={articleRef} items={tocItems} startAt={tocItems?.[0]?.id} />
             </div>
           )}
 
           {(prev !== undefined || next !== undefined) && (
-            <footer className="col-start-1 row-start-3 mt-12 grid grid-cols-2 gap-4 border-t border-border pt-6 [&_a]:text-inherit [&_a]:no-underline">
+            <footer className="col-start-1 row-start-3 mt-12 grid grid-cols-2 gap-4 border-t border-border pt-6 [&_a]:block [&_a]:min-h-11 [&_a]:text-inherit [&_a]:no-underline">
               {prev !== undefined ? (
                 <NavCell
                   target={prev}
