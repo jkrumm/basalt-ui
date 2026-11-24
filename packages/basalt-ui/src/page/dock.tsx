@@ -54,6 +54,7 @@ export type DockProps = {
   /**
    * How the panel opens: `auto` is a bottom sheet that rests at half height and drags to full on a
    * phone (compact width, coarse pointer), the side panel elsewhere; `popup` and `sheet` force one.
+   * The sheet's header shows the tag and the title: `icon`, `avatar` and `favourite` are not drawn there.
    */
   present?: OverlayPresent
   children?: ReactNode
