@@ -1,6 +1,7 @@
 /**
  * basalt-ui CLI — the dispatcher plus the plumbing `init`, `sync`, `lint` and `doctor` (each
- * in its own file) share. Runs under Node 22 or newer and under Bun: `node:` built-ins only, no
+ * in its own file) share. Runs under Node 22.18 or newer (it loads the `.ts` series file through
+ * Node's type stripping) and under Bun: `node:` built-ins only, no
  * `Bun` global and no `bun`-module import on any path. Dependency-free.
  */
 import { createHash } from 'node:crypto'

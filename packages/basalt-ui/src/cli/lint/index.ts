@@ -207,8 +207,9 @@ function writeBudget(project: Project, counts: Counts): number {
 }
 
 /**
- * `--raise <field> --consumer "<who>"`: lifts the `waivers` or `escapes` ceiling to the counted
- * figure and records one raises row naming the consumer; `ejects` has its own raise on `eject`. */
+ * `--raise escapes --consumer "<who>"`: lifts the `escapes` ceiling to the counted figure and records
+ * one raises row naming the consumer. `waivers` has no ceiling (a full `lint` records the count);
+ * `ejects` has its own raise on `eject`. */
 function raise(project: Project, field: string | undefined, consumer: string | undefined): number {
   const fail = (why: string): number => (console.error(`✖ basalt-ui lint: ${why}`), 1)
   if (field === 'ejects') return fail(`ejects go up with ${raiseCommand('ejects')}`)

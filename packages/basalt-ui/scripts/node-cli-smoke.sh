@@ -13,7 +13,7 @@ if command -v bun >/dev/null 2>&1; then
   echo "bun is on PATH ($(command -v bun)): this smoke proves the CLI without it" >&2
   exit 1
 fi
-node -e 'if (+process.versions.node.split(".")[0] < 22) { console.error("needs Node 22 or newer"); process.exit(1) }'
+node -e 'const [a, b] = process.versions.node.split(".").map(Number); if (a < 22 || (a === 22 && b < 18)) { console.error("needs Node 22.18 or newer"); process.exit(1) }'
 
 APP="$(mktemp -d)"
 trap 'rm -rf "$APP"' EXIT
