@@ -306,20 +306,28 @@ function specifierFindings(file: string, snippet: Snippet, ctx: ClaimContext): C
   })
 }
 
-/** A subpath resolves when package.json "exports" has its key, or a wildcard key whose module exists. */
+/**
+ * A subpath resolves when package.json "exports" has its key, or a wildcard key whose module exists.
+ * As in Node, the exact key wins, then the longest matching pattern; a null target is not exported.
+ */
 function resolvesToExport(sub: string, ctx: ClaimContext): boolean {
   const key = './' + sub
-  if (key in ctx.exports) return true
-  for (const [pattern, target] of Object.entries(ctx.exports)) {
-    const star = pattern.indexOf('*')
-    if (star < 0) continue
-    const prefix = pattern.slice(0, star)
-    const suffix = pattern.slice(star + 1)
-    if (!key.startsWith(prefix) || !key.endsWith(suffix)) continue
-    const mod = key.slice(prefix.length, key.length - suffix.length)
-    return moduleExists(ctx.pkgRoot, typeof target === 'string' ? undefined : target.import, mod)
-  }
-  return false
+  if (key in ctx.exports) return ctx.exports[key] !== null
+  const match = Object.entries(ctx.exports)
+    .filter(([pattern]) => {
+      const star = pattern.indexOf('*')
+      if (star < 0) return false
+      const prefix = pattern.slice(0, star)
+      const suffix = pattern.slice(star + 1)
+      return key.length >= pattern.length - 1 && key.startsWith(prefix) && key.endsWith(suffix)
+    })
+    .toSorted(([a], [b]) => b.length - a.length)[0]
+  if (match === undefined) return false
+  const [pattern, target] = match
+  if (target === null) return false
+  const star = pattern.indexOf('*')
+  const mod = key.slice(star, key.length - (pattern.length - star - 1))
+  return moduleExists(ctx.pkgRoot, typeof target === 'string' ? undefined : target.import, mod)
 }
 
 function moduleExists(pkgRoot: string, target: string | undefined, mod: string): boolean {
