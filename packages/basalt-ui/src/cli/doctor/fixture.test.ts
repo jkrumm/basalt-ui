@@ -164,6 +164,13 @@ export function makeTree(profile: Profile = 'app', files: Patch = {}): string {
   )
 
   put(dir, 'src/styles.css', '.page { color: var(--basalt-ink); }\n')
+  if (profile === 'site') {
+    put(
+      dir,
+      'astro.config.mjs',
+      "import react from '@astrojs/react'\nimport { basaltAstro } from 'basalt-ui/astro'\nexport default { integrations: [react(), basaltAstro()] }\n",
+    )
+  }
   put(dir, 'src/main.tsx', 'export const page = 1\n')
   put(
     dir,

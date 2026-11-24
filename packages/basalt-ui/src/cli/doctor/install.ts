@@ -7,6 +7,7 @@ import { dirname, resolve } from 'node:path'
 
 import { readBudget } from '../budget'
 import { findBasaltInstall } from '../index'
+import { ASTRO_PARTS } from '../../astro/parts'
 import { defaultBaseRef, rootFindings } from '../../lint/weakened'
 import type { Profile } from '../manifest'
 import { installAllCommand } from '../package-manager'
@@ -41,6 +42,19 @@ export const SUBPATH_PROFILE: readonly (readonly [RegExp, Profile])[] = [
   [/^basalt-ui\/ui(?:\/|$)/, 'parts'],
 ]
 
+/**
+ * A `site` draws a `ui` part in an island, so a site root may import every primitive the Astro part
+ * table (`ASTRO_PARTS`, the one `basaltAstro()` checks the build against) measures.
+ */
+const SITE_PRIMITIVES = new Set(ASTRO_PARTS.filter((p) => p.family === 'ui').map((p) => p.id))
+
+/** The lowest profile `spec` needs in a root declared `profile`. */
+export function profileFor(spec: string, profile: Profile): Profile | null {
+  const ui = /^basalt-ui\/ui\/([a-z0-9-]+)$/.exec(spec)
+  if (profile === 'site' && ui !== null && SITE_PRIMITIVES.has(ui[1] ?? '')) return 'site'
+  return SUBPATH_PROFILE.find(([pattern]) => pattern.test(spec))?.[1] ?? null
+}
+
 const IMPORT_SPECIFIER =
   /(?:from\s*|import\s*\(?\s*|@import\s+(?:url\(\s*)?)['"](basalt-ui\/[^'"]+)['"]/g
 
@@ -69,11 +83,10 @@ const check1 = (name: string): Check => ({
       for (const file of filesUnder(ctx.root, root, /\.(?:[cm]?[jt]sx?|css|astro)$/)) {
         const text = readText(ctx.root, file) ?? ''
         for (const [, spec = ''] of text.matchAll(IMPORT_SPECIFIER)) {
-          for (const [pattern, minimum] of SUBPATH_PROFILE) {
-            if (pattern.test(spec) && PROFILE_RANK[minimum] > PROFILE_RANK[needed]) {
-              needed = minimum
-              named = `${spec} in ${file}`
-            }
+          const minimum = profileFor(spec, profile)
+          if (minimum !== null && PROFILE_RANK[minimum] > PROFILE_RANK[needed]) {
+            needed = minimum
+            named = `${spec} in ${file}`
           }
         }
       }

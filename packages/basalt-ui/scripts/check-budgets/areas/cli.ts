@@ -64,12 +64,13 @@ export const rows: readonly RowDef[] = [
   // 13285 -> 13308 (init-layout-seeds, Issue 3171): `init` seeds no `_app` layout or nav beside a root route the app keeps or a page that already serves `/`, and names the skip as a to-do (cli/init/router-seeds.ts +23). Consumer: the playground, moved onto init by Issue 3164, which kept its own `__root.tsx` and could not build.
   // 13308 -> 13311 (Issue 3162): `shot` names a DataTable's `table-root` the `data-table` anchor its help promises (capture.ts +2, types.ts +1).
   // 13311 -> 13338 (Issue 3164): `init --profile app` installs the two peers `basalt-ui/shell` imports (cli/peers.ts +2), and the peer fix line of the `basalt()` gate and doctor check 3 adds a pin exactly and a declared range as the range (cli/peers.ts `peerAddLine` +19, cli/package-manager.ts `exact` +6). Consumer: a create-vite `app` whose build failed in the gate after `init`, on a line that put `--exact` beside a caret.
+  // 13400 -> 13734 (ga-site-path, Issue 3230): `init --profile site` wires astro.config and writes the layout (init/site.ts, init/steps.ts); sync places the agent set per profile and drops the site-off lint tags (sync/render.ts); doctor checks basaltAstro() after react() and reads the Astro part table (doctor/app.ts, doctor/install.ts); the class rules reach .astro and .mdx templates (lint/template-classes.ts, lint/engine.ts). Consumer: the tarball site consumer, which used to hand-write astro.config and the layout after init.
   {
     id: 'cli-lines',
     order: 110,
     label: 'CLI non-test lines (src/cli/**)',
     // 13338 -> 13400 (Issue 3206): `init` places the viewport meta in an app's index.html and seeds the phone shot viewports (cli/init/steps.ts, cli/init/index.ts).
-    ceiling: 13400,
+    ceiling: 13734,
     measure: () =>
       totalLines(
         walkFiles(join(PKG_ROOT, 'src/cli'), /\.tsx?$/).filter((p) => !/\.test\.tsx?$/.test(p)),
@@ -235,6 +236,13 @@ export const raises: Raises = {
       to: 13338,
       consumer:
         '`init --profile app` installs the two peers `basalt-ui/shell` imports (trial 2, entry 5), and the peer fix line (`basalt()` gate, doctor check 3) saves a declared range as the range, never `--exact` beside a caret (Issue 3164)',
+      repo: 'basalt-ui',
+    },
+    {
+      from: 13400,
+      to: 13734,
+      consumer:
+        '`init --profile site` leaves a building Astro site with its own agent set and no hand edit; doctor checks basaltAstro() is wired; the class rules reach `.astro` pages (Issue 3230)',
       repo: 'basalt-ui',
     },
   ],

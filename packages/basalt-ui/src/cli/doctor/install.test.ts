@@ -50,9 +50,16 @@ describe('check 1: manifest', () => {
     )
   })
 
-  it('fails a site root that imports a parts subpath', async () => {
+  it('passes a site root that imports a ui part of the Astro part table, for an island', async () => {
     const dir = makeTree('site', {
-      'src/pages/index.astro': "---\nimport { Button } from 'basalt-ui/ui/button'\n---\n",
+      'src/islands/Counter.tsx': "import { Button } from 'basalt-ui/ui/button'\n",
+    })
+    expect((await runCheck(dir, 1)).status).toBe('pass')
+  })
+
+  it('fails a site root that imports a ui primitive the part table does not measure', async () => {
+    const dir = makeTree('site', {
+      'src/pages/index.astro': "---\nimport { Toast } from 'basalt-ui/ui/toast'\n---\n",
     })
     const r = await runCheck(dir, 1)
     expect(r.status).toBe('fail')

@@ -250,14 +250,14 @@
     "shadcn/require-static-classes": [
       "error",
       {
-        "componentImports": ["^basalt-ui/(?:ui|static)/"]
+        "componentImports": ["^basalt-ui/(?:ui/|static(?:/|$))"]
       }
     ],
     "shadcn/no-restyle": [
       "error",
       {
         "allow": ["layout"],
-        "componentImports": ["^basalt-ui/(?:ui|static)/"],
+        "componentImports": ["^basalt-ui/(?:ui/|static(?:/|$))"],
         "contracts": []
       }
     ],

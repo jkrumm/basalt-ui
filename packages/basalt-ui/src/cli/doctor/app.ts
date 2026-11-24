@@ -29,6 +29,36 @@ const parentOf = (root: string): string =>
   root.includes('/') ? root.slice(0, root.lastIndexOf('/')) : '.'
 const VITE_EXTENSIONS = ['ts', 'mts', 'cts', 'js', 'mjs', 'cjs']
 
+/** Astro configs at the install root, at each declared root and beside it. */
+function astroConfigs(ctx: Ctx, roots: readonly string[]): Source[] {
+  const dirs = new Set(['.', ...roots, ...roots.map(parentOf)])
+  const candidates = [...dirs].flatMap((dir) =>
+    VITE_EXTENSIONS.map((ext) =>
+      dir === '.' ? `astro.config.${ext}` : `${dir}/astro.config.${ext}`,
+    ),
+  )
+  return load(ctx, candidates).filter((s) => s.text !== '')
+}
+
+/** site: `basaltAstro()` from `basalt-ui/astro` sits in the Astro config, after `react()`. */
+function siteFindings(ctx: Ctx, roots: readonly string[]): string[] {
+  const configs = astroConfigs(ctx, roots)
+  if (configs.length === 0)
+    return ['site: no astro.config.* at the install root or a declared root']
+  const fix = 'integrations: [react(), basaltAstro()] (basalt-ui init --profile site writes it)'
+  return configs.flatMap((c) => {
+    const at = c.text.search(/\bbasaltAstro\s*\(/)
+    if (at === -1 || !/['"]basalt-ui\/astro['"]/.test(c.text)) {
+      return [`site: ${c.file} does not add basaltAstro() from basalt-ui/astro; ${fix}`]
+    }
+    const react = c.text.search(/\breact\s*\(/)
+    if (react === -1 || react > at) {
+      return [`site: ${c.file} adds basaltAstro() before react() or without it; ${fix}`]
+    }
+    return trackedSources(ctx, [c])
+  })
+}
+
 /** Vite configs at the install root and beside each declared root. */
 function viteConfigs(ctx: Ctx, roots: readonly string[]): Source[] {
   const dirs = new Set(['.', ...roots.map(parentOf)])
@@ -114,7 +144,7 @@ function treeFirstFindings(ctx: Ctx): string[] {
 /** `<vite dir>/.basalt/sources.css` for each Vite config that calls `basalt()`, when git tracks it. */
 function trackedSources(ctx: Ctx, configs: readonly Source[]): string[] {
   const files = configs
-    .filter((c) => /\bbasalt\s*\(/.test(c.text))
+    .filter((c) => /\bbasalt(?:Astro)?\s*\(/.test(c.text))
     .map((c) => {
       const dir = dirname(c.file)
       return dir === '.' ? SOURCES_PATH : `${dir}/${SOURCES_PATH}`
@@ -169,6 +199,8 @@ const check12 = (name: string): Check => ({
         findings.push(...treeFirstFindings(ctx))
       }
     }
+
+    if (manifest.profile === 'site') findings.push(...siteFindings(ctx, roots))
 
     const notifies = sources.some((s) =>
       /import[^;]*\bnotify\b[^;]*from\s*['"]basalt-ui/s.test(s.text),

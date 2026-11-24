@@ -18,6 +18,8 @@ import { filesUnder, rootsOf } from '../doctor/types'
 import { findBin, STYLELINT_IGNORE_ARGS } from '../../lint/bin'
 import { dropMisreadDirectives } from '../../lint/rules/structure/waiver-needs-reason'
 import { valueListMessage } from '../../lint/stylelint/rules'
+import { PRESET_FILE } from '../../lint/weakened'
+import { TEMPLATE_FILE, templateClassFindings } from './template-classes'
 
 export { findBin }
 
@@ -238,11 +240,39 @@ export function runCheckTokens(project: Project, files: readonly string[]): Find
   }))
 }
 
-/** All three scanners over install-relative `files`; oxlint skips a root declared at `tokens`. */
+/** The basalt rule ids the install's generated preset (`.oxlintrc.basalt.json`) turns on. */
+function enabledIds(root: string): Set<string> {
+  const path = resolve(root, PRESET_FILE)
+  if (!existsSync(path)) return new Set()
+  const rules =
+    (JSON.parse(readFileSync(path, 'utf8')) as { rules?: Record<string, unknown> }).rules ?? {}
+  return new Set(
+    Object.entries(rules)
+      .filter(
+        ([id, level]) =>
+          id.startsWith('basalt/') && (Array.isArray(level) ? level[0] : level) !== 'off',
+      )
+      .map(([id]) => id.slice('basalt/'.length)),
+  )
+}
+
+/** The class rules over the `.astro` and `.mdx` templates oxlint cannot parse. */
+export function runTemplateClasses(project: Project, files: readonly string[]): Finding[] {
+  const templates = files.filter((f) => TEMPLATE_FILE.test(f) && profileOf(project, f) !== 'tokens')
+  if (templates.length === 0) return []
+  const ids = enabledIds(project.root)
+  return templates.flatMap((file) => {
+    const text = readFileSync(resolve(project.root, file), 'utf8')
+    return templateClassFindings(text, ids).map((f) => ({ file: posix(file), ...f }))
+  })
+}
+
+/** The scanners over install-relative `files`; oxlint and the template scan skip a root declared at `tokens`. */
 export function scan(project: Project, files: readonly string[]): Finding[] {
   const js = files.filter((f) => JS_FILE.test(f) && profileOf(project, f) !== 'tokens')
   return [
     ...runOxlint(project, js),
+    ...runTemplateClasses(project, files),
     ...runStylelint(
       project,
       files.filter((f) => STYLE_FILE.test(f)),
