@@ -22,7 +22,7 @@ export const added: Accepts<WithAuto> = requires
 describe('card guard', () => {
   test('every called flush value resolves to classes in the cva table', () => {
     expect(cardVariants({ flush: true })).toContain('p-0')
-    expect(cardVariants({ flush: false })).toContain('p-4')
+    expect(cardVariants({ flush: false })).toContain('p-(--card-edge)')
     expect(cardVariants({})).toBe(cardVariants({ flush: false }))
     expect(requires({ flush: true })).toEqual({ flush: true })
   })
