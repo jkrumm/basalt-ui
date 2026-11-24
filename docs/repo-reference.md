@@ -29,7 +29,7 @@ Stack, structure, consolidation doctrine and principles. Read it when a change t
 - **Monorepo**: Bun workspaces (`packages/*`, `apps/*`)
 - **UI**: Base UI (`@base-ui/react`, optional peer) on Tailwind 4
 - **React**: 19 (peer)
-- **Charts**: `@tanstack/charts` 1.5.0 + `d3-scale` 4.0.2 (exact optional peers of `./charts`)
+- **Charts**: `@tanstack/charts` ~1.5.0 + `d3-scale` ^4.0.2 (optional peers of `./charts`)
 - **Lint/format**: oxlint + oxfmt
 - **Type-check**: tsc (strict)
 - **Git**: conventional commits enforced via commitlint; lefthook pre-commit hooks
