@@ -23,7 +23,6 @@ import { AppLink } from '../core/link'
 import { page } from '../core/messages/page'
 import { useMessages } from '../core/messages/use-messages'
 import type { IconComponent, NavTarget, RecordSequence } from '../core/ports'
-import { neighbours } from '../core/record-steps'
 import { Avatar } from '../ui/avatar'
 import type { AvatarEntry } from '../ui/avatar'
 import { Button, buttonVariants } from '../ui/button'
@@ -31,6 +30,10 @@ import { Menu, MenuContent, MenuItem, MenuTrigger } from '../ui/menu'
 import type { FavoriteInput } from './contract'
 import { FavoriteToggle } from './favorites'
 import { ScrollArea } from '../ui/scroll-area'
+import { neighbours } from '../core/record-steps'
+import { CLOSE, Glyph, PanelSteps } from './panel-steps'
+
+export { PanelSteps }
 
 /** The labels every side panel shares, so each message has one home: its close button and its width handle. */
 export function usePanelLabels(): { close: string; resize: string } {
@@ -89,23 +92,6 @@ export type PanelHeaderProps = {
   className?: string | undefined
 }
 
-function Glyph({ d }: { d: string }): ReactElement {
-  return (
-    <svg viewBox="0 0 16 16" className="size-icon" fill="none" aria-hidden="true">
-      <path
-        d={d}
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
-}
-
-const CLOSE = 'M4 4l8 8M12 4l-8 8'
-const UP = 'M4 10l4-4 4 4'
-const DOWN = 'M4 6l4 4 4-4'
 const OUT = 'M6 3H3v10h10v-3M9 3h4v4M13 3L7 9'
 const PIN = 'M10 2l4 4-2 .5-2.5 2.5.5 3-1 1-2.5-2.5L3 14l-1-1 3.5-3.5L3 7l1-1 3 .5L9.5 4 10 2z'
 
@@ -122,45 +108,6 @@ export function FullPageLink({ href }: { href: string | NavTarget }): ReactEleme
     >
       <Glyph d={OUT} />
     </AppLink>
-  )
-}
-
-/** Previous and next through the opener's records, disabled at the ends. */
-export function PanelSteps({ records }: { records: RecordSequence }): ReactElement {
-  const t = useMessages(page)
-  const { prev, next } = neighbours(records)
-  return (
-    <div className="flex items-center" data-panel="steps">
-      <Button
-        variant="ghost"
-        size="sm"
-        shape="icon"
-        aria-label={t('page.previousRecord')}
-        data-panel="previous"
-        disabled={prev === undefined}
-        onClick={() => {
-          // Read again at the click: the opener may have re-ordered since this render.
-          const to = neighbours(records).prev
-          if (to !== undefined) records.onStep(to)
-        }}
-      >
-        <Glyph d={UP} />
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        shape="icon"
-        aria-label={t('page.nextRecord')}
-        data-panel="next"
-        disabled={next === undefined}
-        onClick={() => {
-          const to = neighbours(records).next
-          if (to !== undefined) records.onStep(to)
-        }}
-      >
-        <Glyph d={DOWN} />
-      </Button>
-    </div>
   )
 }
 
