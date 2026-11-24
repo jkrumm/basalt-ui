@@ -1,8 +1,8 @@
 # Anti-defaults
 
-Taste checks for a page that reads as a default. Read before the first build and at every look. Where a rule guards a tell, its tag is named; the rest are judgement, not law, and a reviewer scores them.
+Taste checks for a page that reads as a default. Read before the first build and at every look. Where a rule guards a tell, its tag is named; the rest are judgement, and the reviewer scores them.
 
-## Seven defects earlier builds shipped with
+## Seven defects a default page ships with
 
 - **Clipped at 390.** A wide table with no scroll region, a fixed height on a card, text in a clipped box. [lint:raw-scroll]
 - **Nameless controls.** An icon-only button or an input with no accessible name. [lint:primitive-bypass]
@@ -10,47 +10,37 @@ Taste checks for a page that reads as a default. Read before the first build and
 - **A generic title.** "Overview" or "Dashboard" alone: name the subject and its scope. [type:PageBarProps]
 - **A page root of its own.** A `div` with its own `gap` or `p-4`, a fragment, or a `@container` wrapper around the page: return `Page`, which owns the gutter and the top inset. [lint:page-root]
 - **Colour on its own.** A status carried by hue only: a word plus its tone, and polarity is data on the delta. [lint:status-fill-as-text]
-- **A side stripe.** A coloured bar on one edge of a card, row, toast or node reads as generated filler (the owner's word: "AI slop"): say the state with `Status`, a badge or the tone of the whole border. [lint:tw-off-law]
+- **A side stripe.** A coloured bar on one edge of a card, row, toast or node reads as generated filler: say the state with `Status`, a badge or the tone of the whole border. [lint:tw-off-law]
 
-## Owner self-check
+## Self-check before review
 
-Five defects a reviewer passed and the owner marked down at the screen: "too much screaming blue", "too hard borders between entries", "nice idea but horrible rendering", "hovering the chart causes crazy jumps", and a grid of cards with no table view. The shipped rubric fails a component on the first four (Craft 4, 8, 9 and 10), so run them on your own frames before you shoot for review, each as its own line:
+Four defects a reviewer can pass and a person still marks down at the screen; the rubric fails a component on them (Craft 4, 8, 9 and 10), so run each on your own frames before you shoot for review:
 
-- **Count the accent.** Write `accent: <every series and mark class in it>` from the 1800 rest frame. More than one is cut to one, the rest go to ink steps in the series file, unless the page names a second meaning for the second in a word (one page drew minutes and pace in one blue, so the hue pointed at nothing). One measure at two grains is two entries: list the heat ramp and its detail zone, or a total and its daily bars, as two classes and give the second an ink step; the word that names a second meaning stands on the page, in a legend or a context line, never only in the design file.
-- **No bare border.** Search the page for `border`, `border-b`, `border-t` and `divide-y` with no colour class beside them: each paints in the text colour, an ink rule. A rule between rows names `border-border` or `border-grid`, and rows separated by spacing and a hover surface need none (one page's list has none, and of its right side the owner said it "does the right side better").
-- **Hover sweep.** Shoot `basalt-ui shot <route> --states rest,hover,focus,tooltip` and set each crop against the ready crop: the plot, its axes and the parts beside it sit at the same pixel position. A readout or tooltip that grows the card, a label that wraps on focus, or a legend that reflows is the defect (one plot jumped under the pointer).
-- **Redraw test for marks you drew.** Rows, tracks and their labels start on one x and one rhythm; every label and title fits its box at 1800 and 390, none clipped, cut at the card edge or hidden under a mark; marks of one class share one size. Judge it as drawing, apart from whether the idea is right: a week track can be the right idea and still be poorly drawn.
-- **Records as a table.** A grid of five or more cards that each show one record of one shape gets a table view of the same records, a toggle in the header or a table beside the grid ([cards](cards.md)).
+- **Count the accent.** In the 1800 rest frame, name every series and mark class in the accent. More than one is cut to one, the rest go to ink steps in the series file, unless the page names a second meaning in a word ([chart-color](chart-color.md)).
+- **No bare border.** Search the page for `border`, `border-b`, `border-t` and `divide-y` with no colour class beside them: each paints in the text colour. A rule between rows names `border-border` or `border-grid`, and rows separated by spacing and a hover surface need none.
+- **Hover sweep.** Shoot `basalt-ui shot <route> --states rest,hover,focus,tooltip` and set each crop against the ready crop: the plot, its axes and the parts beside it sit at the same pixel position. A readout that grows the card, a label that wraps on focus or a legend that reflows is the defect.
+- **Redraw test for marks you drew.** Rows, tracks and their labels start on one x and one rhythm; every label fits its box at 1800 and 390, none clipped or hidden under a mark; marks of one class share one size. Judge it as drawing, apart from whether the idea is right.
+- **Records as a table.** A grid of five or more cards that each show one record of one shape gets a table view of the same records ([cards](cards.md)).
 
 ## Device checklist
 
-Run it against the rendered page at 1800 and 390, light and dark, and one keyboard-focused frame; layout, contrast and motion show only there. Each device names the reference that teaches it.
+Run it against the rendered page at 1800 and 390, light and dark, and one keyboard-focused frame; layout, contrast and motion show only there. Each line names the reference that holds the rule.
 
-- **Answer on the mark.** The hero states the answer with its verb and at most one phrase of baseline, and the mark that answers carries its value or name at rest (the share on its segment, the sha on the deploy rule, the top Issue's row), the agreement between sources and the extreme items included; a list keeps the answer above its cut ([charts](charts.md)).
-- **One measure.** The hero, the marks and the baseline measure one quantity; a comparison of a group against its control draws both on one axis and leads with the signed difference ([charts](charts.md)).
-- **Baseline.** Every headline figure shows its target, prior period or limit as a signed delta or as geometry, a colour rule alone included; a share shows its whole beside it ("9 / 18"); the delta names its base at 390 too, noise is neutral, and a duration is a fact in the footer or a meter, never a delta pill ([charts](charts.md), [cards](cards.md)).
-- **Extremes and zeros.** One outlier is capped with `y.domain` and the off-scale caret, never by a cap you wrote under the data; a saturated ranking says how many are hidden; a zero series draws a mark ([charts](charts.md)).
-- **One readout.** When the figure's period follows focus the tooltip is off, and the announcement names the focused item's values; charts whose readouts differ take their own `cursorGroup`, and a list of spans joins by `focusItems.holds` over the window ([charts](charts.md)).
-- **Colour budget.** A status hue marks only a state that needs action, the common state stays neutral and a quiet or zero day is no fault (its delta is neutral); the failed mark takes the status fill; each hue has one meaning across the cards, written as `colour: meaning` ([charts](charts.md)).
-- **Seam-drawn finish.** A focus mark beside the ring, the ring inset clear of text, tabular numerals, motion-safe transitions, on-ladder values, status tokens as fills only ([charts](charts.md)).
-- **Phases.** No pill, dash or delta outside the ready phase; every part declares the same slots in every phase, and the loaded summary is no taller than its skeleton at 390 ([states](states.md)).
-- **Fixture honesty.** The extreme reads true, a zero shows a cue, binned bars carry a unit caption, every skeleton holds the loaded height, an empty state names the next step once ([concept](concept.md), [states](states.md)).
-- **Label collisions and light-mode contrast.** Direct labels clear each other and the marks; every text and mark reads in both schemes.
-- **At 390.** The answer and the first rows sit above the fold; a header that pushes rows below it is the defect; a strip cell fits one line with its verdict word and the column that answers stays in view ([concept](concept.md), [table](table.md)).
-- **At 1800x1200.** A working screen answers its questions in the first screen without a scroll (a project page: is it healthy, what moves now, what is next, what shipped) and states each fact once. It runs full width; a narrow centred column wastes half the frame, and only running prose caps near 76 ch, with side panels using the rest. 1280x800 keeps its layout and a phone scrolls vertically only ([concept](concept.md)).
-- **Anatomy.** Every card of the page, the secondary ones included, has its figure, pill, footer and context line, count bars a unit caption, times and ids mono; cards in one row end at one height; a subtitle carries a fact; a page of rows leads with a card of figure, context line and footer ([cards](cards.md)).
-- **Fact count.** A table in the design doc, `fact | words | places before | places after`, counted by eye and with `rg -c` over the source; every row of `places after` reads 1, and the empty sentence is one row per page ([copy](copy.md)).
-- **One view.** A table in the design doc, one row per part at 1800x1200 (`part | question | x,y w×h | joins`), that fails on two parts of one question in two rows, a full-width part of four rows, a card-wide gap and a part that joins nothing. The parts read as one working surface at 1800 and at 390: charts on one x share a card or sit side by side inside the 1800x1200 fold, a chart is as tall as its marks need, a long list scrolls in its own region beside its chart, no dead band under a short card, two parts on one focus share one legend and one caption, nothing is large for its own sake ([charts](charts.md)).
-- **Part to whole.** A few named parts are a one-row stacked `BarList` or a Meter in the series file's colours, the part that answers labelled on its segment, the legend rows spreading `focus.item(i)` or `focus.seriesItem(key)` ([charts](charts.md)).
-- **Heatmap tools.** `annotate` puts the value on the cells that answer, a `states` entry marks a partial bucket, `tickCols` keeps clock-stop ticks ([charts](charts.md)).
-- **Age and target.** An age or a duration column is a `c.meter` scaled to the oldest, with the rule that makes an item late stated on the column or the card; progress against a target is a [Meter](node_modules/basalt-ui/docs/meter.md) with zones or done against pace, never a rule over bars it does not measure, and the hero stands against the reference the data holds ([table](table.md), [charts](charts.md)).
-- **Table anatomy.** A table is a `DataPanel` or a card with a title and a context line, never a flush `Section`; mono is for ids and times only; a page of tables takes one `useChartFocus` over its rows, and a chart beside a list is drawn at the list's grain ([table](table.md), [charts](charts.md)).
-- **One name.** The axis, the list and the hero use one name per item; the kit cuts a long one ([charts](charts.md)).
-- **Groups and phones.** Many small cards are grouped by verdict, the group that needs action first, and the verdict reads above the fold at 390 ([charts](charts.md)).
-- **Linked parts.** Point at an item in the chart, then in the list, then step with the arrow keys: the other part focuses it every time, both ways. A `DataTable` or `BarList` of the page's items joins the one focus with or without a chart ([charts](charts.md)).
-- **Numbers.** Hero, tooltip and announcement go through one `useFormat` call at one precision, with a true minus (U+2212) and one currency style per page ([copy](copy.md)).
-- **Console anatomy.** Header with title and context line, figure and delta pill inside the inset, label and value pairs in the footer, monospace for ids, repo names and timestamps; a flush card with a small title over free text is the defect ([cards](cards.md)).
-- **Calm interaction.** The dimmed rest stays readable, and moving the pointer across the gap between two marks or rows never flashes the unfocused state ([charts](charts.md)).
+- **Answer on the mark**, **baseline**, **one name** and **axes**: [chart-labels](chart-labels.md).
+- **One measure**, **part to whole**, **age and target**: [chart-form](chart-form.md), [table](table.md) § Measures in a column.
+- **Colour budget**: one accent, one status hue on the state that needs action, one meaning per hue across the cards ([chart-color](chart-color.md)).
+- **Extremes, zeros, legends and heat grids**: [chart-honest](chart-honest.md).
+- **Linked parts and one readout**: point at an item in the chart, then in the list, then step with the arrow keys; the other part focuses it every time, both ways ([linked-parts](../../basalt-charts/references/linked-parts.md)).
+- **One view, sizes and 390**: [chart-view](chart-view.md).
+- **Phases**: every part declares the same slots in every phase, nothing derived from rows before ready ([states](states.md)).
+- **Fixture honesty**: the extreme reads true, a zero shows a cue, an empty state names the next step once ([concept](concept.md), [states](states.md)).
+- **Label collisions and light-mode contrast**: direct labels clear each other and the marks; every text and mark reads in both schemes.
+- **At 1800x1200**: a working screen answers its questions in the first screen without a scroll and runs full width; only running prose caps near 76 ch. 1280x800 keeps its layout and a phone scrolls vertically only ([concept](concept.md)).
+- **Anatomy**: every card has its figure, pill, footer and context line; times and ids mono; cards in one row end at one height ([cards](cards.md)).
+- **Table anatomy**: a `DataPanel` or a card with a title and a context line, never a flush `Section` ([table](table.md)).
+- **Words**: `basalt-ui shot detect --facts <page dir>` reports no repeat, and the read-aloud finds no fact in two slots ([copy](copy.md)).
+- **Numbers**: one `useFormat` at one precision, a true minus, one currency style ([copy](copy.md)).
+- **Calm interaction**: the dimmed rest stays readable, and the gap between two marks or rows never flashes the unfocused state.
 
 ## Dashboard tells
 

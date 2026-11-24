@@ -100,7 +100,9 @@ describe('reviewer rubric', () => {
     const order = ['content', 'layout', 'style'].map((w) => rubric.indexOf(`**${w}**`))
     expect(order.every((i) => i >= 0)).toBe(true)
     expect(order.toSorted((a, b) => a - b)).toEqual(order)
-    expect(rubric).toContain('Score: <0-100>')
+    expect(rubric).toContain('Score: <n>')
+    expect(rubric).toContain('with no floor')
+    expect(rubric).toContain('Counts: P0 <a>, P1 <b>, P2 <c>, P3 <d>')
     expect(rubric).toContain('never a gate')
   })
 

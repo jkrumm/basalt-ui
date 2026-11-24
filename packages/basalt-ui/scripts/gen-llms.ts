@@ -166,7 +166,7 @@ export function generateLlmsTxt(): string {
   const lines: string[] = [
     `# ${pkg.name} v${pkg.version}`,
     `# ${pkg.description ?? 'Opinionated framework for React apps on Base UI, Tailwind 4 and TanStack'}`,
-    '# Entry points (the v3 app; `basalt-ui` itself is the 2.x root, import nothing from it):',
+    '# Entry points (the v3 app; the `basalt-ui` root holds the state seams: `persisted`, `externalField`, `notify`, `useNow`, `useFormat`):',
     ...ENTRY_POINTS.map(([spec, names]) => `# ${spec.padEnd(20)} ${names.join(', ')}`),
     '# Peers of an `app` profile install: react, react-dom, @tanstack/react-router, @tanstack/react-query,',
     '# @base-ui/react, tailwindcss, @tailwindcss/vite; dev: vite, @tanstack/router-plugin. `basalt-ui init --profile app` writes main.tsx, _app.tsx, nav.tsx.',

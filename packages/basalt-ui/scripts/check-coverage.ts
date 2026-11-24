@@ -50,18 +50,18 @@ export const RULES_TOTAL_BUDGET = 230
  */
 export const AGENT_LINE_BUDGETS: Readonly<Record<string, number>> = {
   'agent/rules/basalt-tokens.md': 45,
-  'agent/rules/basalt-ui.md': 45,
+  'agent/rules/basalt-ui.md': 41,
   'agent/rules/basalt-page.md': 60,
   'agent/rules/basalt-state.md': 45,
   'agent/rules/basalt-charts.md': 40,
-  'agent/skills/basalt-app/SKILL.md': 300, // W10: +40 streaming snippet; +43 form-dialog snippet
-  'agent/skills/basalt-design/SKILL.md': 50, // a map of short lines; AGENT_BYTE_BUDGETS is the bar that binds
-  'agent/skills/basalt-charts/SKILL.md': 40,
-  'agent/templates/AGENTS-block.md.tpl': 55, // concept 4.4: at most 55 lines, imports nothing
+  'agent/skills/basalt-app/SKILL.md': 102,
+  'agent/skills/basalt-design/SKILL.md': 49, // a map of short lines; AGENT_BYTE_BUDGETS is the bar that binds
+  'agent/skills/basalt-charts/SKILL.md': 25,
+  'agent/templates/AGENTS-block.md.tpl': 50, // imports nothing; names every skill
   'agent/templates/AGENTS-block.tokens.md.tpl': 15, // the tokens-profile variant
   // Outside the layer total: a subagent loads only when invoked, not into every session.
-  'agent/reviewer/basalt-design-reviewer.md': 40, // the thin wrapper; agent/reviewer/rubric.md carries the items
-  'agent/templates/DESIGN.md.tpl': 45,
+  'agent/reviewer/basalt-design-reviewer.md': 31, // the thin wrapper; agent/reviewer/rubric.md carries the items
+  'agent/templates/DESIGN.md.tpl': 36,
 }
 
 /**
@@ -70,17 +70,57 @@ export const AGENT_LINE_BUDGETS: Readonly<Record<string, number>> = {
  * sits at its landed value until it is split.
  */
 export const AGENT_BYTE_BUDGETS: Readonly<Record<string, number>> = {
-  'agent/skills/basalt-app/SKILL.md': 12_900,
-  'agent/skills/basalt-design/SKILL.md': 8_000,
-  'agent/skills/basalt-charts/SKILL.md': 8_000,
+  'agent/skills/basalt-app/SKILL.md': 12_886,
+  'agent/skills/basalt-design/SKILL.md': 6_951,
+  'agent/skills/basalt-charts/SKILL.md': 7_972,
+  'agent/templates/AGENTS-block.md.tpl': 4_618,
+  'agent/reviewer/rubric.md': 18_443,
 }
+
+/**
+ * Every skill reference at its landed size: a page build reads the references its route names, so a
+ * reference grows only by losing a line elsewhere. A reference with no row here fails, so a new one is
+ * sized on purpose. `parts.md` is generated from the docs and grows with the parts, so it has none.
+ */
+export const REFERENCE_BYTE_BUDGETS: Readonly<Record<string, number>> = {
+  'agent/skills/basalt-app/references/live.md': 9_007,
+  'agent/skills/basalt-app/references/migrate.md': 6_691,
+  'agent/skills/basalt-app/references/performance.md': 3_094,
+  'agent/skills/basalt-app/references/recipes.md': 5_842,
+  'agent/skills/basalt-app/references/testing.md': 2_176,
+  'agent/skills/basalt-charts/references/custom-marks.md': 3_403,
+  'agent/skills/basalt-charts/references/linked-parts.md': 6_860,
+  'agent/skills/basalt-design/references/ai.md': 7_092,
+  'agent/skills/basalt-design/references/anti-defaults.md': 6_141,
+  'agent/skills/basalt-design/references/cards.md': 8_430,
+  'agent/skills/basalt-design/references/chart-color.md': 2_817,
+  'agent/skills/basalt-design/references/chart-form.md': 4_785,
+  'agent/skills/basalt-design/references/chart-honest.md': 3_596,
+  'agent/skills/basalt-design/references/chart-labels.md': 4_054,
+  'agent/skills/basalt-design/references/chart-view.md': 4_555,
+  'agent/skills/basalt-design/references/charts.md': 1_565,
+  'agent/skills/basalt-design/references/concept.md': 4_630,
+  'agent/skills/basalt-design/references/controls.md': 3_089,
+  'agent/skills/basalt-design/references/copy.md': 6_386,
+  'agent/skills/basalt-design/references/encoding.md': 4_739,
+  'agent/skills/basalt-design/references/forms.md': 10_807,
+  'agent/skills/basalt-design/references/motion.md': 5_834,
+  'agent/skills/basalt-design/references/state.md': 2_266,
+  'agent/skills/basalt-design/references/states.md': 4_921,
+  'agent/skills/basalt-design/references/table.md': 15_335,
+}
+
+/** Generated references, outside {@link REFERENCE_BYTE_BUDGETS}. */
+export const GENERATED_REFERENCES: ReadonlySet<string> = new Set([
+  'agent/skills/basalt-design/references/parts.md',
+])
 
 /**
  * The whole-layer bar — rules + skills + the AGENTS block together, since a per-file budget alone
  * can be satisfied by adding a sixth rule file or a fourth skill. The seeded `DESIGN.md.tpl` is
  * the consumer's own file after `init`, so it is outside the sum.
  */
-export const AGENT_LAYER_TOTAL_BUDGET = 625 // v3 rules: five files at 215 lines (was six at 266), block 38; skills unchanged until G1
+export const AGENT_LAYER_TOTAL_BUDGET = 456 // rules 230, skills 176, block 50
 
 /**
  * Assert the 9 invariants against the live SURFACES + the shipped agent layer.
@@ -227,6 +267,23 @@ export function checkCoverage(flags: readonly string[] = [], pkgRoot: string = P
     if (!existsSync(abs)) continue
     const bytes = Buffer.byteLength(readFileSync(abs, 'utf8'))
     if (bytes > budget) failures.push(`${rel}: ${bytes} bytes exceeds its ${budget}-byte budget`)
+  }
+  for (const skill of SKILL_NAMES) {
+    const refDir = resolve(pkgRoot, `agent/skills/${skill}/references`)
+    if (!existsSync(refDir)) continue
+    for (const name of readdirSync(refDir).filter((n) => n.endsWith('.md'))) {
+      const rel = `agent/skills/${skill}/references/${name}`
+      if (GENERATED_REFERENCES.has(rel)) continue
+      const budget = REFERENCE_BYTE_BUDGETS[rel]
+      if (budget === undefined) {
+        failures.push(
+          `${rel}: no byte budget (add it to REFERENCE_BYTE_BUDGETS at its landed size)`,
+        )
+        continue
+      }
+      const bytes = Buffer.byteLength(readFileSync(resolve(refDir, name), 'utf8'))
+      if (bytes > budget) failures.push(`${rel}: ${bytes} bytes exceeds its ${budget}-byte budget`)
+    }
   }
   for (const name of AGENT_NAMES) {
     if (!existsSync(resolve(pkgRoot, `agent/reviewer/${name}.md`)))

@@ -6,7 +6,7 @@ What to settle before the first component. Write it as `docs/design/<screen>.md`
 
 - Who opens this page, the one question it answers, and the decision they take after reading it, in one verb ("reassign", "escalate", "leave").
 - The figures that answer the question. The hero figure is the answer itself ("3 past SLA"), where a count of the things on the page answers nothing.
-- What this screen reads from `DESIGN.md`: its Identity and its narrowing deviations. The Direction is the owner's to write.
+- What this screen reads from `DESIGN.md`: its Identity and its narrowing deviations. The Direction is the user's to write; leave it as it stands.
 
 ## Plan the surface
 
@@ -14,7 +14,7 @@ Before any form is picked, write the surface as a few lines: the parts it needs,
 
 - Name the parts the question needs: the mark, the figure, and the detail (a list, a table or a timeline of the same items). A part that does nothing for the question is cut.
 - Say where each sits. A chart with a detail list sits side by side at a wide container, the list in its own [ScrollArea](node_modules/basalt-ui/docs/scroll-area.md) at the chart's height; at a narrow container the two stack, the chart first. Key it on the container. [lint:viewport-keyed]
-- Say what they share. Parts that show the same items share one focus: pointing at or stepping to an item in one focuses it in the other, both ways ([charts](charts.md)). A shared filter or scale is stated once, on the part that owns it.
+- Say what they share. Parts that show the same items share one focus: pointing at or stepping to an item in one focuses it in the other, both ways ([linked-parts](../../basalt-charts/references/linked-parts.md)). A shared filter or scale is stated once, on the part that owns it.
 - Size the footprint to the question: a comparison of two numbers is one small card that hugs its content, and the page leaves the rest empty.
 - The parts read as one working surface: a shared edge and a shared gap.
 - Pick the page's layout. The shell is two planes: the rail on the frame, the page on one work surface in the card colour. A list, a split page and a canvas are `Page fill`: the one main part meets the surface's edges. A dashboard, a form and a settings page stay padded and set their cards on the surface, where a card reads by its hairline ring alone; a card inside a card is the defect.
@@ -23,11 +23,11 @@ Before any form is picked, write the surface as a few lines: the parts it needs,
 
 - One row per dataset: source, shape, the form that answers it, the export, and the reason. The form comes from the question-to-form table in the AGENTS block.
 - A shape without a shipped form is reported to the user as a gap and left out of the page.
-- Open the doc of every export in the table before its props are written: [StatCard](node_modules/basalt-ui/docs/stat-card.md), [ChartCard](node_modules/basalt-ui/docs/chart-card.md), [DataTable](node_modules/basalt-ui/docs/data-table.md), [BarList](node_modules/basalt-ui/docs/bar-list.md), [Section](node_modules/basalt-ui/docs/section.md).
+- Pick each part from [parts](parts.md), and open the doc of every export in the table before its props are written: [StatCard](node_modules/basalt-ui/docs/stat-card.md), [ChartCard](node_modules/basalt-ui/docs/chart-card.md), [DataTable](node_modules/basalt-ui/docs/data-table.md), [BarList](node_modules/basalt-ui/docs/bar-list.md), [Section](node_modules/basalt-ui/docs/section.md).
 
 ## Layout
 
-- At desktop width, row by row: what pairs, what spans, what sits above the fold. The answer is in the first row. The owner works at 1800x1200: a working screen is full width and answers its questions there without a scroll, and running prose alone caps its measure.
+- At desktop width, row by row: what pairs, what spans, what sits above the fold. The answer is in the first row. Judge it at 1800x1200: a working screen is full width and answers its questions there without a scroll, and running prose alone caps its measure.
 - At 390: the single-column order, what collapses and what moves behind a disclosure. Keep the column that carries the answer and put the answer above the fold. [type:SizeClass]
 - Chrome follows [useSizeClass](node_modules/basalt-ui/docs/use-size-class.md); the page follows its container. [type:SizeClass]
 

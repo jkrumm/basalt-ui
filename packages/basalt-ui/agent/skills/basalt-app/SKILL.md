@@ -61,7 +61,7 @@ The profile is declared in `.basalt/manifest.json` and never inferred. Choose th
 - Route bars, the compiler check and DevTools: [performance](references/performance.md).
 - A new screen or a chart: `/basalt-design`, `/basalt-charts`.
 - App shortcuts: `defineCommands`; any other key is `useHotkey` (`@tanstack/react-hotkeys`, the exact version `basalt-ui` pins).
-- Icons: `bun add --exact lucide-react`, the recommended set (any `IconComponent` works). Wrap each React root once in `<LucideProvider size={16} strokeWidth={1.5} absoluteStrokeWidth>` (`lucide-react`), so every icon is 16 px (`size-icon`) with the shipped 1.5 px stroke.
+- Icons: `init` installs `lucide-react` (any `IconComponent` works) and its root templates wrap the React root once in `<LucideProvider size={16} strokeWidth={1.5} absoluteStrokeWidth>`: 16 px icons with the shipped 1.5 px stroke. A hand-built root adds both.
 - A surface drawn from state (a game table, a seating plan): list its directory under `bespoke` in `.basalt/manifest.json`, run `sync`, and keep to what `basalt-ui.md` allows there.
 
 ## Refresh after any upgrade
