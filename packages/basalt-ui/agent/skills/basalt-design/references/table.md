@@ -82,12 +82,12 @@ export function Bookings({ rows }: { rows: readonly Booking[] }) {
 
 ## Phone and the 390 px check
 
-- Below 480 px the same rows become cards: sort moves to the toolbar, selection to an explicit Select mode, the row's actions to a kebab. When slots run out the card chooses in this order: a slot a column names, then a column that draws a meter, a delta or a status, then text and number columns in declaration order; `card: 'value'` stays the override.
+- Below 480 px each row is a list row (`phone: 'cards'`, the default): title, up to two muted values, the answering value at the right edge, the rest behind a tap. Slots fill in this order: a slot a column names, then a meter, a delta or a status column, then text and numbers in declaration order; `card: 'value'` names the answer. `phone: 'fields'` is the label-and-value grid for a table of facts.
 - `phone: 'scroll'` keeps a numeric matrix a table, and only where the first column answers the question: it pins the first column and pushes every other off screen. Otherwise `priority` keeps the answer column and drops the rest.
-- A table whose phone cards run past one screen at 390 is `phone: 'columns'` (the name, the card's `value` and the first `meta` that draws a meter, a delta or a status, else the first `meta`, as a table, the rest in the row's details). Decide from the 390 shot, not a row count: cards of five or six lines pass one screen at about six rows. `columns` keeps three columns, so the answering column is among them: set its `priority` or a `card` slot.
-- Every column that answers the question sets its `card` slot (a meter column too: `c.meter(key, { max, card })`), since a column without one takes the kit's order and can drop at 390.
-- A phone card labels every value but the title with its column header, so give every column a header that reads well beside its value. A unit travels in the cell, never only in the header.
-- Every column's data must be reachable on a phone. With `detail`, tapping a row opens it; with `onRowActivate`, the row navigates and a Details door opens the sheet; with neither, tapping opens the auto sheet of every column. Render the page at 390 and count: a column that appears nowhere is a defect.
+- A table whose phone rows run past one screen at 390 is `phone: 'columns'` (the name, the card's `value` and the first `meta` that draws a meter, a delta or a status, else the first `meta`, as a table, the rest in the row's details). Decide from the 390 shot, not a row count. `columns` keeps three columns, so the answering column is among them: set its `priority` or a `card` slot.
+- Every column that answers the question sets its `card` slot (`c.meter(key, { max, card })` too), since a column without one takes the kit's order and can drop at 390.
+- The default row prints no header, so a header need not read beside its value (the sheet and `fields` still print it). A unit travels in the cell, never only in the header.
+- Every column's data must be reachable, and the row draws four. With `detail`, a tap opens it, so it writes the columns the row leaves out; with `onRowActivate`, the row navigates and a Details door opens the sheet; with neither, a tap opens the auto sheet of every column. Render at 390 and count: a column that appears nowhere is a defect.
 
 ## Selection
 

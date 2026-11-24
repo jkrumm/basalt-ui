@@ -92,6 +92,18 @@ export type PlannedColumn = {
    * Every other column leaves the phone row and stays in the row's details.
    */
   phoneKeep: boolean
+  /**
+   * The answering column of `phone: 'cards'` (the list row), drawn at its right edge: the column that
+   * names the card's `value` slot, else the first that draws a meter, a delta or a status, else the
+   * column placed in `value`.
+   */
+  phoneValue: boolean
+  /**
+   * Which muted value `phone: 'cards'` draws under the title: the first two visible columns placed in
+   * `subtitle`, `meta` or `value` that are not the answering one, in declaration order. Every other
+   * column leaves the row and is reached through the tap.
+   */
+  phoneMeta: 1 | 2 | null
   /** The caller asked for `card: 'detail'`: any other column in `detail` was left there by its kind or by a full slot. */
   cardDetail: boolean
 }
@@ -343,6 +355,19 @@ export function planInputs(inputs: readonly PlanInput[], options: PlanOptions = 
   // `phone: 'columns'` keeps one meta column: the first that draws a mark, else the first.
   const metas = places.flatMap((p, index) => (p === 'meta' && visible[index] ? [index] : []))
   const firstMeta = metas.find((index) => marked(inputs[index]!)) ?? metas[0] ?? -1
+  // `phone: 'cards'` answers with one column at the row's end and draws two muted values under the title.
+  const drawn = (index: number): boolean =>
+    visible[index]! && ['value', 'badge', 'meta', 'subtitle'].includes(places[index]!)
+  const named = inputs.findIndex(
+    (c, index) => c.cardFirst === true && drawn(index) && places[index] === 'value',
+  )
+  const marks = inputs.findIndex((c, index) => drawn(index) && marked(c))
+  const answer = named !== -1 ? named : marks !== -1 ? marks : firstValue
+  const lines = places.flatMap((p, index) =>
+    (p === 'subtitle' || p === 'meta' || p === 'value') && visible[index] && index !== answer
+      ? [index]
+      : [],
+  )
   const columns = inputs.map((c, index): PlannedColumn => ({
     id: c.id,
     kind: c.kind,
@@ -363,6 +388,8 @@ export function planInputs(inputs: readonly PlanInput[], options: PlanOptions = 
       places[index] === 'kebab' ||
       index === firstValue ||
       index === firstMeta,
+    phoneValue: answer === index,
+    phoneMeta: lines[0] === index ? 1 : lines[1] === index ? 2 : null,
   }))
   return { columns, fullAt, reducedFrom, demoted }
 }

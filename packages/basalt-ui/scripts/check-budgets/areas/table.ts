@@ -117,7 +117,8 @@ export const rows: readonly RowDef[] = [
     // 212700 -> 222400 (Issue 3102): 221902 B measured; the table's selects draw the shared list engine.
     // 222400 -> 222600 (Issue 3141, bench-inbox-mail): 222412 B measured; `BulkBar` gains its list form (a count and typed actions, no table).
     // 222600 -> 226200 (Issue 3206): 225987 B measured; the detail Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points.
-    ceiling: 226200,
+    // 226200 -> 226500 (Issue 3211): +286 B gz for the phone list row: the plan's answering column and the two meta places the stylesheet reads.
+    ceiling: 226500,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
@@ -129,6 +130,13 @@ export const raises: Raises = {
       to: 226200,
       consumer:
         'the mobile foundation (owner direction 2026-11-24, Issue 3206): a bottom Sheet with a grabber, snap points and the Base UI VirtualKeyboardProvider that lifts a form above the software keyboard, a shell keyboard inset and pressed styles on touch',
+      repo: 'basalt-ui',
+    },
+    {
+      from: 226200,
+      to: 226500,
+      consumer:
+        "the owner's phone review of 2026-11-24 (Issue 3211): a table's phone projection read as a grid of label and value lines with no hierarchy; the default is a list row (title, two muted values, the answering value at the right edge), so the plan names the answering column and the two values",
       repo: 'basalt-ui',
     },
     {

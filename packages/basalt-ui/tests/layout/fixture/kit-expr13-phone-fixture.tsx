@@ -31,7 +31,7 @@ const ISSUES: readonly Issue[] = [
 ]
 const c = col<Issue>()
 
-function Table({ id, phone }: { id: string; phone: 'cards' | 'scroll' }): ReactElement {
+function Table({ id, phone }: { id: string; phone: 'fields' | 'scroll' }): ReactElement {
   const table = useDataTable<Issue>({
     id,
     label: 'Issues',
@@ -57,7 +57,7 @@ function Fixture(): ReactElement {
           title="Issues"
           phase="ready"
           bodySize={{ rows: 3 }}
-          body={() => <Table id="k13-phone" phone="cards" />}
+          body={() => <Table id="k13-phone" phone="fields" />}
         />
       </div>
       <div data-testid="k13-scroll" className="min-w-0">

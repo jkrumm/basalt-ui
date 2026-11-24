@@ -1,6 +1,6 @@
 /**
- * Expression cycle 14, the phone card's mono id (`v3-expr-14-kit-fixes` 7e, n61): at 390 a mono entity's id sits on
- * the card's title line, set in the mono face, with no labelled line of its own. Fixture:
+ * Expression cycle 14, the phone row's mono id (`v3-expr-14-kit-fixes` 7e, n61): at 390 a mono entity's id is a
+ * muted value under the row's title, set in the mono face, with no header label of its own. Fixture:
  * `fixture/kit-expr14-phone-fixture.tsx`.
  */
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
@@ -28,7 +28,7 @@ type Card = {
   titleTop: number
   idLabelText: string
   idMono: boolean
-  idOnTitleLine: boolean
+  idUnderTitle: boolean
 }
 
 const card = (): Promise<Card> =>
@@ -50,17 +50,16 @@ const card = (): Promise<Card> =>
             titleTop: titleBox.top + titleBox.height / 2,
             idLabelText: getComputedStyle(id, '::before').content,
             idMono: getComputedStyle(name).fontFamily.includes('Mono'),
-            idOnTitleLine:
-              Math.abs(idBox.top + idBox.height / 2 - (titleBox.top + titleBox.height / 2)) < 3,
+            idUnderTitle: idBox.top >= titleBox.bottom - 1,
           }
         })
       })
     : Promise.reject(new Error('fixture not built'))
 
-layout('a phone card shows a mono entity id on its title line, in mono', () => {
-  test('the id sits on the title line, not on a labelled line of its own', async () => {
+layout('a phone row shows a mono entity id under its title, in mono', () => {
+  test('the id sits on the muted line under the title', async () => {
     const c = await card()
-    expect(c.idOnTitleLine).toBe(true)
+    expect(c.idUnderTitle).toBe(true)
   })
 
   test('the id is set in the mono face', async () => {

@@ -1,5 +1,5 @@
 /**
- * Expression cycle 13 kit fixes, the phone card (`v3-expr-13-kit-fixes` 10): at 390 a mono entity's value
+ * Expression cycle 13 kit fixes, the phone fields grid (`phone: 'fields'`; `v3-expr-13-kit-fixes` 10): at 390 a mono entity's value
  * stays on its label's line, and a card's values start on the card's content edge, with no cell
  * padding of their own. Fixture: `fixture/kit-expr13-phone-fixture.tsx`.
  */
@@ -71,7 +71,7 @@ const card = (): Promise<Card> =>
     : Promise.reject(new Error('fixture not built'))
 
 layout(
-  'a phone card keeps its mono id on the title line and its values on the content edge',
+  'a phone fields row keeps its mono id on the title line and its values on the content edge',
   () => {
     test('the id sits on the title line, not on a labelled line of its own', async () => {
       const c = await card()

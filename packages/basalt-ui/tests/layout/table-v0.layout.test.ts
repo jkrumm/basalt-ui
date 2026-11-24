@@ -253,17 +253,53 @@ layout('DataTable tiers and pager', () => {
   })
 
   describe('reachability at 390', () => {
+    const HIDDEN_HEADERS = ['Note', 'Quantity', 'Created', 'Seen', 'Score']
+
     for (const id of ['tv0-detail', 'tv0-activate', 'tv0-none']) {
-      test(`${id}: every column of a row is drawn and visible`, async () => {
+      test(`${id}: the list row draws its title, muted values and answer, each with a box`, async () => {
         const page = await open(PHONE)
-        const hidden = await page.raw.evaluate((probe) => {
+        const found = await page.raw.evaluate((probe) => {
           const row = document.querySelector(`[data-testid="${probe}"] tbody tr`)
-          return [...(row?.querySelectorAll<HTMLElement>('td') ?? [])].flatMap((td, i) => {
-            const r = td.getBoundingClientRect()
-            return r.width > 0 && r.height > 0 ? [] : [`cell ${i}`]
-          })
+          const cells = [
+            ...(row?.querySelectorAll<HTMLElement>(
+              '[data-place="title"], [data-phone-meta], [data-phone-value]',
+            ) ?? []),
+          ]
+          return {
+            drawn: cells.length,
+            empty: cells.flatMap((td, i) => {
+              const r = td.getBoundingClientRect()
+              return r.width > 0 && r.height > 0 ? [] : [`cell ${i}`]
+            }),
+          }
         }, id)
-        expect(hidden).toEqual([])
+        expect(found.drawn).toBeGreaterThanOrEqual(2)
+        expect(found.empty).toEqual([])
+      })
+    }
+
+    test('tv0-detail: a tap on the row opens the caller detail', async () => {
+      const page = await open(PHONE)
+      await page.raw.click('[data-testid="tv0-detail"] tbody tr [data-place="title"]')
+      await page.raw.waitForSelector('[role="dialog"]')
+    })
+
+    for (const [id, door] of [
+      ['tv0-activate', true],
+      ['tv0-none', false],
+    ] as const) {
+      test(`${id}: ${door ? 'the Details door' : 'a tap on the row'} opens a sheet that lists the columns the row leaves out`, async () => {
+        const page = await open(PHONE)
+        await page.raw.click(
+          door
+            ? `[data-testid="${id}"] tbody tr [data-slot="table-expand"]`
+            : `[data-testid="${id}"] tbody tr [data-place="title"]`,
+        )
+        await page.raw.waitForSelector('[role="dialog"]')
+        const text = await page.raw.evaluate(
+          () => document.querySelector('[role="dialog"]')?.textContent ?? '',
+        )
+        for (const header of HIDDEN_HEADERS) expect(text).toContain(header)
       })
     }
   })

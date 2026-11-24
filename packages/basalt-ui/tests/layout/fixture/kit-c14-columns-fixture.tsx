@@ -1,7 +1,7 @@
 /**
  * Expression cycle 14 contract (3), a phone form for a long numeric table (n65 .23, cycle 13 n62 .57): twelve
- * reasons over five columns as `phone: 'columns'` (`c14-columns`) and the same table as cards
- * (`c14-cards`). Entry of `kit-c14-columns.layout.test.ts`.
+ * reasons over five columns as `phone: 'columns'` (`c14-columns`) and the same table as fields
+ * (`c14-cards`, the label-and-value grid). Entry of `kit-c14-columns.layout.test.ts`.
  */
 import { createRoot } from 'react-dom/client'
 import type { ReactElement } from 'react'
@@ -93,7 +93,7 @@ function Panel(): ReactElement {
   )
 }
 
-function Table({ id, phone }: { id: string; phone: 'columns' | 'cards' }): ReactElement {
+function Table({ id, phone }: { id: string; phone: 'columns' | 'fields' }): ReactElement {
   const table = useDataTable<Reason>({
     id,
     label: 'Friction reasons',
@@ -114,7 +114,7 @@ function Fixture(): ReactElement {
   return (
     <main className="flex flex-col gap-8 p-4 text-foreground">
       <Table id="c14-columns" phone="columns" />
-      <Table id="c14-cards" phone="cards" />
+      <Table id="c14-cards" phone="fields" />
       <Wide />
       <Panel />
     </main>

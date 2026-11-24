@@ -11,7 +11,7 @@ import { TICK_COL_PX } from '../core/plan'
 import type { TableModel } from '../use-data-table'
 
 export type TierAttributes = {
-  'data-phone': 'cards' | 'scroll' | 'columns'
+  'data-phone': 'cards' | 'fields' | 'scroll' | 'columns'
   'data-below': '480' | '700' | '800' | 'always'
 }
 

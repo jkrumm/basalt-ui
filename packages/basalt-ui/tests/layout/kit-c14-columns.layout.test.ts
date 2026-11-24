@@ -1,7 +1,7 @@
 /**
  * Expression cycle 14 contract (3), `phone: 'columns'` (n65 .23, cycle 13 n62 .57; Spec artifact_01a1f6fb,
  * Issue 2500): at 390 a twelve-row, five-column numeric table keeps its header, the name, the answer
- * column and one count in view with no sideways overflow, at under half the height of its cards form.
+ * column and one count in view with no sideways overflow, at under half the height of its fields form.
  * Fixture: `fixture/kit-c14-columns-fixture.tsx`.
  */
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
@@ -73,7 +73,7 @@ layout("a long numeric table as phone: 'columns' at 390", () => {
     expect(table.right).toBeLessThanOrEqual(PHONE.width)
   })
 
-  test('is under half the height of the same rows as cards', async () => {
+  test('is under half the height of the same rows as fields', async () => {
     const page = await open()
     const [columns, cards] = await Promise.all([
       shown(page, 'c14-columns'),

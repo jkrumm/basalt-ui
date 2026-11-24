@@ -10,8 +10,9 @@ slots: []
 # useDataTable
 
 The table's state, engine, selection and phase in one call. Hand the result to `DataTable` or
-to the parts. A narrow table becomes cards: `phone` defaults to `'cards'` (`'scroll'` pins the
-name and scrolls sideways; `'columns'` keeps a table of the name, the card's `value` and its first
+to the parts. A narrow table becomes cards: `phone` defaults to `'cards'` (a list row: the title, up to
+two muted meta values, the answering value at the right edge, the rest behind a tap; `'fields'` is the
+label-and-value grid; `'scroll'` pins the name and scrolls sideways; `'columns'` keeps a table of the name, the card's `value` and its first
 `meta`, the rest in the row's details) and `cardsBelow` to `'regular'` (480 px of the table's own width, 700 or
 800 px when its priority 1 and 2 columns need more; `'wide'` is always 800, `'always'` never shows a
 table). The tiers live in `basalt-ui/table.css`, which `basalt()` imports for any module that imports
@@ -36,7 +37,7 @@ useDataTable<T, const F extends readonly unknown[] = readonly any[]>(options: Us
   empty?: Empty | null  // Why the table has no rows, and what to do about it: its `cause` replaces the default sentence and its `action` renders beside it
   filters?: PageFilters<T, F>  // Page fields that narrow a client table's rows (a Section's filters over it): each is a field handle with a row predicate, `match(row, value)` typed by that field's value
   resetOn?: readonly unknown[]
-  phone?: "cards" | "scroll" | "columns"  // What a narrow table becomes: `cards`; `scroll`, the table scrolling sideways with its first column pinned; or `columns`, the table keeping its header and three columns (the name, the column placed in the card's `value` and the first placed in its `meta` that draws a meter, a delta or a status, else the first placed in it) while the rest move to the row's details: a long numeric table that must keep its answer in view at 390; default 'cards'
+  phone?: "cards" | "fields" | "scroll" | "columns"  // What a narrow table becomes: `cards` (the default), a list row: the title, up to two muted meta values under it, the answering value (the card's `value`) at the right edge, and every other column behind the tap; `fields`, the label-and-value grid, each value on a line of its own named by its column header, for a table that is a form of facts; `scroll`, the table scrolling sideways with its first column pinned; or `columns`, the table keeping its header and three columns (the name, the column placed in the card's `value` and the first placed in its `meta` that draws a meter, a delta or a status, else the first placed in it) while the rest move to the row's details: a long numeric table that must keep its answer in view at 390; default 'cards'
   look?: "reading" | "grid"  // How the table draws its rules; default 'reading'
   headerIcons?: boolean  // Whether a header draws its column icon (each kind's default or the `headerIcon` a column names); default false in the reading look, true in the grid look
   cardsBelow?: "regular" | "wide" | "always"  // The width below which the table becomes cards (`regular` is 480 px, `wide` 800 px, `always` never a table); default 'regular'
