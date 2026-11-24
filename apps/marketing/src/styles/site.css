@@ -1,8 +1,0 @@
-/* The site's one sheet: basalt's static sheet (the stock tokens included; a retune is a
-   `basalt-ui tokens:css` output declared in .basalt/manifest.json) and the sources of the islands
-   on /charts and /guides/islands-in-mdx: the chart and card classes, the table's. */
-@import "basalt-ui/static.css";
-@source '../../node_modules/basalt-ui/dist/charts';
-@source '../../node_modules/basalt-ui/dist/cards';
-@source '../../node_modules/basalt-ui/dist/table';
-@source '../../node_modules/basalt-ui/dist/astro/mdx';

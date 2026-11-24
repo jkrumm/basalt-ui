@@ -265,7 +265,7 @@
       "error",
       {
         "componentImports": [
-          "^basalt-ui/(?:ui|static)/"
+          "^basalt-ui/(?:ui/|static(?:/|$))"
         ]
       }
     ],
@@ -276,7 +276,7 @@
           "layout"
         ],
         "componentImports": [
-          "^basalt-ui/(?:ui|static)/"
+          "^basalt-ui/(?:ui/|static(?:/|$))"
         ],
         "contracts": []
       }
