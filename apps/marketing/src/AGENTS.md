@@ -21,15 +21,19 @@ The root `apps/marketing/AGENTS.md` points here. Read this before changing a pag
   with the Astro Fonts API, inlines the scheme script and the parts' listeners in the head, and fails the
   build on a part that needs JavaScript rendered outside an island.
   Never add `tailwindcss()` to `vite.plugins` by hand: the integration adds it once.
-- `src/layouts/Layout.astro` is the one layout for non-docs pages: `<BasaltFonts />` in the head,
+- `src/layouts/Layout.astro` is the one layout for non-docs pages: `<SiteHead>` and `<BasaltFonts />` in the head,
   `SiteHeader`, `SiteFooter`, `ThemeSwitch`. Links and every visible word live in `src/lib/site.ts`;
   a part takes its words as props, never from basalt.
 - `/docs/*` is Starlight (`src/content/docs/docs/`), themed by `basalt-ui/starlight.css` in
   `customCss`. `src/components/starlight/` overrides `Head` (fonts), `ThemeProvider` (basalt's scheme
   script) and `ThemeSelect` (basalt's `ThemeSwitch`), so docs and site share one stored scheme.
-- `/guides/*` are MDX files under `src/guides/` rendered in `SiteArticle` with
-  `siteMdxComponents(...)` as their components; raw Markdown is styled by element through
-  `.basalt-prose`, and `<SiteCallout>`, `<Steps>` and `<Figure>` need no import.
+- `/guides/*` are the `guides` collection (`src/content.config.ts`: a glob over `src/guides/*.mdx`, front matter
+  `title`, `description`, `date`, `order`). Adding a guide is adding one MDX file: `pages/guides/[...slug].astro` renders it
+  in `SiteArticle` with `SiteNav` as the sidebar, the headings as the TOC, the reading time and the pager from the
+  collection, and `siteMdxComponents(...)`, `Chart` and `DataTable` as its components. `/guides` lists them with
+  `SitePostList`; `/changelog` is `SiteChangelog` over `src/lib/changelog.ts`, which reads the package's CHANGELOG.md.
+  Raw Markdown is styled by element through `.basalt-prose`, and `<SiteCallout>`, `<Steps>` and `<Figure>` need no import.
+- `Layout.astro` writes the head with `SiteHead` (canonical, Open Graph, article JSON-LD for a guide).
 - `/` is built from the landing blocks (`SiteHero`, `SiteBento`, `SiteComparison`, `SiteQuestionList`,
   `SiteCallToAction`); its words and data live in `src/lib/landing.ts`. `src/components/` holds React
   compositions of basalt parts that render with no directive (the hero's stat cards).
