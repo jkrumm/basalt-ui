@@ -19,16 +19,15 @@ means "inherits the basalt-ui defaults unchanged."**
 ## Series dictionary
 
 The framework owns the roles and the available hues; this table is the app's **data dictionary** —
-which metric maps to which hue, as `{ light, dark }` pairs wired through `defineSeries()`.
+which metric maps to which hue, as `{ light, dark }` pairs under `series.<group>.<key>` in `src/basalt.tokens.ts`.
 
-| Series name              | `defineSeries` key       | Role / earned reason                                                   |
-| ------------------------ | ------------------------ | ---------------------------------------------------------------------- |
-| _demo series (multiple)_ | see `src/demo/series.ts` | Chart-kind demo pages — categorical separation, not one metric's trend |
+| Series name              | `series.<group>.<key>`     | Role / earned reason                                                   |
+| ------------------------ | -------------------------- | ---------------------------------------------------------------------- |
+| _demo series (multiple)_ | see `src/basalt.tokens.ts` | Chart-kind demo pages — categorical separation, not one metric's trend |
 
 ```ts
-// apps/playground/src/demo/series.ts — the app's guard-exempt series file
-import { defineSeries } from 'basalt-ui/tokens'
-export const DEMO_SERIES = defineSeries({/* … demo series, see the file itself */})
+// apps/playground/src/basalt.tokens.ts — the app's guard-exempt series file
+export default { series: {/* … demo groups, see the file itself */} } as const
 ```
 
 A series earns a color only for trend, signal/status or categorical separation. `/basalt-design` is

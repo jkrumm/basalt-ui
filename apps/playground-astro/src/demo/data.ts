@@ -2,21 +2,13 @@
  * The demo data of the Astro playground. Charts and tables read the Vite playground's own fixtures
  * (apps/playground/src/demo) so a part looks the same in both playgrounds and the two can be compared.
  */
-import { defineSeries } from 'basalt-ui/tokens'
+import tokens from '../basalt.tokens'
 
 export { RUNS } from '../../../playground/src/demo/runs'
 export type { Run } from '../../../playground/src/demo/runs'
 
-/**
- * The Vite playground's DEMO_SERIES pairs (apps/playground/src/demo/series.ts), declared here because that
- * file also augments `BasaltRegister` for the Vite app, which this app must not inherit.
- */
-export const DEMO_SERIES = defineSeries({
-  sessions: { light: '#2871c7', dark: '#5190f7' },
-  signups: { light: '#10781c', dark: '#65d289' },
-  revenue: { light: '#c07e3c', dark: '#f9a13d' },
-  churn: { light: '#af293e', dark: '#e46360' },
-})
+/** The Vite playground's `demo` series pairs, authored once in `../basalt.tokens`. */
+export const DEMO_SERIES = tokens.series.demo
 
 export type Day = { t: Date; sessions: number; signups: number }
 
