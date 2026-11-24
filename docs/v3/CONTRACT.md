@@ -74,6 +74,7 @@ home for a consumer's type. One import path per symbol. The generated docs under
 | `basalt-ui/static.css` | non-js-asset | `tailwindcss` |
 | `basalt-ui/starlight.css` | non-js-asset | none |
 | `basalt-ui/astro/BasaltFonts.astro` | non-js-asset | none |
+| `basalt-ui/astro/SiteHead.astro` | non-js-asset | none |
 | `basalt-ui/astro/mdx/Chart.astro` | non-js-asset | `@tanstack/charts`, `d3-scale` |
 | `basalt-ui/astro/mdx/DataTable.astro` | non-js-asset | `@tanstack/react-table`, `@base-ui/react` |
 | `basalt-ui/fonts.css` | non-js-asset | none |
