@@ -10,8 +10,9 @@ import { MATRIX, partsSource } from '../../scripts/gen-astro-parts'
 import { basaltAstro } from './index'
 import { deadIslandMessage, deadIslands, deadSlots, requiredPartOf } from './islands'
 import { ASTRO_PARTS } from './parts'
-import { importedDirs, renderSiteSources } from './sources'
+import { renderSiteSources, siteImports } from './sources'
 
+const PKG = join(import.meta.dir, '../..')
 const tmp = (): string => mkdtempSync(join(tmpdir(), 'basalt-astro-'))
 
 describe('ASTRO_PARTS', () => {
@@ -87,7 +88,7 @@ describe('the island check', () => {
 })
 
 describe('.basalt/sources.css', () => {
-  it('lists the directories the site imports, the MDX tags their islands, and skips code fences', () => {
+  it('reads the closure keys the site imports, the MDX tags as their island subpath, and skips code fences', () => {
     const root = tmp()
     mkdirSync(join(root, 'src/pages'), { recursive: true })
     mkdirSync(join(root, 'src/islands'), { recursive: true })
@@ -103,23 +104,31 @@ describe('.basalt/sources.css', () => {
       join(root, 'src/pages/post.mdx'),
       "# Post\n\n```ts\nimport { Board } from 'basalt-ui/page'\n```\n",
     )
-    expect(importedDirs(join(root, 'src'))).toEqual(['astro/mdx', 'charts', 'table', 'ui/button'])
+    expect(siteImports(join(root, 'src'))).toEqual({
+      keys: ['charts', 'table', 'ui/button'],
+      tags: true,
+    })
   })
 
-  it('imports static.css, then the recorded token sheets, then a source line per directory', () => {
-    const pkg = tmp()
-    for (const dir of ['dist/charts', 'dist/ui']) mkdirSync(join(pkg, dir), { recursive: true })
+  it('sources what a dialog island reaches, its button included, and never drops a static.css primitive', () => {
     const css = renderSiteSources({
       outFile: '/site/.basalt/sources.css',
-      pkgRoot: pkg,
-      dirs: ['charts', 'ui/button', 'missing'],
+      pkgRoot: PKG,
+      keys: ['ui/dialog'],
+      tags: false,
       tokenSheets: ['/site/tokens.css'],
     })
     const lines = css.split('\n')
     expect(lines[1]).toBe('@import "basalt-ui/static.css";')
     expect(lines[2]).toBe('@import "../tokens.css";')
-    expect(lines.filter((l) => l.startsWith('@source'))).toHaveLength(2)
-    expect(css).toContain('/dist/ui/button.*";')
-    expect(css).not.toContain('missing')
+    const excluded = lines
+      .filter((l) => l.startsWith('@source not'))
+      .map((l) => /ui\/([a-z-]+)\.\*/.exec(l)?.[1])
+    expect(lines.some((l) => /^@source "[^"]*\/ui";$/.test(l))).toBe(true)
+    expect(excluded).not.toContain('dialog')
+    expect(excluded).not.toContain('button')
+    expect(excluded).not.toContain('alert')
+    expect(excluded).not.toContain('table')
+    expect(excluded).toContain('accordion')
   })
 })
