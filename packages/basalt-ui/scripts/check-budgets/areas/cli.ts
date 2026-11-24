@@ -61,11 +61,12 @@ export const rows: readonly RowDef[] = [
   // 12905 -> 12947 (shot-overlap): `shot`'s measurer clips each text box by its clipping ancestors and its own ellipsis before the overlap test (measure.ts, +42).
   // 12970 -> 13272 (ga-agent-layer, Issue 3167): `init --profile app` installs lucide-react for the icon provider its root templates mount (init/steps.ts +13); `shot detect --facts <dir>` counts the words, phrases and constants a page says in several places (shot/facts.ts +208, shot/detect.ts +79, help.ts +2). Consumer: a basalt-design page whose fact count was a shell one-liner.
   // 13272 -> 13285 (init-sibling-oxfmt): a sibling app's new `.oxfmtrc.json` copies the repo root's formatter settings, so oxfmt does not read a file holding only ignorePatterns (cli/init/steps.ts +13).
+  // 13285 -> 13286 (init-layout-seeds, Issue 3171): `init` seeds no `_app` layout or nav beside a root route the app keeps or a route that already serves `/`, and keeps the route components main.tsx imports (cli/init/router-seeds.ts). Consumer: the playground, moved onto init by Issue 3164, which kept its own `__root.tsx` and could not build.
   {
     id: 'cli-lines',
     order: 110,
     label: 'CLI non-test lines (src/cli/**)',
-    ceiling: 13285,
+    ceiling: 13286,
     measure: () =>
       totalLines(
         walkFiles(join(PKG_ROOT, 'src/cli'), /\.tsx?$/).filter((p) => !/\.test\.tsx?$/.test(p)),
@@ -203,6 +204,13 @@ export const raises: Raises = {
       to: 13285,
       consumer:
         '`init` in a sibling app (apps/playground, Issue 3164) writing its own .oxfmtrc.json',
+      repo: 'basalt-ui',
+    },
+    {
+      from: 13285,
+      to: 13286,
+      consumer:
+        'the playground, moved onto init by Issue 3164, kept its own __root.tsx and could not build (Issue 3171)',
       repo: 'basalt-ui',
     },
   ],
