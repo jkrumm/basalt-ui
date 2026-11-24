@@ -41,6 +41,23 @@ const classOf = (range: string): string => {
   return range.startsWith('~') ? 'coupled' : 'stable'
 }
 
+describe('lint tool pins', () => {
+  it('keeps the dev copies of oxlint and @shadcn/lint on their peer pins', () => {
+    const rootDev = (
+      JSON.parse(readFileSync(join(pkgRoot, '../../package.json'), 'utf8')) as {
+        devDependencies: Record<string, string>
+      }
+    ).devDependencies
+    const pkgDev = (
+      JSON.parse(readFileSync(join(pkgRoot, 'package.json'), 'utf8')) as {
+        devDependencies: Record<string, string>
+      }
+    ).devDependencies
+    expect(rootDev['oxlint']).toBe(pkg.peerDependencies['oxlint'])
+    expect(pkgDev['@shadcn/lint']).toBe(pkg.peerDependencies['@shadcn/lint'])
+  })
+})
+
 describe('peer table (MAINTAINING.md)', () => {
   const rows = tableRows()
 

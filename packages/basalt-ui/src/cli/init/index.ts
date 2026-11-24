@@ -3,7 +3,7 @@
  * [--tokens-json-out <json>] [--extra <file>] [--accent --neutral --vibrancy --selector]`: the one
  * door into an install (docs/v3/concepts/skills-agent-layer.md 4.1). The profile is declared,
  * never inferred. It declares the manifest, generates the token outputs, installs the profile's
- * peers at exact pins, places the managed files through `sync`, seeds the budget and DESIGN.md,
+ * peers within their declared ranges (saved exactly), places the managed files through `sync`, seeds the budget and DESIGN.md,
  * writes the router scaffold at `app` (`./router-seeds`; with `--start` the TanStack Start host
  * scaffold instead) and ends in `doctor`, which reports, then the session note when the run changed an
  * agent-read file (`../agent-note`); `init` exits 0 when every step ran, 1 when one could not.
