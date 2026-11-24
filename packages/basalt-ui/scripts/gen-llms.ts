@@ -171,7 +171,7 @@ export function generateLlmsTxt(): string {
     ...ENTRY_POINTS.map(([spec, names]) => `# ${spec.padEnd(20)} ${names.join(', ')}`),
     '# Peers of an `app` profile install: react, react-dom, @tanstack/react-router, @tanstack/react-query,',
     '# @base-ui/react, tailwindcss, @tailwindcss/vite; dev: vite, @tanstack/router-plugin. `basalt-ui init --profile app` writes main.tsx, _app.tsx, nav.tsx.',
-    "# A frame's `phase` is `Phase | QueryStateLike`, and the frame's types (`Empty`, `FrameState`, `Phase`, `QueryStateLike`, `Menu`, `Delta`, `Status`, `Tone`, `FootFacts`) import from `basalt-ui/cards`: `import type { Phase, QueryStateLike } from 'basalt-ui/cards'`.",
+    "# A frame's `phase` is `Phase | QueryStateLike`, and the frame's types (`Empty`, `FrameState`, `Phase`, `QueryStateLike`, `CardMenu`, `Delta`, `Verdict`, `Tone`, `FootFacts`) import from `basalt-ui/cards`: `import type { Phase, QueryStateLike } from 'basalt-ui/cards'`.",
     "# A subpath's `Install:` line is its required peers; `OptionalPeers:` are import()-only, install on use.",
     '',
     `Package: ${pkg.name}`,
