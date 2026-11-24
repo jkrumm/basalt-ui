@@ -1,5 +1,7 @@
 import type { ReactElement } from 'react'
 import { Bars, ChartCard, Lines } from '../../charts'
+import { IntlScope } from '../../core/provider-props'
+import type { IslandMessages } from './messages'
 
 /** One series of a content-site chart: plain data, so it can cross an island boundary. */
 export type ChartSeriesSpec = {
@@ -29,6 +31,10 @@ export type ChartIslandProps = {
   /** The key of the x value: an ISO date string (read as a time) or a category. */
   x: string
   series: readonly ChartSeriesSpec[]
+  /** The locale numbers and dates read in. Default `en`. */
+  locale?: string
+  /** Overrides of the chart's English words, by key: `{ 'charts.unavailable': 'Keine Daten' }`. */
+  messages?: IslandMessages
 }
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}/
@@ -65,6 +71,7 @@ export function ChartIsland({
   data,
   x,
   series,
+  ...intl
 }: ChartIslandProps): ReactElement {
   const rows = data.map((row) => ({ row, at: xOf(row, x) }))
   const value =
@@ -74,41 +81,43 @@ export function ChartIsland({
       return typeof v === 'number' ? v : null
     }
   return (
-    <ChartCard
-      title={title}
-      figure={figure === undefined ? undefined : { value: figure, period }}
-      height="tall"
-      chart={() =>
-        kind === 'bars' ? (
-          <Bars
-            label={label ?? title}
-            data={rows}
-            height="fill"
-            x={{ value: (d) => d.at }}
-            series={series.map((s, i) => ({
-              mark: 'bar' as const,
-              key: s.key,
-              label: s.label,
-              color: color(i, s.color),
-              y: value(s.key),
-            }))}
-          />
-        ) : (
-          <Lines
-            label={label ?? title}
-            data={rows}
-            height="fill"
-            x={{ value: (d) => d.at }}
-            series={series.map((s, i) => ({
-              mark: 'line' as const,
-              key: s.key,
-              label: s.label,
-              color: color(i, s.color),
-              y: value(s.key),
-            }))}
-          />
-        )
-      }
-    />
+    <IntlScope {...intl}>
+      <ChartCard
+        title={title}
+        figure={figure === undefined ? undefined : { value: figure, period }}
+        height="tall"
+        chart={() =>
+          kind === 'bars' ? (
+            <Bars
+              label={label ?? title}
+              data={rows}
+              height="fill"
+              x={{ value: (d) => d.at }}
+              series={series.map((s, i) => ({
+                mark: 'bar' as const,
+                key: s.key,
+                label: s.label,
+                color: color(i, s.color),
+                y: value(s.key),
+              }))}
+            />
+          ) : (
+            <Lines
+              label={label ?? title}
+              data={rows}
+              height="fill"
+              x={{ value: (d) => d.at }}
+              series={series.map((s, i) => ({
+                mark: 'line' as const,
+                key: s.key,
+                label: s.label,
+                color: color(i, s.color),
+                y: value(s.key),
+              }))}
+            />
+          )
+        }
+      />
+    </IntlScope>
   )
 }

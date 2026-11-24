@@ -23,6 +23,9 @@ export interface ThemeScriptOptions {
  * nothing. Logic is its own copy of `readScheme`; parity is tested, not shared. A second statement
  * does the same for the appearance object: each valid `density`, `frame` and `accent` becomes its
  * `data-*` attribute unless the page already has one (its copy of `readAppearance`, tested alike).
+ *
+ * @useWhen a host renders its own `<head>` (TanStack Start, a content site outside Astro) and must set the scheme before paint
+ * @neverWhen the app builds with `basalt()` from `basalt-ui/vite` or `basaltAstro()` from `basalt-ui/astro`, which inline it already
  */
 export function themeScript(options: ThemeScriptOptions = {}): string {
   const key = JSON.stringify(options.key ?? SCHEME_KEY)

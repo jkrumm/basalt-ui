@@ -4,7 +4,7 @@
  * added later. Two duties: a `[data-basalt-scheme]` button applies and stores the scheme (the
  * `setScheme` contract: `data-theme` on `<html>`, the `basalt:scheme` key) and every switch's
  * `aria-pressed` follows, honouring the same `key`, `attribute` and `cookie` options as `themeScript()`; a `[data-basalt-copy]` button copies the text of its block's `pre` and
- * announces its `data-copied-label`; the header's menus get the arrow keys (Left, Right, Home, End between
+ * announces its `data-copied-label`; the header's menus get the arrow keys (Left, Right, mirrored under `dir="rtl"`, Home, End between
  * the items, Down into a panel) and, where the browser has no interest invokers, hover with a short delay; a `[role=tab]` button inside `[data-basalt-tabs]` shows its panel
  * (click, arrow keys, Home, End) and the head marks the document `data-basalt-js`, so the tabs hide
  * their panels only where a script can show them. Logic is its own copy of `setScheme`; parity is tested.
@@ -22,8 +22,10 @@ const COOKIE_MAX_AGE = 31536000
  * The inline script the static parts share: `ThemeSwitch` applies and stores the scheme, `SiteCodeBlock`
  * copies its block. `basaltAstro()` inlines it after `themeScript()` with the same scheme options.
  * About 1.4 kB gzip; a unit test holds it and `themeScript()` under 2 kB together.
+ * A TanStack Start or Vite content site inlines `themeScript()` then `siteScript()` in its head with the same scheme options.
  *
- * Internal to the site profile until a host outside Astro needs it exported.
+ * @useWhen a content site outside Astro (TanStack Start, Vite) needs the theme switch, the copy button and the tabs without the astro integration
+ * @neverWhen the site is Astro: `basaltAstro()` inlines both head scripts itself
  */
 export function siteScript(options: SiteScriptOptions = {}): string {
   const key = JSON.stringify(options.key ?? SCHEME_KEY)
@@ -41,7 +43,7 @@ export function siteScript(options: SiteScriptOptions = {}): string {
     `function link(){var gs=d.querySelectorAll("[data-basalt-tabs]");for(var j=0;j<gs.length;j++){var ts=gs[j].querySelectorAll("[role=tab]"),ps=gs[j].querySelectorAll("[role=tabpanel]");`,
     `for(var i=0;i<ts.length;i++)for(var m=0;m<ps.length;m++)if(ps[m].getAttribute("data-label")===ts[i].getAttribute("data-tab")){var k="bt"+j+"-"+i;ts[i].id=k+"t";ps[m].id=k+"p";ts[i].setAttribute("aria-controls",k+"p");ps[m].setAttribute("aria-labelledby",k+"t")}}}`,
     `d.addEventListener("keydown",function(e){var t=e.target instanceof Element?e.target.closest("[role=tab]"):null;if(!t)return;var g=t.closest("[data-basalt-tabs]");if(!g)return;`,
-    `var ts=g.querySelectorAll("[role=tab]"),i=[].indexOf.call(ts,t),k=e.key,n=k==="ArrowRight"?i+1:k==="ArrowLeft"?i-1:k==="Home"?0:k==="End"?ts.length-1:-9;if(n===-9)return;e.preventDefault();pick(ts[(n+ts.length)%ts.length],1)});`,
+    `var ts=g.querySelectorAll("[role=tab]"),i=[].indexOf.call(ts,t),k=e.key,rt=getComputedStyle(g).direction==="rtl",nx=rt?"ArrowLeft":"ArrowRight",pv=rt?"ArrowRight":"ArrowLeft",n=k===nx?i+1:k===pv?i-1:k==="Home"?0:k==="End"?ts.length-1:-9;if(n===-9)return;e.preventDefault();pick(ts[(n+ts.length)%ts.length],1)});`,
     `d.addEventListener("click",function(e){var t=e.target instanceof Element?e.target:null;if(!t)return;`,
     `var tb=t.closest("[role=tab]");if(tb){pick(tb,0);return}`,
     `var s=t.closest("[data-basalt-scheme]");if(s){var v=s.getAttribute("data-basalt-scheme");`,
@@ -56,7 +58,7 @@ export function siteScript(options: SiteScriptOptions = {}): string {
     `d.addEventListener("keydown",function(e){var t=e.target instanceof Element?e.target.closest("[data-basalt-top]"):null;if(!t)return;`,
     `var l=[].slice.call(t.closest("[data-basalt-nav]").querySelectorAll("[data-basalt-top]")),i=l.indexOf(t),k=e.key,p=t.hasAttribute("popovertarget")?pp(t):null;`,
     `if(k==="ArrowDown"&&p&&p.showPopover){e.preventDefault();p.showPopover();var a=p.querySelector("a");if(a)a.focus();return}`,
-    `var n=k==="ArrowRight"?i+1:k==="ArrowLeft"?i-1:k==="Home"?0:k==="End"?l.length-1:-9;if(n===-9)return;e.preventDefault();`,
+    `var rt=getComputedStyle(t).direction==="rtl",nx=rt?"ArrowLeft":"ArrowRight",pv=rt?"ArrowRight":"ArrowLeft",n=k===nx?i+1:k===pv?i-1:k==="Home"?0:k==="End"?l.length-1:-9;if(n===-9)return;e.preventDefault();`,
     `var o=l[(n+l.length)%l.length],q=o.hasAttribute("popovertarget")?pp(o):null;o.focus();if(p&&q&&p.showPopover&&p.matches(":popover-open"))q.showPopover()});`,
     `if(!("interestForElement" in HTMLButtonElement.prototype)){var tm=0;`,
     `d.addEventListener("mouseover",function(e){var t=e.target instanceof Element?e.target:null;if(!t)return;clearTimeout(tm);var b=t.closest("[data-basalt-top][popovertarget]");`,
