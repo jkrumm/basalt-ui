@@ -5,7 +5,7 @@
  * The bar's slots are the nav's SECTIONS in declared order, at most `BAR_SECTIONS`: each with the
  * section's icon (else its first destination's), the summed badge of its items (a dot when only dots
  * are lit), and its rows. A section of one destination is that destination. Everything else, the
- * workspace, the favourites and the account included, is behind More, which reveals the rail.
+ * workspace, the favorites and the account included, is behind More, which reveals the rail.
  */
 import type { IconComponent } from '../../../../core/ports'
 import { rollupBadges } from '../../../core/badges'

@@ -1,6 +1,6 @@
 /**
  * More: the whole app slides to the right and reveals the rail behind it, as the desktop shows it
- * (the workspace switcher, search, favourites, every section, the blocks, settings and account). The
+ * (the workspace switcher, search, favorites, every section, the blocks, settings and account). The
  * slide is the shell root's `translate`, a CSS transition on `--phone-sidebar-x`, so a tap that lands
  * mid-motion reverses it from where it is. The shifted app is one target: a tap returns it, and a
  * drag to the left follows the finger and returns it once it passes a quarter of the rail's width.
