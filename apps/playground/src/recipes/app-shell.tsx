@@ -11,7 +11,7 @@ export function AppLayout() {
     <AppShell
       nav={NAV}
       brand={{ name: 'Basalt' }}
-      badges={{ cards: { count: 4 } }}
+      badges={{ board: { count: 4 } }}
       account={{ status: 'signed-out', onSignIn: () => undefined }}
     >
       <Outlet />
