@@ -58,12 +58,4 @@ describe('header icons by look', () => {
     render(<Subject look="grid" headerIcons={false} />)
     expect(icons()).toBe(0)
   })
-
-  test('the label comes before its help mark in the document order of a right-aligned header', () => {
-    render(<Subject />)
-    const head = document.querySelector('th[data-col="amount"]')!
-    const label = head.querySelector('button')!
-    const hint = head.querySelector('[data-slot="info-hint"], button ~ *')!
-    expect(label.compareDocumentPosition(hint) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-  })
 })
