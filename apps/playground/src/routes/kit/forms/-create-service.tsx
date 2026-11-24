@@ -191,12 +191,12 @@ function CreateServiceForm({
 const c = col<Service>()
 const columns = [
   c.entity('name', { header: 'Service', sub: (s) => s.repo, subMono: true }),
-  c.custom('team', {
+  c.status('team', {
     header: 'Team',
     priority: 1,
     card: 'meta',
-    sortValue: (s) => s.team,
-    render: (s) => TEAM_LABEL[s.team] ?? s.team,
+    options: TEAMS.map((t): string => t.value),
+    labels: TEAM_LABEL,
   }),
   c.text('zone', { header: 'Time zone', priority: 2 }),
   c.number('replicas', { header: 'Replicas' }),
