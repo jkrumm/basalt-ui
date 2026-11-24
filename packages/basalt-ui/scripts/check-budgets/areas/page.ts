@@ -37,13 +37,21 @@ export const rows: readonly RowDef[] = [
     // 125700 -> 129000 (Issue 2938): 128756 B measured; the PageBar view row: the search box (`ui/input`), counted pill tabs, the layout toggle and the settings button.
     // 129000 -> 132000 (Issue 3087): 131625 B measured; PageBar draws a record identity (`EntityTitle`, `Avatar`) and `PropertyList` edits a row in place (`Input`, `NativeSelect`).
     // 132000 -> 137000 (Issue 3106): 136381 B measured; the favourite star, its context and default store, and the star on the page bar and the panel header.
-    ceiling: 137000,
+    // 137000 -> 140500 (Issue 3206): 140222 B measured; the Sheet behind Peek and the aside carries Base UI's VirtualKeyboardProvider, a grabber and snap points.
+    ceiling: 140500,
     measure: () => measureSource(reExportAll({ page: 'page/index' })),
   },
 ]
 
 export const raises: Raises = {
   'page-subpath': [
+    {
+      from: 137000,
+      to: 140500,
+      consumer:
+        'the mobile foundation (owner direction 2026-11-24, Issue 3206): a bottom Sheet with a grabber, snap points and the Base UI VirtualKeyboardProvider that lifts a form above the software keyboard, a shell keyboard inset and pressed styles on touch',
+      repo: 'basalt-ui',
+    },
     {
       from: 132000,
       to: 137000,
