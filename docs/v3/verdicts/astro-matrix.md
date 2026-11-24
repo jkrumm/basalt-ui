@@ -85,8 +85,8 @@ Columns: `No directive` is the static HTML: `clean`, `differs` from the client:o
 | connection-indicator | ConnectionIndicator | fails | none works | 133.0 kB | 61.9 kB | 34.2 kB | fails on the server (No QueryClient set, use QueryClientProvider to set one) and in the browser (No QueryClient set, use QueryClientProvider to set one) |
 | overlay-host | OverlayHost | clean | client:visible | 133.5 kB | 62.3 kB | 34.2 kB | Needs the island to work: overlays open by key from JS; nothing is open at rest, so the host draws nothing. client:idle above the fold, client:visible below, up to 62.3 kB further. |
 | toast-host | ToastHost | clean | client:visible | 108.9 kB | 37.7 kB | 34.2 kB | Static picture first, the island adds behaviour: it drains notify() calls made after mount; the viewport is empty at rest. client:visible, up to 37.7 kB further (client:idle above the fold). |
-| app-shell | AppShell | fails | none works | 235.8 kB | 164.7 kB | 34.2 kB | fails on the server (Invalid value used as weak map key) and in the browser (Invalid value used as weak map key) |
-| command-palette | CommandPalette | clean | client:visible | 179.0 kB | 107.7 kB | 33.7 kB | Needs the island to work: the palette opens on a key or the search row; rendered closed, the trigger is the picture. client:idle above the fold, client:visible below, up to 107.7 kB further. |
+| app-shell | AppShell | fails | none works | 239.2 kB | 168.1 kB | 34.2 kB | fails on the server (Invalid value used as weak map key) and in the browser (Invalid value used as weak map key) |
+| command-palette | CommandPalette | clean | client:visible | 181.8 kB | 110.6 kB | 33.7 kB | Needs the island to work: the palette opens on a key or the search row; rendered closed, the trigger is the picture. client:idle above the fold, client:visible below, up to 110.6 kB further. |
 | controls | FilterSet, ViewTabs | fails | none works | 247.5 kB | 176.4 kB | 33.7 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
 | control-home | ControlHome, ControlView | fails | none works | 212.4 kB | 141.3 kB | 33.7 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
 | basalt-provider | BasaltProvider | clean | no directive | 83.4 kB | 12.2 kB | 33.7 kB | The static HTML is the whole part, 0 bytes of JavaScript: the provider only sets locale and scheme; a Button inside it is the whole picture. |
@@ -118,9 +118,9 @@ Every part of a family on one page, each its own island, in one mode: the JavaSc
 | ui | 27 | 0 | 131.4 kB | 244.2 kB | 244.1 kB | 244.1 kB |
 | cards | 9 | 0 | 130.4 kB | 142.7 kB | 142.6 kB | 142.6 kB |
 | charts | 8 | 0 | 205.7 kB | 223.6 kB | 223.5 kB | 223.5 kB |
-| table | 4 | 0 | 334.9 kB | 348.5 kB | 348.5 kB | 348.5 kB |
+| table | 4 | 0 | 334.9 kB | 349.6 kB | 349.5 kB | 349.5 kB |
 | content | 6 | 0 | 271.7 kB | 276.3 kB | 276.3 kB | 276.3 kB |
-| page | 19 | 0 | 199.1 kB | 280.6 kB | 280.5 kB | 365.6 kB |
+| page | 19 | 0 | 199.1 kB | 283.7 kB | 283.6 kB | 370.6 kB |
 | forms | 18 | 0 | 184.2 kB | 248.6 kB | 248.6 kB | 248.6 kB |
 
 ## Charts: is the static picture correct?
@@ -207,8 +207,8 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 - connection-indicator: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
 - overlay-host: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
 - toast-host: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- app-shell: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- command-palette: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
+- app-shell: the shared sheet gains the phone nav trial's classes and the shell reads the picked variant (Issue 3205): its section bar, tray, drawer, sliding sidebar and lazy palette sheet
+- command-palette: the shared sheet gains the phone nav trial's classes and the shell reads the picked variant (Issue 3205): its section bar, tray, drawer, sliding sidebar and lazy palette sheet
 - controls: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
 - control-home: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
 - basalt-provider: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
@@ -232,9 +232,9 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 - stepper: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
 - family ui: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
 - family cards: phase.ts gains the settled-empty rule (settledEmpty, resolveFrame) every frame page imports; a few bytes on the form, cards and page families
-- family table: one list engine behind Select, Combobox and the command palette (Issue 3102): shared option row and group header, loader states, create row, and a searchable Select on Base UI Combobox
+- family table: the shared sheet gains the phone nav trial's classes and the shell reads the picked variant (Issue 3205): its section bar, tray, drawer, sliding sidebar and lazy palette sheet
 - family content: record the new site-header part; the content family pages now also carry its island code
-- family page: phase.ts gains the settled-empty rule (settledEmpty, resolveFrame) every frame page imports; a few bytes on the form, cards and page families
+- family page: the shared sheet gains the phone nav trial's classes and the shell reads the picked variant (Issue 3205): its section bar, tray, drawer, sliding sidebar and lazy palette sheet
 - family forms: one list engine behind Select, Combobox and the command palette (Issue 3102): shared option row and group header, loader states, create row, and a searchable Select on Base UI Combobox
 
 ## Findings
