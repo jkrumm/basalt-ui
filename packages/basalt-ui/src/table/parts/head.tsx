@@ -303,7 +303,7 @@ function HeaderLabel<T>({ spec, icons }: { spec: KindSpec<T>; icons: boolean }):
 }
 
 /**
- * One header at rest: its icon and label, and only the state it holds: a sorted column adds its
+ * One header at rest: its label (and its icon where header icons are on), and only the state it holds: a sorted column adds its
  * direction arrow, a filtered column one mark, each named for assistive tech (`aria-sort` stays on the
  * cell). The whole content is one button that opens the column's one menu, by click, tap or the
  * keyboard; the menu's `Filter column...` and `Order categories...` open their panel in a popover
