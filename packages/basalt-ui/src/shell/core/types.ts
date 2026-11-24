@@ -30,6 +30,8 @@ export type CoreNavItem = {
   disabled?: boolean
   /** @default 'more' */
   mobile?: boolean | CoreMobilePlacement
+  /** The `linkOptions` a `defineNav` item carries; the core never reads it, the anchor parts do. */
+  link?: { to: string; search?: unknown; params?: unknown }
   children?: ReadonlyArray<CoreNavItem>
 }
 

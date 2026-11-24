@@ -18,7 +18,6 @@ import { useState, useSyncExternalStore } from 'react'
 import type { MouseEvent, ReactElement } from 'react'
 import { cn } from '../../../core/cn'
 import { navAnchor } from '../../../router/nav/anchor'
-import type { AnyNavItem } from '../../../router/nav/types'
 import type {
   Account,
   GlobalAction,
@@ -145,7 +144,7 @@ export function warnLongShort(slots: readonly PhoneSlot[]): void {
 
 function LinkTab({ slot }: { slot: Extract<PhoneSlot, { kind: 'link' }> }): ReactElement {
   const router = useRouter()
-  const Anchor = navAnchor(slot.row.item as unknown as AnyNavItem)
+  const Anchor = navAnchor(slot.row.item)
   const onClick = (event: MouseEvent<HTMLElement>): void => {
     retap(slot.row, event, router.state.location.href)
   }

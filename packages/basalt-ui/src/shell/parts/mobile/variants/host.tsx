@@ -7,7 +7,6 @@ import { useRouter } from '@tanstack/react-router'
 import { useSyncExternalStore } from 'react'
 import type { MouseEvent, ReactElement, ReactNode } from 'react'
 import { navAnchor } from '../../../../router/nav/anchor'
-import type { AnyNavItem } from '../../../../router/nav/types'
 import type { ShellBrand } from '../../../contract'
 import type { PhoneProjectionInput, PhoneRow } from '../../../core/mobile-projection'
 import type { NavState } from '../../../core/nav-runtime'
@@ -50,7 +49,7 @@ export function SlotLink({
   children: ReactNode
 }): ReactElement {
   const router = useRouter()
-  const Anchor = navAnchor(row.item as unknown as AnyNavItem)
+  const Anchor = navAnchor(row.item)
   const onClick = (event: MouseEvent<HTMLElement>): void => {
     retap(row, event, router.state.location.href)
   }
