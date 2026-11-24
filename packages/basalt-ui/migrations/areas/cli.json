@@ -35,6 +35,14 @@
       "kind": "removed",
       "from": "basalt-ui lint --raise waivers",
       "note": "waivers have no ceiling in 3.0: a full `basalt-ui lint` records the count in `.basalt/budget.json`, so a new waiver shows in the diff; `lint --raise escapes --consumer` stays for the escapes ceiling"
+    },
+    {
+      "id": "cli-tokens-extra-dts",
+      "kind": "removed",
+      "from": "basalt-ui tokens:css --extra writing <out>.d.ts",
+      "profiles": ["tokens", "bridge", "parts", "app"],
+      "manual": true,
+      "note": "the sheet is the one output and `--check` compares it alone; delete the committed `basalt.tokens.css.d.ts`, which only augmented the removed series slot"
     }
   ],
   "tokens": {

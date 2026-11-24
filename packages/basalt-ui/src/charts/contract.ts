@@ -15,7 +15,7 @@ import type { KeyboardEvent, PointerEvent, ReactElement } from 'react'
 
 // ---- Series -------------------------------------------------------------------------------
 
-// minimal; concept elides it (a `defineSeries` entry)
+// minimal; concept elides it (one `series.<group>.<key>` pair of the app's `basalt.tokens.ts`)
 export type SeriesColor = { light: string; dark: string }
 
 // minimal; concept elides it

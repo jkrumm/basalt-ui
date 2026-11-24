@@ -22,7 +22,7 @@ Named exports only — **no default exports**. Files `kebab-case`, components `P
 | -------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `.`            | ui           | the state seams (`persisted`, `notify`, `createChannel`, `externalField`, `useNow`, `createFormat`)                                                                 |
 | `./charts`     | **headless** | `CartesianChart` + the `Lines`/`Bars`/`Sparkline`/`Heatmap`/`BandStrip`/`IntervalTrack` kinds, `ChartCard`, `chartCursor` — no token, formatter or engine re-export |
-| `./tokens`     | **headless** | `BASALT`, `alpha`, `BP`/`p`, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`                                                                       |
+| `./tokens`     | **headless** | `BASALT`, `alpha`, `BP`/`p`, `buildPaletteCss`, `seriesTokens`, `groupTokens`                                                                                       |
 | `./controls`   | headless     | the control tier: `FilterSet` over `spec(...)`, `ViewTabs`, `ControlView`, `ControlHome`, `filterSlot` and the v3 forms                                             |
 | `./table`      | headless     | `col<Row>()` kind columns, `useDataTable`, `DataTable` and its parts, `tableCodec`                                                                                  |
 | `./content`    | ui           | `Prose`, `Markdown`, `CodeBlock`, `MermaidDiagram`, MDX map                                                                                                         |
@@ -232,7 +232,7 @@ Three tiers: **palette data** (pure data, zero React/DOM) → **`--basalt-*` CSS
   `deriveSpacing`'s JSDoc has the full accounting.
 - **Series color is consumer data.** `BASALT.series` is not in the framework: an app declares its own in
   one guard-exempt file, `src/basalt.tokens.ts`, which `tokens:css --extra` emits as `--basalt-<group>-<key>`
-  (`groupTokens` mints the refs). `defineSeries` and `buildPaletteCss({ groups })` are internal. Every
+  (`groupTokens` mints the refs). `buildPaletteCss({ groups })` is internal. Every
   `defineX` factory follows ONE shape — `<const T extends Constraint>(spec: T): T`, exact-keyed, no
   widening annotation, no fluent builder, no accumulating config bag. A new factory matches that
   shape before it reaches the public surface.

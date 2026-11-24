@@ -680,15 +680,6 @@ export function seriesTokens<const T extends SeriesMap>(
   return out
 }
 
-/**
- * Define a named series map. Identity passthrough — gives consumers a typed authoring entry
- * point and preserves the exact literal keys of the input (const-generic so callers get back T,
- * not the widened SeriesMap, enabling downstream exact-key checks in groupTokens / seriesTokens).
- */
-export function defineSeries<const T extends SeriesMap>(map: T): T {
-  return map
-}
-
 /** Runtime key of the {@link SeriesGroup} brand. */
 const SERIES_GROUP: unique symbol = Symbol('basalt.series-group')
 

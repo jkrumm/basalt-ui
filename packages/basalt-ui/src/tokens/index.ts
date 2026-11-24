@@ -21,7 +21,6 @@ export {
 export {
   alpha,
   buildPaletteCss,
-  defineSeries,
   groupTokens,
   seriesTokens,
   BASALT,

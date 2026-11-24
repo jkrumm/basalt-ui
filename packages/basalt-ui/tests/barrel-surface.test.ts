@@ -27,14 +27,7 @@ const RAW_PALETTE_KEYS = [
   'SURFACE',
 ] as const
 
-const REQUIRED_KEYS = [
-  'BASALT',
-  'alpha',
-  'buildPaletteCss',
-  'defineSeries',
-  'seriesTokens',
-  'groupTokens',
-] as const
+const REQUIRED_KEYS = ['BASALT', 'alpha', 'buildPaletteCss', 'seriesTokens', 'groupTokens'] as const
 
 // BP/p are `./tokens`-only: a series module imports its building blocks from basalt-ui/tokens.
 const TOKENS_ONLY_KEYS = ['BP', 'p'] as const

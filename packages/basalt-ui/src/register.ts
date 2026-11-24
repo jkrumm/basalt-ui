@@ -3,22 +3,22 @@
  * primitives (AsyncState, assertNever), and the vendored Standard Schema v1 contract.
  *
  * Re-exported from the root barrel '.' so `declare module 'basalt-ui'` augmentation works.
- * Imports only a type from ./tokens (erased at runtime).
+ * Imports nothing.
  */
-import type { SeriesMap } from './tokens'
 
 // ── BasaltRegister + Slot ─────────────────────────────────────────────────────────────────────────
 
 /**
  * The one augmentable seam — TanStack Router/Query's `interface Register {}` applied to the whole
  * app shape. Declaration-merge your truth ONCE per concern, in that concern's own file. Every slot
- * is optional and defaults to a never-keyed empty type; a charts-only consumer augments only
- * `series` (or nothing) and pays zero cost.
+ * is optional and defaults to a never-keyed empty type; an app that augments nothing pays zero cost.
+ * The slots are `commands`, `overlays` and `notifications`. There is no series slot: a chart
+ * series `key` is the data's own name, and its colour is the pair from the app's series file.
  *
  * @example
- * // src/theme/series.ts — augment ONE slot in its own file, 3 lines:
+ * // src/lib/notifications.ts — augment ONE slot in its own file, 3 lines:
  * declare module 'basalt-ui' {
- *   interface BasaltRegister { series: typeof DEMO_SERIES }
+ *   interface BasaltRegister { notifications: { deploy: { sha: string } } }
  * }
  */
 export interface BasaltRegister {}
@@ -29,14 +29,13 @@ export interface BasaltRegister {}
  * WHY `{}` AND NOT `Record<string, never>`:
  * `keyof {}` is `never` (correct — an un-augmented slot has no keys).
  * `keyof Record<string, never>` is `string` — silent widening that would accept every string as a
- * 'legal' key (the TS footgun). The `{}` default and the `Extract<keyof, string>` symbol guard in
- * SeriesKey are baked into this one place and locked by fixture J.1 / J.2.
+ * 'legal' key (the TS footgun). The `{}` default is baked into this one place and locked by
+ * fixture J.1 / J.2.
  *
  * `infer S extends Constraint` is a BOUND-CHECK, not a cast — an ill-typed augment falls through
  * to `{}` rather than poisoning the union. This ONE generic is the frozen mechanism every battery
- * slot instantiates against. At 1.0 the `series`, `commands`, `overlays`, and `notifications`
- * slots ship and have concrete instantiations (define-commands.ts, define-overlays.ts,
- * define-notifications.ts); `router`, `query`, and `state` remain advisory.
+ * slot instantiates against. The `commands`, `overlays`, and `notifications` slots ship and have
+ * concrete instantiations (define-commands.ts, define-overlays.ts, core/notify.ts).
  *
  * **Indexed-access form, not a mapped-type structural match (C5 consolidation)** — this used to
  * read `BasaltRegister extends { [P in K]: infer S extends Constraint } ? S : {}`, which forces
@@ -51,26 +50,14 @@ export interface BasaltRegister {}
  * at all), and `BasaltRegister[K]` then touches ONLY that one slot's value — so resolving
  * `overlays` never has to resolve `commands` first, and a consumer can define both registries,
  * with one calling the other's imperative controller, in a SINGLE file. Behaviourally identical to
- * the old form for every existing augmentation (fixture J.1/J.2 pin both the `{}` fallback and the
- * `Extract<keyof, string>` guard below); ONLY the internal resolution path changed.
+ * the old form for every existing augmentation (fixture J.1/J.2 pin the `{}` fallback); ONLY the
+ * internal resolution path changed.
  */
 export type Slot<K extends string, Constraint> = K extends keyof BasaltRegister
   ? BasaltRegister[K] extends Constraint
     ? BasaltRegister[K]
     : {}
   : {}
-
-/** The consumer's registered series map, or `{}` when un-augmented. */
-export type Series = Slot<'series', SeriesMap>
-
-/**
- * The legal series keys — Extract<…, string> drops symbol/number members that `keyof` always
- * includes (§B.2/§6.3), so the literal union never widens via a symbol key.
- *
- * Un-augmented: `never` (slot is `{}`, keyof is never).
- * Augmented: the exact string literal union of the registered series map keys.
- */
-export type SeriesKey = Extract<keyof Series, string>
 
 // ── AsyncState + assertNever ──────────────────────────────────────────────────────────────────────
 

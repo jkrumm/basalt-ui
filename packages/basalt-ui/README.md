@@ -341,9 +341,9 @@ export const colors = groupTokens('app', tokens.series.app)
 // colors.sessions → 'var(--basalt-app-sessions)'
 ```
 
-After an edit, regenerate the sheet: `basalt-ui tokens:css --extra src/basalt.tokens.ts --out src/basalt.tokens.css` (`doctor` re-runs it with `--check` for every row of the manifest). The sheet also writes `basalt.tokens.css.d.ts`, which registers the keys on `BasaltRegister`, so write no `declare module` of your own. `vars: { <name>: '<css value>' }` beside `series` emits `--basalt-<name>` once on `:root`. A ramp entry (`{ hue: 'blue', light: 3, dark: 4 }`) gives the variable only; a chart needs a literal pair.
+After an edit, regenerate the sheet: `basalt-ui tokens:css --extra src/basalt.tokens.ts --out src/basalt.tokens.css` (`doctor` re-runs it with `--check` for every row of the manifest). The pair's keys are typed by the import of `basalt.tokens.ts` itself; nothing is registered. `vars: { <name>: '<css value>' }` beside `series` emits `--basalt-<name>` once on `:root`. A ramp entry (`{ hue: 'blue', light: 3, dark: 4 }`) gives the variable only; a chart needs a literal pair.
 
-`tokens:css --extra` is the one route. `defineSeries` and `buildPaletteCss({ groups })` are internal: the first types a pair map the CLI does not read, the second emits the same variables at runtime for a build with no CLI, and neither is documented for an app. A hand-written `BasaltRegister` series augmentation is removed from the docs: it conflicts with the generated one.
+`tokens:css --extra` is the one route. `buildPaletteCss({ groups })` is internal: it emits the same variables at runtime for a build with no CLI, and is not documented for an app. A chart series `key` is the data's own name, never a registered type.
 
 Every `defineX` factory is const-generic and exact-keyed — the return type mirrors the literal input shape, so `tsc` catches stale keys.
 
@@ -499,20 +499,18 @@ default are byte-identical to what they always emitted. Full doctrine and plugin
 
 `BasaltRegister` is the single declaration-merge interface consumers augment to register their app-specific shapes for exact-keyed typing. It follows the same pattern as TanStack Router's `Register` interface — augment once per concern in the concern's own file, and every battery that reads the slot gets narrow types automatically.
 
-<!-- readme-check: skip an augmentation fragment: SERIES is the app's own and the block is not a program -->
-
 ```ts
-// src/series.ts — augment the series slot
+// src/lib/notifications.ts — augment the notifications slot
 import type {} from 'basalt-ui'
 
 declare module 'basalt-ui' {
   interface BasaltRegister {
-    series: typeof SERIES
+    notifications: { deploy: { sha: string } }
   }
 }
 ```
 
-Current slots: `series` (read by `./charts` + `./tokens`) and `notifications` (the kinds `notify` accepts beyond the four it ships). An un-augmented slot defaults to a never-keyed `{}` — augment only the slots you use.
+Current slots: `commands`, `overlays` and `notifications` (the kinds `notify` accepts beyond the four it ships). An un-augmented slot defaults to a never-keyed `{}` — augment only the slots you use. There is no series slot: a series colour is the pair from `basalt.tokens.ts`.
 
 ---
 

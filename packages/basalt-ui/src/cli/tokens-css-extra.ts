@@ -6,9 +6,9 @@
  *   vars:   { <name>: '<css value>' }
  *
  * `series` emits `--basalt-<group>-<key>` per scheme (ramp steps resolve through `rampPair`), `vars`
- * emits `--basalt-<name>` once on `:root`, and a sibling `.d.ts` augments `BasaltRegister` so the series
- * keys are typed. Keys are written verbatim: an app's existing `--basalt-usage-*` names stay
- * byte-identical.
+ * emits `--basalt-<name>` once on `:root`. Keys are written verbatim: an app's existing
+ * `--basalt-usage-*` names stay byte-identical. No `.d.ts` is written: a chart reads the pair from
+ * the file itself (`tokens.series.<group>.<key>`), so its keys are typed by the import.
  *
  * Refused (the message names the fix): an emitted name that is a package name, and a `vars` value
  * reading a `--basalt-*` that is neither a package name nor a name in this file. Pure apart from
@@ -22,7 +22,7 @@ import type { Decl } from '../tokens/emit-fallback'
 import { RAMPS, rampPair } from '../tokens/ramps'
 import type { RampHue, RampStep } from '../tokens/ramps'
 
-export type ExtraOutput = { css: string; dts: string }
+export type ExtraOutput = { css: string }
 export type ExtraResult = ({ ok: true } & ExtraOutput) | { ok: false; error: string }
 
 /** The scheme selectors of the default sheet (`emit.ts`); `tokens-css.test.ts` pins them against it. */
@@ -132,9 +132,9 @@ function editDistance(a: string, b: string): number {
 }
 
 /**
- * Emit the app sheet and its `.d.ts` for the file's data.
+ * Emit the app sheet for the file's data.
  * @param file the path as the user wrote it, for messages
- * @param header the two-line provenance header, written on both outputs
+ * @param header the two-line provenance header
  */
 export function emitExtra(data: unknown, file: string, header: string): ExtraResult {
   const fail = (error: string): ExtraResult => ({ ok: false, error: `${file}: ${error}` })
@@ -158,7 +158,6 @@ export function emitExtra(data: unknown, file: string, header: string): ExtraRes
 
   const light: Decl[] = []
   const dark: Decl[] = []
-  const registered: string[] = []
   for (const [group, entries] of Object.entries(series)) {
     if (!NAME.test(group)) return fail(`series group '${group}' must match ${NAME}`)
     if (!isRecord(entries)) return fail(`series.${group} must be { <key>: entry }`)
@@ -172,7 +171,6 @@ export function emitExtra(data: unknown, file: string, header: string): ExtraRes
       if (typeof pair === 'string') return fail(pair)
       light.push([name, pair.light])
       dark.push([name, pair.dark])
-      registered.push(`${group}-${key}`)
     }
   }
 
@@ -203,12 +201,5 @@ export function emitExtra(data: unknown, file: string, header: string): ExtraRes
     (light.length === 0 ? '' : schemeBlocks(SELECTORS, light, dark)) +
     (varDecls.length === 0 ? '' : block(':root', varDecls))
 
-  const slot = registered.map(
-    (name) => `      readonly '${name}': { readonly light: string; readonly dark: string }`,
-  )
-  const dts =
-    `${header}export {}\n\ndeclare module 'basalt-ui' {\n  interface BasaltRegister {\n` +
-    (slot.length === 0 ? '' : `    series: {\n${slot.join('\n')}\n    }\n`) +
-    `  }\n}\n`
-  return { ok: true, css, dts }
+  return { ok: true, css }
 }

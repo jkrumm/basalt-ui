@@ -193,7 +193,7 @@ export const SURFACES = {
     rule: 'tokens',
     skill: ['basalt-design', 'basalt-charts'],
     description:
-      'BASALT token refs, buildPaletteCss, defineSeries, seriesTokens, groupTokens, alpha, the motion scale (MOTION_DURATION, MOTION_EASE_STANDARD, MOTION_EASE_ENTER, MOTION_EASE_EXIT, MOTION_SPRING, MOTION_STAGGER, staggerDelay)',
+      'BASALT token refs, buildPaletteCss, seriesTokens, groupTokens, alpha, the motion scale (MOTION_DURATION, MOTION_EASE_STANDARD, MOTION_EASE_ENTER, MOTION_EASE_EXIT, MOTION_SPRING, MOTION_STAGGER, staggerDelay)',
     globs: {
       shipped: ['**/tokens/**'],
       repo: ['packages/basalt-ui/src/tokens/**'],

@@ -10,7 +10,6 @@
   "basalt-ui/tokens#BASALT",
   "basalt-ui/tokens#alpha",
   "basalt-ui/tokens#buildPaletteCss",
-  "basalt-ui/tokens#defineSeries",
   "basalt-ui/tokens#groupTokens",
   "basalt-ui/tokens#p",
   "basalt-ui/tokens#seriesTokens"

@@ -3,10 +3,10 @@
  * `SeriesGroup[]`, so the `${name}-` key that emits the variables is the one that references them.
  */
 import { expect, test } from 'bun:test'
-import { buildPaletteCss, defineSeries, groupTokens } from './index'
-import type { SeriesGroup } from './index'
+import { buildPaletteCss, groupTokens } from './index'
+import type { SeriesGroup, SeriesMap } from './index'
 
-const MAP = defineSeries({ a: { light: '#111111', dark: '#eeeeee' } })
+const MAP = { a: { light: '#111111', dark: '#eeeeee' } } satisfies SeriesMap
 const ACTIVITY = groupTokens('activity', MAP)
 
 buildPaletteCss({ groups: [ACTIVITY] })
@@ -23,7 +23,7 @@ export function rejected(): void {
 type Equal<A, B> =
   (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false
 const keysAreExact: Equal<keyof typeof ACTIVITY, 'a'> = true
-const wide = groupTokens('wide', defineSeries({ a: MAP.a, b: MAP.a }))
+const wide = groupTokens('wide', { a: MAP.a, b: MAP.a })
 const wideKeysAreExact: Equal<keyof typeof wide, 'a' | 'b'> = true
 void [keysAreExact, wideKeysAreExact]
 
