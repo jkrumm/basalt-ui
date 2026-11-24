@@ -34,6 +34,7 @@ import {
 import { headPlugin, serviceWorkerPlugins } from './head'
 import type { HeadOptions } from './head'
 import { renderSources, writeSources } from './sources'
+import { withTableSheet } from './table-sheet'
 
 /** Not exported (the type budget is full): read it as `Parameters<typeof basalt>[0]`. */
 type BasaltOptions = HeadOptions & {
@@ -63,19 +64,6 @@ function ejectedSpecifiers(ejected: AppEjects['ejected']): string[] {
     }
   }
   return [...found].toSorted()
-}
-
-/** An app module's import of the table subpath (static, dynamic or re-export), not `table.css`. */
-const TABLE_IMPORT = /(?:\bfrom\s*|\bimport\s*\(?\s*)['"]basalt-ui\/table['"]/
-const TABLE_SHEET_IMPORT = /['"]basalt-ui\/table\.css(?:\?[^'"]*)?['"]/
-const TABLE_SHEET = "\nimport 'basalt-ui/table.css';\n"
-const SCRIPT_ID = /\.[cm]?[jt]sx?$/
-
-/** The module's code with the tier sheet imported, or null when it needs no change. */
-function withTableSheet(code: string, id: string): string | null {
-  if (id.includes('/node_modules/') || !SCRIPT_ID.test(id.split('?')[0] ?? id)) return null
-  if (!TABLE_IMPORT.test(code) || TABLE_SHEET_IMPORT.test(code)) return null
-  return code + TABLE_SHEET
 }
 
 const escape = (s: string): string => s.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')

@@ -7,9 +7,11 @@
  *
  * `Bun.build` cannot run Tailwind or read `?inline`, so a build plugin does both for this one app:
  * `src/index.css` goes through the Tailwind CLI (the same compile the playground's Vite plugin does)
- * and `<css>?inline` becomes a string module.
+ * and `<css>?inline` becomes a string module. It applies `basalt()`'s one transform as well: a module that
+ * imports `basalt-ui/table` gets the table tier sheet.
  */
 import { join, resolve } from 'node:path'
+import { withTableSheet } from '../../../src/vite/table-sheet'
 import { PLAYGROUND, REPO } from './routes'
 
 const TAILWIND = join(REPO, 'node_modules/.bin/tailwindcss')
@@ -66,6 +68,17 @@ const playgroundPlugin = (pseudo: boolean): Bun.BunPlugin => ({
       const file = await compile(await Bun.file(args.path).text(), { remarkPlugins: [gfm.default] })
       return { contents: String(file), loader: 'js' }
     })
+    // `basalt()` appends the table tier sheet to a module that imports `basalt-ui/table`; so does this build.
+    build.onLoad(
+      { filter: /(?:apps\/playground\/src|packages\/basalt-ui\/blocks)\/.*\.[jt]sx?$/ },
+      async (args) => {
+        const code = await Bun.file(args.path).text()
+        return {
+          contents: withTableSheet(code, args.path) ?? code,
+          loader: args.path.endsWith('x') ? 'tsx' : 'ts',
+        }
+      },
+    )
     build.onLoad({ filter: /apps\/playground\/src\/index\.css$/ }, (args) => ({
       contents: compileTailwind(args.path),
       loader: 'css',
