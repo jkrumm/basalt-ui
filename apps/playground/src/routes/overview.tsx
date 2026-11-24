@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { CardGrid, Page, PageBar } from 'basalt-ui/page'
 import { BarList, EventList, StatCard, StatCell, StatGroup } from 'basalt-ui/cards'
-import type { QueryStateLike } from 'basalt-ui/cards'
+import type { Empty, QueryStateLike } from 'basalt-ui/cards'
 import { ChartCard, Lines } from 'basalt-ui/charts'
 import { FilterSet, ViewTabs, filterSlot, spec } from 'basalt-ui/controls'
 import { defineControls, field } from 'basalt-ui/router'
@@ -69,7 +69,13 @@ const OVERVIEW: Overview = { days: DAYS, projects: PROJECTS, events: EVENTS }
 const NO_OVERVIEW: Overview = { days: [], projects: [], events: [] }
 
 /** A frame's phase and its empty state: the stat frames count the range's requests, so no traffic is empty. */
-type Frame = { phase: QueryStateLike; empty: { cause: string } | null }
+type Frame = { phase: QueryStateLike; empty: Empty }
+
+/** The query answers an object, so the stat frames say what empty means for it. */
+const NO_TRAFFIC: Empty = {
+  cause: 'No traffic in this range yet.',
+  when: (data) => (data as Overview).days.length === 0,
+}
 
 // #region stat-group
 const health = ({ phase, empty }: Frame) => (
@@ -103,7 +109,8 @@ const health = ({ phase, empty }: Frame) => (
 // #endregion
 
 // #region stat-card
-const requests = ({ phase, empty }: Frame) => (
+// A StatCard reads `empty` as given (no `when`), so it takes the settled answer.
+const requests = ({ phase }: Frame, empty: Empty | null) => (
   <StatCard
     phase={phase}
     empty={empty}
@@ -114,7 +121,7 @@ const requests = ({ phase, empty }: Frame) => (
     controls={filterSlot([spec(overview.widget.requests.range, 'Range')])}
   />
 )
-const errors = ({ phase, empty }: Frame) => (
+const errors = ({ phase }: Frame, empty: Empty | null) => (
   <StatCard
     phase={phase}
     empty={empty}
@@ -206,10 +213,8 @@ const tabs: NonNullable<ComponentProps<typeof PageBar>['tabs']> = {
 function OverviewRoute(): ReactElement {
   const [tab] = overview.field.tab.use()
   const query = useFixture(['overview'], OVERVIEW, NO_OVERVIEW)
-  const frame: Frame = {
-    phase: query,
-    empty: query.data?.days.length === 0 ? { cause: 'No traffic in this range yet.' } : null,
-  }
+  const frame: Frame = { phase: query, empty: NO_TRAFFIC }
+  const noTraffic = query.data?.days.length === 0 ? NO_TRAFFIC : null
   return (
     <Page area="overview">
       <PageBar tabs={tabs} controls={filterSlot([spec(globals.field.range, 'Range')])} />
@@ -218,8 +223,8 @@ function OverviewRoute(): ReactElement {
         <>
           {health(frame)}
           <CardGrid min="regular">
-            <div data-testid="ov-bound">{requests(frame)}</div>
-            <div data-testid="ov-override">{errors(frame)}</div>
+            <div data-testid="ov-bound">{requests(frame, noTraffic)}</div>
+            <div data-testid="ov-override">{errors(frame, noTraffic)}</div>
           </CardGrid>
           {trend(frame, query.data?.days)}
         </>
