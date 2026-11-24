@@ -26,7 +26,7 @@ export type ClaimKind = 'specifier' | 'import-name' | 'export-name' | 'cli-flag'
 
 export type ClaimFinding = { file: string; line: number; kind: ClaimKind; text: string }
 
-type Exports = Record<string, string | { import?: string }>
+type Exports = Record<string, string | { import?: string } | null>
 
 /** Backticked names that are not package exports: third-party or platform names only, never a missing name. */
 export const NON_EXPORT_NAMES: ReadonlyMap<string, string> = new Map<string, string>([
@@ -494,8 +494,9 @@ function namesIn(file: string, pkgRoot: string, seen = new Set<string>()): Set<s
 /** Public entry specifier (\`basalt-ui\`, \`basalt-ui/charts\`) → the names it exports; design-references.test.ts reads the same map. */
 export function publicEntries(pkgRoot: string = PKG_ROOT): Map<string, Set<string>> {
   const entries = new Map<string, Set<string>>()
-  for (const [sub, target] of Object.entries(readExports(pkgRoot))) {
-    const importTarget = typeof target === 'string' ? undefined : target.import
+  const exports = readExports(pkgRoot)
+  for (const [sub, target] of Object.entries(exports)) {
+    const importTarget = target === null || typeof target === 'string' ? undefined : target.import
     if (importTarget === undefined) continue
     // A wildcard subpath (\`./ui/*\`) is one entry per module in its source directory.
     if (sub.includes('*')) {
@@ -506,6 +507,8 @@ export function publicEntries(pkgRoot: string = PKG_ROOT): Map<string, Set<strin
       for (const name of readdirSync(dir)) {
         const mod = name.replace(/\.tsx?$/, '')
         if (mod === name || /\.(test|guard|type-guard)$/.test(mod)) continue
+        // A module the map nulls (`"./ui/slots": null`) is not published, though the wildcard matches it.
+        if (exports[sub.replace('*', mod)] === null) continue
         const file = sourceOf(pkgRoot, importTarget.replace('*', mod))
         if (file !== undefined)
           entries.set('basalt-ui/' + sub.slice(2).replace('*', mod), namesIn(file, pkgRoot))

@@ -67,10 +67,130 @@
       "import": "./dist/tokens/index.js",
       "default": "./dist/tokens/index.js"
     },
-    "./core/*": {
-      "types": "./dist/core/*.d.ts",
-      "import": "./dist/core/*.js",
-      "default": "./dist/core/*.js"
+    "./core/appearance": {
+      "types": "./dist/core/appearance.d.ts",
+      "import": "./dist/core/appearance.js",
+      "default": "./dist/core/appearance.js"
+    },
+    "./core/cn": {
+      "types": "./dist/core/cn.d.ts",
+      "import": "./dist/core/cn.js",
+      "default": "./dist/core/cn.js"
+    },
+    "./core/control-scope": {
+      "types": "./dist/core/control-scope.d.ts",
+      "import": "./dist/core/control-scope.js",
+      "default": "./dist/core/control-scope.js"
+    },
+    "./core/could-not-load": {
+      "types": "./dist/core/could-not-load.d.ts",
+      "import": "./dist/core/could-not-load.js",
+      "default": "./dist/core/could-not-load.js"
+    },
+    "./core/drag-landing": {
+      "types": "./dist/core/drag-landing.d.ts",
+      "import": "./dist/core/drag-landing.js",
+      "default": "./dist/core/drag-landing.js"
+    },
+    "./core/format": {
+      "types": "./dist/core/format.d.ts",
+      "import": "./dist/core/format.js",
+      "default": "./dist/core/format.js"
+    },
+    "./core/link": {
+      "types": "./dist/core/link.d.ts",
+      "import": "./dist/core/link.js",
+      "default": "./dist/core/link.js"
+    },
+    "./core/list/engine": {
+      "types": "./dist/core/list/engine.d.ts",
+      "import": "./dist/core/list/engine.js",
+      "default": "./dist/core/list/engine.js"
+    },
+    "./core/list/option-row": {
+      "types": "./dist/core/list/option-row.d.ts",
+      "import": "./dist/core/list/option-row.js",
+      "default": "./dist/core/list/option-row.js"
+    },
+    "./core/list/options": {
+      "types": "./dist/core/list/options.d.ts",
+      "import": "./dist/core/list/options.js",
+      "default": "./dist/core/list/options.js"
+    },
+    "./core/list/popup": {
+      "types": "./dist/core/list/popup.d.ts",
+      "import": "./dist/core/list/popup.js",
+      "default": "./dist/core/list/popup.js"
+    },
+    "./core/list/rank": {
+      "types": "./dist/core/list/rank.d.ts",
+      "import": "./dist/core/list/rank.js",
+      "default": "./dist/core/list/rank.js"
+    },
+    "./core/messages/base": {
+      "types": "./dist/core/messages/base.d.ts",
+      "import": "./dist/core/messages/base.js",
+      "default": "./dist/core/messages/base.js"
+    },
+    "./core/messages/date": {
+      "types": "./dist/core/messages/date.d.ts",
+      "import": "./dist/core/messages/date.js",
+      "default": "./dist/core/messages/date.js"
+    },
+    "./core/messages/dialogs": {
+      "types": "./dist/core/messages/dialogs.d.ts",
+      "import": "./dist/core/messages/dialogs.js",
+      "default": "./dist/core/messages/dialogs.js"
+    },
+    "./core/messages/select": {
+      "types": "./dist/core/messages/select.d.ts",
+      "import": "./dist/core/messages/select.js",
+      "default": "./dist/core/messages/select.js"
+    },
+    "./core/messages/sortable": {
+      "types": "./dist/core/messages/sortable.d.ts",
+      "import": "./dist/core/messages/sortable.js",
+      "default": "./dist/core/messages/sortable.js"
+    },
+    "./core/messages/use-messages": {
+      "types": "./dist/core/messages/use-messages.d.ts",
+      "import": "./dist/core/messages/use-messages.js",
+      "default": "./dist/core/messages/use-messages.js"
+    },
+    "./core/panel": {
+      "types": "./dist/core/panel.d.ts",
+      "import": "./dist/core/panel.js",
+      "default": "./dist/core/panel.js"
+    },
+    "./core/persisted": {
+      "types": "./dist/core/persisted.d.ts",
+      "import": "./dist/core/persisted.js",
+      "default": "./dist/core/persisted.js"
+    },
+    "./core/phase": {
+      "types": "./dist/core/phase.d.ts",
+      "import": "./dist/core/phase.js",
+      "default": "./dist/core/phase.js"
+    },
+    "./core/phase-boundary": {
+      "types": "./dist/core/phase-boundary.d.ts",
+      "import": "./dist/core/phase-boundary.js",
+      "default": "./dist/core/phase-boundary.js"
+    },
+    "./core/ports": {
+      "types": "./dist/core/ports.d.ts",
+      "import": "./dist/core/ports.js",
+      "default": "./dist/core/ports.js"
+    },
+    "./core/retry-owner": {
+      "types": "./dist/core/retry-owner.d.ts",
+      "import": "./dist/core/retry-owner.js",
+      "default": "./dist/core/retry-owner.js"
+    },
+    "./core/zoned": {
+      "types": "./dist/core/zoned.d.ts",
+      "import": "./dist/core/zoned.js",
+      "default": "./dist/core/zoned.js"
     },
     "./controls": {
       "types": "./dist/controls/index.d.ts",
@@ -142,6 +262,10 @@
       "import": "./dist/ui/*.js",
       "default": "./dist/ui/*.js"
     },
+    "./ui/*.guard": null,
+    "./ui/guard-completeness": null,
+    "./ui/primitive.contract": null,
+    "./ui/slots": null,
     "./shell": {
       "types": "./dist/shell/index.d.ts",
       "import": "./dist/shell/index.js",
@@ -188,7 +312,7 @@
   },
   "scripts": {
     "build": "tsup && tsc -p tsconfig.build.json --emitDeclarationOnly --declarationMap && bun scripts/gen-chart-css.ts --check && bun scripts/copy-assets.mjs && bun scripts/rewrite-ui-specifiers.mjs && bun scripts/fix-esm-extensions.mjs && bun scripts/gen-llms.ts",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.nav-guard.json",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.nav-guard.json && tsc --noEmit -p tsconfig.rule-tags.json",
     "check-budgets": "bun scripts/check-budgets.ts",
     "test": "cd ../.. && bun test packages/basalt-ui",
     "pack-test": "bash scripts/pack-test.sh",

@@ -7,19 +7,17 @@
  */
 // ── Scalar types ──────────────────────────────────────────────────────────────────────────────────
 
-/** The 6 on-disk rule names (agent/rules/basalt-{name}.md — the set-equality target).
+/** The 5 on-disk rule names (agent/rules/basalt-{name}.md); `tests/surfaces.test.ts` holds the set equal.
  *
- * One rule file per DOCTRINE, not per subpath: `state` also owns the router bridge's placement law
- * (the two were one argument split across two files), and `batteries` owns every adapter surface
- * whose doctrine is "use the shipped thing" — forms, commands, table, content, agent and the
- * app-global layer. Thirteen files carried 4,177 lines, 55% of it with no guard
- * behind it and the identity paragraph restated six times (`docs/CONTROLS-SPEC.md` §7).
+ * One rule file per DOCTRINE, not per subpath: `state` owns the router bridge and the field handles,
+ * `page` owns every part a page composes (frames, controls, tables, forms, content and AI), and `ui`
+ * owns the import boundary and the primitives, the app-global ban layer included.
  *
  * @example
  * const r: RuleName = 'tokens' // ok
  * // const bad: RuleName = 'overlays' // tsc error — not in the union
  */
-export type RuleName = 'tokens' | 'charts' | 'ui' | 'state' | 'controls' | 'batteries'
+export type RuleName = 'tokens' | 'charts' | 'ui' | 'state' | 'page'
 
 /** The 3 shipped skill names (agent/skills/basalt-{name}/SKILL.md, placed into a consumer's
  * .claude/skills/ by `basalt-ui init`/`sync` — the same managed path the rules take).
@@ -148,7 +146,7 @@ const v = (spec: string, message: string, extra?: Partial<ForbiddenImport>): For
 
 /**
  * The one hard source for the enforcement seam. Keys split into two kinds:
- * - JS-subpath keys (., ./charts, ./tokens, ./controls, ./table, ./format, ./content, ./vite, plus the v3 subpaths ./router, ./data, ./form, ./page, ./cards, ./ai, ./ui/*, ./core/*, ./shell, ./lint, ./stylelint, ./testing, ./theme-script) — real package.json exports (the 15-subpath map of docs/V2-SPEC.md §1, with ./styles.css, ./configs/* and the v3 CSS entries as the non-JS assets).
+ * - JS-subpath keys (., ./charts, ./tokens, ./controls, ./table, ./content, ./vite, ./router, ./data, ./form, ./page, ./cards, ./motion, ./ai, ./ui/*, ./core/*, ./shell, ./lint, ./stylelint, ./testing, ./theme-script, ./static, ./astro) — real package.json exports; `./core/*` stands for the explicit eject paths (`scripts/export-keys.ts`), and the CSS, Astro and config entries are the non-JS assets.
  * - #-prefixed synthetic keys (#app) — the synthetic global app-wide ban layer. The #-prefix
  *   guarantees it is never mistaken for an export path.
  *
@@ -171,15 +169,7 @@ export const SURFACES = {
       "no second cssVariablesResolver — don't hand-build createTheme or re-add the resolver basalt already installs",
     ],
     description:
-      'The state seams (`persisted`, `notify`, `externalField`, `useNow`, `createFormat`, `useFormat`). Reaches no subpath-required peer.',
-    optionalPeers: [
-      'remark-gfm',
-      'rehype-sanitize',
-      'remend',
-      'shiki',
-      'pele',
-      '@tanstack/react-router-devtools',
-    ],
+      'The app root and the state seams: `BasaltProvider`, `IntlScope`, `setScheme`, `setAppearance`, `persisted`, `notify`, `externalField`, `useNow`, `createFormat`, `useFormat`, and the port types every subpath names (`NavTarget`, `LinkComponent`, `IconComponent`, `FieldLike`, `DetailHost`, `DragLike`). Reaches no peer beyond react.',
     forbiddenImports: [], // the no-charts/tokens-reexport invariant is comment-only today; Phase-4 plugin
   },
   './charts': {
@@ -216,13 +206,13 @@ export const SURFACES = {
     layer: 'build-tooling',
     description:
       'basalt(opts) — v3 plugin: peer and seed build gates, eject aliases, `.basalt/sources.css`, theme script, theme-color and manifest; basaltViteConfig(opts) — 2.x Vite preset',
-    optionalPeers: ['vite-plugin-pwa'],
+    optionalPeers: ['vite', 'vite-plugin-pwa'],
     forbiddenImports: [],
   },
   './table': {
     kind: 'doctrine',
     layer: 'ui',
-    rule: 'batteries',
+    rule: 'page',
     skill: ['basalt-design'],
     description:
       '`DataTable` over `useDataTable`, the `col` kind columns, the parts `DataTable` composes (`TableToolbar`, `DataTableBody`, `TablePager`, `BulkBar`) and `tableCodec`, on TanStack Table v9 and `ui/*` primitives',
@@ -232,11 +222,12 @@ export const SURFACES = {
   './content': {
     kind: 'doctrine',
     layer: 'ui',
-    rule: 'batteries',
+    rule: 'page',
     skill: ['basalt-design'],
     description:
       'Markdown (react-markdown + remark-gfm + rehype-sanitize + remend, all required peers, every import static so server, client and hydrate render the same tree; `contentTrust` is REQUIRED and independent of `streaming`, which is a rendering mode only — render agent or model output with `contentTrust="untrusted"`: no `<img>` (alt text; `images="same-origin"` admits relative srcs), links limited to same-origin, https:, mailto: and tel:, and no `sanitize` or `rehypePlugins`; `contentTrust="trusted"` takes `sanitize` ({ allowTags, allowAttrs } additions over a fixed policy that runs last) and `rehypePlugins`; a missing or unknown `contentTrust` renders as untrusted) — the content surface',
     optionalPeers: [
+      '@base-ui/react',
       'shiki',
       '@shikijs/langs',
       '@shikijs/themes',
@@ -251,7 +242,7 @@ export const SURFACES = {
   './controls': {
     kind: 'doctrine',
     layer: 'ui',
-    rule: 'controls',
+    rule: 'page',
     skill: ['basalt-design'],
     // docs/CONTROLS-SPEC.md §6 "Honest coverage" — verbatim, because a generated header claiming
     // otherwise is D8 again.
@@ -263,7 +254,7 @@ export const SURFACES = {
     ],
     description:
       'The control tier (docs/v3/concepts/controls-url-state.md). Exports: `FilterSet` (a list of `spec(...)`s as one nowrap row of pills, a measured +N fold and the mobile Filters (n) sheet), `ViewTabs` bound to a control handle, `ControlView`, `ControlHome`, `filterSlot`, `spec`, and the v3 forms `FormField`/`FormRow`/`FormFooter`/`useFormDraft`/`toSubmitErrors`. The home picks the presentation (pill, row, inline), never a prop. Every control owns its own desktop/mobile swap in CSS and resolves with only its own peers.',
-    optionalPeers: [],
+    optionalPeers: ['@base-ui/react'],
     globs: {
       shipped: [],
       repo: ['packages/basalt-ui/src/controls/**'],
@@ -271,11 +262,15 @@ export const SURFACES = {
     forbiddenImports: [],
   },
 
-  // ── v3 skeleton (additive stubs; each row is filled by its owning v3 Issue) ──────────────────
+  // ── v3 subpaths ──────────────────────────────────────────────────────────────────────────────
   './router': {
-    kind: 'tooling',
+    kind: 'doctrine',
     layer: 'headless',
-    description: 'v3 router bridge — nav, controls and search-state defaults on TanStack Router',
+    rule: 'state',
+    skill: ['basalt-app'],
+    description:
+      'v3 router bridge — defineNav, field handles, navTarget, routerDefaults and the re-exported BasaltProvider on TanStack Router',
+    optionalPeers: ['@tanstack/react-router'],
     globs: { shipped: [], repo: ['packages/basalt-ui/src/router/**'] },
     forbiddenImports: [],
   },
@@ -284,6 +279,7 @@ export const SURFACES = {
     layer: 'headless',
     description:
       'v3 data layer — query client, unwrap, optimistic and live queries on TanStack Query',
+    optionalPeers: ['@tanstack/react-query'],
     globs: { shipped: [], repo: ['packages/basalt-ui/src/data/**'] },
     forbiddenImports: [],
   },
@@ -292,28 +288,33 @@ export const SURFACES = {
     layer: 'ui',
     description:
       "basalt's form parts bound to TanStack Form through createFormHook: useAppForm (FormField on every AppField, Form and Footer inside AppForm, blur-then-change revalidation by default), withForm",
-    optionalPeers: ['@tanstack/react-form'],
+    optionalPeers: ['@base-ui/react', '@tanstack/react-form'],
     globs: { shipped: [], repo: ['packages/basalt-ui/src/form/**'] },
     forbiddenImports: [],
   },
   './page': {
-    kind: 'tooling',
-    layer: 'headless',
-    description: 'v3 page composites — Page, PageBar, Section, QueryState, overlays',
+    kind: 'doctrine',
+    layer: 'ui',
+    rule: 'page',
+    skill: ['basalt-design'],
+    description:
+      'v3 page composites — Page, PageBar, PageAside, Section, SplitPage, InnerNav, QueryState, overlays, and the article parts (Prose, Callout, Toc, ArticleLayout)',
+    optionalPeers: ['@base-ui/react', '@tanstack/react-router'],
     globs: { shipped: [], repo: ['packages/basalt-ui/src/page/**'] },
     forbiddenImports: [],
   },
   './cards': {
     kind: 'tooling',
-    layer: 'headless',
+    layer: 'ui',
     description:
       'v3 card composites — StatCard, StatGroup, BarList, EventList, RowList, RelationshipCard, StepRail, ChainView, Board, FlowCanvas, FlowChecklist, useFlow',
+    optionalPeers: ['@base-ui/react'],
     globs: { shipped: [], repo: ['packages/basalt-ui/src/cards/**'] },
     forbiddenImports: [],
   },
   './motion': {
     kind: 'tooling',
-    layer: 'headless',
+    layer: 'ui',
     description:
       'v3 motion presets — useMotionPreset and motionPreset (overlay, item, card) on motion/react, collapsed under reduced motion',
     optionalPeers: ['motion'],
@@ -322,25 +323,42 @@ export const SURFACES = {
   },
   './ai': {
     kind: 'tooling',
-    layer: 'headless',
+    layer: 'ui',
     description: 'v3 AI-chat part views — partView, defineBlock, defineCatalog',
-    optionalPeers: ['react-markdown', 'remark-gfm', 'rehype-sanitize', 'remend'],
+    optionalPeers: [
+      '@base-ui/react',
+      'shiki',
+      '@shikijs/langs',
+      '@shikijs/themes',
+      'pele',
+      'react-markdown',
+      'remark-gfm',
+      'rehype-sanitize',
+      'remend',
+    ],
     globs: { shipped: [], repo: ['packages/basalt-ui/src/ai/**'] },
     forbiddenImports: [],
   },
   './ui/*': {
     kind: 'tooling',
-    layer: 'headless',
-    description: 'v3 primitives — one module per primitive on Base UI, wildcard entry',
-    optionalPeers: ['@base-ui/react'],
+    layer: 'ui',
+    description:
+      'v3 primitives — one module per primitive on Base UI, wildcard entry; a guard, a test helper and the slot table do not resolve',
+    optionalPeers: [
+      '@base-ui/react',
+      '@atlaskit/pragmatic-drag-and-drop',
+      '@tanstack/react-virtual',
+      'react-day-picker',
+      'react-resizable-panels',
+    ],
     globs: { shipped: [], repo: ['packages/basalt-ui/src/ui/**'] },
     forbiddenImports: [],
   },
   './core/*': {
     kind: 'tooling',
-    layer: 'headless',
+    layer: 'ui',
     description:
-      'v3 core modules (cn, format, messages, phase, ports) — the paths an ejected primitive imports; wildcard entry',
+      'The modules an ejected primitive imports (cn, format, messages, phase, ports, list, …), each listed in the exports map and held to the seeds by a test; every other core module is unpublished, and no public type lives here',
     globs: { shipped: [], repo: ['packages/basalt-ui/src/core/**'] },
     forbiddenImports: [],
   },
@@ -349,7 +367,12 @@ export const SURFACES = {
     layer: 'ui',
     description:
       'App shell — AppShell, the CSS-grid frame: header, rail, one scrollport, aside and phone tab bar from one defineNav; defineCommands chords run on TanStack Hotkeys',
-    optionalPeers: ['@tanstack/react-hotkeys'],
+    optionalPeers: [
+      '@base-ui/react',
+      '@tanstack/react-router',
+      '@tanstack/react-hotkeys',
+      '@atlaskit/pragmatic-drag-and-drop',
+    ],
     forbiddenImports: [],
   },
   './lint': {
@@ -368,6 +391,7 @@ export const SURFACES = {
     kind: 'tooling',
     layer: 'build-tooling',
     description: 'v3 test harness — renderApp, settled, quality; tooling, no app bundle',
+    optionalPeers: ['@axe-core/playwright'],
     forbiddenImports: [],
   },
   './theme-script': {
@@ -498,7 +522,7 @@ export const SURFACES = {
     // synthetic global app-wide ban layer — the src/**+app/** glob
     kind: 'doctrine',
     layer: 'app-global',
-    rule: 'batteries',
+    rule: 'ui',
     skill: ['basalt-app'],
     globs: {
       shipped: ['**/*.{ts,tsx}'],
@@ -539,7 +563,7 @@ export const SURFACES = {
 
 /**
  * Derived, deduped set of doctrine rule names. Projection 1 of SURFACES.
- * → ['ui', 'charts', 'tokens', 'batteries', 'state', 'controls'] (order is insertion order of Set)
+ * → ['ui', 'charts', 'tokens', 'page', 'state'] (order is insertion order of Set)
  *
  * @example
  * RULE_NAMES.includes('tokens') // true

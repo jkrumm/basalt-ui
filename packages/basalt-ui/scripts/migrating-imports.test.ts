@@ -26,6 +26,8 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import ts from 'typescript'
 
+import { isEjectPath } from './export-keys'
+
 const PKG = join(import.meta.dir, '..')
 const OLDEST_CHECKED_PROSE_SECTION = '## 1.30.0'
 
@@ -41,7 +43,7 @@ function subpathEntries(): Map<string, string> {
   if (!isRecord(exportsMap)) throw new Error('package.json#exports is missing or not an object')
   const entries = new Map<string, string>()
   for (const [key, value] of Object.entries(exportsMap)) {
-    if (typeof value === 'string') continue
+    if (typeof value === 'string' || value === null || isEjectPath(key)) continue
     if (!isRecord(value))
       throw new Error(`package.json#exports["${key}"] is neither a string nor an object`)
     if (value.types === undefined) continue

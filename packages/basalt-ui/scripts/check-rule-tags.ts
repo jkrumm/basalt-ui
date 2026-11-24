@@ -6,34 +6,36 @@
  * enforces and fails.
  *
  * - `[lint:<id>]` must be a key of the merged rule table (`src/lint`), the one source of lint ids.
- * - `[type:<name>]` must be a backticked name in docs/v3/ARCHITECTURE.md section 1, an export of
- *   `src/core/ports.ts` or an export of a `src/<dir>/contract.ts`. A name that has not landed yet
- *   is listed in {@link LANDS_LATER}: it passes, is printed, and fails once it resolves (a stale
- *   entry) so the list shrinks as the surface lands.
+ * - `[type:<name>]` must be exported from a published entry (`basalt-ui`, `basalt-ui/<subpath>` or
+ *   `basalt-ui/ui/<name>`), read by the TypeScript checker from the entry files the exports map
+ *   names (`entry-exports.ts`). A name only a `contract.ts` or `core/*` declares does not count: a
+ *   consumer could not import it.
+ * - `tests/types/rule-tags.type-test.ts` imports every tagged name from its entry by the published
+ *   specifier, so the package typecheck compiles each one against the built `.d.ts`. It is generated
+ *   here (`--write`) and the check fails when it is stale.
  *
  * Repo-local: `scripts/` is not shipped. Called from `check-agent-doc-drift.ts`; also runnable.
  *
- * Usage: bun packages/basalt-ui/scripts/check-rule-tags.ts
+ * Usage: bun packages/basalt-ui/scripts/check-rule-tags.ts [--write]
  */
-import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 
 import { tableOf } from '../src/lint/factory'
 import plugin from '../src/lint/index'
+import { entryExports, homesOf } from './entry-exports'
 
 const PKG_ROOT = join(import.meta.dir, '..')
-const REPO_ROOT = join(PKG_ROOT, '../..')
-
-/** `[type:<name>]` names whose export has not landed (G1 or later); each must still be unresolved. */
-export const LANDS_LATER: ReadonlySet<string> = new Set(['setScheme'])
+export const TYPE_TEST = 'tests/types/rule-tags.type-test.ts'
 
 export type TagSources = {
   readonly lintIds: ReadonlySet<string>
+  /** Every name a published entry exports. */
   readonly typeNames: ReadonlySet<string>
 }
 
 export type TagFailure = { line: number; message: string }
-export type TagReport = { failures: TagFailure[]; landsLater: string[] }
+export type TagReport = { failures: TagFailure[]; typeNames: string[] }
 
 const TAG = String.raw`\[(?:lint:[a-z][a-z0-9-]*|type:[A-Za-z_$][\w$]*)\]`
 const TAG_RE = new RegExp(TAG, 'g')
@@ -45,7 +47,7 @@ const NOT_GUARDED_RE = /^not guarded:\s*$/i
 /** Failures of one rule document: untagged bullets, unresolved tags, prose outside bullets. */
 export function checkRuleTags(markdown: string, sources: TagSources): TagReport {
   const failures: TagFailure[] = []
-  const landsLater = new Set<string>()
+  const typeNames = new Set<string>()
   let inFrontmatter = false
   let inFence = false
   let inComment = false
@@ -76,15 +78,9 @@ export function checkRuleTags(markdown: string, sources: TagSources): TagReport 
           failures.push({ line, message: `[lint:${name}] is not a key of the lint rule table` })
         }
       } else if (!sources.typeNames.has(name)) {
-        if (LANDS_LATER.has(name)) landsLater.add(name)
-        else {
-          failures.push({
-            line,
-            message: `[type:${name}] is not named in ARCHITECTURE section 1, core/ports.ts or a contract.ts`,
-          })
-        }
-      } else if (LANDS_LATER.has(name)) {
-        failures.push({ line, message: `[type:${name}] resolves now: drop it from LANDS_LATER` })
+        failures.push({ line, message: `[type:${name}] is not exported from a published entry` })
+      } else {
+        typeNames.add(name)
       }
     }
   }
@@ -142,46 +138,16 @@ export function checkRuleTags(markdown: string, sources: TagSources): TagReport 
     failures.push({ line, message: 'prose outside a bullet (only the intro line under the H1)' })
   })
   closeBullet()
-  return { failures, landsLater: [...landsLater].toSorted() }
+  return { failures, typeNames: [...typeNames].toSorted() }
 }
 
-/** Names exported by a TypeScript source file, by declaration keyword. */
-export function exportedNames(source: string): string[] {
-  const re =
-    /^export (?:declare )?(?:type|interface|const|function|class|enum) ([A-Za-z_$][\w$]*)/gm
-  return [...source.matchAll(re)].map((m) => m[1] as string)
-}
-
-/** Backticked identifiers (an optional trailing `()`) inside ARCHITECTURE section 1. */
-export function architectureNames(architecture: string): string[] {
-  const start = architecture.search(/^## 1\. /m)
-  const end = architecture.search(/^## 2\. /m)
-  if (start === -1 || end === -1) {
-    throw new Error('docs/v3/ARCHITECTURE.md: section 1 or 2 heading not found')
-  }
-  const section = architecture.slice(start, end)
-  return [...section.matchAll(/`([A-Za-z_$][\w$]*)(?:\(\))?`/g)].map((m) => m[1] as string)
-}
-
-const read = (file: string): string => readFileSync(file, 'utf8')
-
-export function loadSources(): TagSources {
-  const src = join(PKG_ROOT, 'src')
-  const files = [
-    join(src, 'core/ports.ts'),
-    // The frame types both contracts name (`FrameState`, `FootFacts`, `MenuEntry`) are declared once here.
-    join(src, 'core/phase.ts'),
-    ...readdirSync(src, { withFileTypes: true })
-      .filter((e) => e.isDirectory())
-      .map((e) => join(src, e.name, 'contract.ts'))
-      .filter((f) => existsSync(f)),
-  ]
+/** The lint ids, and the names of every published entry (`entries`, by specifier). */
+export function loadSources(
+  entries: ReadonlyMap<string, ReadonlySet<string>> = entryExports(PKG_ROOT),
+): TagSources {
   return {
     lintIds: new Set(Object.keys(tableOf(plugin))),
-    typeNames: new Set([
-      ...architectureNames(read(join(REPO_ROOT, 'docs/v3/ARCHITECTURE.md'))),
-      ...files.flatMap((f) => exportedNames(read(f))),
-    ]),
+    typeNames: new Set([...entries.values()].flatMap((names) => [...names])),
   }
 }
 
@@ -194,34 +160,61 @@ export function ruleFiles(pkgRoot: string = PKG_ROOT): string[] {
     .map((n) => join(dir, n))
 }
 
-/** Every rule file checked; returns printable failures and the names that land later. */
+/** Every rule file checked; returns printable failures and every tagged type name. */
 export function checkAllRuleFiles(
   sources: TagSources = loadSources(),
   pkgRoot: string = PKG_ROOT,
-): { messages: string[]; landsLater: string[] } {
+): { messages: string[]; typeNames: string[] } {
   const messages: string[] = []
-  const landsLater = new Set<string>()
+  const typeNames = new Set<string>()
   for (const file of ruleFiles(pkgRoot)) {
     const report = checkRuleTags(readFileSync(file, 'utf8'), sources)
     for (const f of report.failures)
       messages.push(`${relative(pkgRoot, file)}:${f.line}: ${f.message}`)
-    for (const name of report.landsLater) landsLater.add(name)
+    for (const name of report.typeNames) typeNames.add(name)
   }
-  for (const name of LANDS_LATER) {
-    if (!landsLater.has(name))
-      messages.push(`LANDS_LATER['${name}'] is used by no rule bullet or resolves: drop it`)
-  }
-  return { messages, landsLater: [...landsLater].toSorted() }
+  return { messages, typeNames: [...typeNames].toSorted() }
+}
+
+/**
+ * The type test: each tagged name re-exported from its home by the published specifier, so
+ * `tsc` resolves it through the exports map and the built `.d.ts`, as a consumer's import does.
+ */
+export function typeTestSource(
+  typeNames: readonly string[],
+  entries: ReadonlyMap<string, ReadonlySet<string>>,
+): string {
+  const lines = typeNames.flatMap((name) => {
+    // A root name a subpath also exports is the 2.x shadow; the subpath is its home.
+    const homes = homesOf(entries, name)
+    const home = homes.find((h) => h !== 'basalt-ui') ?? homes[0]
+    return home === undefined ? [] : [`export type { ${name} } from '${home}'`]
+  })
+  return [
+    '// Generated by scripts/check-rule-tags.ts --write; do not edit.',
+    '// Every [type:X] of agent/rules, imported from its published entry: the package typecheck compiles it.',
+    ...lines,
+    '',
+  ].join('\n')
 }
 
 if (import.meta.main) {
-  const { messages, landsLater } = checkAllRuleFiles()
+  const entries = entryExports(PKG_ROOT)
+  const { messages, typeNames } = checkAllRuleFiles(loadSources(entries))
+  const want = typeTestSource(typeNames, entries)
+  const path = join(PKG_ROOT, TYPE_TEST)
+  if (process.argv.includes('--write')) writeFileSync(path, want)
+  else if (readFileSync(path, 'utf8') !== want) {
+    messages.push(
+      `${TYPE_TEST} is stale: run bun packages/basalt-ui/scripts/check-rule-tags.ts --write`,
+    )
+  }
   if (messages.length > 0) {
     console.error(`✖ check-rule-tags: ${messages.length} failure(s)`)
     for (const m of messages) console.error(`  ${m}`)
     process.exit(1)
   }
   console.log(
-    `✓ check-rule-tags: 0 failures${landsLater.length > 0 ? ` (types landing later: ${landsLater.join(', ')})` : ''}`,
+    `✓ check-rule-tags: 0 failures (${typeNames.length} type names, each from a published entry)`,
   )
 }

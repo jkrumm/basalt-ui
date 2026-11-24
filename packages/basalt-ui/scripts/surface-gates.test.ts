@@ -10,6 +10,8 @@ import {
   duplicateSymbols,
   packageOf,
   peerClassViolations,
+  reachedPeers,
+  surfacePeerDrift,
 } from './surface-gates'
 
 describe('duplicateSymbols', () => {
@@ -126,6 +128,32 @@ describe('peerClassViolations', () => {
       peerDependenciesMeta: meta,
     })
     expect(v.some((m) => m.startsWith('./llms.txt'))).toBe(false)
+  })
+
+  test('reachedPeers counts the lazy, static and .d.ts reach of declared peers', () => {
+    const reached = reachedPeers(root, {
+      exports: { ...exportsMap, './core/cn': entry('./dist/index.js', './dist/index.d.ts') },
+      peerDependencies: { ...peers, '@tanstack/react-router': '*' },
+    })
+    // `clsx` is no declared peer; an eject path (`./core/*`) is the `./ui/*` row's, never its own
+    expect(reached).toEqual({
+      '.': ['@tanstack/react-router', 'shiki'],
+      './table': ['@base-ui/react', '@tanstack/react-table', 'remend'],
+    })
+  })
+
+  test('surfacePeerDrift fails a SURFACES list the graph does not match', () => {
+    const reached = { '.': ['shiki'], './astro': [] }
+    expect(
+      surfacePeerDrift(reached, {
+        '.': { optionalPeers: ['react', 'shiki'] },
+        './astro': { optionalPeers: ['@tailwindcss/vite', 'tailwindcss'] },
+      }),
+    ).toEqual([])
+    expect(surfacePeerDrift(reached, { '.': { optionalPeers: ['remend'] } })).toEqual([
+      '.: SURFACES optionalPeers [remend] but the graph reaches [shiki]',
+      './astro: SURFACES optionalPeers [] but the graph reaches [@tailwindcss/vite, tailwindcss]',
+    ])
   })
 
   test('the .d.ts walk follows a .d.ts, never the sibling .js of the same specifier', () => {

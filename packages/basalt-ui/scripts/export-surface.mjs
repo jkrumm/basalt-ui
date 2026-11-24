@@ -56,6 +56,7 @@ const subpaths = (
   await Promise.all(
     Object.keys(exportsMap)
       .filter((k) => !k.startsWith('./configs') && !k.endsWith('.css') && !k.endsWith('.astro'))
+      .filter((k) => exportsMap[k] !== null && !k.startsWith('./core/'))
       .flatMap(async (k) => {
         if (k === UI_WILDCARD) return (await uiModules()).map((name) => `./ui/${name}`)
         return k.includes('*') ? [] : [k]

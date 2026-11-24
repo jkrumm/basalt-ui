@@ -21,6 +21,7 @@
     "node_modules",
     "dist",
     "src/router/nav/nav.type-guard*.test.ts",
-    "src/router/nav/nav.type-guard*.test.tsx"
+    "src/router/nav/nav.type-guard*.test.tsx",
+    "tests/types/*.type-test.ts"
   ]
 }

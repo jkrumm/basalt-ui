@@ -45,7 +45,7 @@ for f in \
   dist/cli/index.js dist/styles.css \
   dist/shell/index.js \
   dist/router/index.js dist/data/index.js dist/page/index.js dist/cards/index.js dist/ai/index.js dist/motion/index.js \
-  dist/lint/index.js dist/lint/stylelint/index.js dist/testing/index.js dist/ui/index.js dist/css/theme-script.js \
+  dist/lint/index.js dist/lint/stylelint/index.js dist/testing/index.js dist/css/theme-script.js \
   dist/css/tokens.css dist/css/typography.css dist/css/prose.css dist/css/fonts.css dist/css/tailwind.css dist/css/archify.css dist/table/table.css \
   dist/static/index.js dist/static/index.d.ts dist/astro/index.js dist/astro/index.d.ts dist/astro/BasaltFonts.astro dist/astro/mdx/Chart.astro dist/astro/mdx/DataTable.astro dist/astro/mdx/chart-island.js dist/astro/mdx/table-island.js \
   dist/css/static.css dist/css/starlight.css \
@@ -188,7 +188,6 @@ const subpaths = [
   'basalt-ui/testing',
   'basalt-ui/theme-script',
   'basalt-ui/shell',
-  'basalt-ui/ui/index',
   'basalt-ui/tokens.css',
   'basalt-ui/typography.css',
   'basalt-ui/prose.css',
@@ -275,6 +274,30 @@ console.log('smoke: basalt-ui/static and basalt-ui/astro OK')
   walk(fileURLToPath(new URL('dist', pkgDir)))
   if (stale.length > 0) throw new Error(`relative primitive imports left in dist: ${stale.slice(0, 5).join(', ')}`)
   console.log(`smoke: eject specifiers OK (${wanted.size} core/tokens paths, ${seeds.length} seeds)`)
+
+  // The exports map is an explicit list: an internal core module, a guard, a test helper, the slot
+  // table and the old stub barrel do not resolve, though each file ships in the tarball.
+  const hidden = [
+    'basalt-ui/core/frame-arm',
+    'basalt-ui/core/provider',
+    'basalt-ui/core/scheme',
+    'basalt-ui/ui/button.guard',
+    'basalt-ui/ui/primitive.contract',
+    'basalt-ui/ui/guard-completeness',
+    'basalt-ui/ui/slots',
+    'basalt-ui/ui/index',
+  ]
+  for (const spec of hidden) {
+    let resolved = false
+    try {
+      import.meta.resolve(spec)
+      resolved = true
+    } catch (e) {
+      if (e?.code !== 'ERR_PACKAGE_PATH_NOT_EXPORTED' && e?.code !== 'ERR_MODULE_NOT_FOUND') throw e
+    }
+    if (resolved) throw new Error(`${spec} resolves; the exports map must not publish it`)
+  }
+  console.log(`smoke: ${hidden.length} internal paths do not resolve`)
 }
 
 console.log(`scratch resolution OK (${subpaths.length} subpaths)`)

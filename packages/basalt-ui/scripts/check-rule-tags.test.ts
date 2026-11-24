@@ -1,18 +1,18 @@
 import { describe, expect, test } from 'bun:test'
 
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import {
-  architectureNames,
   checkAllRuleFiles,
   checkRuleTags,
-  exportedNames,
-  LANDS_LATER,
   loadSources,
   ruleFiles,
+  TYPE_TEST,
+  typeTestSource,
 } from './check-rule-tags'
+import { entryExports } from './entry-exports'
 import type { TagSources } from './check-rule-tags'
 
 const fence = '```'
@@ -54,7 +54,7 @@ describe('checkRuleTags', () => {
   test('flags an unknown lint id and an unknown type name', () => {
     expect(run('- A [lint:nope]', '- B [type:Nope]').failures.map((f) => f.message)).toEqual([
       '[lint:nope] is not a key of the lint rule table',
-      '[type:Nope] is not named in ARCHITECTURE section 1, core/ports.ts or a contract.ts',
+      '[type:Nope] is not exported from a published entry',
     ])
   })
 
@@ -99,41 +99,41 @@ describe('checkRuleTags', () => {
   test('ignores a bullet-shaped line inside a multi-line HTML comment', () => {
     expect(run('<!--', '- not a bullet', '-->', '- real [type:PageBarProps]').failures).toEqual([])
   })
-
-  test('a name in LANDS_LATER passes, is listed, and fails once it resolves', () => {
-    const [name = ''] = [...LANDS_LATER]
-    expect(run(`- A [type:${name}]`)).toEqual({ failures: [], landsLater: [name] })
-    const resolved = checkRuleTags(doc(`- A [type:${name}]`), {
-      ...sources,
-      typeNames: new Set([name]),
-    })
-    expect(resolved.failures[0]?.message).toContain('drop it from LANDS_LATER')
-  })
 })
 
 describe('sources', () => {
-  test('exportedNames reads declaration exports, not re-exports or locals', () => {
-    const src = [
-      'export type A = 1',
-      'export const b = 2',
-      'type C = 3',
-      'export function d() {}',
-    ].join('\n')
-    expect(exportedNames(src)).toEqual(['A', 'b', 'd'])
-  })
+  const entries = entryExports(join(import.meta.dir, '..'))
 
-  test('architectureNames reads backticked identifiers of section 1 only', () => {
-    const md = ['## 1. Layers', '`Alpha` `beta()` `not-ident`', '## 2. Package', '`Gamma`'].join(
-      '\n',
-    )
-    expect(architectureNames(md)).toEqual(['Alpha', 'beta'])
-  })
-
-  test('the real sources hold the table ids and the contract names', () => {
-    const real = loadSources()
+  test('a contract type no entry exports does not resolve; its published home does', () => {
+    const real = loadSources(entries)
     expect(real.lintIds.has('import-boundary')).toBe(true)
-    expect(real.typeNames.has('ControlsSlot')).toBe(true)
     expect(real.typeNames.has('PageBarProps')).toBe(true)
+    // `ShellNav` is declared in shell/contract.ts and exported by no entry
+    expect(real.typeNames.has('ShellNav')).toBe(false)
+    expect(entries.get('basalt-ui/page')?.has('PageBarProps')).toBe(true)
+  })
+
+  test('core/* paths are no home: a name only core/ports declares is not public', () => {
+    expect([...entries.keys()].some((s) => s.startsWith('basalt-ui/core/'))).toBe(false)
+    expect(loadSources(entries).typeNames.has('PageHost')).toBe(false)
+  })
+
+  test('the type test imports each name from a subpath before the root shadow', () => {
+    const map = new Map([
+      ['basalt-ui', new Set(['Phase', 'NavTarget'])],
+      ['basalt-ui/cards', new Set(['Phase'])],
+    ])
+    expect(typeTestSource(['NavTarget', 'Phase'], map).split('\n').slice(2, 4)).toEqual([
+      "export type { NavTarget } from 'basalt-ui'",
+      "export type { Phase } from 'basalt-ui/cards'",
+    ])
+  })
+
+  test(`${TYPE_TEST} is current`, () => {
+    const { typeNames } = checkAllRuleFiles(loadSources(entries))
+    expect(readFileSync(join(import.meta.dir, '..', TYPE_TEST), 'utf8')).toBe(
+      typeTestSource(typeNames, entries),
+    )
   })
 })
 

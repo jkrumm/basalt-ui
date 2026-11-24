@@ -26,6 +26,7 @@ import ts from 'typescript'
 import { SURFACES } from '../src/surfaces'
 import { checkExport, formatExportDoc } from './docs-format'
 import type { ExportInfo, ExportJsdoc } from './docs-format'
+import { isEjectPath } from './export-keys'
 import { currentArms, propShapeLines, valueSignature } from './llms-signatures'
 import { SUBPATH_REQUIRED_PEERS } from './surface-gates'
 
@@ -126,7 +127,8 @@ function publishedEntries(pkgRoot: string): Array<{ key: string; file: string }>
     exports?: Record<string, unknown>
   }
   return Object.entries(pkg.exports ?? {}).flatMap(([key, value]) => {
-    if (key.startsWith('./ui/') || typeof value !== 'object' || value === null) return []
+    if (key.startsWith('./ui/') || isEjectPath(key) || typeof value !== 'object' || value === null)
+      return []
     const types = (value as { types?: unknown }).types
     if (typeof types !== 'string') return []
     const file = sourceEntry(pkgRoot, types)

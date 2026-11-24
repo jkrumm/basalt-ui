@@ -8,8 +8,10 @@
  *
  * Every function returns violation strings; empty means green.
  */
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
+
+import { isEjectPath } from './export-keys'
 
 /** A `Record<subpath, exported names>` — the shape of `scripts/export-surface/*.json`. */
 export type Surface = Readonly<Record<string, readonly string[]>>
@@ -196,7 +198,7 @@ function resolveRelative(from: string, spec: string, exts: readonly string[]): s
  * deliberately NOT followed — that is what makes a peer optional) and named by the `.d.ts` graph
  * rooted at `entryDts` (static and `import('…')` type references both count: a public type names it).
  */
-function reachFromEntry(entryJs: string, entryDts: string): Reach {
+function reachFromEntry(entryJs: string, entryDts: string, lazy = false): Reach {
   const walk = (entry: string, dynamic: boolean, exts: readonly string[], into: Set<string>) => {
     const seen = new Set<string>()
     const stack = existsSync(entry) ? [entry] : []
@@ -225,9 +227,75 @@ function reachFromEntry(entryJs: string, entryDts: string): Reach {
     }
   }
   const reach: Reach = { staticPeers: new Set(), typePeers: new Set() }
-  walk(entryJs, false, ['.js'], reach.staticPeers)
+  walk(entryJs, lazy, ['.js'], reach.staticPeers)
   walk(entryDts, true, ['.d.ts'], reach.typePeers)
   return reach
+}
+
+/**
+ * Every declared peer a subpath can load: its static and lazy `import()` graph through relative modules
+ * and published primitives, plus what its `.d.ts` graph names, minus the React base. The set a
+ * consumer may need for that subpath, which `SURFACES[subpath].optionalPeers` states for llms.txt and
+ * `info`; `./ui/*` is the union over every primitive.
+ */
+export function reachedPeers(root: string, manifest: Manifest): Record<string, string[]> {
+  const declared = new Set(Object.keys(manifest.peerDependencies ?? {}))
+  const out: Record<string, string[]> = {}
+  for (const [subpath, target] of Object.entries(manifest.exports ?? {})) {
+    if (typeof target !== 'object' || target === null || isEjectPath(subpath)) continue
+    const { import: js, types } = target
+    if (!js || !types) continue
+    const pairs: [string, string][] = []
+    if (js.includes('*')) {
+      const dir = resolve(root, dirname(js))
+      if (!existsSync(dir)) continue
+      for (const f of readdirSync(dir)) {
+        const stem = f.replace(/\.js$/, '')
+        if (stem === f || stem.includes('.')) continue // a guard (`x.guard.js`) is no primitive
+        if (Object.hasOwn(manifest.exports ?? {}, `${subpath.slice(0, -1)}${stem}`)) continue // a null key
+        pairs.push([resolve(dir, f), resolve(root, types.replace('*', stem))])
+      }
+    } else pairs.push([resolve(root, js), resolve(root, types)])
+    const peers = new Set<string>()
+    for (const [entryJs, entryDts] of pairs) {
+      const reach = reachFromEntry(entryJs, entryDts, true)
+      for (const name of [...reach.staticPeers, ...reach.typePeers]) {
+        if (declared.has(name) && !REACT_PEERS.includes(name)) peers.add(name)
+      }
+    }
+    out[subpath] = [...peers].toSorted()
+  }
+  return out
+}
+
+/**
+ * Peers a subpath loads by a name resolved from the app, which no import graph shows: `basaltAstro()`
+ * resolves Tailwind 4's Vite plugin (and with it `tailwindcss`) from the site's own install.
+ */
+export const APP_RESOLVED_PEERS: Readonly<Record<string, readonly string[]>> = {
+  './astro': ['@tailwindcss/vite', 'tailwindcss'],
+}
+
+/**
+ * Each JS subpath whose `optionalPeers` in SURFACES differs from {@link reachedPeers} plus
+ * {@link APP_RESOLVED_PEERS}. The React base may be stated (`./static` names `react`) and is not compared.
+ */
+export function surfacePeerDrift(
+  reached: Readonly<Record<string, readonly string[]>>,
+  surfaces: Readonly<Record<string, { readonly optionalPeers?: readonly string[] }>>,
+): string[] {
+  const out: string[] = []
+  for (const [subpath, graph] of Object.entries(reached)) {
+    const want = [...new Set([...graph, ...(APP_RESOLVED_PEERS[subpath] ?? [])])].toSorted()
+    const have = (surfaces[subpath]?.optionalPeers ?? [])
+      .filter((name) => !REACT_PEERS.includes(name))
+      .toSorted()
+    if (have.join() === want.join()) continue
+    out.push(
+      `${subpath}: SURFACES optionalPeers [${have.join(', ')}] but the graph reaches [${want.join(', ')}]`,
+    )
+  }
+  return out
 }
 
 export type Manifest = {
@@ -263,7 +331,8 @@ export function peerClassViolations(root: string, manifest: Manifest): string[] 
   }
 
   for (const [subpath, target] of Object.entries(manifest.exports ?? {})) {
-    if (typeof target !== 'object' || target === null) continue
+    // An eject path is a module an ejected seed imports; its peers are the `./ui/*` row's.
+    if (typeof target !== 'object' || target === null || isEjectPath(subpath)) continue
     const { import: js, types } = target
     if (!js || !types) continue
     const { staticPeers, typePeers } = reachFromEntry(resolve(root, js), resolve(root, types))

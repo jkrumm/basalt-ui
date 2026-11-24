@@ -57,6 +57,7 @@ import { join, relative } from 'node:path'
 import { readShards } from './export-surface-shards.mjs'
 import { generateLlmsTxt } from './gen-llms'
 import { checkAllRuleFiles } from './check-rule-tags'
+import { isEjectPath } from './export-keys'
 import { SURFACES } from '../src/surfaces'
 
 const pkgRoot = join(import.meta.dirname, '..')
@@ -113,7 +114,7 @@ function collectTypeExports(): Set<string> {
   return names
 }
 
-type ExportsManifest = Record<string, { import?: string } | string>
+type ExportsManifest = Record<string, { import?: string } | string | null>
 
 /** `package.json` `exports`, keyed by subpath (`.`, `./charts`, …). */
 function readExportsManifest(): ExportsManifest {
@@ -130,7 +131,7 @@ function subpathSpec(subpath: string): string {
 
 /** The source entry (`src/**`) behind one `exports` target's `import` path; undefined for assets. */
 export function resolveSubpathEntry(target: ExportsManifest[string]): string | undefined {
-  const js = typeof target === 'object' ? target.import : undefined
+  const js = typeof target === 'object' && target !== null ? target.import : undefined
   if (js === undefined) return undefined
   const base = join(pkgRoot, 'src', js.replace(/^\.\/dist\//, '').replace(/\.js$/, ''))
   return [`${base}.ts`, `${base}.tsx`, join(base, 'index.ts')].find(existsSync)
@@ -146,6 +147,8 @@ export function collectPublishedBySubpath(): Map<string, Set<string>> {
   const values = readShards(join(pkgRoot, 'scripts/export-surface'))
   const bySubpath = new Map<string, Set<string>>()
   for (const [subpath, target] of Object.entries(readExportsManifest())) {
+    // A null key publishes nothing; an eject path (`./core/<module>`) is no home for a public name.
+    if (target === null || isEjectPath(subpath)) continue
     const names = new Set(values[subpath] ?? [])
     const entry = resolveSubpathEntry(target)
     if (entry !== undefined) addTypeNames(readFileSync(entry, 'utf8'), names)
