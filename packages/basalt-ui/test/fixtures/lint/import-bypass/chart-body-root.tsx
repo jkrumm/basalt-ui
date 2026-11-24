@@ -1,16 +1,16 @@
 // Fixture: primitive-bypass/chart-body-root
 // @invalid
-const a = <DataPanel title="Load" body={<Lines data={data} ariaLabel="Load" />} />
+const a = <DataPanel title="Load" body={<Lines data={data} label="Load" />} />
 // @invalid
-const a = <DataPanel title="Mix" body={<Donut data={data} ariaLabel="Mix" />} />
+const a = <DataPanel title="Mix" body={<Donut data={data} label="Mix" />} />
 // @invalid
-const a = <DataPanel title="Load" body={() => <CartesianChart data={data} ariaLabel="Load" />} />
+const a = <DataPanel title="Load" body={() => <CartesianChart data={data} label="Load" />} />
 // @invalid
 const a = (
-  <DataPanel title="Load" body={ready ? <Bars data={data} ariaLabel="Load" /> : <Skeleton />} />
+  <DataPanel title="Load" body={ready ? <Bars data={data} label="Load" /> : <Skeleton />} />
 )
 // @valid
-const a = <ChartCard title="Load" chart={<Lines data={data} ariaLabel="Load" />} />
+const a = <ChartCard title="Load" chart={<Lines data={data} label="Load" />} />
 // @valid
 const a = <DataPanel title="Rows" body={<DataTable rows={rows} columns={columns} />} />
 // @valid
@@ -19,7 +19,7 @@ const a = (
     title="Rows"
     body={
       <Stack>
-        <Lines data={data} ariaLabel="Load" />
+        <Lines data={data} label="Load" />
       </Stack>
     }
   />
@@ -30,7 +30,7 @@ const a = (
     title="Load"
     body={() => (
       <div className="h-64">
-        <Lines data={data} ariaLabel="Load" />
+        <Lines data={data} label="Load" />
       </div>
     )}
   />
@@ -42,7 +42,7 @@ const a = (
     body={
       <div>
         <div>
-          <Bars data={data} ariaLabel="Load" />
+          <Bars data={data} label="Load" />
         </div>
       </div>
     }
@@ -65,7 +65,7 @@ const a = (
     title="Share"
     body={() => (
       <>
-        <Lines ariaLabel="share" data={rows} x="at" series={['share']} />
+        <Lines label="share" data={rows} x="at" series={['share']} />
       </>
     )}
   />
@@ -84,34 +84,34 @@ const a = (
 // @invalid
 const a = (
   <section>
-    <Lines data={data} ariaLabel="Load" />
+    <Lines data={data} label="Load" />
   </section>
 )
 // @valid
 const a = (
   <div className="flex">
-    <Lines data={data} ariaLabel="Load" />
+    <Lines data={data} label="Load" />
   </div>
 )
 // @invalid
 const a = (
   <main>
     <div>
-      <Donut data={data} ariaLabel="Mix" />
+      <Donut data={data} label="Mix" />
     </div>
   </main>
 )
 // @valid
 const a = (
   <section>
-    <ChartCard title="Load" chart={<Lines data={data} ariaLabel="Load" />} />
+    <ChartCard title="Load" chart={<Lines data={data} label="Load" />} />
   </section>
 )
 // @valid
 const a = (
   <div>
     <Card>
-      <Lines data={data} ariaLabel="Load" />
+      <Lines data={data} label="Load" />
     </Card>
   </div>
 )
@@ -119,44 +119,44 @@ const a = (
 const a = (
   <div>
     <DataPanel title="Load" body={<Table />}>
-      <Bars data={data} ariaLabel="Load" />
+      <Bars data={data} label="Load" />
     </DataPanel>
   </div>
 )
 // @valid
-const Spark = () => <Sparkline data={data} ariaLabel="Load" />
+const Spark = () => <Sparkline data={data} label="Load" />
 // @valid
 const a = (
   <Stack>
-    <Lines data={data} ariaLabel="Load" />
+    <Lines data={data} label="Load" />
   </Stack>
 )
 // @invalid
 import { Section } from 'basalt-ui/page'
 const a = (
   <Section title="Usage">
-    <Bars data={rows} ariaLabel="Usage" />
+    <Bars data={rows} label="Usage" />
   </Section>
 )
 // @invalid
 import { Page as Frame } from 'basalt-ui/page'
 const a = (
   <Frame>
-    <Lines data={rows} ariaLabel="Load" />
+    <Lines data={rows} label="Load" />
   </Frame>
 )
 // @valid
 import { Section } from 'basalt-ui/page'
 const a = (
   <Section title="Usage">
-    <ChartCard title="Usage" chart={<Bars data={rows} ariaLabel="Usage" />} />
+    <ChartCard title="Usage" chart={<Bars data={rows} label="Usage" />} />
   </Section>
 )
 // @valid
 import { Section } from './my-section'
 const a = (
   <Section title="Usage">
-    <Bars data={rows} ariaLabel="Usage" />
+    <Bars data={rows} label="Usage" />
   </Section>
 )
 // @invalid
@@ -188,7 +188,7 @@ const a = (
       <StatCell
         label="Sessions"
         value={12}
-        chart={(box) => <Sparkline height={box.height} label="Sessions per day" series={daily} />}
+        chart={(box) => <Sparkline height={box.height} label="Sessions per day" points={daily} />}
       />
     </StatGroup>
   </Section>
@@ -198,7 +198,7 @@ import { Page } from 'basalt-ui/page'
 const a = (
   <Page>
     <StatGroup>
-      <StatCell label="Load" value={3} chart={<Lines data={data} ariaLabel="Load" />} />
+      <StatCell title="Load" value={3} chart={<Lines data={data} label="Load" />} />
     </StatGroup>
   </Page>
 )
@@ -207,8 +207,8 @@ import { Section } from 'basalt-ui/page'
 const a = (
   <Section title="Activity">
     <StatGroup>
-      <StatCell label="Sessions" value={12} />
+      <StatCell title="Sessions" value={12} />
     </StatGroup>
-    <Sparkline height={28} label="Sessions per day" series={daily} />
+    <Sparkline height={28} label="Sessions per day" points={daily} />
   </Section>
 )
