@@ -24,7 +24,7 @@ import {
 import { DataTable, col, useDataTable } from 'basalt-ui/table'
 import { BASALT } from 'basalt-ui/tokens'
 import type { ReactElement } from 'react'
-import { STAT_ICON } from '../dogfood-2/stat-icons'
+import { STAT_ICON } from './stat-icons'
 import {
   COUNT_LABELS,
   DEFINITIONS,
@@ -35,8 +35,8 @@ import {
   WORK_LABELS,
   WORK_STATES,
   trendOf,
-} from '../dogfood-4/overview-fixtures'
-import type { OverviewIssue, OverviewStat, WorkState } from '../dogfood-4/overview-fixtures'
+} from './overview-fixtures'
+import type { OverviewIssue, OverviewStat, WorkState } from './overview-fixtures'
 import { overview } from './overview-store'
 import type { Screen } from './overview-store'
 

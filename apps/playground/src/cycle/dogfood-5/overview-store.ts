@@ -15,7 +15,7 @@ import {
   WINDOW_LABELS,
   WORK_LABELS,
   WORK_STATES,
-} from '../dogfood-4/overview-fixtures'
+} from './overview-fixtures'
 
 const SCREENS = ['ready', 'loading', 'empty', 'error', 'stale'] as const
 export type Screen = (typeof SCREENS)[number]

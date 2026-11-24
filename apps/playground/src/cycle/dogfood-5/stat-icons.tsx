@@ -3,7 +3,7 @@
  * the playground has no icon library. Counted apart from the slice: the console imports them.
  */
 import type { ReactElement, ReactNode } from 'react'
-import type { FlowStat } from '../dogfood-1/flow-fixtures'
+import type { FlowStat } from './flow-fixtures'
 
 type Glyph = (props: { className?: string }) => ReactElement
 
