@@ -41,11 +41,17 @@ function classStrings(text: string): { value: string; at: number }[] {
   return out
 }
 
-/** The class-rule findings of one template, for the basalt rule ids in `enabled`. */
+/** A fenced code block, blanked line by line so the lines after it keep their numbers. */
+const FENCE = /^(```|~~~)[\s\S]*?^\1/gm
+const withoutFences = (text: string): string =>
+  text.replace(FENCE, (block) => block.replace(/[^\n]/g, ' '))
+
+/** The class-rule findings of one template, for the basalt rule ids in `enabled`; fenced code is an example, never a finding. */
 export function templateClassFindings(
-  text: string,
+  source: string,
   enabled: ReadonlySet<string>,
 ): TemplateFinding[] {
+  const text = withoutFences(source)
   const lines = text.split('\n')
   const lineOf = (at: number): number => text.slice(0, at).split('\n').length
   const waived = (line: number, id: string): boolean => {

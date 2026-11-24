@@ -18,12 +18,13 @@ export const SITE_LAYOUT = 'src/layouts/Layout.astro'
 
 const BASALT_ASTRO_IMPORT = "import { basaltAstro } from 'basalt-ui/astro'"
 const REACT_IMPORT = "import react from '@astrojs/react'"
-const LAST_IMPORT = /^import [^\n]*\n(?![\s\S]*^import )/m
+/** A whole import statement, one line or wrapped: through its `from '…'` (or bare specifier) and `;`. */
+const IMPORT_STATEMENT = /^import\b(?:[^'"]*?\bfrom\s*)?['"][^'"\n]+['"];?[ \t]*\n/gm
 
 function withImport(text: string, line: string): string {
-  const last = LAST_IMPORT.exec(text)
-  if (last === null) return `${line}\n${text}`
-  const at = last.index + last[0].length
+  const last = [...text.matchAll(IMPORT_STATEMENT)].at(-1)
+  if (last === undefined) return `${line}\n${text}`
+  const at = (last.index ?? 0) + last[0].length
   return `${text.slice(0, at)}${line}\n${text.slice(at)}`
 }
 
