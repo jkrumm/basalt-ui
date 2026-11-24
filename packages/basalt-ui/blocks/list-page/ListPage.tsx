@@ -132,11 +132,8 @@ export function ListPage({
     id: 'ref-parts',
     label: 'Parts',
     columns: [
-      c.entity('name', {
-        header: 'Part',
-        sub: (p) => p.sku,
-        subMono: true,
-      }),
+      // The SKU is the record page's subtitle: a nine-column grid has no room for it beside the name.
+      c.entity('name', { header: 'Part' }),
       c.status('stock', {
         header: 'Stock',
         options: STOCK,
