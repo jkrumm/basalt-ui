@@ -327,6 +327,9 @@ export type CustomMarks<D> = {
 
 export type { ChartMarks }
 
+/** One engine mark, for a builder that collects its marks in an array before returning them. */
+export type ChartMark = ChartMarks[number]
+
 /** The accessible name of a chart, required: `label`. */
 export type ChartName = { label: string }
 
