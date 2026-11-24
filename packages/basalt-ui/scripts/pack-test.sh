@@ -41,7 +41,7 @@ for f in \
   dist/charts/index.js dist/charts/index.d.ts \
   dist/tokens/index.js dist/tokens/index.d.ts \
   dist/table/index.js dist/table/index.d.ts \
-  dist/vite.js dist/vite.d.ts \
+  dist/vite/index.js dist/vite/index.d.ts \
   dist/cli/index.js dist/styles.css \
   dist/shell/index.js \
   dist/router/index.js dist/data/index.js dist/page/index.js dist/cards/index.js dist/ai/index.js dist/motion/index.js \

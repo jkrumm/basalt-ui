@@ -10,6 +10,7 @@
  * and `<css>?inline` becomes a string module. It applies `basalt()`'s one transform as well: a module that
  * imports `basalt-ui/table` gets the table tier sheet.
  */
+import { existsSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { withTableSheet } from '../../../src/vite/table-sheet'
 import { PLAYGROUND, REPO } from './routes'
@@ -88,6 +89,12 @@ const playgroundPlugin = (pseudo: boolean): Bun.BunPlugin => ({
 
 /** Generates the (gitignored) route tree the playground imports, then bundles the app. */
 export async function buildPlayground(outdir: string, pseudo: boolean): Promise<void> {
+  // `src/index.css` imports the sources `basalt()` writes on a Vite run; this bundle runs no Vite.
+  if (!existsSync(join(PLAYGROUND, '.basalt/sources.css'))) {
+    throw new Error(
+      'matrix: apps/playground/.basalt/sources.css is missing: run `bun --filter @basalt-ui/playground build` first',
+    )
+  }
   const generate = Bun.spawnSync([join(PLAYGROUND, 'node_modules/.bin/tsr'), 'generate'], {
     cwd: PLAYGROUND,
     stdout: 'pipe',
