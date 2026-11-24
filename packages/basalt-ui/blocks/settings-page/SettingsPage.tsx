@@ -59,7 +59,8 @@ function ReorderingPane(): ReactElement {
   return (
     <form.AppForm>
       <form.Form>
-        <div data-shot="reordering" className="flex flex-col gap-10">
+        {/* On a phone the pane opens from the section list, so the anchor is hidden at rest there. */}
+        <div data-shot="reordering" data-shot-absent="rest" className="flex flex-col gap-10">
           <FormSection
             title="Policy"
             description="Applies to every part without a policy of its own."
