@@ -27,7 +27,7 @@ Keep every label in one file of the site's words (`src/lib/site.ts`) and pass it
 
 1. Look up the part's `interaction` in `ASTRO_PARTS` from `basalt-ui/astro` (the same table drives the build check):
    - `none`: render it in the `.astro` page with no directive.
-   - `enhance`: the static picture works; add `client:visible` (`client:idle` above the fold) only when the behaviour is wanted.
+   - `enhance`: the static picture works; add `client:visible` (`client:idle` above the fold) only when the behavior is wanted.
    - `required`: it is dead without JavaScript.
 2. A `required` part, or any part with state, goes in an island: the smallest React component holding the state, in `src/islands/<Name>.tsx`, placed as `<Name client:visible />` (the ladder is in the rule).
 3. A build that stops with `basalt-ui: N part(s) that need JavaScript render outside an island` lists each part and its page: move the part into an island as above. Never remove the check.

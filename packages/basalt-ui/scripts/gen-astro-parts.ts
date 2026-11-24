@@ -40,7 +40,7 @@ export function partsSource(json: string): string {
     '',
     '/**',
     ' * One part as an Astro page sees it: `interaction` is what it does with no JavaScript (`none`: the',
-    ' * HTML is the whole part; `enhance`: it works static and gains behaviour in an island; `required`:',
+    ' * HTML is the whole part; `enhance`: it works static and gains behavior in an island; `required`:',
     ' * it is dead without one) and `best` the render mode the matrix measured as its best.',
     ' */',
     'export type AstroPart = {',
