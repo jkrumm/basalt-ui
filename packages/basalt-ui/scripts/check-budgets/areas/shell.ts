@@ -103,12 +103,21 @@ export const rows: readonly RowDef[] = [
     label: 'largest authored file, G2 v3 paths (lines; page, shell, router, content)',
     // 750 lines measured (router/controls/define.ts; shell/core/mobile-projection.ts is 522). The target
     // is 500: splitting those two files is a src change this freeze does not make.
-    ceiling: 790,
+    ceiling: 795,
     measure: largestAuthoredFile,
   },
 ]
 
 export const raises: Raises = {
+  'g2-largest-file-lines': [
+    {
+      from: 790,
+      to: 795,
+      consumer:
+        "the field handle's `useHref()` (plan row ga-typed-nav, Issue 3202), so `InnerNav` and with it `basalt-ui/page` import no router; the hook body lives in `router/controls/href.ts`, and `define.ts` keeps only its type and one binding line",
+      repo: 'basalt-ui',
+    },
+  ],
   'shell-subpath': [
     {
       from: 169000,
