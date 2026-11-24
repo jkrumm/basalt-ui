@@ -12,7 +12,7 @@
  * everything a v3 reader or consumer sees does not.
  */
 
-export type Kind = 'vx' | 'mantine'
+export type Kind = 'vx' | 'mantine' | 'british'
 
 export type Allow = {
   /** A repo-relative path: a directory when it ends in `/`, else one file. */
@@ -30,6 +30,8 @@ const FINDERS: Readonly<Record<Kind, readonly RegExp[]>> = {
   // inside a camel-case identifier (`collectVxNames`). Base64 runs such as `1YVxB` match neither.
   vx: [/(?:(?<![A-Za-z0-9])|(?<=\\[bBdDsSwW]))vx/i, /(?<=[a-z0-9])Vx(?![a-z])/],
   mantine: [/mantine/i],
+  // American spelling in every identifier, rule id, file name and shipped text (Issue 3201): `color`, `favorite`.
+  british: [/colour|favourite/i],
 }
 
 const HISTORY = 'history: a record of what was, kept in its own words'
@@ -163,6 +165,41 @@ const ALLOWED: readonly Allow[] = [
     kinds: ['mantine'],
     reason: 'the 2.x symbol census the ui migration rows must cover',
   },
+  // British spelling: repo-internal records keep their words; what ships and what a consumer types does not.
+  {
+    path: 'docs/',
+    kinds: ['british'],
+    reason: 'repo-internal design records and history; nothing under docs/ ships',
+  },
+  {
+    path: 'scripts/evidence/',
+    kinds: ['british'],
+    reason: 'benchmark evidence capture, repo-internal',
+  },
+  ...detector('lint/renamed-rules', undefined, 'the renamed-rule map names the 2.x ids', 'british'),
+  ...detector(
+    'lint/rules/structure/waiver-needs-reason',
+    /colour/,
+    'the renamed-id report names the 2.x ids it refuses',
+    'british',
+  ),
+  ...detector(
+    'lint/check-tokens',
+    /colour: 'color'/,
+    'the token-kind reader accepts the British word an author may write',
+    'british',
+  ),
+  {
+    path: 'packages/basalt-ui/scripts/glossary.ts',
+    kinds: ['british'],
+    line: /rejected: \['(favourite|colour)/,
+    reason: 'the glossary rejects the British spelling by name',
+  },
+  {
+    path: 'packages/basalt-ui/test/fixtures/lint/structure-rest/waiver-needs-reason-renamed-id.tsx',
+    kinds: ['british'],
+    reason: 'the renamed-id offender fixture',
+  },
   // The 2.x layout oracle (`LAYOUT_TARGET=v2`) measures the 2.x DOM by its own class names.
   ...[
     'packages/basalt-ui/tests/layout/shell-slots.ts',
@@ -175,11 +212,16 @@ const ALLOWED: readonly Allow[] = [
 ]
 
 /** A detector's source module and its compiled twins, line-scoped. */
-function detector(module: string, line: RegExp, reason: string): Allow[] {
+function detector(
+  module: string,
+  line: RegExp | undefined,
+  reason: string,
+  kind: Kind = 'mantine',
+): Allow[] {
   return [`src/${module}.ts`, `dist/${module}.js`, `dist/${module}.d.ts`].map((rel) => ({
     path: `packages/basalt-ui/${rel}`,
-    kinds: ['mantine'],
-    line,
+    kinds: [kind],
+    ...(line !== undefined && { line }),
     reason,
   }))
 }
