@@ -527,6 +527,7 @@ export function useDataTable<
     options.look ?? 'reading',
   )
   const look = options.look ?? 'reading'
+  const phone = options.phone ?? (look === 'grid' ? 'scroll' : 'cards')
   const tick = options.selection !== undefined
   const numbers = options.rowNumbers === true
   // The number column fits the largest number it can print, as it prints it: every row of a client
@@ -931,7 +932,7 @@ export function useDataTable<
     pager,
     look,
     headerIcons: options.headerIcons ?? look === 'grid',
-    phone: options.phone ?? (look === 'grid' ? 'scroll' : 'cards'),
+    phone,
     cardsBelow: options.cardsBelow ?? 'regular',
     cursor: server && 'cursor' in mode ? mode.cursor : undefined,
     // A folded column reads as hidden to every part (the columns menu too) until a reader decides; a part
@@ -989,9 +990,9 @@ export function useDataTable<
           column.visible &&
           (column.priority === 3 ||
             column.place === 'detail' ||
-            (options.phone === 'columns' && !column.phoneKeep) ||
+            (phone === 'columns' && !column.phoneKeep) ||
             // The phone list row draws the title, two values and the answer; any other column is behind the tap.
-            ((options.phone ?? (look === 'grid' ? 'scroll' : 'cards')) === 'cards' &&
+            (phone === 'cards' &&
               !column.identity &&
               column.place !== 'title' &&
               column.place !== 'kebab' &&
