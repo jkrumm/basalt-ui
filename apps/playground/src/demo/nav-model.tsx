@@ -9,7 +9,8 @@
  *
  * Destinations: the Tour first (the landing page and its stops, in order; `demo/tour.ts` holds each stop's line),
  * then the Reference pages, the Kit (one page per capability), its Forms group and the routed recipes,
- * each folded until opened. Trial builds and test fixtures have no entry (apps/playground/AGENTS.md).
+ * each folded until opened. Trial builds and test fixtures have no entry (apps/playground/AGENTS.md);
+ * /kit/avatars has none either, to hold the 40-entry cap, and is reached by URL.
  * Settings is the shell's `settings` menu, not a nav item.
  */
 import { linkOptions } from '@tanstack/react-router'
