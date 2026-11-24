@@ -185,7 +185,7 @@ const ALLOWED: readonly Allow[] = [
   ),
   ...detector(
     'lint/check-tokens',
-    /colour: 'color'/,
+    /colour: ['"]color['"]/,
     'the token-kind reader accepts the British word an author may write',
     'british',
   ),
