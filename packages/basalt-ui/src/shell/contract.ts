@@ -7,11 +7,12 @@
 import type { ReactNode } from 'react'
 import type { ControlsSlot, IconComponent, NavTarget } from '../core/ports'
 import type { FavouritesStore, NavBadge } from '../page/contract'
+import type { SizeClass } from '../page/use-size-class'
 
 // ---- Opaque targets and size ---------------------------------------------------------------
 
 /** The frame axis (never page layout); the rail is hidden compact, collapsed medium, open expanded. */
-export type SizeClass = 'compact' | 'medium' | 'expanded'
+export type { SizeClass }
 
 /** What a `custom`, `popover` or block slot receives; clipped to the header row. */
 export type ShellBox = { height: number; sizeClass: SizeClass }
@@ -44,14 +45,15 @@ export type NavItem = {
 
 export type NavSection = { id: string; label: string; items: readonly NavItem[] }
 
-export type NavConfig = {
+/** The nav the shell draws; `basalt-ui/router`'s `NavConfig` is what `defineNav` returns. */
+export type ShellNav = {
   sections: readonly NavSection[]
   /** Rail bottom. */
   pinned?: readonly NavItem[]
 }
 
 /** Keys are typed from the declared nav; a typo is a compile error. */
-export type NavBadges<Id extends string = string> = Partial<Record<Id, NavBadge>>
+export type ShellBadges<Id extends string = string> = Partial<Record<Id, NavBadge>>
 
 // ---- Header actions, sidebar blocks, settings, account (3.1) ------------------------------
 
@@ -133,9 +135,9 @@ export type WorkspaceSwitcher = {
 }
 
 export type AppShellProps<Id extends string = string> = {
-  nav: NavConfig
+  nav: ShellNav
   brand: ShellBrand
-  badges?: NavBadges<Id>
+  badges?: ShellBadges<Id>
   blocks?: readonly SidebarBlock[]
   globalControls?: ControlsSlot
   globalActions?: readonly GlobalAction[]

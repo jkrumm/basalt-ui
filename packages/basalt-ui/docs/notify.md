@@ -3,7 +3,7 @@ name: notify
 use when: 'a result needs a short, passing note the user can ignore'
 never when: 'the message must be read to continue, or belongs next to a field'
 subpath: basalt-ui
-peers: ['@tanstack/react-router-devtools', pele, rehype-sanitize, remark-gfm, remend, shiki]
+peers: []
 slots: []
 ---
 

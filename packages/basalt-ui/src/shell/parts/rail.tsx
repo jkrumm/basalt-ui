@@ -15,7 +15,7 @@ import { useSyncExternalStore } from 'react'
 import type { ReactElement } from 'react'
 import type {
   Account,
-  NavBadges,
+  ShellBadges,
   SettingsConfig,
   ShellBrand,
   SidebarBlock,
@@ -44,7 +44,7 @@ import { RAIL_TEXT } from './rail-text'
 export type RailProps = {
   runtime: NavRuntime
   brand: ShellBrand
-  badges: NavBadges | undefined
+  badges: ShellBadges | undefined
   blocks: readonly SidebarBlock[]
   settings: SettingsConfig | undefined
   account: Account | undefined

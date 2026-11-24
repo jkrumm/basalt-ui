@@ -3,7 +3,7 @@ name: installDomShims
 use when: 'a jsdom or happy-dom test mounts a Base UI popup and the runner lacks a browser API it touches'
 never when: 'the test runs in a real browser, or the runner is neither jsdom nor happy-dom (it throws)'
 subpath: basalt-ui/testing
-peers: []
+peers: ['@axe-core/playwright']
 slots: []
 ---
 

@@ -3,7 +3,7 @@ name: defineBlock
 use when: 'a model may ask the page to show a typed piece of UI (a stat, a list, a table) through a tool call or a data part'
 never when: 'the content is model text (use partView, which renders it as untrusted markdown) or the UI is authored by the app, not chosen by a model'
 subpath: basalt-ui/ai
-peers: ['@base-ui/react', react-markdown, rehype-sanitize, remark-gfm, remend]
+peers: ['@base-ui/react', '@shikijs/langs', '@shikijs/themes', pele, react-markdown, rehype-sanitize, remark-gfm, remend, shiki]
 slots: []
 ---
 

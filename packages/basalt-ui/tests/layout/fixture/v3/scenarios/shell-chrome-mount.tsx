@@ -32,10 +32,10 @@ import type {
   Account,
   AppShellProps,
   GlobalAction,
-  NavBadges,
-  NavConfig,
   NavItem,
   SettingsConfig,
+  ShellBadges,
+  ShellNav,
 } from '../../../../../src/shell/contract'
 import type { FixtureSpec, ItemSpec, SectionSpec } from '../../spec'
 import type { ShellChromeSpec } from './shell-chrome'
@@ -88,7 +88,7 @@ function toItem(item: ItemSpec, icons: boolean): NavItem {
   }
 }
 
-function toSection(section: SectionSpec, index: number, icons: boolean): NavConfig['sections'][0] {
+function toSection(section: SectionSpec, index: number, icons: boolean): ShellNav['sections'][0] {
   return {
     id: slug(section.label, index),
     label: section.label,
@@ -96,7 +96,7 @@ function toSection(section: SectionSpec, index: number, icons: boolean): NavConf
     // The core reads these two off the declaration; the frozen `NavSection` type omits them.
     ...(section.collapsible === true && { collapsible: true }),
     ...(section.defaultCollapsed === true && { defaultCollapsed: true }),
-  } as NavConfig['sections'][0]
+  } as ShellNav['sections'][0]
 }
 
 function flatItems(sections: readonly SectionSpec[]): ItemSpec[] {
@@ -270,9 +270,9 @@ export async function mount(spec: FixtureSpec, container: HTMLElement): Promise<
   }
 
   const icons = spec.icons !== false
-  const nav: NavConfig = { sections: spec.sections.map((s, i) => toSection(s, i, icons)) }
+  const nav: ShellNav = { sections: spec.sections.map((s, i) => toSection(s, i, icons)) }
   const items = flatItems(spec.sections)
-  const badges: NavBadges = Object.fromEntries(
+  const badges: ShellBadges = Object.fromEntries(
     items.flatMap((item) => (item.count === undefined ? [] : [[item.key, { count: item.count }]])),
   )
   const active = items.find((item) => item.active === true) ?? items[0]

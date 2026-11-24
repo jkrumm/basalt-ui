@@ -9,3 +9,19 @@ export { defineCommands } from './commands/define-commands'
 export { CommandPalette } from './commands/command-palette'
 export { toMenuTemplate } from './menu-template'
 export { useWindowChrome } from './chrome'
+export type {
+  Account,
+  AccountRow,
+  AppShellProps,
+  GlobalAction,
+  SettingsConfig,
+  SettingsItem,
+  ShellBox,
+  ShellBrand,
+  ShellChrome,
+  ShellFrame,
+  SidebarBlock,
+  WindowChrome,
+  Workspace,
+  WorkspaceSwitcher,
+} from './contract'

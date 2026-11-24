@@ -19,7 +19,7 @@ import type { ControlHandle } from '../core/ports'
 import { Segmented } from '../ui/segmented'
 import { Select } from '../ui/select'
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs'
-import type { ViewTabsProps as ContractProps } from './contract'
+import type { ViewTabsBinding } from './contract'
 import { ControlPresentationContext } from './control-view'
 
 export type ViewTabsOption<T extends string = string> = {
@@ -30,7 +30,7 @@ export type ViewTabsOption<T extends string = string> = {
   readonly only?: 'sm-up' | 'sm-down'
 }
 
-type HandleProps<T extends string> = ContractProps<T> & {
+type HandleProps<T extends string> = ViewTabsBinding<T> & {
   /** Defaults to `state.options` (every declared value, labelled by `.labels()`). */
   options?: readonly ViewTabsOption<T>[]
   /**

@@ -3,7 +3,7 @@ name: ModelPicker
 use when: 'a person picks the model, or several to compare, that answers a prompt; it sits in the Composer''s footer through `model`'
 never when: 'the choice is no model (use Select or Combobox from basalt-ui/ui)'
 subpath: basalt-ui/ai
-peers: ['@base-ui/react', react-markdown, rehype-sanitize, remark-gfm, remend]
+peers: ['@base-ui/react', '@shikijs/langs', '@shikijs/themes', pele, react-markdown, rehype-sanitize, remark-gfm, remend, shiki]
 slots: [model-picker, model-picker-content, model-picker-count]
 ---
 

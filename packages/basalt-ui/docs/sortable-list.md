@@ -3,7 +3,7 @@ name: SortableList
 use when: 'the user sets an order by hand: a settings list, the order of tabs or columns'
 never when: 'the order is a sort the data defines (sort the table), or cards move between states (use Board)'
 subpath: basalt-ui/ui/sortable-list
-peers: ['@base-ui/react']
+peers: ['@atlaskit/pragmatic-drag-and-drop']
 slots: [sortable-list]
 ---
 

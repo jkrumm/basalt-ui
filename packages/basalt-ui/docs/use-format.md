@@ -3,7 +3,7 @@ name: useFormat
 use when: 'a component prints a number, date, money amount, relative time or duration for a reader'
 never when: 'the code runs outside React (a model module, a server function): use `createFormat`'
 subpath: basalt-ui
-peers: ['@tanstack/react-router-devtools', pele, rehype-sanitize, remark-gfm, remend, shiki]
+peers: []
 slots: []
 ---
 

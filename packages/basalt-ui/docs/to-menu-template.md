@@ -3,7 +3,7 @@ name: toMenuTemplate
 use when: 'the app runs in a native shell (Tauri) whose menu bar should list the commands of the app'
 never when: 'the app is web only (the palette is the menu) or the menu needs submenus (the host groups the items)'
 subpath: basalt-ui/shell
-peers: ['@base-ui/react', '@tanstack/react-hotkeys', '@tanstack/react-router']
+peers: ['@atlaskit/pragmatic-drag-and-drop', '@base-ui/react', '@tanstack/react-hotkeys', '@tanstack/react-router']
 slots: []
 ---
 

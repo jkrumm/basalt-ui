@@ -3,7 +3,7 @@ name: ChoiceCard
 use when: 'a choice carries a description, a price or a picture and the options sit side by side'
 never when: 'the options are plain one-line labels (use a RadioGroup or CheckboxGroup list)'
 subpath: basalt-ui/ui/choice-card
-peers: ['@base-ui/react']
+peers: []
 slots: [choice-card]
 ---
 

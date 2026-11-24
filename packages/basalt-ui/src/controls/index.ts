@@ -8,6 +8,21 @@
 // Filters are data: `spec(handle, label, options?)` entries a `FilterSet` or a `ControlHome` renders.
 export { FilterSet } from './filter-set'
 export { ViewTabs } from './view-tabs'
+export type { ViewTabsOption, ViewTabsProps } from './view-tabs'
+export type {
+  ControlHomeProps,
+  FilterOption,
+  FilterScope,
+  FilterSetProps,
+  FormAction,
+  FormFooterProps,
+  SpecOptions,
+  SubmitErrors,
+  ToSubmitErrors,
+  UseFormDraftOptions,
+  UseFormDraftResult,
+} from './contract'
+export type { ControlsSlot, FormLike } from '../core/ports'
 
 // v3 forms: `FormField` carries label, description and error by construction; `FormRow` lays fields out by container tier.
 export { FormField } from './form-field'

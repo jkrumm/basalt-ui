@@ -3,7 +3,7 @@ name: Message
 use when: 'one turn of a chat thread, the person''s or the assistant''s'
 never when: 'the text is not a conversation turn (use Prose, or a Card)'
 subpath: basalt-ui/ai
-peers: ['@base-ui/react', react-markdown, rehype-sanitize, remark-gfm, remend]
+peers: ['@base-ui/react', '@shikijs/langs', '@shikijs/themes', pele, react-markdown, rehype-sanitize, remark-gfm, remend, shiki]
 slots: [ai-message, ai-message-body]
 ---
 

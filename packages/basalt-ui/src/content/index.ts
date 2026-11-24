@@ -9,3 +9,9 @@
 export { Markdown } from './markdown'
 export type { MarkdownProps } from './markdown'
 export { CodeBlock } from './code-block'
+export type {
+  CodeBlockProps,
+  FenceRenderers,
+  TrustedMarkdownProps,
+  UntrustedMarkdownProps,
+} from './contract'

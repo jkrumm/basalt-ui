@@ -3,7 +3,7 @@ name: MessageActions
 use when: 'the copy, regenerate, feedback and edit buttons of a message the app draws itself'
 never when: 'the message is a `Message`: give it `actions` instead'
 subpath: basalt-ui/ai
-peers: ['@base-ui/react', react-markdown, rehype-sanitize, remark-gfm, remend]
+peers: ['@base-ui/react', '@shikijs/langs', '@shikijs/themes', pele, react-markdown, rehype-sanitize, remark-gfm, remend, shiki]
 slots: [ai-message-actions]
 ---
 

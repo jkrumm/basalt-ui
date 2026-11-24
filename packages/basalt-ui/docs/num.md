@@ -3,7 +3,7 @@ name: Num
 use when: 'a figure is printed in the page locale with tabular digits and a muted dash when it is missing'
 never when: 'the text is not a number, or the figure belongs to a part that formats its own (StatCard, DataTable)'
 subpath: basalt-ui/ui/num
-peers: ['@base-ui/react']
+peers: []
 slots: [num]
 ---
 

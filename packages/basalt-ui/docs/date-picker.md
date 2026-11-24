@@ -3,7 +3,7 @@ name: DatePicker
 use when: 'the user picks one calendar day (a due date, a birthday, a report day)'
 never when: 'a time of day or a time zone matters (the value has neither) or the user picks a span (use `DateRangePicker`)'
 subpath: basalt-ui/ui/date-picker
-peers: ['@base-ui/react']
+peers: ['@base-ui/react', react-day-picker]
 slots: [date-picker, date-range-picker]
 ---
 

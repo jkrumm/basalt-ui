@@ -3,7 +3,7 @@ name: Alert
 use when: 'the page must say something about its own state next to the content it concerns: a failed sync, a warning'
 never when: 'the message is transient feedback after an action (use `notify`) or a card-level state (use `Callout` or a part''s own phase)'
 subpath: basalt-ui/ui/alert
-peers: ['@base-ui/react']
+peers: []
 slots: [alert]
 ---
 

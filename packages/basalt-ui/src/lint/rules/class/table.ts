@@ -217,7 +217,7 @@ export const CLASS_RULES = defineRules({
       {
         id: 'scheme-fork',
         detect: schemeForkForm,
-        fix: 'BasaltProvider owns the scheme: switch it with setScheme from basalt-ui/core/scheme, which sets data-theme on the root and stores the choice, never a root class, className or data-theme written by hand; where the scheme picks a class, tokens switch per scheme, so the one token class serves both',
+        fix: 'BasaltProvider owns the scheme: switch it with setScheme from basalt-ui, which sets data-theme on the root and stores the choice, never a root class, className or data-theme written by hand; where the scheme picks a class, tokens switch per scheme, so the one token class serves both',
         next: 'A reasoned per-line waiver',
         fixture: 'class/dark-fork/scheme-fork.tsx',
       },

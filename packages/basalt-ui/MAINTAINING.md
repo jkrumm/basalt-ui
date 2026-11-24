@@ -5,7 +5,7 @@ ships in the tarball. The repo-root `AGENTS.md` is the monorepo file; `AGENTS.md
 shipped consumer quick reference.
 
 The only published package (npm: `basalt-ui`). An opinionated framework for React apps on Base UI, Tailwind 4 and TanStack
-Charts: `BasaltProvider` (`basalt-ui/router`), an app shell with a page bar and a
+Charts: `BasaltProvider` (`basalt-ui`, re-exported by `basalt-ui/router`), an app shell with a page bar and a
 control tier, a TanStack Charts chart system, a three-tier `--basalt-*` token system, a Vite preset,
 raw toolchain presets, and the `basalt-ui` CLI.
 

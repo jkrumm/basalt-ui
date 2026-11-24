@@ -4,10 +4,11 @@
  * unmounts the `<a>` and loses keyboard focus on the link the user just activated.
  *
  * Ported from the 2.x shell test without the shell: a small harness renders every item through
- * `navAnchor` and `useActiveNav`, which is all the nav core owns.
+ * `navAnchor` and marks the item `resolveActive` picks for the live location, which is all the nav
+ * core owns.
  */
 import { act, cleanup, render, waitFor } from '@testing-library/react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { afterEach, describe, expect, test } from 'bun:test'
 import {
   RouterProvider,
@@ -15,9 +16,10 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
+  useRouterState,
 } from '@tanstack/react-router'
 import { navAnchor } from './anchor'
-import { useActiveNav } from './use-active-nav'
+import { resolveActive } from './resolve-active'
 import { defineNav } from '../../../tests/support/router-nav'
 import type { AnyNavConfig, AnyNavItem } from './types'
 
@@ -48,8 +50,16 @@ const NAV: AnyNavConfig = defineNav({
 const flat = (items: ReadonlyArray<AnyNavItem>): AnyNavItem[] =>
   items.flatMap((i) => [i, ...(i.children ? flat(i.children) : [])])
 
+/** The active item for the live location; `href` moves on every navigation, search-only ones included. */
+function useActive(nav: AnyNavConfig) {
+  const pathname = useRouterState({ select: (s) => s.location.pathname })
+  const href = useRouterState({ select: (s) => s.location.href })
+  // oxlint-disable-next-line react-hooks/exhaustive-deps -- `href` is the change signal an `activeWhen` may read
+  return useMemo(() => resolveActive(nav, pathname), [nav, pathname, href])
+}
+
 function Harness({ nav, count, search }: { nav: AnyNavConfig; count: number; search?: boolean }) {
-  const { activeId, ancestorIds } = useActiveNav(nav)
+  const { activeId, ancestorIds } = useActive(nav)
   return (
     <nav>
       {flat(nav.sections.flatMap((s) => s.items)).map((it) => {

@@ -1,7 +1,7 @@
 import { useFormat } from 'basalt-ui'
 import type { QueryStateLike } from 'basalt-ui/cards'
 import { Facts, Page, PageBar } from 'basalt-ui/page'
-import type { NavTarget } from 'basalt-ui/core/ports'
+import type { NavTarget } from 'basalt-ui'
 import { defineControls, field } from 'basalt-ui/router'
 import { col, DataTable, useDataTable } from 'basalt-ui/table'
 import { EntityChip } from 'basalt-ui/ui/entity'

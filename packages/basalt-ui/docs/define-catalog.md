@@ -3,7 +3,7 @@ name: defineCatalog
 use when: 'an app renders blocks a model chose: every spec passes `validate` or `Block` before any render'
 never when: 'there is one fixed component and no model picks it (render the composite directly)'
 subpath: basalt-ui/ai
-peers: ['@base-ui/react', react-markdown, rehype-sanitize, remark-gfm, remend]
+peers: ['@base-ui/react', '@shikijs/langs', '@shikijs/themes', pele, react-markdown, rehype-sanitize, remark-gfm, remend, shiki]
 slots: []
 ---
 

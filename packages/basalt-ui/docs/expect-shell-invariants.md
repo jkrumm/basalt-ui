@@ -3,7 +3,7 @@ name: expectShellInvariants
 use when: 'a test drives a page through `AppShell` and wants the frame held to the same geometry the library holds itself to'
 never when: 'the check is a pixel comparison (use a screenshot gate) or the page runs outside AppShell'
 subpath: basalt-ui/testing
-peers: []
+peers: ['@axe-core/playwright']
 slots: []
 ---
 

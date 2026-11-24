@@ -19,6 +19,39 @@ export {
 } from './core/external-field'
 export type { StorageLike } from './core/ports'
 
+// The app's root provider and the two writers of the reader's choices on `<html>`. `basalt-ui/router`
+// re-exports the same `BasaltProvider` beside `routerDefaults`, the entry `init` writes.
+export { BasaltProvider } from './core/provider'
+export type { BasaltProviderProps, LiveBinding } from './core/provider'
+export { IntlScope } from './core/provider-props'
+export type { BasaltIntlProps } from './core/provider-props'
+export { setScheme } from './core/scheme'
+export type { Scheme } from './core/scheme'
+export { setAppearance } from './core/appearance'
+export type {
+  Appearance,
+  AppearanceChange,
+  AppearanceDensity,
+  AppearanceFrame,
+} from './core/appearance'
+
+// The ports every subpath's props name: a router-free part takes `string | NavTarget`, an icon, a
+// field another store owns, a detail host and a drag source through these, never through `core/*`.
+export type {
+  Box,
+  BoxSlot,
+  DetailEntry,
+  DetailHost,
+  DragData,
+  DragEdge,
+  DragLike,
+  FieldLike,
+  IconComponent,
+  LinkComponent,
+  NavTarget,
+  RecordSequence,
+} from './core/ports'
+
 // The frame's value types live on `basalt-ui/cards` and `ControlHandle` on `basalt-ui/router`; these five stay one minor as aliases of the
 // same types (migration rows `cards-frame-types-*` and `router-control-handle`).
 import type { Empty as CardsEmpty, FrameState as CardsFrameState } from './core/phase'

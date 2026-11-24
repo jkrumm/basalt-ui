@@ -51,4 +51,9 @@ export type {
   UseDataTable,
   View,
   ViewStore,
+  Aggregate,
+  CardSlot,
+  Priority,
+  RowHeight,
+  TableLayout,
 } from './contract'

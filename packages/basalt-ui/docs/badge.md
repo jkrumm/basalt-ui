@@ -3,7 +3,7 @@ name: Badge
 use when: 'a state, a count or a change needs a small chip beside a label: `Lozenge` for a word, `CountBadge` for a number, `DeltaBadge` for a change against a period'
 never when: 'the verdict is a dot and a word on one entity (use Status), or the chip would carry colour alone'
 subpath: basalt-ui/ui/badge
-peers: ['@base-ui/react']
+peers: []
 slots: [lozenge, count-badge, delta-badge]
 ---
 

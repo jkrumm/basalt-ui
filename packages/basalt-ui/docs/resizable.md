@@ -3,7 +3,7 @@ name: Resizable
 use when: 'two or more regions share one box and the reader should choose how much room each gets (a list and its detail, an editor and its output)'
 never when: 'a panel only appears over the page without sharing it (a `Peek` or a `Sheet`), or its width is fixed (a plain flex row)'
 subpath: basalt-ui/ui/resizable
-peers: ['@base-ui/react']
+peers: [react-resizable-panels]
 slots: [resizable-panel-group, resizable-panel, resizable-handle]
 ---
 

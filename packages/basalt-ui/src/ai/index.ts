@@ -12,6 +12,15 @@
 export { partView } from './part-view'
 export type { MessagePart, PartViewOptions, ToolView } from './contract'
 export { defineBlock, defineCatalog } from './catalog/define'
+export type {
+  Block,
+  BlockComponentProps,
+  BlockEvent,
+  Catalog,
+  DefineBlockOptions,
+  Infer,
+  Resolved,
+} from './contract'
 export { Composer } from './composer'
 export type { ComposerMessage, ComposerProps, ComposerStatus, Mention } from './composer'
 export { ModelPicker } from './model-picker'
