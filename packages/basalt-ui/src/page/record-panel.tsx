@@ -23,6 +23,7 @@ import { AppLink } from '../core/link'
 import { page } from '../core/messages/page'
 import { useMessages } from '../core/messages/use-messages'
 import type { IconComponent, NavTarget, RecordSequence } from '../core/ports'
+import { neighbours } from '../core/record-steps'
 import { Avatar } from '../ui/avatar'
 import type { AvatarEntry } from '../ui/avatar'
 import { Button, buttonVariants } from '../ui/button'
@@ -122,15 +123,6 @@ export function FullPageLink({ href }: { href: string | NavTarget }): ReactEleme
       <Glyph d={OUT} />
     </AppLink>
   )
-}
-
-/** The record before and after the shown one in the opener's order; `undefined` at an end. */
-export function neighbours(records: RecordSequence): { prev?: string; next?: string } {
-  const at = records.ids.indexOf(records.id)
-  if (at < 0) return {}
-  const prev = records.ids[at - 1]
-  const next = records.ids[at + 1]
-  return { ...(prev !== undefined && { prev }), ...(next !== undefined && { next }) }
 }
 
 /** Previous and next through the opener's records, disabled at the ends. */

@@ -49,6 +49,7 @@ export type {
   PageActionMobile,
   PageAsideProps,
   PageBarProps,
+  PageRecords,
   PageButtonAction,
   PageIdentity,
   PageLayout,
