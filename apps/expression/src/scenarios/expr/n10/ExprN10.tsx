@@ -5,6 +5,7 @@ import { rect } from '@tanstack/charts/rect'
 import { text } from '@tanstack/charts/text'
 import { createFormat } from 'basalt-ui'
 import { CartesianChart, ChartCard, chartLabels, useChartFocus } from 'basalt-ui/charts'
+import type { ChartMark } from 'basalt-ui/charts'
 import { BASALT, alpha } from 'basalt-ui/tokens'
 import { Card } from 'basalt-ui/ui/card'
 import {
@@ -166,7 +167,7 @@ export function ExprN10Scenario({ shotState, fixture }: ScenarioProps): ReactEle
           }
           marks={CartesianChart.custom<Hour>((plot) => {
             const band = plot.rows('p90')
-            const marks: unknown[] = [
+            const marks: ChartMark[] = [
               // cycle-expression-5: the kit has no band series (a filled range between two series), so the ensemble fill is an engine area mark between the p10 and p90 rows.
               areaY(band, {
                 x: (d: Hour) => d.t,
