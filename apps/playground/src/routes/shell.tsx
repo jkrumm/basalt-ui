@@ -1,44 +1,53 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Page, PageAside, PageBar, Section } from 'basalt-ui/page'
+import { Facts, Page, PageAside, Section } from 'basalt-ui/page'
+import { useWindowChrome } from 'basalt-ui/shell'
+import type { ReactElement } from 'react'
 
 // #region page-aside
 // A docked aside: a page claims the shell's right region, which opens at the full-width size class
 // and becomes a sheet opened from the header on a phone.
-function AsideBody() {
+function AsideBody(): ReactElement {
   return (
     <PageAside title="Display" dock="always" width={320}>
-      <p className="m-0 text-sm text-muted-foreground">The aside is a fourth shell region.</p>
+      <p className="m-0 text-sm text-muted-foreground">
+        The aside is the shell's fourth region: docked here, a sheet from the header on a phone.
+      </p>
     </PageAside>
   )
 }
 // #endregion
 
 /**
- * The shell demo: a page bar with an action, and a docked `PageAside`. The navigation, the rail and
- * the tab bar are the subject; the body says what to look at.
+ * The shell: what the one `AppShell` in `routes/__root.tsx` draws, read from the declarations that
+ * drive it. The window chrome row reads `useWindowChrome`; open the page with
+ * `?chrome=native-overlay` to see the desktop window's header.
  */
-function ShellRoute() {
+function ShellRoute(): ReactElement {
+  const { chrome, leadInset } = useWindowChrome()
   return (
     <Page area="shell">
-      <PageBar
-        title="Shell"
-        actions={[{ id: 'tour', label: 'Take a tour', primary: true, onClick: () => undefined }]}
-      />
       <Section title="Navigation">
-        <ul className="m-0 flex list-none flex-col gap-1.5 p-0 text-sm text-muted-foreground">
-          <li>
-            One typed definition (demo/nav-model.tsx) feeds the rail, the tab bar and the
-            breadcrumb.
-          </li>
-          <li>Four destinations are mobile tabs; the rest fold into More.</li>
-          <li>The Cards entry carries a count badge.</li>
-          <li>The Scenarios section is built from the scenario registry.</li>
-        </ul>
+        <Facts
+          rows={[
+            { label: 'Declared', value: 'Once, with defineNav in demo/nav-model.tsx' },
+            { label: 'Sections', value: 'Tour open; Reference, Kit, Forms and Recipes folded' },
+            { label: 'Phone tabs', value: 'Start, Parts, Settings, Dashboard; the rest in More' },
+            { label: 'Badge', value: 'Mail shows 3, its folded section carries the sum' },
+            { label: 'Palette', value: 'Mod K, or the search row of the rail' },
+          ]}
+        />
       </Section>
-      <Section title="Rail footer">
-        <p className="m-0 text-sm text-muted-foreground">
-          Settings and the account menu sit in the footer; the progress block pins above them.
-        </p>
+      <Section title="Rail and header">
+        <Facts
+          rows={[
+            { label: 'Workspace', value: 'The switcher at the top of the rail' },
+            { label: 'Progress', value: 'Getting started, pinned above the footer' },
+            { label: 'Footer', value: 'Settings menu and the signed-out account row' },
+            { label: 'Appearance', value: 'Density, frame and accent, from the header' },
+            { label: 'Window chrome', value: chrome },
+            { label: 'Lead inset', value: `${leadInset} px` },
+          ]}
+        />
       </Section>
       <AsideBody />
     </Page>
