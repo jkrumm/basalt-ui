@@ -490,13 +490,18 @@ export async function detect(
         `${error instanceof Error ? error.message : String(error)}\n${USAGE_LINE}`,
       )
     }
-    const outDir = outDirOf(cwd, values.out)
-    const metricsPath = join(outDir, 'metrics.json')
-    // `--facts` alone: a page with no shot round in its out dir still gets its fact count, and no score.
-    const factsOnly = values.facts !== undefined && !existsSync(metricsPath)
-    if (factsOnly && values.lint !== undefined)
-      throw new DetectError(`--lint needs ${metricsPath}: its findings join the measured ones`)
-    const metrics = factsOnly ? undefined : readMetrics(metricsPath)
+    // `--facts` without `--out` is the page's own count, run before any shot round: no out dir, no
+    // score, no detect.json. With `--out` the facts join that round's findings and score.
+    const factsAlone = values.facts !== undefined && values.out === undefined
+    if (factsAlone && values.lint !== undefined)
+      throw new DetectError('--lint needs a shot round: pass --out <dir> with --facts')
+    const outDir = factsAlone ? undefined : outDirOf(cwd, values.out)
+    const metricsPath = outDir === undefined ? undefined : join(outDir, 'metrics.json')
+    if (metricsPath !== undefined && values.facts !== undefined && !existsSync(metricsPath))
+      throw new DetectError(
+        `--out with --facts needs ${metricsPath}; drop --out to count the facts alone`,
+      )
+    const metrics = metricsPath === undefined ? undefined : readMetrics(metricsPath)
     const facts = values.facts === undefined ? [] : factsOf(resolve(cwd, values.facts), cwd)
     const findings = metrics
       ? sortFindings([
@@ -511,23 +516,25 @@ export async function detect(
         ? `score ${score}`
         : metrics
           ? 'nothing measured (no anchor resolved: not a score)'
-          : 'no metrics.json: facts only, no score'
+          : 'facts only, no score'
     const at = (deps.now ?? (() => new Date()))().toISOString()
-    const rel = relative(cwd, join(outDir, 'detect.json'))
-    try {
-      mkdirSync(outDir, { recursive: true })
-      writeFileSync(
-        join(outDir, 'detect.json'),
-        JSON.stringify(
-          { version: 1, at, out: relative(cwd, outDir), counts, score, findings },
-          null,
-          2,
-        ) + '\n',
-      )
-    } catch (error) {
-      throw new DetectError(
-        `cannot write ${rel}: ${error instanceof Error ? error.message : String(error)}`,
-      )
+    const rel = outDir === undefined ? 'not written' : relative(cwd, join(outDir, 'detect.json'))
+    if (outDir !== undefined) {
+      try {
+        mkdirSync(outDir, { recursive: true })
+        writeFileSync(
+          join(outDir, 'detect.json'),
+          JSON.stringify(
+            { version: 1, at, out: relative(cwd, outDir), counts, score, findings },
+            null,
+            2,
+          ) + '\n',
+        )
+      } catch (error) {
+        throw new DetectError(
+          `cannot write ${rel}: ${error instanceof Error ? error.message : String(error)}`,
+        )
+      }
     }
     const summary = SEVERITIES.filter((s) => counts[s] > 0)
       .map((s) => `${s} ${counts[s]}`)

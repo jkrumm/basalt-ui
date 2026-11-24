@@ -150,8 +150,8 @@ export const USAGE =
   '  40 % or more, overlap, a touch target under the hit floor, document overflow, a state crop identical\n' +
   '  to rest, error shots, a missing scale or no anchors. Contrast is not read: axe owns it.\n' +
   '  --facts <dir> reads the .tsx files under <dir> (not *.test.tsx) and lists the words, phrases and constants\n' +
-  '  the page says in several places (communication-5, P2). With no metrics.json in <out> it is the whole run,\n' +
-  '  with no score; --lint needs metrics.json.\n' +
+  '  the page says in several places (communication-5, P2). Without --out it is the whole run: no shot round,\n' +
+  '  no score, no detect.json; with --out the facts join that round. --lint needs --out.\n' +
   '  Exit codes: 0 clean (P2/P3 findings are listed, not failing), 2 a P0 or P1 finding, 1 scan failure (missing\n' +
   '  or unreadable metrics.json or lint file, or detect.json cannot be written).\n' +
   '    P0  fails: broken or unreadable: an error shot; no anchors\n' +

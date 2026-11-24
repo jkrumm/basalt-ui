@@ -481,7 +481,7 @@ describe('detect command', () => {
     expect(written.score).toBeNull()
   })
 
-  test('--facts with no metrics.json: the fact count alone, a P2 exits 0 with no score', async () => {
+  test('--facts without --out: the fact count alone, before any shot round, with no score and no file', async () => {
     const cwd = tmp()
     const page = join(cwd, 'src/overview')
     mkdirSync(page, { recursive: true })
@@ -489,30 +489,20 @@ describe('detect command', () => {
       join(page, 'a.tsx'),
       'export const Page = () => (\n<p>Median one</p>\n<p>Median two</p>\n<p>Median three</p>\n<p>Median four</p>\n)\n',
     )
-    const out = join(cwd, 'out')
-    const { code, text } = await run(['--facts', 'src/overview', '--out', out], cwd)
+    // No .basalt/last-shot.json in cwd: the page has never been shot.
+    const { code, text } = await run(['--facts', 'src/overview'], cwd)
     expect(code).toBe(0)
     expect(text).toContain('communication-5/repeated-word')
-    expect(text).toContain('no metrics.json: facts only, no score')
-    const written = JSON.parse(readFileSync(join(out, 'detect.json'), 'utf8')) as {
-      score: unknown
-      findings: Finding[]
-    }
-    expect(written.score).toBeNull()
-    expect(written.findings).toMatchObject([
-      {
-        rule: 'communication-5/repeated-word',
-        severity: 'P2',
-        layer: 'content',
-        anchor: 'src/overview',
-        cite: 'src/overview/a.tsx',
-      },
-    ])
+    expect(text).toContain('facts only, no score')
+    expect(text).toContain('src/overview')
+    expect(existsSync(join(cwd, '.basalt'))).toBe(false)
     const err = spyOn(console, 'error').mockImplementation(() => undefined)
     try {
-      expect(
-        (await run(['--facts', 'src/overview', '--out', out, '--lint', 'gone.json'], cwd)).code,
-      ).toBe(1)
+      expect((await run(['--facts', 'src/overview', '--lint', 'gone.json'], cwd)).code).toBe(1)
+      expect(String(err.mock.calls[0]?.[0])).toContain('--lint needs a shot round')
+      const out = join(cwd, 'out')
+      expect((await run(['--facts', 'src/overview', '--out', out], cwd)).code).toBe(1)
+      expect(String(err.mock.calls[1]?.[0])).toContain('drop --out to count the facts alone')
     } finally {
       err.mockRestore()
     }
