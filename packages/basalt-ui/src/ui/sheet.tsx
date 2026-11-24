@@ -301,7 +301,7 @@ export function SheetContent({
                 className,
               )}
             >
-              {!right && <SheetGrabber />}
+              {!right && GRABBER}
               {right && (
                 <PanelHandle
                   panel={popup}
@@ -363,17 +363,15 @@ function KeyboardAware({
 }
 
 /** The pill on a bottom sheet's top edge: it says the panel drags, and it is a drag handle in itself. */
-function SheetGrabber(): ReactElement {
-  return (
-    <div
-      data-slot="sheet-grabber"
-      aria-hidden="true"
-      className="flex h-6 shrink-0 touch-none items-end justify-center pb-1"
-    >
-      <span className="h-1 w-9 rounded-full bg-line" />
-    </div>
-  )
-}
+const GRABBER = (
+  <div
+    data-slot="sheet-grabber"
+    aria-hidden="true"
+    className="flex h-6 shrink-0 touch-none items-end justify-center pb-1"
+  >
+    <span className="h-1 w-9 rounded-full bg-line" />
+  </div>
+)
 
 /**
  * The sheet's heading. `SheetContent` renders it from its `title`.
