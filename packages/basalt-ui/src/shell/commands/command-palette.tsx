@@ -173,7 +173,9 @@ export function CommandPalette({
   const phoneNav = usePhoneNav()
   const sizeClass = useSizeClass()
   const sheetPresent = useSheetPresent(present)
-  const phoneSheet = sheetPresent || (phoneNav !== 'tabs' && sizeClass === 'compact')
+  // `present="popup"` keeps the dialog even under a trial phone nav
+  const phoneSheet =
+    present !== 'popup' && (sheetPresent || (phoneNav !== 'tabs' && sizeClass === 'compact'))
 
   const body = (
     <div data-slot="command-palette">

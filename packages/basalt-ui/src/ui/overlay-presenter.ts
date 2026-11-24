@@ -13,27 +13,31 @@ const PHONE = `(width < ${toEm(SIZE_CLASSES.medium)}) and (pointer: coarse)`
 
 const subscribePhone = (notify: () => void): (() => void) => {
   // the one viewport and pointer read the overlays make; nothing else keys on the viewport
+  // an environment with no matchMedia (a bare test DOM) never reads as a phone
+  if (typeof window.matchMedia !== 'function') return () => {}
   const query = window.matchMedia(PHONE)
   query.addEventListener('change', notify)
   return () => query.removeEventListener('change', notify)
 }
-const readPhone = (): boolean => window.matchMedia(PHONE).matches
+const readPhone = (): boolean =>
+  typeof window.matchMedia === 'function' && window.matchMedia(PHONE).matches
 const serverPhone = (): boolean => false
 
 /**
  * Whether an overlay opens as a sheet: `present` wins, otherwise a phone does. The server and the
  * hydration pass read `false`, so the markup matches and the sheet lands one commit later.
  */
-export function useSheetPresent(present: OverlayPresent = 'auto'): boolean {
+export function useSheetPresent(present?: OverlayPresent): boolean {
   const phone = useSyncExternalStore(subscribePhone, readPhone, serverPhone)
-  return present === 'sheet' || (present === 'auto' && phone)
+  return present === 'sheet' || (present !== 'popup' && phone)
 }
 
 /** What an overlay's content part reads from its root: whether it is a sheet, and its open state. */
 type OverlayState = {
   sheet: boolean
   open: boolean
-  setOpen: (open: boolean) => void
+  /** Closes or opens it; the sheet passes its own event details, a bare call gets a close-press one. */
+  setOpen: (open: boolean, details?: unknown) => void
   /** The sheet's accessible name: the control that opened it, by label or by id. */
   name: OverlayName | undefined
   /** Set by a part that starts as a popup and may turn into a sheet (`Popover` on a phone). */
@@ -48,6 +52,19 @@ const OverlayContext = createContext<OverlayState | null>(null)
 /** The root's presenter state, or `null` outside one: the content part then draws its popup. */
 export function useOverlay(): OverlayState | null {
   return useContext(OverlayContext)
+}
+
+/** The event details of a change no Base UI event started (Done under a calendar): shaped like Base UI's. */
+function closePress(open: boolean): Record<string, unknown> {
+  return {
+    reason: open ? 'trigger-press' : 'close-press',
+    event: new Event('click'),
+    cancel: () => {},
+    allowPropagation: () => {},
+    isCanceled: false,
+    isPropagationAllowed: false,
+    trigger: undefined,
+  }
 }
 
 type OpenProps<D> = {
@@ -75,16 +92,18 @@ export function useOverlayRoot<D>({
   const [inner, setInner] = useState(defaultOpen ?? false)
   const value = open ?? inner
   const change = (next: boolean, details: D): void => {
-    if (open === undefined) setInner(next)
+    // the consumer sees the change first, and a `details.cancel()` keeps an uncontrolled root as it was
     onOpenChange?.(next, details)
+    if (open === undefined && (details as { isCanceled?: boolean }).isCanceled !== true) {
+      setInner(next)
+    }
   }
   return {
     overlay: {
       sheet,
       name,
       open: value,
-      // a close the sheet starts has no Base UI event: the root's own handler gets a bare reason
-      setOpen: (next) => change(next, undefined as D),
+      setOpen: (next, details) => change(next, (details ?? closePress(next)) as D),
     },
     root: { open: value, onOpenChange: change },
   }
