@@ -137,6 +137,14 @@ export const KNOWN: readonly KnownFinding[] = [
     item: /\[code-block\] div \d+x\d+/,
     owner: 'content: the CodeBlock frame has no border or outline under forced-colors',
   },
+  // /kit/content is the tour's content stop: an authored article in ArticleLayout with its TOC rail.
+  {
+    route: '/kit/content',
+    assertion: 'forcedColors',
+    item: /\[code-block\] div \d+x\d+/,
+    owner:
+      'content: the CodeBlock frame has no border or outline under forced-colors (as /scenarios/mdx)',
+  },
   {
     route: '/overview',
     assertion: 'ringWalk',
