@@ -321,7 +321,7 @@ function resolvesToExport(sub: string, ctx: ClaimContext): boolean {
       const suffix = pattern.slice(star + 1)
       return key.length >= pattern.length - 1 && key.startsWith(prefix) && key.endsWith(suffix)
     })
-    .toSorted(([a], [b]) => b.length - a.length)[0]
+    .toSorted(([a], [b]) => b.indexOf('*') - a.indexOf('*') || b.length - a.length)[0]
   if (match === undefined) return false
   const [pattern, target] = match
   if (target === null) return false
