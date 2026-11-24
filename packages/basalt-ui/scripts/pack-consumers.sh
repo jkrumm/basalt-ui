@@ -7,7 +7,9 @@
 #    install, then a server render of the start page the router seeds write.
 # 2. eject: the same app ejects `button`, edits it, builds (the edit reaches the bundle through the
 #    alias `basalt()` sets) and passes `doctor`.
-# 3. site: an Astro project, then `init --profile site`, then `astro build`: the static page ships no
+# 3. a missing peer: with a shell peer removed, `doctor` fails naming it and the build fails in
+#    `basalt()`'s gate on a line that adds it at its declared range; that line, run, makes the build pass.
+# 4. site: an Astro project, then `init --profile site`, then `astro build`: the static page ships no
 #    module script and the island page hydrates exactly one island.
 #
 # A file the tarball lacks (a template `init` writes from, a preset `sync` renders) fails a step here.
@@ -216,6 +218,22 @@ quiet bun run build
 grep -rqF 'data-pack-ejected' dist/assets || { echo "FAILED: the edited ejected button is not in the bundle"; exit 1; }
 quiet ./node_modules/.bin/basalt-ui doctor
 echo "eject round trip: the edit is in the bundle and doctor passes"
+
+echo "==> app: a missing shell peer fails doctor and the build gate, and the gate's line restores it"
+DND=@atlaskit/pragmatic-drag-and-drop
+quiet bun remove "$DND"
+if out=$(./node_modules/.bin/basalt-ui doctor 2>&1); then echo "FAILED: doctor passed without $DND"; exit 1; fi
+grep -qF "$DND" <<<"$out" || { echo "FAILED: doctor did not name $DND"; echo "$out"; exit 1; }
+if out=$(bun run build 2>&1); then echo "FAILED: the build passed without $DND"; exit 1; fi
+fix=$(grep -o "Run: .*" <<<"$out" | head -1 | sed 's/^Run: //')
+case "$fix" in
+  *"$DND@$(pin "$PKG/package.json" peerDependencies "$DND")"*) ;;
+  *) echo "FAILED: the gate's line does not add $DND at its declared range: $fix"; echo "$out"; exit 1 ;;
+esac
+case "$fix" in *--exact*) echo "FAILED: the gate's line saves a range with --exact: $fix"; exit 1 ;; esac
+quiet bash -c "$fix"
+quiet bun run build
+echo "missing peer: doctor and the gate name it; the gate's line ($fix) restores the build"
 
 echo "==> site: Astro project, init --profile site, astro build"
 cd "$SITE"
