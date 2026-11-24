@@ -35,9 +35,10 @@ export default defineConfig({ integrations: [react(), basaltAstro()] })
 faces with the Astro Fonts API (Fontsource), and inlines `themeScript()` then the parts' own listeners in
 every head. At `astro:build:done` it runs the island check (below).
 
-The sheet is `basalt-ui/static.css`, then the token sheets `.basalt/manifest.json` records, then one
-`@source` line per basalt directory the site's own files import (`basalt-ui/charts`, `basalt-ui/ui/dialog`,
-the MDX tags), resolved from the installed package, so a hoisted workspace install works the same and no
+The sheet is `basalt-ui/static.css`, then the token sheets `.basalt/manifest.json` records, then the
+`@source` lines of everything the site's own imports reach (`basalt-ui/charts`, `basalt-ui/ui/dialog`, the MDX
+tags): the closure `basalt()` computes for a Vite app, so a dialog island brings the button it draws, with an
+`@source not` line for each primitive nothing reaches. The paths resolve from the installed package, so a hoisted workspace install works the same and no
 `@source` line is written by hand. It is rewritten on every build and dev start; a new import is picked up
 on the next one. `basaltAstro({ sources: false })` injects `basalt-ui/static.css` instead, for a site that
 lists its own sources.

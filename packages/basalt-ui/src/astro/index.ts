@@ -6,8 +6,8 @@
  * need `<BasaltFonts />` from `basalt-ui/astro/BasaltFonts.astro` in the layout's head: Astro emits a
  * face only where its font component renders. The parts themselves are `basalt-ui/static`.
  *
- * It also writes `.basalt/sources.css` (the sheet with the `@source` lines of every basalt directory
- * the site imports) and, when the build is done, fails it on a part that needs JavaScript rendered
+ * It also writes `.basalt/sources.css` (the sheet with the `@source` lines of the closure the site's
+ * basalt imports reach, as `basalt()` computes it) and, when the build is done, fails it on a part that needs JavaScript rendered
  * outside an island (`ASTRO_PARTS`, `interaction: 'required'`).
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
