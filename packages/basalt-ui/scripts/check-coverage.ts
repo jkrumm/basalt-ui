@@ -93,7 +93,7 @@ export const AGENT_BYTE_BUDGETS: Readonly<Record<string, number>> = {
   'agent/skills/basalt-design/SKILL.md': 6_951,
   'agent/skills/basalt-charts/SKILL.md': 7_972,
   'agent/templates/AGENTS-block.md.tpl': 4_618,
-  'agent/skills/basalt-site/SKILL.md': 4_076,
+  'agent/skills/basalt-site/SKILL.md': 4_113,
   'agent/templates/AGENTS-block.site.md.tpl': 2_295,
   'agent/reviewer/rubric.md': 18_443,
 }

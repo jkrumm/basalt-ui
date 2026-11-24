@@ -85,6 +85,14 @@ describe('the agent set per profile', () => {
     }
   })
 
+  it('a mixed install names the site skill in its block, beside the app skills', () => {
+    const block = renderBlock(PKG, manifest({ site: 'site', src: 'app' }), '3.0.0') ?? ''
+    expect(block).toContain('- `/basalt-site`:')
+    expect(block).toContain('- `/basalt-design`:')
+    const appOnly = renderBlock(PKG, manifest({ src: 'app' }), '3.0.0') ?? ''
+    expect(appOnly).not.toContain('basalt-site')
+  })
+
   it('a mixed install keys each rule on the roots that receive it', () => {
     const units = renderManaged(PKG, manifest({ site: 'site', src: 'app' }))
     const rule = (name: string): string =>

@@ -32,6 +32,14 @@ describe('patchAstroConfig', () => {
     expect(patchAstroConfig(out)).toBe(out)
   })
 
+  it('puts the import after a wrapped last import, never inside it', () => {
+    const text =
+      "import react from '@astrojs/react'\nimport {\n  defineConfig,\n  envField,\n} from 'astro/config'\n\nexport default defineConfig({ integrations: [react()] })\n"
+    const out = patchAstroConfig(text) ?? ''
+    expect(out).toContain("} from 'astro/config'\nimport { basaltAstro } from 'basalt-ui/astro'\n")
+    expect(out).toContain('[react(), basaltAstro()]')
+  })
+
   it('leaves integrations without react() and a config without defineConfig to a to-do', () => {
     expect(patchAstroConfig('export default defineConfig({ integrations: [mdx()] })\n')).toBeNull()
     expect(patchAstroConfig('export default {}\n')).toBeNull()
@@ -124,6 +132,13 @@ describe('init --profile site', () => {
 })
 
 describe('templateClassFindings', () => {
+  it('skips a class in fenced code, an example, and keeps the line numbers after it', () => {
+    const text = '# Guide\n\n```astro\n<div class="ml-4" />\n```\n\n<p class="mr-2">x</p>\n'
+    expect(templateClassFindings(text, new Set(['logical-properties'])).map((f) => f.line)).toEqual(
+      [7],
+    )
+  })
+
   it('reads only the enabled ids, and className and template-literal values too', () => {
     const text = '<A className="pl-3" />\n<B class={`ml-1`} />\n'
     expect(templateClassFindings(text, new Set()).length).toBe(0)

@@ -204,15 +204,31 @@ export function renderBlock(
   version: string,
   sibling: Sibling | null = null,
 ): string | null {
-  const site = profiledRoots(manifest).every(([, profile]) => profile === 'site')
+  const profiles = profiledRoots(manifest).map(([, profile]) => profile)
+  const site = profiles.every((profile) => profile === 'site')
   const template = resolve(pkgRoot, site ? SITE_BLOCK_TEMPLATE : BLOCK_TEMPLATE)
   if (!existsSync(template)) return null
   const vars: Record<string, string> = { BASALT_VERSION: version, PROFILE: manifest.profile }
   const fill = (_: string, key: string): string => vars[key] ?? `{{${key}}}`
-  const block = readFileSync(template, 'utf8')
+  let block = readFileSync(template, 'utf8')
     .replace(/\{\{(\w+)\}\}/g, fill)
     .trim()
+  // A mixed install places the site skill for its site roots: the app block names it beside the app skills.
+  if (!site && profiles.includes('site')) block = withSiteSkill(block, pkgRoot)
   return sibling === null ? block : renameRefs(block, sibling.prefix, skillNames(pkgRoot))
+}
+
+/** The app block with the site block's skill bullet after the last skill bullet. */
+function withSiteSkill(block: string, pkgRoot: string): string {
+  const siteBlock = resolve(pkgRoot, SITE_BLOCK_TEMPLATE)
+  const bullet = existsSync(siteBlock)
+    ? /^- `\/basalt-site`:.*$/m.exec(readFileSync(siteBlock, 'utf8'))?.[0]
+    : undefined
+  if (bullet === undefined) return block
+  const skills = [...block.matchAll(/^- `\/basalt-[a-z-]+`:.*$/gm)].at(-1)
+  if (skills === undefined) return `${block}\n\n${bullet}`
+  const at = (skills.index ?? 0) + skills[0].length
+  return `${block.slice(0, at)}\n${bullet}${block.slice(at)}`
 }
 
 export const HOOK_TEMPLATE = 'agent/templates/hook.mjs.tpl'

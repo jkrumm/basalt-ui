@@ -4,7 +4,7 @@
  * behaves without JavaScript and its best render mode. `basaltAstro()` fails a build on a `required`
  * part outside an island and `doctor` reads which parts a `site` root may import, both from it.
  *
- * `src/astro/parts.test.ts` holds the table to the record, so a matrix change that moves a part fails
+ * `src/astro/astro.test.tsx` holds the table to the record, so a matrix change that moves a part fails
  * until this runs again.
  *
  * Usage: bun packages/basalt-ui/scripts/gen-astro-parts.ts
