@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #
-# Dist gate for the unbundled tsup build. The playground only exercises src/,
-# so this is the only thing that proves the published tarball actually resolves.
+# Dist gate for the unbundled tsup build. The playground runs its scripts from src/
+# (its stylesheets and basalt()'s graph come from dist/), so this is the only thing
+# that proves the published tarball actually resolves.
 # Builds, packs, asserts tarball contents, and scratch-installs the tarball to
 # confirm every subpath export resolves and the tokens entry loads.
 #
