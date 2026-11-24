@@ -1,11 +1,13 @@
 import { useRouter } from '@tanstack/react-router'
-import { lazy, Suspense, useContext, useEffect, useMemo, useState } from 'react'
-import type { ReactElement } from 'react'
+import { lazy, Suspense, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import type { KeyboardEvent as ReactKeyboardEvent, ReactElement } from 'react'
 import { requestMainFocus } from '../../common/focus'
 import { useIsomorphicLayoutEffect } from '../../common/isomorphic-layout-effect'
 import { navFor } from '../../router/nav/registry'
 import { Autocomplete, AutocompleteInput } from '../../ui/combobox'
 import { useSizeClass } from '../../page/use-size-class'
+import { Lozenge } from '../../ui/badge'
+import { Button } from '../../ui/button'
 import { Dialog, DialogContent } from '../../ui/dialog'
 import { useSheetPresent } from '../../ui/overlay-presenter'
 import type { OverlayPresent } from '../../ui/overlay-presenter'
@@ -16,11 +18,13 @@ import { RailControlProvider } from '../parts/grid'
 import { usePhoneNav } from '../parts/mobile/variant'
 import { currentArea } from './area'
 import { useChordBindings } from './bindings'
-import { parseChordSequence } from './chord'
+import { isApplePlatform, parseChordSequence } from './chord'
 import { ChordKeys } from './chord-keys'
 import { SHELL_PALETTE } from './define-commands'
 import type { CommandSet } from './define-commands'
 import { navCommands } from './nav-commands'
+import { openResult, rememberRecent, useSourceRows } from './palette-sources'
+import type { PaletteResult, PaletteResultAction, PaletteSource } from './palette-sources'
 import { defaultRank } from './rank'
 import type { PaletteItem, RankFn } from './rank'
 import { ShortcutOverlay } from './shortcut-overlay'
@@ -29,6 +33,11 @@ import { ShortcutOverlay } from './shortcut-overlay'
 const LazyPaletteSheet = lazy(async () => ({
   default: (await import('./palette-sheet')).PaletteSheet,
 }))
+
+const NO_SOURCES: readonly PaletteSource[] = []
+
+/** A source row's result with the source it came from. */
+type SourceHit = { source: PaletteSource; result: PaletteResult }
 
 export type CommandPaletteProps = {
   commands: CommandSet
@@ -43,6 +52,11 @@ export type CommandPaletteProps = {
    * coarse pointer) and the centred dialog elsewhere; `popup` and `sheet` force one.
    */
   present?: OverlayPresent
+  /**
+   * Record search beside the commands: one group per source, after the command and nav groups, in
+   * this order and headed by the source's `label`. See `PaletteSource`.
+   */
+  sources?: readonly PaletteSource[]
 }
 
 /**
@@ -63,14 +77,31 @@ export type CommandPaletteProps = {
  * `area`) and limited to what fires where focus is; a sequence reads `g` then `n`. It is part of the
  * palette, so no chord can be declared and missing from it, and `?` is reserved like `Mod+K`.
  *
+ * `sources` add record search to the same list. While the query is empty each source shows the
+ * results opened from it last (its recents, kept per source id); a typed query is sent to every
+ * source's `search` after 150 ms of rest, and a newer query or closing aborts the older call through
+ * its `signal`. A source's rows keep the order it returned. Choosing a result (Enter or a click)
+ * closes the palette, records the recent and opens its `to`. A result's `actions` draw as small
+ * trailing buttons, and `Mod+Enter` runs the first action of the highlighted row.
+ *
  * @useWhen the app has commands, shortcuts or a destination list worth reaching from the keyboard
  * @neverWhen the app has a handful of screens and no actions (the rail is the whole navigation)
  *
  * @example
  * <AppShell nav={NAV} brand={{ name: 'Argo' }} search={{ onOpen: () => setOpen(true) }}>
  *   <Outlet />
- *   <CommandPalette commands={COMMANDS} open={open} onOpenChange={setOpen} />
+ *   <CommandPalette commands={COMMANDS} open={open} onOpenChange={setOpen} sources={[SUPPLIERS]} />
  * </AppShell>
+ *
+ * @example
+ * const SUPPLIERS: PaletteSource = {
+ *   id: 'suppliers',
+ *   label: 'Suppliers',
+ *   search: async (query, signal) => {
+ *     const found = await findSuppliers(query, { signal })
+ *     return found.map((s) => ({ id: s.id, title: s.name, kind: 'Supplier', detail: s.city, to: `/suppliers/${s.id}` }))
+ *   },
+ * }
  */
 export function CommandPalette({
   commands,
@@ -79,6 +110,7 @@ export function CommandPalette({
   onOpenChange,
   placeholder = 'Type a command or a page',
   present,
+  sources = NO_SOURCES,
 }: CommandPaletteProps): ReactElement {
   const router = useRouter()
   const rail = useContext(RailControlProvider)
@@ -87,6 +119,8 @@ export function CommandPalette({
   const [query, setQuery] = useState('')
   const [area, setArea] = useState<string | undefined>(undefined)
   const [listHost, setListHost] = useState<HTMLDivElement | null>(null)
+  const [recentsVersion, setRecentsVersion] = useState(0)
+  const highlighted = useRef<unknown>(undefined)
 
   const setOpen = (next: boolean): void => {
     if (next === open) return
@@ -167,8 +201,50 @@ export function CommandPalette({
     queueMicrotask(() => void item.run())
   }
 
+  const chooseResult = ({ source, result }: SourceHit): void => {
+    rememberRecent(router, source, result)
+    setRecentsVersion((version) => version + 1)
+    setOpen(false)
+    queueMicrotask(() => {
+      requestMainFocus()
+      openResult(router, result.to)
+    })
+  }
+
+  const runAction = (action: PaletteResultAction): void => {
+    setOpen(false)
+    queueMicrotask(() => void action.run())
+  }
+
+  // Mod+Enter runs the first action of the highlighted result, before Base UI reads it as a choice.
+  const onKeyDownCapture = (event: ReactKeyboardEvent<HTMLDivElement>): void => {
+    if (event.key !== 'Enter' || !(isApplePlatform() ? event.metaKey : event.ctrlKey)) return
+    const hit = resultByValue.get(String(highlighted.current))
+    const action = hit?.result.actions?.[0]
+    if (action === undefined) return
+    event.preventDefault()
+    event.stopPropagation()
+    runAction(action)
+  }
+
   const byId = new Map(rows.map((item) => [item.id, item]))
-  const list = useOptionList({ source: toListItems(rows), query: '', open })
+  const sourceRows = useSourceRows(sources, query, open, recentsVersion)
+  const resultByValue = new Map<string, SourceHit>()
+  const sourceGroups: ListGroup<string>[] = []
+  for (const { source, results } of sourceRows) {
+    const options = results.map((result): ListOption<string> => {
+      const value = `source:${source.id}:${result.id}`
+      resultByValue.set(value, { source, result })
+      return {
+        value,
+        label: result.title,
+        ...(result.detail !== undefined && { description: result.detail }),
+        ...(result.icon !== undefined && { icon: result.icon }),
+      }
+    })
+    if (options.length > 0) sourceGroups.push({ label: source.label, options })
+  }
+  const list = useOptionList({ source: [...toListItems(rows), ...sourceGroups], query: '', open })
   const highlight = useListHighlight()
   const phoneNav = usePhoneNav()
   const sizeClass = useSizeClass()
@@ -178,7 +254,7 @@ export function CommandPalette({
     present !== 'popup' && (sheetPresent || (phoneNav !== 'tabs' && sizeClass === 'compact'))
 
   const body = (
-    <div data-slot="command-palette">
+    <div data-slot="command-palette" onKeyDownCapture={onKeyDownCapture}>
       <Autocomplete
         items={list.values as readonly string[]}
         mode="none"
@@ -188,6 +264,9 @@ export function CommandPalette({
         value={query}
         onValueChange={setQuery}
         itemToStringValue={list.textOf}
+        onItemHighlighted={(value) => {
+          highlighted.current = value
+        }}
       >
         <AutocompleteInput aria-label="Search commands" placeholder={placeholder} />
         <PopupFrame
@@ -204,10 +283,15 @@ export function CommandPalette({
             virtual={undefined}
             checked={false}
             trailing={(option) => {
+              const hit = resultByValue.get(option.value)
+              if (hit !== undefined)
+                return <ResultTrailing result={hit.result} onAction={runAction} />
               const steps = byId.get(option.value)?.steps ?? []
               return steps.length > 0 ? <ChordKeys steps={steps} /> : null
             }}
             onRowClick={(option) => {
+              const hit = resultByValue.get(option.value)
+              if (hit !== undefined) return chooseResult(hit)
               const item = byId.get(option.value)
               if (item !== undefined) choose(item)
             }}
@@ -244,6 +328,37 @@ export function CommandPalette({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent title="Command palette">{body}</DialogContent>
       </Dialog>
+    </>
+  )
+}
+
+/** A result row's end: its kind as a chip, then one small ghost button per action. */
+function ResultTrailing({
+  result,
+  onAction,
+}: {
+  result: PaletteResult
+  onAction: (action: PaletteResultAction) => void
+}): ReactElement | null {
+  const { kind, actions } = result
+  if (kind === undefined && (actions === undefined || actions.length === 0)) return null
+  return (
+    <>
+      {kind !== undefined && <Lozenge>{kind}</Lozenge>}
+      {actions?.map((action) => (
+        <Button
+          key={action.id}
+          variant="ghost"
+          size="sm"
+          tabIndex={-1}
+          onClick={(event) => {
+            event.stopPropagation()
+            onAction(action)
+          }}
+        >
+          {action.label}
+        </Button>
+      ))}
     </>
   )
 }
