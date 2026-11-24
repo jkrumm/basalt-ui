@@ -1,6 +1,0 @@
-/* Load self-hosted variable fonts — basalt-ui provides tokens only, fonts are app responsibility */
-@import "@fontsource-variable/instrument-sans";
-@import "@fontsource-variable/jetbrains-mono";
-
-/* Import basalt-ui (Tailwind v4, typography plugin, design tokens) */
-@import "../../../../packages/basalt-ui/src/index.css";
