@@ -67,6 +67,7 @@ export type {
   CurveName,
   CustomMarks,
   ChartMarks,
+  ChartMark,
   LegendEntry,
   Marker,
   Series,
