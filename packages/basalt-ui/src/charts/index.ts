@@ -76,33 +76,3 @@ export type {
   XConfig,
   YConfig,
 } from './contract'
-
-// The frame's value types live on `basalt-ui/cards`; these eight stay one minor as aliases of the
-// same types (migration rows `charts-frame-types-*` in `migrations/areas/charts.json`).
-import type {
-  CardAction as CardsCardAction,
-  Empty as CardsEmpty,
-  Fact as CardsFact,
-  FootFacts as CardsFootFacts,
-  FrameHead as CardsFrameHead,
-  FrameState as CardsFrameState,
-  CardMenu as CardsMenu,
-  MenuEntry as CardsMenuEntry,
-} from '../core/phase'
-
-/** @deprecated Import `CardAction` from `basalt-ui/cards`; this alias is removed in the next minor. */
-export type CardAction = CardsCardAction
-/** @deprecated Import `Empty` from `basalt-ui/cards`; this alias is removed in the next minor. */
-export type Empty = CardsEmpty
-/** @deprecated Import `Fact` from `basalt-ui/cards`; this alias is removed in the next minor. */
-export type Fact = CardsFact
-/** @deprecated Import `FootFacts` from `basalt-ui/cards`; this alias is removed in the next minor. */
-export type FootFacts = CardsFootFacts
-/** @deprecated Import `FrameHead` from `basalt-ui/cards`; this alias is removed in the next minor. */
-export type FrameHead = CardsFrameHead
-/** @deprecated Import `FrameState` from `basalt-ui/cards`; this alias is removed in the next minor. */
-export type FrameState = CardsFrameState
-/** @deprecated Import `Menu` from `basalt-ui/cards`; this alias is removed in the next minor. */
-export type Menu = CardsMenu
-/** @deprecated Import `MenuEntry` from `basalt-ui/cards`; this alias is removed in the next minor. */
-export type MenuEntry = CardsMenuEntry

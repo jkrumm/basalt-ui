@@ -118,7 +118,7 @@ const TEXT_BOX_MIN_PX = 12
  * placed beside its caret by the kit's placer (right of it, else left), clear of the host's marks
  * and of the other values, and dropped when neither side has room. A clamped bar has no room beside
  * its caret (its own body fills the edge): its value stands inside the bar's end under the caret, in
- * the card's colour, when it fits the bar. The caret says "past the edge"; this is how far past.
+ * the card's color, when it fits the bar. The caret says "past the edge"; this is how far past.
  */
 function capValueMarks(
   found: { top: CapMark[]; bottom: CapMark[] },
@@ -159,7 +159,7 @@ function capValueMarks(
       gap: number
       obstacles: readonly LabelBox[]
       color?: string
-      /** A spot over a rule or a line piece is taken on a card-coloured backing, so the rule gives way to the value. */
+      /** A spot over a rule or a line piece is taken on a card-colored backing, so the rule gives way to the value. */
       backed?: boolean
     },
   ): void => {
@@ -339,7 +339,7 @@ function capValueMarks(
 }
 
 /**
- * One caret per datum past a bounded axis, in the series colour, at the datum's x on the plot's top
+ * One caret per datum past a bounded axis, in the series color, at the datum's x on the plot's top
  * or bottom edge. Drawn on the hidden `[0, 1]` x scale `zx`, so any x scale places it.
  */
 export function offScaleMarks<T, X extends ChartX>(opts: {
@@ -434,7 +434,7 @@ export function offScaleMarks<T, X extends ChartX>(opts: {
                 xScale: 'zx',
                 yScale: opts.yScaleOf(s),
                 text: () => CARETS[side],
-                // On a bar the caret sits inside the body that fills the edge: in the series colour it is the bar's own, so it is cut in the card's colour.
+                // On a bar the caret sits inside the body that fills the edge: in the series color it is the bar's own, so it is cut in the card's color.
                 fill: opts.slotOf?.(s) === undefined ? s.color : CV.surface,
                 fontSize: CARET_SIZE,
                 anchor: 'middle',
@@ -458,7 +458,7 @@ export function offScaleMarks<T, X extends ChartX>(opts: {
 /**
  * One caret per x for a stack whose TOTAL passes a bounded axis (`offScaleMarks` sees one series at a
  * time, so it misses a stack of values that are each inside the cap). The caret sits on the plot's
- * edge in the colour of the segment on top, the brand accent where that datum is highlighted.
+ * edge in the color of the segment on top, the brand accent where that datum is highlighted.
  * `series` are the stacked bars, `domain` the cap and `edge` the plotted domain.
  */
 export function stackCapMarks<T, X extends ChartX>(opts: {
@@ -493,7 +493,7 @@ export function stackCapMarks<T, X extends ChartX>(opts: {
       const s = last[side]
       if (s === undefined || offScaleSide(sums[side], opts.domain) !== side) continue
       // The total is the whole stack's, no one segment's: it takes the ink of a stack total above an
-      // unclamped stack, never its top segment's colour (a pale segment's colour read as that segment's value).
+      // unclamped stack, never its top segment's color (a pale segment's color read as that segment's value).
       found[side].push({ f, color: CV.inkMuted, total: sums[side] })
     }
   }
@@ -509,7 +509,7 @@ export function stackCapMarks<T, X extends ChartX>(opts: {
               xScale: 'zx',
               yScale: 'y',
               text: () => CARETS[side],
-              // The caret sits inside the stack's top bar, whose own colour it would be: it is cut in the card's colour.
+              // The caret sits inside the stack's top bar, whose own color it would be: it is cut in the card's color.
               fill: CV.surface,
               fontSize: CARET_SIZE,
               anchor: 'middle',

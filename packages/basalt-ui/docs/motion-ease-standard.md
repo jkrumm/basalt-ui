@@ -1,6 +1,6 @@
 ---
 name: MOTION_EASE_STANDARD
-use when: 'a `motion` transition changes an element that stays on screen (a width, a colour, a position).'
+use when: 'a `motion` transition changes an element that stays on screen (a width, a color, a position).'
 never when: 'the element arrives or leaves: use `MOTION_EASE_ENTER` or `MOTION_EASE_EXIT`.'
 subpath: basalt-ui/tokens
 peers: []

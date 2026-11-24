@@ -12,7 +12,7 @@ slots: [calendar]
 A month of days, inline: no field and no popup. Use it for a mini month beside a schedule or a
 page's own day picker. Arrow keys move by day and week, Page Up and Down by month, Shift with Page
 by year, Home and End to the week's ends, and a click or Enter picks a day. A day in `marks` gets
-up to three dots and says busy in its name, so a colour never carries the meaning alone.
+up to three dots and says busy in its name, so a color never carries the meaning alone.
 
 ## Props
 
@@ -21,7 +21,7 @@ up to three dots and says busy in its name, so a colour never carries the meanin
 A month of days, inline: no field and no popup. Use it for a mini month beside a schedule or a
 page's own day picker. Arrow keys move by day and week, Page Up and Down by month, Shift with Page
 by year, Home and End to the week's ends, and a click or Enter picks a day. A day in `marks` gets
-up to three dots and says busy in its name, so a colour never carries the meaning alone.
+up to three dots and says busy in its name, so a color never carries the meaning alone.
 
 ```ts
 Calendar(props: CalendarProps): ReactElement
@@ -37,7 +37,7 @@ Calendar(props: CalendarProps): ReactElement
   className?: string  // Layout only (`w-64`)
   mode?: "single" | "range"
   value?: `${number}-${number}-${number}` | null | CalendarRange  // The picked day as `YYYY-MM-DD`, or null
-  onChange?: (day: CalendarDate) => void | (range: CalendarRange) => void  // Called with the clicked or keyed-in day, as `YYYY-MM-DD`
+  onValueChange?: (day: CalendarDate) => void | (range: CalendarRange) => void  // Called with the clicked or keyed-in day, as `YYYY-MM-DD`
   aria-label: string
   aria-labelledby: string
 ```

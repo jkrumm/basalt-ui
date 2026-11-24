@@ -1,11 +1,11 @@
 /**
  * P5b (docs/v3/concepts/primitives-distribution.md section 4, rows 27-32): the `Status`, `Swatch`,
  * `Alert`, `Progress`, `Ring` and `Meter` primitives in real Chrome at 1440, 768, 390 and 320.
- * Asserted here because happy-dom has no geometry and no colour computation: the meter's zones
+ * Asserted here because happy-dom has no geometry and no color computation: the meter's zones
  * partition its track in proportion to their bounds, the marker sits inside the track at the value's
  * position, the active zone word is on screen, the ring prints `42,5 %` in `de-DE`, a long alert
  * body wraps instead of pushing the page sideways, the dots and chips are drawn, and axe finds
- * nothing serious or critical (colour contrast included, in both colour schemes).
+ * nothing serious or critical (color contrast included, in both color schemes).
  *
  * The page is self-contained: `fixture/ui-status.css` is compiled with the Tailwind CLI into a temp
  * directory and `fixture/ui-status-fixture.tsx` is bundled in memory, both inlined into a document

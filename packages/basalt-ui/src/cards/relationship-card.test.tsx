@@ -54,7 +54,7 @@ describe('RelationshipCard', () => {
     expect(container.querySelector('[data-slot="relationship-strength"]')).toBeNull()
   })
 
-  test('a strength is a word in a tone with its score, never colour alone', () => {
+  test('a strength is a word in a tone with its score, never color alone', () => {
     const { container } = render(
       <RelationshipCard
         title="A"

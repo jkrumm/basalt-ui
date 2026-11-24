@@ -1,4 +1,4 @@
-/** A `Bars` legend swatch wears the shade its bars draw (per-datum `opacity`, the shared-colour step, the 0.85 default), not a flat colour. */
+/** A `Bars` legend swatch wears the shade its bars draw (per-datum `opacity`, the shared-color step, the 0.85 default), not a flat color. */
 import { afterEach, describe, expect, test } from 'bun:test'
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -50,7 +50,7 @@ describe('Bars legend swatches', () => {
     const shades = { a: 0.3, b: 0.9 }
     const got = await swatchOpacities(
       <Bars
-        ariaLabel="shades"
+        label="shades"
         data={data}
         height={200}
         x={{ value: (d) => d.t }}
@@ -63,10 +63,10 @@ describe('Bars legend swatches', () => {
     expect(got).toMatchObject({ a: '0.3', b: '0.9' })
   })
 
-  test('same-coloured bars step down in the legend as on the plot', async () => {
+  test('same-colored bars step down in the legend as on the plot', async () => {
     const got = await swatchOpacities(
       <Bars
-        ariaLabel="steps"
+        label="steps"
         data={data}
         height={200}
         x={{ value: (d) => d.t }}
@@ -76,10 +76,10 @@ describe('Bars legend swatches', () => {
     expect(got).toMatchObject({ a: '1', b: '0.4' })
   })
 
-  test('distinct colours keep the 0.85 default', async () => {
+  test('distinct colors keep the 0.85 default', async () => {
     const got = await swatchOpacities(
       <Bars
-        ariaLabel="defaults"
+        label="defaults"
         data={data}
         height={200}
         x={{ value: (d) => d.t }}

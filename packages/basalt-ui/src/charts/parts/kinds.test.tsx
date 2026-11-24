@@ -1,7 +1,7 @@
 /**
  * `Lines` and `Bars` through their public v3 props: what the compiled definition and the rendered DOM
  * say, never the engine's internals. Ported from the 2.x `kinds.test.tsx`; the assertions are the
- * 2.x ones, the props are the v3 vocabulary (`Series` by `mark`, `{ light, dark }` colours, `phase`).
+ * 2.x ones, the props are the v3 vocabulary (`Series` by `mark`, `{ light, dark }` colors, `phase`).
  */
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import type { ChartPoint, StoredChartSpec } from '@tanstack/charts/types/core'
@@ -69,7 +69,7 @@ function yDomainOf(spec: StoredChartSpec): number[] {
 
 const specOf = (series: readonly Series<Row>[], extra: object = {}) => ({
   chartId: 'k',
-  ...toEngineSpec({ ariaLabel: 'K', data, x, series }),
+  ...toEngineSpec({ label: 'K', data, x, series }),
   marks: () => [],
   ...extra,
 })
@@ -77,7 +77,7 @@ const frame = { width: 640, height: 240, defaultTheme: {} as never }
 
 describe('Lines', () => {
   test('a legend toggle hides the series from the plot and from the auto domain', async () => {
-    const el = await mount(<Lines ariaLabel="L" data={data} x={x} series={[a, b]} />)
+    const el = await mount(<Lines label="L" data={data} x={x} series={[a, b]} />)
     const keys = (): string[] =>
       [...el.querySelectorAll('[data-ts-key$=":segment:0"]')].map(
         (p) => p.getAttribute('data-ts-key') ?? '',
@@ -108,12 +108,12 @@ describe('Lines', () => {
 
   test('one legend entry: no legend; legend: false on every series: no legend', async () => {
     // A lone series names nothing the title and axis do not.
-    const alone = await mount(<Lines ariaLabel="L" data={data} x={x} series={[a]} />)
+    const alone = await mount(<Lines label="L" data={data} x={x} series={[a]} />)
     expect(alone.querySelector('[data-basalt-chart-legend]')).toBeNull()
     act(() => root?.unmount())
     const none = await mount(
       <Lines
-        ariaLabel="L"
+        label="L"
         data={data}
         x={x}
         series={[
@@ -127,7 +127,7 @@ describe('Lines', () => {
 
   test('a companion (legend: false + parent) hides with its parent', async () => {
     const ma: LineSeries<Row> = { ...b, key: 'ma', label: 'MA', legend: false, parent: 'a' }
-    const el = await mount(<Lines ariaLabel="L" data={data} x={x} series={[a, b, ma]} />)
+    const el = await mount(<Lines label="L" data={data} x={x} series={[a, b, ma]} />)
     expect(el.querySelector('[data-legend-key="ma"]')).toBeNull()
     const toggle = el.querySelector('button[data-legend-key="a"]') as HTMLButtonElement
     await act(async () => toggle.click())
@@ -137,7 +137,7 @@ describe('Lines', () => {
   test('area, dash, markers and the right axis compile to their marks', () => {
     const html = renderToString(
       <Lines
-        ariaLabel="L"
+        label="L"
         data={data}
         x={x}
         series={[
@@ -161,7 +161,7 @@ describe('Lines', () => {
     const widths = (weight: 'quiet' | 'strong'): number[] => {
       const host = document.createElement('div')
       host.innerHTML = renderToString(
-        <Lines ariaLabel="L" data={data} x={x} series={[{ ...a, weight }]} />,
+        <Lines label="L" data={data} x={x} series={[{ ...a, weight }]} />,
       )
       return [...host.querySelectorAll('g.ts-chart__line[data-ts-key^="a:"] path')].map((p) =>
         Number(p.getAttribute('stroke-width')),
@@ -187,7 +187,7 @@ describe('Lines', () => {
     expect(marksAt(1000, false)).toEqual(['wide'])
     expect(marksAt(640, false)).toEqual([])
     expect(marksAt(1000, true)).toEqual([])
-    const html = renderToString(<Lines ariaLabel="L" data={data} x={x} series={[a]} />)
+    const html = renderToString(<Lines label="L" data={data} x={x} series={[a]} />)
     expect(html).not.toContain('a-end-label') // SSR renders the regular class
   })
 
@@ -209,26 +209,19 @@ describe('Lines', () => {
     expect(content.rows.map((r) => r.label)).toEqual(['Alpha', 'Visible'])
   })
 
-  test('label is the accessible name and ariaLabel its deprecated alias', () => {
-    const named = (props: { label: string } | { ariaLabel: string }): string =>
-      renderToString(<Lines {...props} data={data} x={x} series={[a]} />)
-    expect(named({ label: 'Sessions' })).toContain('aria-label="Sessions"')
-    expect(named({ ariaLabel: 'Sessions' })).toContain('aria-label="Sessions"')
+  test('label is the accessible name', () => {
+    expect(renderToString(<Lines label="Sessions" data={data} x={x} series={[a]} />)).toContain(
+      'aria-label="Sessions"',
+    )
   })
 
   test('phase replaces the plot with its placeholder', () => {
     expect(
-      renderToString(<Lines ariaLabel="L" data={[]} x={x} series={[a]} phase="loading" />),
+      renderToString(<Lines label="L" data={[]} x={x} series={[a]} phase="loading" />),
     ).toContain('aria-busy="true"')
     expect(
       renderToString(
-        <Lines
-          ariaLabel="L"
-          data={[]}
-          x={x}
-          series={[a]}
-          phase={{ tag: 'error', message: 'Boom' }}
-        />,
+        <Lines label="L" data={[]} x={x} series={[a]} phase={{ tag: 'error', message: 'Boom' }} />,
       ),
     ).toContain('Boom')
   })
@@ -237,7 +230,7 @@ describe('Lines', () => {
 /** The tooltip config through the adapter, so the consumer row reads `visible` as the engine passes it. */
 function toEngineSpecTooltip(): object {
   const { tooltip } = toEngineSpec({
-    ariaLabel: 'K',
+    label: 'K',
     data,
     x,
     series: [],
@@ -278,7 +271,7 @@ describe('Bars', () => {
   test('renders bars, an overlay line on the right axis and the opacity function', () => {
     const html = renderToString(
       <Bars
-        ariaLabel="B"
+        label="B"
         data={data}
         x={x}
         series={[
@@ -308,7 +301,7 @@ describe('Bars', () => {
   test('a string x is a band scale too', () => {
     const html = renderToString(
       <Bars
-        ariaLabel="B"
+        label="B"
         data={[
           { k: '0–5', v: 3 },
           { k: '5–10', v: 7 },

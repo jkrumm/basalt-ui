@@ -71,7 +71,7 @@ async function mount(slot: boolean): Promise<HTMLElement> {
   root = createRoot(el)
   const bars = (
     <Bars
-      ariaLabel="Pace"
+      label="Pace"
       data={data}
       x={{ value: (d) => d.bin }}
       height={22}

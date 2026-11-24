@@ -3,7 +3,7 @@
  * (guardrails section 4, rows 1-7). The factory turns each entry into an oxlint/ESLint rule; this
  * module holds the patterns, the fix each message names and the next rung of the bending ladder.
  *
- * Colour names are never typed here: `generated/zone-a.ts` (from `tokens/emit.ts`) is the one
+ * Color names are never typed here: `generated/zone-a.ts` (from `tokens/emit.ts`) is the one
  * source of the earned names, the pre-mixed alpha roles, the fill-only roles and the utilities
  * denied outright.
  */
@@ -32,10 +32,10 @@ const SITE: readonly Profile[] = ['site']
 const VENDORED: readonly Zone[] = ['vendored']
 
 /**
- * An ejected or seed file is the primitive: it owns the colour roles and the surface recipe
+ * An ejected or seed file is the primitive: it owns the color roles and the surface recipe
  * (guardrails section 6), so the forms written for app code are off there; `alpha-on-premixed` stays on.
  */
-const ZONE_COLOUR: readonly Zone[] = ['ejected', 'seed']
+const ZONE_COLOR: readonly Zone[] = ['ejected', 'seed']
 
 const escape = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 /** Longest first, so an alternation never settles for a prefix of a longer name. */
@@ -50,10 +50,10 @@ const HEAD = '(?:^|:)!?'
 /** An optional `/NN` opacity modifier and a trailing `!`, then the end of the token. */
 const TAIL = '(?:\\/[^\\s!]+)?!?$'
 
-/** Utilities that take a colour (the zone A denial list, tokens-visual 3.5, plus `text`). */
-const COLOUR_UTILITIES =
+/** Utilities that take a color (the zone A denial list, tokens-visual 3.5, plus `text`). */
+const COLOR_UTILITIES =
   'text|bg|border(?:-[xytrblse])?|ring(?:-offset)?|outline|divide|from|via|to|fill|stroke|decoration|accent|caret'
-const COLOUR_PREFIX = `(?:${COLOUR_UTILITIES}|shadow)`
+const COLOR_PREFIX = `(?:${COLOR_UTILITIES}|shadow)`
 
 const SPACING_PREFIX =
   '(?:p[xytrblse]?|m[xytrblse]?|gap(?:-[xy])?|space-[xy]|inset(?:-[xy])?|top|right|bottom|left|start|end|size|w|h|min-w|min-h|max-w|max-h|basis|translate-[xy]|scroll-[mp][xytrblse]?)'
@@ -68,14 +68,14 @@ const deniedOutright = deniedCurrent
   .join('|')
 
 /**
- * A ring or outline colour under a focus variant (`focus-visible:`, `data-focused:`,
- * `group-focus-visible:` ...): no component owns a focus ring's colour, so it is not app colour.
+ * A ring or outline color under a focus variant (`focus-visible:`, `data-focused:`,
+ * `group-focus-visible:` ...): no component owns a focus ring's color, so it is not app color.
  */
-const FOCUS_RING_COLOUR =
+const FOCUS_RING_COLOR =
   '(?:[^:]+:)*[^:]*focus[^:]*:(?:[^:]+:)*!?(?:ring(?:-offset)?|outline)-[^:]*$'
 
-const colourUtility = new RegExp(
-  `^(?!${FOCUS_RING_COLOUR})(?=.*(?:${HEAD}${COLOUR_PREFIX}-(?:${alt(zoneANames)})${TAIL}|${deniedOutright}))`,
+const colorUtility = new RegExp(
+  `^(?!${FOCUS_RING_COLOR})(?=.*(?:${HEAD}${COLOR_PREFIX}-(?:${alt(zoneANames)})${TAIL}|${deniedOutright}))`,
 )
 /**
  * The fills a mark can carry: the fill-only and status roles on `bg`, `fill` and `stroke`, and
@@ -100,7 +100,7 @@ const basaltArbitrary = (names: readonly string[]): string =>
 
 /**
  * Any custom property as an arbitrary value, bare (`(--brand-blue)`, `[var(--x)]`) or with the
- * `color:` type hint. `text-(--x)` is read as a colour: Tailwind types it by the hint, and only
+ * `color:` type hint. `text-(--x)` is read as a color: Tailwind types it by the hint, and only
  * `length:` (or `image:`, ...) makes it a size.
  */
 const ANY_VAR = '--[a-z][\\w-]*'
@@ -108,13 +108,13 @@ const anyVarArbitrary = (hint: string): string =>
   `\\(${hint}${ANY_VAR}\\)|\\[${hint}(?:var\\()?${ANY_VAR}\\)?\\]`
 
 /**
- * A colour utility over a custom property: any variable under a colour utility. A bare
- * `shadow-(--x)` is a box-shadow value, not a colour, so `shadow` takes the `color:` hint, or a
- * `--basalt-*` colour name as before.
+ * A color utility over a custom property: any variable under a color utility. A bare
+ * `shadow-(--x)` is a box-shadow value, not a color, so `shadow` takes the `color:` hint, or a
+ * `--basalt-*` color name as before.
  */
-const colourArbitrary = new RegExp(
-  `^(?!${FOCUS_RING_COLOUR})(?=.*(?:` +
-    `${HEAD}(?:${COLOUR_UTILITIES})-(?:${anyVarArbitrary('(?:color:)?')})${TAIL}|` +
+const colorArbitrary = new RegExp(
+  `^(?!${FOCUS_RING_COLOR})(?=.*(?:` +
+    `${HEAD}(?:${COLOR_UTILITIES})-(?:${anyVarArbitrary('(?:color:)?')})${TAIL}|` +
     `${HEAD}shadow-(?:${anyVarArbitrary('color:')}|${basaltArbitrary(zoneANames)})${TAIL}))`,
 )
 
@@ -132,7 +132,7 @@ const textOnFill = new RegExp(
  * (`[:where([data-theme=dark])_&]:`), the v4 self-selector spellings, `&` followed by `:is(…)` or
  * `:where(…)` holding the class or the attribute, comma lists included (`[&:is(.dark_*)]:`,
  * `[&:where(.dark,.dark_*)]:`; a `.darker` class or `:is(:hover)` is not one), the v4 `in-`/`group-`/`peer-`
- * arbitrary form holding the class or the attribute (`in-[.dark]:`, `group-[.dark]/app:`), and the colour-scheme media query as an arbitrary variant
+ * arbitrary form holding the class or the attribute (`in-[.dark]:`, `group-[.dark]/app:`), and the color-scheme media query as an arbitrary variant
  * (`[@media(prefers-color-scheme:dark)]:`).
  */
 const DARK_VARIANT =
@@ -198,7 +198,7 @@ export const CLASS_RULES = defineRules({
     profiles: ALL,
     zonesOff: VENDORED,
     // A JS fork on the scheme is `scheme-fork`: a scheme test (a scheme value read by name compared
-    // with 'dark' or 'light', the colour-scheme query's `.matches` or media hook, a boolean named
+    // with 'dark' or 'light', the color-scheme query's `.matches` or media hook, a boolean named
     // for the dark scheme, or a const bound to one, through useMemo or useCallback too) where it
     // chooses a class string or a cn() class key, a cva/tv variant group keyed dark and light, and
     // a scheme store of the app's own: `.dark` on the root's classList or className, or data-theme
@@ -224,7 +224,7 @@ export const CLASS_RULES = defineRules({
     ],
   },
 
-  'fixed-colour': {
+  'fixed-color': {
     family: 'class',
     profiles: ALL,
     zonesOff: VENDORED,
@@ -233,10 +233,10 @@ export const CLASS_RULES = defineRules({
     forms: [
       {
         id: 'black-white',
-        pattern: new RegExp(`${HEAD}${COLOUR_PREFIX}-(?:black|white)${TAIL}`),
+        pattern: new RegExp(`${HEAD}${COLOR_PREFIX}-(?:black|white)${TAIL}`),
         fix: 'Button variant primary or Status own a brand fill and its ink in app code; on-brand ink on a brand fill at bridge; a white or black surface is Card in app code; bg-card or bg-background for a surface at bridge; the backdrop is owned by Dialog and Sheet',
         next: 'A reasoned per-line waiver',
-        fixture: 'class/fixed-colour/black-white.tsx',
+        fixture: 'class/fixed-color/black-white.tsx',
       },
     ],
   },
@@ -286,7 +286,7 @@ export const CLASS_RULES = defineRules({
     schema: [PROFILE_GATE_SCHEMA],
     profileOptions: { bridge: [{ profile: 'bridge' }], site: [{ profile: 'bridge' }] },
     defect:
-      'shadcn suggests `p-3.25` and `w-105`; console 16 bordered vs 4 shadow cards; coloured left bars; `/NN` on `color-mix` tokens; epos `grid-cols-1!`; `bg-${tone}-600` unscanned by anything',
+      'shadcn suggests `p-3.25` and `w-105`; console 16 bordered vs 4 shadow cards; colored left bars; `/NN` on `color-mix` tokens; epos `grid-cols-1!`; `bg-${tone}-600` unscanned by anything',
     forms: [
       {
         id: 'off-ladder-spacing',
@@ -299,7 +299,7 @@ export const CLASS_RULES = defineRules({
         {
           id: 'surface-recipe',
           // The ejected primitive is the component that owns the recipe.
-          zonesOff: ZONE_COLOUR,
+          zonesOff: ZONE_COLOR,
           // A `dark:` token is `dark-fork`'s: one fix at a time, and the recipe fires once it is gone.
           pattern: new RegExp(
             `^(?!.*(?:^|:)${DARK_VARIANT})(?:.*:)?!?(?:bg-(?:card|inset)|shadow-card|rounded-card)(?:\\/[^\\s!]+)?!?$`,
@@ -312,22 +312,22 @@ export const CLASS_RULES = defineRules({
       ),
       partsOnlyExceptSeamMark(
         {
-          id: 'app-colour',
-          zonesOff: ZONE_COLOUR,
-          pattern: colourUtility,
-          fix: 'Status, Lozenge, DeltaBadge or Num tone own colour in app code',
+          id: 'app-color',
+          zonesOff: ZONE_COLOR,
+          pattern: colorUtility,
+          fix: 'Status, Lozenge, DeltaBadge or Num tone own color in app code',
           next: 'A reasoned waiver',
-          fixture: 'class/tw-off-law/app-colour.tsx',
+          fixture: 'class/tw-off-law/app-color.tsx',
         },
         seamMarkFill,
       ),
       partsOnlyExceptStyleVar({
-        id: 'app-colour-arbitrary',
-        zonesOff: ZONE_COLOUR,
-        pattern: colourArbitrary,
-        fix: 'Status, Lozenge, DeltaBadge or Num tone own colour in app code',
+        id: 'app-color-arbitrary',
+        zonesOff: ZONE_COLOR,
+        pattern: colorArbitrary,
+        fix: 'Status, Lozenge, DeltaBadge or Num tone own color in app code',
         next: 'A reasoned waiver',
-        fixture: 'class/tw-off-law/app-colour-arbitrary.tsx',
+        fixture: 'class/tw-off-law/app-color-arbitrary.tsx',
       }),
       // The pre-mixed tokens by the theme class that reads them (`hover:bg-accent/50`,
       // `border-border/60`). A token name (`bg-hover/60`) is no class: shadcn's no-unknown-classes
@@ -335,7 +335,7 @@ export const CLASS_RULES = defineRules({
       {
         id: 'alpha-on-premixed',
         pattern: new RegExp(
-          `${HEAD}-?${COLOUR_PREFIX}-(?:${alt(zoneAPremixed)}|${alt(TINTS)})\\/[^\\s!]+!?$`,
+          `${HEAD}-?${COLOR_PREFIX}-(?:${alt(zoneAPremixed)}|${alt(TINTS)})\\/[^\\s!]+!?$`,
         ),
         fix: 'Use the pre-mixed token as it is: it already carries its alpha',
         next: 'A new token in the table',
@@ -363,7 +363,7 @@ export const CLASS_RULES = defineRules({
         // dash, or `${at}:hidden`, an interpolated variant prefix.
         pattern: /-\$\{\}|\$\{\}-[a-z0-9[(]|\$\{\}:/,
         fix: 'A cva variant per value, a tone, size or count: Tailwind cannot scan an interpolated class',
-        next: 'Status or Num tone from parts for a colour',
+        next: 'Status or Num tone from parts for a color',
         fixture: 'class/tw-off-law/template-interpolation.tsx',
       },
       partsOnly({
@@ -380,11 +380,11 @@ export const CLASS_RULES = defineRules({
         next: 'A reasoned waiver',
         fixture: 'class/tw-off-law/fixed-width.tsx',
       }),
-      // Every profile and zone but vendored: a primitive owns its colour roles, never a stripe.
+      // Every profile and zone but vendored: a primitive owns its color roles, never a stripe.
       wholeString(
         {
           id: 'side-stripe',
-          fix: 'Say the state with Status, a Badge or the tone of the whole border, never a coloured bar on one edge',
+          fix: 'Say the state with Status, a Badge or the tone of the whole border, never a colored bar on one edge',
           next: 'A reasoned waiver',
           fixture: 'class/tw-off-law/side-stripe.tsx',
         },
@@ -494,7 +494,7 @@ export const CLASS_RULES = defineRules({
       {
         id: 'border-side',
         pattern: /(?:^|:)!?border-[lr](?:[-!/]|$)/,
-        fix: 'Use border-s and border-e for the inline border: the edges that follow the text direction, where the physical border does not; colour included',
+        fix: 'Use border-s and border-e for the inline border: the edges that follow the text direction, where the physical border does not; color included',
         next: 'A reasoned waiver where the edge is physical on purpose',
         fixture: 'class/logical-properties/border-side.tsx',
       },

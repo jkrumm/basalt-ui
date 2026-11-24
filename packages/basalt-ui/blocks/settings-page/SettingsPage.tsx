@@ -222,7 +222,7 @@ function AppearancePane({ accents }: { accents: readonly AccentName[] }): ReactE
         <FormGroupRow
           id="row-appearance"
           label="Theme and layout"
-          description="Theme, accent colour, density and how the page meets the window."
+          description="Theme, accent color, density and how the page meets the window."
           summary={summary}
           defaultOpen
         >

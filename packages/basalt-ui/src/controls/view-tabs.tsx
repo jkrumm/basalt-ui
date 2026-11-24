@@ -105,14 +105,12 @@ function NarrowForm<T extends string>({
 }
 
 function HandleViewTabs<T extends string>({
-  state,
-  handle: legacy,
+  state: handle,
   options,
   label = 'View',
   disabled = false,
   className,
 }: HandleProps<T>): ReactElement {
-  const handle = (state ?? legacy) as ControlHandle<T>
   const presentation = use(ControlPresentationContext)
   const labelId = useId()
   const [value, set] = handle.use()

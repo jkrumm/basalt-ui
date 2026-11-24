@@ -184,7 +184,7 @@ layout('FormField and FormRow', () => {
         expect(sizes.input.width).toBeCloseTo(sizes.control, 0)
       })
 
-      test('the required mark is a visible glyph, not colour alone', async () => {
+      test('the required mark is a visible glyph, not color alone', async () => {
         const page = await open(viewport)
         const mark = await page.raw.evaluate(() => {
           const el = document.querySelector<HTMLElement>('[data-slot="field-required"]')

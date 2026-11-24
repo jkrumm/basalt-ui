@@ -1,6 +1,6 @@
 /**
  * The cell content each kind renders: plain functions of a present value, called by the spec's
- * `render` after the absent check. No colour beyond the `status` dot and a `delta` with a real
+ * `render` after the absent check. No color beyond the `status` dot and a `delta` with a real
  * polarity (concept section 5); alignment, numerals and wrapping are attributes the parts put on
  * the cell (`cellAttributes`), so a renderer draws content only.
  */
@@ -255,7 +255,7 @@ export function WithIcon({
   )
 }
 
-/** The ink of a status icon per tone: the icon takes the dot's place and its colour. */
+/** The ink of a status icon per tone: the icon takes the dot's place and its color. */
 const TONE_INK: Readonly<Record<Tone, string>> = {
   neutral: 'text-muted-foreground',
   accent: 'text-brand',

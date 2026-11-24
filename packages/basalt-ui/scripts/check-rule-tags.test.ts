@@ -17,7 +17,7 @@ import type { TagSources } from './check-rule-tags'
 
 const fence = '```'
 const sources: TagSources = {
-  lintIds: new Set(['colour-literal', 'import-boundary']),
+  lintIds: new Set(['color-literal', 'import-boundary']),
   typeNames: new Set(['PageBarProps']),
 }
 const doc = (...body: string[]): string =>
@@ -31,7 +31,7 @@ describe('checkRuleTags', () => {
       '',
       '## A',
       '',
-      '- Use it. [lint:colour-literal] [lint:import-boundary]',
+      '- Use it. [lint:color-literal] [lint:import-boundary]',
       '- Typed. [type:PageBarProps]',
       '',
       fence + 'ts',

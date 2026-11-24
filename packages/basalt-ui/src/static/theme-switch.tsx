@@ -4,7 +4,7 @@ import type { Scheme } from '../core/scheme'
 import { Glyph } from './glyphs'
 
 export type ThemeSwitchProps = {
-  /** The group's accessible name ("Colour scheme"). */
+  /** The group's accessible name ("Color scheme"). */
   label: string
   /** Each option's accessible name; the buttons show only a glyph. */
   labels: Readonly<Record<Scheme, string>>
@@ -26,7 +26,7 @@ const OPTIONS = [
  * @neverWhen the app already runs `BasaltProvider` (use the shell's own switch)
  *
  * @example
- * <ThemeSwitch label="Colour scheme" labels={{ light: 'Light', dark: 'Dark', auto: 'System' }} />
+ * <ThemeSwitch label="Color scheme" labels={{ light: 'Light', dark: 'Dark', auto: 'System' }} />
  */
 export function ThemeSwitch({ label, labels, className }: ThemeSwitchProps): ReactElement {
   return (

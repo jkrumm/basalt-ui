@@ -111,19 +111,17 @@ export type BarListProps<I = unknown> = FrameHead &
      * 3: a list the page should read whole at rest (twelve months) passes its length. Default 5.
      */
     bodyRows?: ListRows
-    /** @deprecated Use `bodyRows`; removed in the next minor. */
-    rows?: ListRows
     /** Formats each value. Default: the number in the provider's locale. */
     format?: (value: number) => string
     /**
-     * The series a row's `parts` stack by: their order (first at the bar's start), their colour and
-     * a legend row under the header. With it each row's track draws its parts in the series colours,
+     * The series a row's `parts` stack by: their order (first at the bar's start), their color and
+     * a legend row under the header. With it each row's track draws its parts in the series colors,
      * 8 px tall; without it every bar is one neutral fill.
      */
     series?: readonly LegendEntry[]
     /**
      * `false` draws no legend row for `series`: the page's one legend sits elsewhere (a `ChartCard
-     * legend` beside it keys the same colours), so the card does not repeat it.
+     * legend` beside it keys the same colors), so the card does not repeat it.
      */
     legend?: false
     /** Draw every label in the mono face with tabular figures: ids, hashes, paths. */
@@ -168,8 +166,8 @@ function BarSkeleton({ rows }: { rows: number }): ReactElement {
  * text and an optional muted second figure (`secondary`: a share, a status word, or the counts a
  * stacked row's segments carry, "11 gained, 9 dropped"). Each row is a link, a button or plain text. It holds
  * one body height at every phase, scrolls past `bodyRows`, and its loading skeleton draws the rows it
- * will become. Colour belongs to a verdict, so a single bar is neutral; a row with `parts` stacks
- * them in the colours of `series`, and the name stays on its own line above the bar at every width.
+ * will become. Color belongs to a verdict, so a single bar is neutral; a row with `parts` stacks
+ * them in the colors of `series`, and the name stays on its own line above the bar at every width.
  *
  * @useWhen a card ranks a handful of named things by one number, or splits a total into its parts (a top-N list, a breakdown that replaces a donut), or ranks long names by a total stacked by kind (horizontal stacked bars)
  * @neverWhen the rows have several columns to compare (use a table) or the list is a stream of things that happened (use an event list)
@@ -185,7 +183,7 @@ function BarSkeleton({ rows }: { rows: number }): ReactElement {
 export function BarList<I = unknown>(props: BarListProps<I>): ReactElement {
   const { items, max, format, phase, empty, focus, series } = props
   const mono = props.mono ?? false
-  const rows = listRows(props.bodyRows ?? props.rows)
+  const rows = listRows(props.bodyRows)
   const { title, subtitle, icon, info } = props
   const f = useFormat()
   const t = useMessages(lists)
@@ -354,7 +352,7 @@ function sayRow(item: BarListItem | undefined, view: RowView | undefined): strin
     .join(', ')
 }
 
-/** The 8 px track of a stacked row: each part in its series colour, a hairline between parts. */
+/** The 8 px track of a stacked row: each part in its series color, a hairline between parts. */
 function StackedTrack({ segments }: { segments: readonly Segment[] }): ReactElement {
   return (
     <>

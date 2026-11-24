@@ -73,7 +73,7 @@ describe('prose.css source', () => {
     }
   })
 
-  test('no declaration is !important and no raw hex colour is written', () => {
+  test('no declaration is !important and no raw hex color is written', () => {
     expect(PROSE).not.toContain('!important')
     expect(PROSE).not.toMatch(/#[0-9a-fA-F]{3,8}\b/)
   })

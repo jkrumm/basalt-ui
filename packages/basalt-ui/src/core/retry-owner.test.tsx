@@ -126,7 +126,7 @@ describe('one Retry across frames', () => {
       <>
         <Panel phase={phase} title="Panel" />
         <ChartCard title="Revenue" phase={phase} chart={() => null} />
-        <StatCell label="Orders" phase={phase} />
+        <StatCell title="Orders" phase={phase} />
       </>,
     )
     expect(buttons().length).toBe(2)
@@ -140,8 +140,8 @@ describe('one Retry across frames', () => {
     render(
       <>
         <StatGroup variant="cards" label="Link health">
-          <StatCell label="Downstream" phase={phase} />
-          <StatCell label="Upstream" phase={phase} />
+          <StatCell title="Downstream" phase={phase} />
+          <StatCell title="Upstream" phase={phase} />
         </StatGroup>
         <Panel phase={phase} title="Panel" />
       </>,

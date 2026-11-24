@@ -1241,7 +1241,7 @@ function buildPaletteDataUncached(config: DeriveConfig) {
    *    that floor holds (a near-black ink otherwise, for a fill brightened past the safety margin).
    *
    * `onAccent` is THE foreground for any accent fill. `theme/index.ts` bridges the
-   * primary filled colour onto `--basalt-accent-fill` and every filled foreground onto
+   * primary filled color onto `--basalt-accent-fill` and every filled foreground onto
    * `--basalt-on-accent`, so ONE token drives the chrome — which is also what makes the theme lab able to
    * retune the accent live. An automatic contrast pick cannot express this (it resolves the
    * foreground scheme-blindly, in JS). Regression-locked by `theme/contrast.test.ts`.

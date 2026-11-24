@@ -102,7 +102,7 @@ function spawn(bin: string, args: string[], cwd: string): Run {
 
 const posix = (path: string): string => path.replaceAll('\\', '/')
 
-/** oxlint reports `basalt(colour-literal)`; the dialect everywhere else is `basalt/colour-literal`. */
+/** oxlint reports `basalt(color-literal)`; the dialect everywhere else is `basalt/color-literal`. */
 function normalizeId(code: string | undefined): string {
   if (code === undefined) return 'oxlint/unused-directive'
   const paren = /^([\w@-]+)\(([\w-]+)\)$/.exec(code)

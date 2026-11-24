@@ -24,7 +24,7 @@ export const settingsRowParts = [
   'form-group-row-panel',
 ] as const
 
-/** `danger` is a destructive row: its name reads in the verdict colour and its button is `danger`. */
+/** `danger` is a destructive row: its name reads in the verdict color and its button is `danger`. */
 export type SettingsRowTone = 'default' | 'danger'
 
 /** A row's own target: the flash `SettingsLayout` sets when a link points at it. */
@@ -73,7 +73,7 @@ type CommonRowProps = {
   icon?: IconComponent
   /** A stable id for the row, a target for a link (`#row-delete`): `SettingsLayout` scrolls to it and marks it once. */
   id?: string
-  /** `danger` reads in the verdict colour. Default `default`. */
+  /** `danger` reads in the verdict color. Default `default`. */
   tone?: SettingsRowTone
   /** Layout only (`w-full`). */
   className?: string

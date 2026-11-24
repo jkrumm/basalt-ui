@@ -248,17 +248,13 @@ describe('row height', () => {
     const { container } = render(<Subject id="rows" />)
     const body = container.querySelector('[data-slot="table-scroller"]')
     expect(body?.hasAttribute('data-density')).toBe(false)
-    for (const [height, density] of [
-      ['compact', 'dense'],
-      ['default', 'normal'],
-      ['comfortable', 'comfortable'],
-    ] as const) {
+    for (const height of ['dense', 'normal', 'comfortable'] as const) {
       act(() => latest().setRowHeight(height))
-      expect(body?.getAttribute('data-density')).toBe(density)
+      expect(body?.getAttribute('data-density')).toBe(height)
       // The body carries it too, so a bespoke layout's `DataTableBody` takes the step without the scroller.
       expect(
         container.querySelector('[data-slot="table-body"]')?.getAttribute('data-density'),
-      ).toBe(density)
+      ).toBe(height)
       expect(
         container.querySelector('[data-slot="table-header"]')?.hasAttribute('data-density'),
       ).toBe(false)
@@ -285,7 +281,7 @@ describe('row height', () => {
     const { container } = render(<Subject id="declared" options={{ rowHeight: 'comfortable' }} />)
     const body = container.querySelector('[data-slot="table-scroller"]')
     expect(body?.getAttribute('data-density')).toBe('comfortable')
-    act(() => latest().setRowHeight('compact'))
+    act(() => latest().setRowHeight('dense'))
     expect(body?.getAttribute('data-density')).toBe('dense')
   })
 })
@@ -401,7 +397,7 @@ describe('the view carries them', () => {
     display: {
       visibility: {},
       widths: { amount: 200 },
-      rowHeight: 'compact',
+      rowHeight: 'dense',
       groupBy: 'status',
       aggregates: { amount: 'max' },
     },
@@ -414,7 +410,7 @@ describe('the view carries them', () => {
     expect(isViewDirty(view, withView)).toBe(false)
     for (const display of [
       { ...withView.display, widths: { amount: 210 } },
-      { ...withView.display, rowHeight: 'default' as const },
+      { ...withView.display, rowHeight: 'normal' as const },
       { ...withView.display, groupBy: null },
       { ...withView.display, aggregates: {} },
     ]) {

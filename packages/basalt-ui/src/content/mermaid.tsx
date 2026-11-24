@@ -6,7 +6,7 @@ import { FenceTrust } from './fence-trust'
 import { loadPele } from './pele-peer'
 
 /**
- * pele colours its SVG through `--pele-*` custom properties, read by the SVG's own `var()`s. They
+ * pele colors its SVG through `--pele-*` custom properties, read by the SVG's own `var()`s. They
  * are set here on the wrapper, to basalt tokens, so a scheme flip is pure CSS and never re-renders
  * the diagram. `--pele-series-*` carries the five chart-series tokens, then repeats from the first.
  * The node surface lifts off the card; the border and the alt surface are ink mixed into the card.

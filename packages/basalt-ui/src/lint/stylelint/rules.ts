@@ -1,6 +1,6 @@
 /**
  * The closed D0 stylelint preset (static-framework-free 4.2, guardrails 5/6): ten stylelint core
- * rules plus the colour-as-decoration property map, all expressed as data so the shipped config is a
+ * rules plus the color-as-decoration property map, all expressed as data so the shipped config is a
  * pure function of this file. Regexes are strings in stylelint's `"/.../flags"` form because the
  * rendered `.stylelintrc.basalt.json` cannot carry a RegExp.
  *
@@ -29,8 +29,8 @@ const ALLOWED_RADIUS = `^${RADIUS_ATOM}(?:\\s+${RADIUS_ATOM})*$`
 export const RADIUS_PROPERTIES = '/^border(?:-[a-z]+)*-radius$/'
 
 // color-mix(in <space> [<hue-method> hue], <basalt var|transparent> [pct], <basalt var|transparent> [pct])
-const MIX_COLOUR = `(?:${BASALT_VAR}|transparent)`
-const MIX_STOP = `${MIX_COLOUR}(?:\\s+[\\d.]+%)?`
+const MIX_COLOR = `(?:${BASALT_VAR}|transparent)`
+const MIX_STOP = `${MIX_COLOR}(?:\\s+[\\d.]+%)?`
 const CLEAN_MIX_BODY = `\\s*in\\s+[a-z0-9-]+(?:\\s+(?:shorter|longer|increasing|decreasing)\\s+hue)?\\s*,\\s*${MIX_STOP}\\s*,\\s*${MIX_STOP}\\s*\\)`
 
 // Tailwind v4 exposes every token as `--color-<role>`; a value list reads that spelling beside `--basalt-<role>`.
@@ -53,7 +53,7 @@ export const SHAPE_PROPERTIES =
 export const DECORATION_PROPERTIES =
   '/^(?:background(?:-[a-z]+)*|border(?:-[a-z]+)*|outline(?:-[a-z]+)*|box-shadow)$/'
 // `overlay` is the deprecated alias of `auto`; `hidden`, `clip` and `visible` do not scroll.
-export const TEXT_COLOUR_PROPERTIES = '/^color$/'
+export const TEXT_COLOR_PROPERTIES = '/^color$/'
 // A width, and a flex basis (`flex-basis`, the basis of the `flex` shorthand: its grow and shrink
 // are unitless, so a length in it is the basis).
 export const WIDTH_PROPERTIES = '/^(?:(?:min-)?width|flex(?:-basis)?)$/'
@@ -96,7 +96,7 @@ const MOTION_EASE_KEYWORD = '/(?<![\\w-])(?:ease|ease-in|ease-out|ease-in-out|li
 const STATUS_ROLE = `var\\(\\s*${TOKEN_PREFIX}(?:good|warn|bad|info|destructive)(?:-[a-z0-9-]+)?\\s*[,)]`
 const CHART_ROLE = `var\\(\\s*${TOKEN_PREFIX}(?:chart|seq)(?:-[a-z0-9-]+)?\\s*[,)]`
 const DECORATION_LEAD =
-  'background, border, outline and shadow take the colour role of their surface'
+  'background, border, outline and shadow take the color role of their surface'
 
 /**
  * The groups in message order. `scrollOnly` marks the bans that hold from `parts` up, as their
@@ -114,31 +114,31 @@ const VALUE_GROUPS: readonly ValueGroup[] = [
   {
     properties: DECORATION_PROPERTIES,
     values: [`/${DECORATIVE_ROLE}/i`],
-    clause: `${DECORATION_LEAD}, never a status, chart or brand colour: a status colour or tint is Status, Lozenge, DeltaBadge or a Num tone, a chart colour belongs to a chart kind, and only a brand tint is var(--basalt-selected) or a surface token`,
+    clause: `${DECORATION_LEAD}, never a status, chart or brand color: a status color or tint is Status, Lozenge, DeltaBadge or a Num tone, a chart color belongs to a chart kind, and only a brand tint is var(--basalt-selected) or a surface token`,
     roles: [
       {
         value: `/${STATUS_ROLE}/i`,
-        clause: `${DECORATION_LEAD}, never a status colour or tint: Status, Lozenge, DeltaBadge or a Num tone own status colour in app code`,
+        clause: `${DECORATION_LEAD}, never a status color or tint: Status, Lozenge, DeltaBadge or a Num tone own status color in app code`,
       },
       {
         value: `/${CHART_ROLE}/i`,
-        clause: `${DECORATION_LEAD}, never a chart colour: a series colour belongs to a chart kind from basalt-ui/charts`,
+        clause: `${DECORATION_LEAD}, never a chart color: a series color belongs to a chart kind from basalt-ui/charts`,
       },
       {
         value: `/${DECORATIVE_ROLE}/i`,
-        clause: `${DECORATION_LEAD}, never a brand colour (a tinted background is var(--basalt-selected) or a surface token)`,
+        clause: `${DECORATION_LEAD}, never a brand color (a tinted background is var(--basalt-selected) or a surface token)`,
       },
     ],
   },
   {
-    // colour mixing is only legal over tokens or transparent
+    // color mixing is only legal over tokens or transparent
     properties: '/.*/',
     values: [`/color-mix\\((?!${CLEAN_MIX_BODY})/i`],
     clause: 'color-mix runs over --basalt tokens or transparent only',
   },
   {
     // a fill-only role as text and a fixed track length (the class rules' twins, every profile)
-    properties: TEXT_COLOUR_PROPERTIES,
+    properties: TEXT_COLOR_PROPERTIES,
     values: [`/${FILL_ONLY_ROLE}/i`],
     clause:
       'color takes a text role (Status or Num tone from parts; text-good or text-brand at bridge), never a fill-only role (chart, seq, the brand fill, a status tint)',
@@ -234,21 +234,21 @@ export const STYLELINT_RULES = {
     true,
     {
       message:
-        'A hex colour `%s` is authored colour. Use a `--basalt-*` colour token (`var(--basalt-ink)`), or `color-mix` over one.',
+        'A hex color `%s` is authored color. Use a `--basalt-*` color token (`var(--basalt-ink)`), or `color-mix` over one.',
     },
   ],
   'color-named': [
     'never',
     {
       message:
-        'The named colour `%s` is authored colour. Use a `--basalt-*` colour token, or `color-mix` over one.',
+        'The named color `%s` is authored color. Use a `--basalt-*` color token, or `color-mix` over one.',
     },
   ],
   'function-disallowed-list': [
     ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'lab', 'lch', 'oklab', 'oklch', 'color', 'light-dark'],
     {
       message:
-        "`%s()` writes a colour by hand. Use the `--basalt-*` colour token of the property's role (a surface for a background, an ink for text), or `color-mix(in oklab, var(--basalt-token) 40%, transparent)` over that token for an alpha; a token already switches per scheme.",
+        "`%s()` writes a color by hand. Use the `--basalt-*` color token of the property's role (a surface for a background, an ink for text), or `color-mix(in oklab, var(--basalt-token) 40%, transparent)` over that token for an alpha; a token already switches per scheme.",
     },
   ],
   'declaration-property-value-disallowed-list': disallowedValueList(true),
@@ -297,7 +297,7 @@ export const STYLELINT_RULES = {
     ],
     {
       message:
-        "Never select `%s`. A `data-slot` or `.mantine-*` selector reaches into a component: use the component's own prop or variant, or eject it (basalt-ui eject <name>). A `data-theme` or `.dark` selector forks a colour per scheme: tokens switch per scheme, so use a `--basalt-*` token instead.",
+        "Never select `%s`. A `data-slot` or `.mantine-*` selector reaches into a component: use the component's own prop or variant, or eject it (basalt-ui eject <name>). A `data-theme` or `.dark` selector forks a color per scheme: tokens switch per scheme, so use a `--basalt-*` token instead.",
     },
   ],
   'at-rule-disallowed-list': [
@@ -315,7 +315,7 @@ export const STYLELINT_RULES = {
     {
       // `%s` is the at-rule with its `@` already (stylelint passes `@utility`)
       message:
-        "`%s` adds to or rebuilds what the package owns: a utility class, a theme colour, a variant, the classes of a plugin, a class list the class rules check or a tailwind.config file that declares them. Take colour from Status, Lozenge, DeltaBadge or a Num tone (the palette is derived, never declared per app); tokens switch per scheme, so a `@variant dark` fork is a `--basalt-*` token instead (add the token instead of forking); long-form text is `Prose` from basalt-ui/page, never a typography plugin; compose the shipped component and its variants, or a `--basalt-*` token in a module stylesheet. A `@custom-media` names a viewport query: key on the container, `@container` with a named size (`@narrow`, `@regular`, `@wide`). `@tailwind` is Tailwind v3's layer directive: the package owns the layers, so the one basalt stylesheet import is all a module needs, and no layer is written.",
+        "`%s` adds to or rebuilds what the package owns: a utility class, a theme color, a variant, the classes of a plugin, a class list the class rules check or a tailwind.config file that declares them. Take color from Status, Lozenge, DeltaBadge or a Num tone (the palette is derived, never declared per app); tokens switch per scheme, so a `@variant dark` fork is a `--basalt-*` token instead (add the token instead of forking); long-form text is `Prose` from basalt-ui/page, never a typography plugin; compose the shipped component and its variants, or a `--basalt-*` token in a module stylesheet. A `@custom-media` names a viewport query: key on the container, `@container` with a named size (`@narrow`, `@regular`, `@wide`). `@tailwind` is Tailwind v3's layer directive: the package owns the layers, so the one basalt stylesheet import is all a module needs, and no layer is written.",
     },
   ],
 } as const

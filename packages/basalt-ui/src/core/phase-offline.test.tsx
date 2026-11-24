@@ -103,7 +103,7 @@ describe('the v3 frames over a paused query with no data', () => {
   })
 
   test('StatCell draws the Offline line in its figure, not skeleton bars', () => {
-    const { container } = render(<StatCell label="Recovery" value={82} phase={query()} />)
+    const { container } = render(<StatCell title="Recovery" value={82} phase={query()} />)
     const cell = container.querySelector('[data-slot="stat-cell"]')
     expect(cell?.getAttribute('data-phase')).toBe('offline')
     expect(cell?.getAttribute('aria-busy')).toBeNull()

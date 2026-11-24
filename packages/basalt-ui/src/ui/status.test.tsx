@@ -36,7 +36,7 @@ describe('status module', () => {
     expect(getByText('Down').className).toContain('truncate')
   })
 
-  test('Swatch carries its colour as a variable and is hidden from assistive tech', () => {
+  test('Swatch carries its color as a variable and is hidden from assistive tech', () => {
     const { container } = render(<Swatch color={BASALT.good} />)
     const el = container.firstElementChild as HTMLElement
     expect(el.style.getPropertyValue('--swatch')).toBe('var(--basalt-good)')

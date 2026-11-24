@@ -51,7 +51,7 @@ describe('Progress', () => {
     expect(bar.hasAttribute('aria-valuenow')).toBe(false)
   })
 
-  test('tone colours the fill, default accent', () => {
+  test('tone colors the fill, default accent', () => {
     const { getAllByRole } = render(
       <>
         <Progress value={1} aria-label="a" tone="bad" />

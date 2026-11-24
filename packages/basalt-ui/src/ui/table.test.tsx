@@ -67,7 +67,7 @@ describe('table module', () => {
     expect(container.querySelector('td')?.className).toContain('border-b')
   })
 
-  test('the grid look rules both axes in the row rule colour, compact and tabular', () => {
+  test('the grid look rules both axes in the row rule color, compact and tabular', () => {
     const { getByLabelText } = render(
       <Table look="grid" aria-label="Orders">
         <TableBody>
@@ -84,7 +84,7 @@ describe('table module', () => {
     expect(table.className).toContain('[&_:is(th,td):last-child]:border-e-0')
     expect(table.className).toContain('tabular-nums')
     expect(table.className).toContain('[--table-row-h:1.75rem]')
-    // the row rule the cells already draw is the same token: both axes share one colour
+    // the row rule the cells already draw is the same token: both axes share one color
     expect(table.querySelector('td')?.className).toContain('border-border')
   })
 

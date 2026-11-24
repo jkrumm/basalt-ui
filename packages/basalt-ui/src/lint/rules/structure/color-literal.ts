@@ -1,28 +1,28 @@
 /**
- * `basalt/colour-literal` (guardrails section 4, row 14): a hex or colour function written as a
+ * `basalt/color-literal` (guardrails section 4, row 14): a hex or color function written as a
  * string in TS. The regex guard it replaces had an escape hatch, which is why shutterflow carried
  * 11 canvas waivers; an AST rule reads strings and template quasis and nothing else. Deep-rendering
  * files take one file-level waiver on a path in `manifest.deepRender` (`waiver-needs-reason`).
  *
- * `color(display-p3 0.1 0.5 0.9)` (a `color()` over a colour space) reads as `oklch(` does.
+ * `color(display-p3 0.1 0.5 0.9)` (a `color()` over a color space) reads as `oklch(` does.
  *
  * A function that wraps a token (`rgb(var(--basalt-x) / 50%)`) is not a literal and passes;
- * CSS relative colour syntax (`rgb(from var(--basalt-x) r g b / 50%)`, `oklch(from …)`, `color(from …)`)
+ * CSS relative color syntax (`rgb(from var(--basalt-x) r g b / 50%)`, `oklch(from …)`, `color(from …)`)
  * is the alpha the `alpha(BASALT.x, n)` helper owns and reports; `color-mix` and `light-dark` are the
  * stylesheet's, not this rule's.
  *
  * `basalt.tokens.ts`, the series file `tokens:css --extra` reads, is the one file that writes raw
- * colour pairs, and is not read at all.
+ * color pairs, and is not read at all.
  *
- * A CSS named colour (`'white'`, `'steelblue'`) is a literal where it is written into a colour slot:
+ * A CSS named color (`'white'`, `'steelblue'`) is a literal where it is written into a color slot:
  * a canvas `strokeStyle`, `fillStyle` or `shadowColor` assignment, a style-object key such as
  * `color`, `backgroundColor`, `fill` or `stroke`, or an SVG `fill` / `stroke` attribute (through a
  * ternary or `||` too). The same word anywhere else is a plain string. `transparent`, `inherit`,
- * `currentColor` and `none` are keywords, not colours, and pass.
+ * `currentColor` and `none` are keywords, not colors, and pass.
  *
  * A bare `hsl(var(--border))`, `rgb(var(--x))` or `oklch(var(--x))` over a variable that is not a
  * `--basalt-` token is the shadcn v3 idiom the stylesheet's `function-disallowed-list` bans, and reports.
- * A `*-color` key (`'line-color'`, `'fill-color'`, a maplibre paint object) is a colour slot.
+ * A `*-color` key (`'line-color'`, `'fill-color'`, a maplibre paint object) is a color slot.
  *
  * A `#` plus digits string under a reference key (`ref`, `id`, `issue`, `number`, `ticket`, or a
  * compound such as `issueRef`, `rowId`, `issueNumber`) is an Issue reference and passes; the same
@@ -31,10 +31,10 @@
  * passes, a hex-shaped one included: `{ from: '#fff', to: '#000' }` reports only `#fff`, since
  * `#add` and `#000` are the same shape.
  *
- * Known limit: a named colour that reaches its slot through a variable or a function result is not
+ * Known limit: a named color that reaches its slot through a variable or a function result is not
  * read (`const c = 'white'; ctx.fillStyle = c` reports nothing: only the slot's own literal is). A
  * short hex-alphabet fragment (`'#feed'`, `'#cafe'`) is indistinguishable from a
- * colour by syntax alone outside a link key. `url(#id)` and `url('#id')` pass; a selector string of
+ * color by syntax alone outside a link key. `url(#id)` and `url('#id')` pass; a selector string of
  * that shape takes a per-line waiver with a reason.
  */
 import type { AstForm } from '../../rule-table'
@@ -43,15 +43,15 @@ import type { Node } from '../../factory'
 import { isSeriesFile, isTestFile } from '../../factory'
 
 const HEX = /(?<!url\(['"]?)(?<![\w&#-])#(?:[0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{3,4})(?![\w-])/gi
-const COLOUR_FUNCTION =
+const COLOR_FUNCTION =
   /(?<![\w-])(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch)\(\s*(?:[-+.\d]|none\b|\$\{\})/i
-/** `rgb(from var(--basalt-x) r g b / 50%)`: CSS relative colour syntax, the alpha `alpha(BASALT.x, n)` owns. */
-const RELATIVE_COLOUR = /(?<![\w-])(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\(\s*from\s/i
-/** `color(display-p3 0.1 0.5 0.9)`: the CSS `color()` function over a colour space. */
+/** `rgb(from var(--basalt-x) r g b / 50%)`: CSS relative color syntax, the alpha `alpha(BASALT.x, n)` owns. */
+const RELATIVE_COLOR = /(?<![\w-])(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\(\s*from\s/i
+/** `color(display-p3 0.1 0.5 0.9)`: the CSS `color()` function over a color space. */
 const COLOR_SPACE_FUNCTION =
   /(?<![\w-])color\(\s*(?:srgb(?:-linear)?|display-p3|a98-rgb|prophoto-rgb|rec2020|xyz(?:-d50|-d65)?)\s/i
 
-/** `#123` in prose is an issue number, not a colour; a bare `'#123'` string still is one. */
+/** `#123` in prose is an issue number, not a color; a bare `'#123'` string still is one. */
 const isIssueReference = (match: string, text: string): boolean =>
   /^#\d{3,4}$/.test(match) && text.trim() !== match
 
@@ -63,9 +63,9 @@ const REFERENCE_KEY = /^(?:ref|id|issue|number|ticket)$|(?:Ref|Id|Issue|Number|T
 const LINK_KEY = /^(?:href|to|hash)$/
 
 function literalIn(text: string): string | undefined {
-  const fn = COLOUR_FUNCTION.exec(text) ?? COLOR_SPACE_FUNCTION.exec(text)
+  const fn = COLOR_FUNCTION.exec(text) ?? COLOR_SPACE_FUNCTION.exec(text)
   if (fn) return `${fn[0].replace(/\(.*$/s, '')}()`
-  const relative = RELATIVE_COLOUR.exec(text)
+  const relative = RELATIVE_COLOR.exec(text)
   if (relative) return `${relative[0].replace(/\(.*$/s, '')}(from …)`
   const bare = NON_TOKEN_VAR_FUNCTION.exec(text)
   if (bare) return `${bare[0].replace(/\(.*$/s, '')}(var())`
@@ -110,7 +110,7 @@ const isModuleSource = (node: Node): boolean => {
   )
 }
 
-const NAMED_COLOURS: ReadonlySet<string> = new Set(
+const NAMED_COLORS: ReadonlySet<string> = new Set(
   (
     'aliceblue antiquewhite aqua aquamarine azure beige bisque black blanchedalmond blue blueviolet ' +
     'brown burlywood cadetblue chartreuse chocolate coral cornflowerblue cornsilk crimson cyan ' +
@@ -132,7 +132,7 @@ const NAMED_COLOURS: ReadonlySet<string> = new Set(
   ).split(' '),
 )
 
-const COLOUR_SLOTS: ReadonlySet<string> = new Set([
+const COLOR_SLOTS: ReadonlySet<string> = new Set([
   'strokeStyle',
   'fillStyle',
   'shadowColor',
@@ -145,7 +145,7 @@ const COLOUR_SLOTS: ReadonlySet<string> = new Set([
   'stroke',
   'background',
 ])
-const COLOUR_ATTRIBUTES: ReadonlySet<string> = new Set([
+const COLOR_ATTRIBUTES: ReadonlySet<string> = new Set([
   'fill',
   'stroke',
   'stopColor',
@@ -162,8 +162,8 @@ const keyName = (property: Node): string | undefined => {
   return typeof key['value'] === 'string' ? key['value'] : undefined
 }
 
-/** True when a string is written into a colour slot: `ctx.fillStyle = …`, `{ color: … }`, `<rect fill=… />`. */
-function inColourSlot(literal: Node): boolean {
+/** True when a string is written into a color slot: `ctx.fillStyle = …`, `{ color: … }`, `<rect fill=… />`. */
+function inColorSlot(literal: Node): boolean {
   let at = literal
   let up = parentOf(at)
   while (
@@ -180,22 +180,22 @@ function inColourSlot(literal: Node): boolean {
   if (up?.type === 'AssignmentExpression' && up['right'] === at) {
     const left = up['left'] as Node
     if (left.type !== 'MemberExpression' || left['computed']) return false
-    return COLOUR_SLOTS.has(((left['property'] as Node)['name'] as string | undefined) ?? '')
+    return COLOR_SLOTS.has(((left['property'] as Node)['name'] as string | undefined) ?? '')
   }
   if (up?.type === 'Property' && up['value'] === at) {
     const key = keyName(up) ?? ''
-    return COLOUR_SLOTS.has(key) || key.endsWith('-color')
+    return COLOR_SLOTS.has(key) || key.endsWith('-color')
   }
   if (up?.type !== 'JSXAttribute') return false
   const name = up['name'] as Node
-  return name.type === 'JSXIdentifier' && COLOUR_ATTRIBUTES.has(name['name'] as string)
+  return name.type === 'JSXIdentifier' && COLOR_ATTRIBUTES.has(name['name'] as string)
 }
 
-const namedColourIn = (literal: Node, text: string): string | undefined =>
-  NAMED_COLOURS.has(text.trim().toLowerCase()) && inColourSlot(literal) ? text.trim() : undefined
+const namedColorIn = (literal: Node, text: string): string | undefined =>
+  NAMED_COLORS.has(text.trim().toLowerCase()) && inColorSlot(literal) ? text.trim() : undefined
 
-export const colourLiteralForm: AstForm = {
-  id: 'colour-literal',
+export const colorLiteralForm: AstForm = {
+  id: 'color-literal',
   detect: ({ context, report }) =>
     isSeriesFile(context)
       ? {}
@@ -203,11 +203,11 @@ export const colourLiteralForm: AstForm = {
           Literal(node) {
             const text = node['value']
             if (typeof text !== 'string' || isModuleSource(node)) return
-            // A test passes a colour word as input (`{ color: 'red' }`); a hex is still a literal there.
+            // A test passes a color word as input (`{ color: 'red' }`); a hex is still a literal there.
             if (/^#\d{3,4}$/.test(text.trim()) && isReferenceValue(node)) return
             if (/^#[\w-]+$/.test(text.trim()) && isAnchorValue(node)) return
             const found =
-              literalIn(text) ?? (isTestFile(context) ? undefined : namedColourIn(node, text))
+              literalIn(text) ?? (isTestFile(context) ? undefined : namedColorIn(node, text))
             if (found) report(node, found)
           },
           TemplateLiteral(node) {
@@ -216,16 +216,16 @@ export const colourLiteralForm: AstForm = {
           },
         },
   fix: 'A BASALT.* token, alpha(BASALT.x, n) or the series file (src/basalt.tokens.ts); a deep-rendering file takes a reasoned file waiver',
-  next: 'A canvas renderer lists its file in manifest.deepRender and waives colour-literal once with -- <why>; a series colour goes in basalt.tokens.ts, never a waiver',
-  fixture: 'structure-rest/colour-literal.tsx',
+  next: 'A canvas renderer lists its file in manifest.deepRender and waives color-literal once with -- <why>; a series color goes in basalt.tokens.ts, never a waiver',
+  fixture: 'structure-rest/color-literal.tsx',
 }
 
-export const colourLiteralRules = defineRules({
-  'colour-literal': {
+export const colorLiteralRules = defineRules({
+  'color-literal': {
     family: 'structure',
     profiles: ['bridge', 'parts', 'app', 'site'],
     defect:
       '11 shutterflow canvas waivers (overlay.ts 10, Stage.tsx 1); the regex guard gave the escape and an AST rule replaces it',
-    forms: [colourLiteralForm],
+    forms: [colorLiteralForm],
   },
 })

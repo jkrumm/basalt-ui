@@ -157,7 +157,7 @@ function Fixture(): ReactElement {
       </Labelled>
       <Labelled id="swatch">
         <SwatchPicker
-          aria-label="Stage colour"
+          aria-label="Stage color"
           options={SWATCHES}
           value={swatch}
           onValueChange={setSwatch}
@@ -165,7 +165,7 @@ function Fixture(): ReactElement {
       </Labelled>
       <Labelled id="swatch-menu">
         <SwatchPicker
-          aria-label="Label colour"
+          aria-label="Label color"
           display="menu"
           options={SWATCHES}
           value={menuSwatch}

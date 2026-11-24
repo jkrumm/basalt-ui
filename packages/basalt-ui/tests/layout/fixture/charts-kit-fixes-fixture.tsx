@@ -61,7 +61,7 @@ function Card(props: {
         title={props.id}
         chart={(box) => (
           <Bars
-            ariaLabel={props.id}
+            label={props.id}
             data={props.rows}
             x={x}
             series={props.series}
@@ -151,7 +151,7 @@ function Fixture() {
           title="Dot on the floor"
           chart={(box) => (
             <CartesianChart<Pt>
-              ariaLabel="A dot on the floor"
+              label="A dot on the floor"
               data={points}
               x={{ value: (d) => d.n }}
               y={{ domain: [0, 4] }}

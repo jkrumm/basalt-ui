@@ -63,9 +63,7 @@ const bandX = (el: HTMLElement, label: string): number =>
   Number([...el.querySelectorAll('text')].find((t) => t.textContent === label)?.getAttribute('x'))
 
 async function inkOf(data: Cell[], domain?: readonly [number, number]): Promise<string[]> {
-  const el = await mount(
-    <Heatmap ariaLabel="H" data={data} {...grid} {...(domain && { domain })} />,
-  )
+  const el = await mount(<Heatmap label="H" data={data} {...grid} {...(domain && { domain })} />)
   return inked(el)
 }
 
@@ -74,7 +72,7 @@ describe('Heatmap', () => {
     const hours = Array.from({ length: 18 }, (_, h) => String(h).padStart(2, '0'))
     const el = await mount(
       <Heatmap
-        ariaLabel="H"
+        label="H"
         data={hours.map((col) => ({ row: 'Mon', col, v: 1 }))}
         {...grid}
         cols={hours}
@@ -88,7 +86,7 @@ describe('Heatmap', () => {
 
   test('a cell per datum; absent cells are flat neutral with no hatch', async () => {
     const el = await mount(
-      <Heatmap ariaLabel="H" data={cells} {...grid} rows={['Mon', 'Tue']} cols={['0', '1', '2']} />,
+      <Heatmap label="H" data={cells} {...grid} rows={['Mon', 'Tue']} cols={['0', '1', '2']} />,
     )
     expect(inked(el)).toHaveLength(2)
     // One null value plus three pairs with no datum: the six-cell grid minus the two measured.
@@ -99,7 +97,7 @@ describe('Heatmap', () => {
 
   test('bands run in the order given: rows top-down, columns left-right', async () => {
     const el = await mount(
-      <Heatmap ariaLabel="H" data={cells} {...grid} rows={['Tue', 'Mon']} cols={['2', '1', '0']} />,
+      <Heatmap label="H" data={cells} {...grid} rows={['Tue', 'Mon']} cols={['2', '1', '0']} />,
     )
     expect(bandY(el, 'Tue')).toBeLessThan(bandY(el, 'Mon'))
     expect(bandX(el, '2')).toBeLessThan(bandX(el, '1'))
@@ -107,7 +105,7 @@ describe('Heatmap', () => {
   })
 
   test('without explicit bands they are first seen in the data', async () => {
-    const el = await mount(<Heatmap ariaLabel="H" data={cells} {...grid} />)
+    const el = await mount(<Heatmap label="H" data={cells} {...grid} />)
     expect(bandY(el, 'Mon')).toBeLessThan(bandY(el, 'Tue'))
     expect(bandX(el, '0')).toBeLessThan(bandX(el, '1'))
   })
@@ -151,29 +149,29 @@ describe('Heatmap', () => {
       { row: 'a', col: 'y', v: Number.POSITIVE_INFINITY },
       { row: 'a', col: 'z', v: 4 },
     ]
-    const el = await mount(<Heatmap ariaLabel="H" data={data} {...grid} />)
+    const el = await mount(<Heatmap label="H" data={data} {...grid} />)
     expect(inked(el)).toHaveLength(1)
     expect(flat(el)).toHaveLength(2)
   })
 
   test('data=[] without a state draws an empty grid', async () => {
-    const el = await mount(<Heatmap ariaLabel="H" data={[]} {...grid} />)
+    const el = await mount(<Heatmap label="H" data={[]} {...grid} />)
     expect(el.querySelector('svg')).not.toBeNull()
     expect(inked(el)).toHaveLength(0)
   })
 
   test('gradient legend by default, none with legend={false}; never a crosshair', async () => {
-    const withLegend = await mount(<Heatmap ariaLabel="H" data={cells} {...grid} />)
+    const withLegend = await mount(<Heatmap label="H" data={cells} {...grid} />)
     expect(withLegend.querySelector('.ts-chart__legend--gradient')).not.toBeNull()
     expect(withLegend.querySelector('[class*="crosshair"]')).toBeNull()
-    const without = await mount(<Heatmap ariaLabel="H" data={cells} {...grid} legend={false} />)
+    const without = await mount(<Heatmap label="H" data={cells} {...grid} legend={false} />)
     expect(without.querySelector('.ts-chart__legend--gradient')).toBeNull()
   })
 
   test('the tooltip reads row · column, the value and the caller rows', async () => {
     const el = await mount(
       <Heatmap
-        ariaLabel="H"
+        label="H"
         data={cells}
         {...grid}
         rows={['Mon', 'Tue']}
@@ -193,7 +191,7 @@ describe('Heatmap', () => {
   test('a caller row with swatch dashed paints a dashed swatch, a plain one the color', async () => {
     const el = await mount(
       <Heatmap
-        ariaLabel="H"
+        label="H"
         data={cells}
         {...grid}
         rows={['Mon', 'Tue']}
@@ -217,23 +215,25 @@ describe('Heatmap', () => {
 
   test('an absent cell with a datum still opens a tooltip that says so', async () => {
     const el = await mount(
-      <Heatmap ariaLabel="H" data={cells} {...grid} rows={['Mon', 'Tue']} cols={['0', '1']} />,
+      <Heatmap label="H" data={cells} {...grid} rows={['Mon', 'Tue']} cols={['0', '1']} />,
     )
     expect(await hover(el, 400, 28)).toContain('No data')
   })
 
-  test('matchHeight fills the parent; state replaces the grid', async () => {
-    const el = await mount(<Heatmap ariaLabel="H" data={cells} {...grid} matchHeight />)
+  test('matchHeight fills the parent; empty replaces the grid', async () => {
+    const el = await mount(<Heatmap label="H" data={cells} {...grid} matchHeight />)
     expect(el.firstElementChild instanceof HTMLElement && el.firstElementChild.style.height).toBe(
       '100%',
     )
-    const empty = await mount(<Heatmap ariaLabel="H" data={[]} {...grid} state={{ empty: true }} />)
+    const empty = await mount(
+      <Heatmap label="H" data={[]} {...grid} empty={{ cause: 'Nothing plotted in this range' }} />,
+    )
     expect(empty.querySelector('svg')).toBeNull()
     expect(empty.textContent).toContain('Nothing plotted in this range')
   })
 
-  test('phase and empty replace the grid like state does', async () => {
-    const loading = await mount(<Heatmap ariaLabel="H" data={cells} {...grid} phase="loading" />)
+  test('phase and empty replace the grid', async () => {
+    const loading = await mount(<Heatmap label="H" data={cells} {...grid} phase="loading" />)
     expect(loading.querySelector('svg')).toBeNull()
     expect(loading.querySelector('[aria-busy="true"]')).not.toBeNull()
     const query = {
@@ -241,28 +241,21 @@ describe('Heatmap', () => {
       isError: false,
       error: null,
     } as const
-    const pending = await mount(<Heatmap ariaLabel="H" data={[]} {...grid} phase={query} />)
+    const pending = await mount(<Heatmap label="H" data={[]} {...grid} phase={query} />)
     expect(pending.querySelector('[aria-busy="true"]')).not.toBeNull()
     const empty = await mount(
-      <Heatmap ariaLabel="H" data={[]} {...grid} empty={{ cause: 'No runs this week' }} />,
+      <Heatmap label="H" data={[]} {...grid} empty={{ cause: 'No runs this week' }} />,
     )
     expect(empty.querySelector('svg')).toBeNull()
     expect(empty.textContent).toContain('No runs this week')
-    const none = await mount(<Heatmap ariaLabel="H" data={cells} {...grid} empty={null} />)
+    const none = await mount(<Heatmap label="H" data={cells} {...grid} empty={null} />)
     expect(none.querySelector('svg')).not.toBeNull()
-  })
-
-  test('the deprecated state still applies when phase and empty say nothing', async () => {
-    const el = await mount(
-      <Heatmap ariaLabel="H" data={cells} {...grid} state={{ pending: true }} phase="ready" />,
-    )
-    expect(el.querySelector('svg')).toBeNull()
   })
 })
 
 describe('Heatmap positions without a datum', () => {
   const sparse = (): React.ReactNode => (
-    <Heatmap ariaLabel="H" data={cells} {...grid} rows={['Mon', 'Tue']} cols={['0', '1']} />
+    <Heatmap label="H" data={cells} {...grid} rows={['Mon', 'Tue']} cols={['0', '1']} />
   )
 
   test('are inert: no tooltip, and the neighbouring cell is not snapped to', async () => {
@@ -294,7 +287,7 @@ describe('Heatmap states', () => {
     { row: 'Tue', col: '1', v: 8, s: 'idle' },
   ]
   const props = {
-    ariaLabel: 'H',
+    label: 'H',
     data: stated,
     ...grid,
     rows: ['Mon', 'Tue'],
@@ -346,7 +339,7 @@ describe('Heatmap states', () => {
 
 describe('Heatmap legend and tooltip labels', () => {
   const props = {
-    ariaLabel: 'H',
+    label: 'H',
     data: cells,
     ...grid,
     rows: ['Mon', 'Tue'],
@@ -382,7 +375,7 @@ describe('Heatmap hit-testing at the grid edges', () => {
     { row: 'C', col: '2', v: 2 },
   ]
   const edgeGrid = (): React.ReactNode => (
-    <Heatmap ariaLabel="H" data={sparse} {...grid} rows={['A', 'B', 'C']} cols={['0', '1', '2']} />
+    <Heatmap label="H" data={sparse} {...grid} rows={['A', 'B', 'C']} cols={['0', '1', '2']} />
   )
 
   test('the first and last cell answer at their corners with their exact tooltip', async () => {
@@ -408,7 +401,7 @@ describe('Heatmap default domain and stated cells', () => {
     { row: 'a', col: 'x', v: 50 },
     { row: 'a', col: 'y', v: 100, s: 'failed' },
   ]
-  const props = { ariaLabel: 'H', data, ...grid, states, getState: (d: S) => d.s }
+  const props = { label: 'H', data, ...grid, states, getState: (d: S) => d.s }
 
   test('a stated cell does not stretch the default domain: the 50 is full ink', async () => {
     const el = await mount(<Heatmap {...props} />)
@@ -430,7 +423,7 @@ describe('Heatmap states: edges of the contract', () => {
     { row: 'Mon', col: '1', v: null, s: 'failed' },
   ]
   const props = {
-    ariaLabel: 'H',
+    label: 'H',
     data,
     ...grid,
     rows: ['Mon'],
@@ -463,7 +456,7 @@ describe('Heatmap states: edges of the contract', () => {
   })
 
   test('a state chart conceals the state legend instead of removing it', async () => {
-    const el = await mount(<Heatmap {...props} state={{ pending: true }} />)
+    const el = await mount(<Heatmap {...props} phase="loading" />)
     const chips = el.querySelector('fieldset[aria-label="Legend"]')
     expect(chips?.getAttribute('aria-hidden')).toBe('true')
   })

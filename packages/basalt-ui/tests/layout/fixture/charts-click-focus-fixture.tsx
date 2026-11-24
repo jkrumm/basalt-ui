@@ -57,7 +57,7 @@ function LinesProbe() {
     <section className={BOX} data-testid="cf-lines">
       <h2 className="text-sm">Lines</h2>
       <Lines
-        ariaLabel="Requests and errors per day"
+        label="Requests and errors per day"
         data={rows}
         x={x}
         series={[lineA, lineB]}
@@ -73,7 +73,7 @@ function BarsProbe() {
     <section className={BOX} data-testid="cf-bars">
       <h2 className="text-sm">Bars</h2>
       <Bars
-        ariaLabel="Requests and errors, stacked"
+        label="Requests and errors, stacked"
         data={rows}
         x={x}
         series={[barA, barB]}
@@ -89,7 +89,7 @@ function CartesianProbe() {
     <section className={BOX} data-testid="cf-cartesian">
       <h2 className="text-sm">Cartesian</h2>
       <CartesianChart
-        ariaLabel="Requests as bars, errors as a line, spikes as dots"
+        label="Requests as bars, errors as a line, spikes as dots"
         data={rows}
         x={x}
         series={[
@@ -127,7 +127,7 @@ function HeatmapProbe() {
     <section className={BOX} data-testid="cf-heatmap">
       <h2 className="text-sm">Heatmap</h2>
       <Heatmap
-        ariaLabel="Events per weekday and hour"
+        label="Events per weekday and hour"
         data={cells}
         getRow={(c) => c.row}
         getCol={(c) => c.col}
@@ -226,7 +226,7 @@ function SparklineProbe() {
   return (
     <section className={BOX} data-testid="cf-sparkline">
       <h2 className="text-sm">Sparkline</h2>
-      <Sparkline series={DAYS} height={56} axisLabels={LABELS} ariaLabel="Shipped per day" />
+      <Sparkline points={DAYS} height={56} axisLabels={LABELS} label="Shipped per day" />
     </section>
   )
 }

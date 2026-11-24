@@ -1,4 +1,4 @@
-// Blocks: see colour-literal.tsx.
+// Blocks: see color-literal.tsx.
 
 // @invalid
 const q = useQuery({ queryKey: ['gyms'], queryFn, refetchInterval: 30_000 })

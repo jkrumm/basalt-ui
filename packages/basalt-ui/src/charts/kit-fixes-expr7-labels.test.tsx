@@ -17,7 +17,7 @@ function captionY(value: (i: number) => number): number | null {
   const data: Row[] = Array.from({ length: 10 }, (_, i) => ({ t: i * DAY, v: value(i) }))
   const html = renderToString(
     <CartesianChart<Row>
-      ariaLabel="V"
+      label="V"
       data={data}
       x={{ value: (d) => new Date(d.t) }}
       y={{ domain: [0, 100] }}

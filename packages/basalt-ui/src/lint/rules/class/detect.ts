@@ -52,7 +52,7 @@ function literalText(arg: Node | undefined): string | undefined {
 /**
  * `viewport-keyed`, JS form: a media query whose literal text names a `width`, or the viewport
  * width read against a number (`window.innerWidth < 768`; an element's `clientWidth` is container-keyed). Reduced-motion,
- * colour-scheme and pointer queries are not viewport-keyed; a non-literal argument stays open
+ * color-scheme and pointer queries are not viewport-keyed; a non-literal argument stays open
  * (S2: 8 of 28 hits remain once narrowed, all true). A top-level `const` string or number
  * (`useMediaQuery(MOBILE_QUERY)`, `window.innerWidth < BREAKPOINT`) is read as its literal.
  *
@@ -496,18 +496,18 @@ function schemeName(node: Node | undefined): string | undefined {
   return name !== undefined && SCHEME_NAMES.has(name) ? name : undefined
 }
 
-const COLOUR_SCHEME_QUERY = /prefers-color-scheme:\s*(?:dark|light)/i
+const COLOR_SCHEME_QUERY = /prefers-color-scheme:\s*(?:dark|light)/i
 
 /**
  * `matchMedia('(prefers-color-scheme: dark)').matches`, or a media-query hook's call on that query
  * (`useMediaQuery('(prefers-color-scheme: dark)')` of usehooks-ts and the like, react-responsive's
  * `useMediaQuery({ query: … })`), which returns the `.matches` itself; by its subject.
  */
-function colourSchemeQuery(test: Node | undefined): string | undefined {
+function colorSchemeQuery(test: Node | undefined): string | undefined {
   if (test?.type === 'CallExpression' && calleeName(test) === 'useMediaQuery') {
     const [arg] = nodesOf(test, 'arguments')
     const text = literalText(arg) ?? objectQueryText(arg, (node) => node)
-    return text !== undefined && COLOUR_SCHEME_QUERY.test(text)
+    return text !== undefined && COLOR_SCHEME_QUERY.test(text)
       ? `useMediaQuery('${text}')`
       : undefined
   }
@@ -605,7 +605,7 @@ function boundSchemeTest(
 
 /**
  * A scheme test: a scheme value compared with `'dark'` or `'light'` (either side), the
- * colour-scheme media query's `.matches`, a boolean named for the dark scheme, or a `const` bound
+ * color-scheme media query's `.matches`, a boolean named for the dark scheme, or a `const` bound
  * to one of those (`bound`, by name); through `!`. Returns the subject, or undefined.
  */
 function schemeTest(
@@ -616,7 +616,7 @@ function schemeTest(
   if (test?.type === 'UnaryExpression' && test['operator'] === '!') {
     return schemeTest(field(test, 'argument'), bound)
   }
-  const query = colourSchemeQuery(test)
+  const query = colorSchemeQuery(test)
   if (query !== undefined) return query
   const name = lastName(test)
   if (name !== undefined && DARK_FLAG.test(name)) return name
@@ -690,7 +690,7 @@ function isSchemeType(annotation: Node | undefined): boolean {
  * value is one (`{ invert: resolvedTheme === 'dark' }`), reports at the conditional or the key,
  * once. A scheme test is a scheme value read by name (`theme`, `resolvedTheme`, `systemTheme`,
  * `colorScheme`, `scheme`, bare or as a member) compared with `'dark'` or `'light'`, the
- * colour-scheme media query's `.matches` or a media-query hook's call on it
+ * color-scheme media query's `.matches` or a media-query hook's call on it
  * (`useMediaQuery('(prefers-color-scheme: dark)')`, any package), a boolean named for the dark
  * scheme (`isDark`, `isDarkMode`, `darkMode`) or a `const` bound to any of these, directly or as
  * what a `useMemo` callback returns (`const dark = useMemo(() => resolvedTheme === 'dark', [])`;
@@ -1056,9 +1056,9 @@ export function partsOnly(
 const UTILITY_VAR = /-[([](?:color:)?(?:var\()?(--[a-z][\w-]*)/i
 
 /**
- * `partsOnly` for a colour utility over a custom property, minus a property the same file sets in
+ * `partsOnly` for a color utility over a custom property, minus a property the same file sets in
  * a `style` object (`style={{ '--part': BASALT.line }}` with `bg-(--part)`): that value is passed in,
- * a series colour or a token, and the style's own route holds it (no-inline-styles,
+ * a series color or a token, and the style's own route holds it (no-inline-styles,
  * html-data-marks). A property declared elsewhere (`--brand-blue` in a module stylesheet) is the
  * app's own palette and reports; a `--basalt-*` name reports wherever it is set. Known limit: a
  * property set through a spread or a computed key is not read as set, and reports.
@@ -1148,9 +1148,9 @@ export function borderedCard(tokens: readonly string[], element?: string): strin
   return `${radius} ${border} ${third}`
 }
 
-/** The roles a bar is painted in: every earned colour but the neutral line, the ring and brand ink. */
+/** The roles a bar is painted in: every earned color but the neutral line, the ring and brand ink. */
 const NEUTRAL_ROLE = /^(?:line|ring|on-brand)$/
-/** The hues a bar is painted in: the status, brand and chart roles, a palette step or an arbitrary colour. */
+/** The hues a bar is painted in: the status, brand and chart roles, a palette step or an arbitrary color. */
 const STRIPE_HUE =
   `${zoneANames
     .filter((name) => !NEUTRAL_ROLE.test(name))
@@ -1181,12 +1181,12 @@ const pseudoBar = (tokens: readonly string[], at: 'before' | 'after'): string | 
 }
 
 /**
- * `side-stripe`, whole-string form: a coloured bar on one inline edge of an element, the "AI slop"
+ * `side-stripe`, whole-string form: a colored bar on one inline edge of an element, the "AI slop"
  * accent the owner rejected on cards, rows, toasts and nodes (2026-11-19). Two shapes: a one-side
  * border width (`border-l-2`, `border-s`) beside a hue on a border (`border-warn`,
  * `data-active:border-s-brand`), or a `before:`/`after:` bar that is full height, narrow (`w-px`
  * to `w-2`), pinned to a side and filled with a hue. A hue is a status, brand, chart or sequential
- * role, a Tailwind palette step or an arbitrary colour; a neutral rule (`border-s border-border`, a
+ * role, a Tailwind palette step or an arbitrary color; a neutral rule (`border-s border-border`, a
  * divider) and a top or bottom rule (a tab underline) pass, as does a pseudo bar lit only under a
  * hover, focus or drag variant (a splitter's line). Known limit: a stripe split across two class
  * strings (`cn(base, active && 'border-brand')`) and an inset box-shadow stripe are not read.
@@ -1273,7 +1273,7 @@ function itemSpreadHandle(attr: Node): string | undefined {
  * `useChartFocus` seam: the element, or one of its ancestors, spreads `focus.item(..)` where
  * `focus` is bound from `useChartFocus(..)` in this file. The same route `primitive-bypass` names
  * for a self-drawn mark, so the fill that mark takes is not reported (text, border and ring
- * colours still are). Purely syntactic: a handle bound elsewhere, or a mark in a child component,
+ * colors still are). Purely syntactic: a handle bound elsewhere, or a mark in a child component,
  * is not seen and takes a waiver. Unlike `primitive-bypass`'s data-mark forms it does not require
  * the enclosing `focus.target` container: a seam mark's fill is legal wherever the mark is wired.
  */

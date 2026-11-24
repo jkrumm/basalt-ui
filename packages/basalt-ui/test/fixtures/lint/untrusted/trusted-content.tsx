@@ -1,4 +1,4 @@
-// Blocks: see ../structure-rest/colour-literal.tsx.
+// Blocks: see ../structure-rest/color-literal.tsx.
 
 // @invalid
 // @filename src/chat/reply.tsx

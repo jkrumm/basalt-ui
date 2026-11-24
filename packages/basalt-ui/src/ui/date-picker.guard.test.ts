@@ -13,7 +13,7 @@ type Accepts<P> = (c: CalledPicker) => P
 type WithoutDays = {
   'aria-label'?: string | undefined
   value?: null | undefined
-  onChange?: DatePickerProps['onChange']
+  onValueChange?: DatePickerProps['onValueChange']
   placeholder?: string | undefined
   disabled?: boolean | undefined
   defaultOpen?: boolean | undefined
@@ -21,7 +21,7 @@ type WithoutDays = {
 type WithMinDate = {
   'aria-label'?: string | undefined
   value?: DatePickerProps['value']
-  onChange?: DatePickerProps['onChange']
+  onValueChange?: DatePickerProps['onValueChange']
   placeholder?: string | undefined
   disabled?: boolean | undefined
   defaultOpen?: boolean | undefined

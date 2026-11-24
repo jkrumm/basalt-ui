@@ -113,7 +113,7 @@ const dot: ChartSeries<Row> = {
 
 describe('y domain through the adapter', () => {
   const props = (y: NonNullable<CartesianChartProps<Row>['y']>): CartesianChartProps<Row> => ({
-    ariaLabel: 'x',
+    label: 'x',
     data: rows,
     x: { value: (r) => r.d },
     y,

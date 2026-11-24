@@ -208,7 +208,7 @@ describe('IntervalTrack pointer', () => {
 const spanFills = (el: HTMLElement) =>
   [...el.querySelectorAll('rect[data-ts-key^="span:meeting"]')].map((r) => r.getAttribute('fill'))
 
-describe('IntervalTrack colour', () => {
+describe('IntervalTrack color', () => {
   const brand = 'var(--basalt-brand)'
   test('a one-series track paints neutral at rest, no brand; the accent is the focused span', async () => {
     const el = await mount(<Week />)
@@ -222,7 +222,7 @@ describe('IntervalTrack colour', () => {
     expect(lifted(el)[0]?.getAttribute('stroke')).toBe(brand)
   })
 
-  test('with two lane series, colour names the category as a tint of the series colour', async () => {
+  test('with two lane series, color names the category as a tint of the series color', async () => {
     const two: readonly IntervalSeries<Span['kind']>[] = [
       SERIES[0] as IntervalSeries<Span['kind']>,
       { key: 'free', label: 'Free', color: { light: '#4a4a4a', dark: '#c4c4c4' } },

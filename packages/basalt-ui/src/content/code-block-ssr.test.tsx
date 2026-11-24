@@ -26,7 +26,7 @@ describe('CodeBlock server render', () => {
     expect(html).not.toContain('<!--$!-->')
   })
 
-  test('a cold renderToString (no Suspense support) ships the plain block for the client to colour', () => {
+  test('a cold renderToString (no Suspense support) ships the plain block for the client to color', () => {
     const html = renderToString(<CodeBlock lang="ts" code="const cold = 0" />)
     expect(html).toContain('<code>const cold = 0</code>')
     expect(html).not.toContain('--shiki-')

@@ -68,12 +68,5 @@ export function renderTabs<K extends string>(
 ): ReactNode {
   if (tabs === undefined) return null
   if ('kind' in tabs) return tabs.render()
-  return (
-    <HandleTabs
-      state={(tabs.state ?? tabs.handle) as ControlHandle<K>}
-      label={tabs.label}
-      badges={tabs.badges}
-      look={look}
-    />
-  )
+  return <HandleTabs state={tabs.state} label={tabs.label} badges={tabs.badges} look={look} />
 }

@@ -17,7 +17,7 @@ the glyph follows the tone.
 ## Signature
 
 ```ts
-Callout({ tone, kind, title, className, children }: CalloutProps): ReactElement
+Callout({ tone, title, className, children }: CalloutProps): ReactElement
   tone?: Tone  // Semantic tone, the values of `Alert`: drives the tint, the glyph and the announcement
   title?: string
   className?: string  // Layout only (`my-6`)

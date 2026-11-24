@@ -131,7 +131,7 @@ export type TabsTriggerProps = Omit<BaseTabs.Tab.Props, 'className'> &
   }
 
 /**
- * One tab. The active tab takes the ink colour and a brand underline, or the selected fill when the
+ * One tab. The active tab takes the ink color and a brand underline, or the selected fill when the
  * list is vertical (`segment`: a raised face; `pill`: a tint inside a hairline); a
  * disabled tab stays reachable by the arrow keys (it cannot be activated), as the WAI-ARIA tabs pattern asks.
  * A `count`, an `attention` tone and a `tone` dot draw the badge `PageBar`'s tabs draw, so a tab bar

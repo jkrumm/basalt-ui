@@ -13,7 +13,7 @@ export type UrlTrust = 'trusted' | 'untrusted'
 /**
  * A path inside the app: one leading slash, so not `//host`, a scheme, a hash or a relative path,
  * and no backslash or control character, which a parser folds into `/` or drops (`/\host` is
- * another origin). The one rule the router's link adapter and the stored favourites share.
+ * another origin). The one rule the router's link adapter and the stored favorites share.
  */
 export function isInAppPath(href: string): boolean {
   if (!href.startsWith('/') || href.startsWith('//')) return false

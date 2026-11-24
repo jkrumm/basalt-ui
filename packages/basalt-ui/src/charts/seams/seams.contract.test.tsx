@@ -36,7 +36,7 @@ const without = (id: string): Registry => SEAM_MODULES.filter((m) => m.id !== id
 
 /** The chart props of a seam case: `y` only when given (`exactOptionalPropertyTypes`). */
 const chartProps = ({ y, ...rest }: SeamProps<Row>): CartesianChartProps<Row> => ({
-  ariaLabel: 'T',
+  label: 'T',
   ...rest,
   ...(y !== undefined && { y }),
 })
@@ -162,7 +162,7 @@ const cases: Record<string, (mods: Registry) => void> = {
     let seen: readonly Row[] = []
     renderToString(
       <CartesianChart
-        ariaLabel="T"
+        label="T"
         data={data}
         x={x}
         series={[{ ...a, failed: true }]}
@@ -180,7 +180,7 @@ const cases: Record<string, (mods: Registry) => void> = {
     registered(mods, 'per-datum opacity')
     const html = renderToString(
       <CartesianChart
-        ariaLabel="T"
+        label="T"
         data={rowsOf(4)}
         x={x}
         series={[
@@ -201,9 +201,7 @@ const cases: Record<string, (mods: Registry) => void> = {
     registered(mods, 'lone point')
     const data = [null, 100, null].map((v, i) => ({ t: day(i), a: v, b: null }))
     const doc = document.implementation.createHTMLDocument('')
-    doc.body.innerHTML = renderToString(
-      <CartesianChart ariaLabel="T" data={data} x={x} series={[a]} />,
-    )
+    doc.body.innerHTML = renderToString(<CartesianChart label="T" data={data} x={x} series={[a]} />)
     expect(doc.querySelectorAll('g[data-ts-key^="a-lone"] circle')).toHaveLength(1)
   },
   'plot.pxToY and pxToX': (mods) => {

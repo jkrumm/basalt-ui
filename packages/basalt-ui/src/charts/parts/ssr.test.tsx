@@ -30,10 +30,10 @@ const bar = (key: 'a' | 'b') =>
   ({ mark: 'bar', key, label: key, color: pair('line'), y: (d: Row) => d[key] }) as const
 
 const lines = (n: number): ReactElement => (
-  <Lines ariaLabel="L" data={rowsOf(n)} x={x} series={[a, b]} />
+  <Lines label="L" data={rowsOf(n)} x={x} series={[a, b]} />
 )
 const bars = (n: number): ReactElement => (
-  <Bars ariaLabel="B" data={rowsOf(n)} x={x} series={[bar('a'), bar('b')]} />
+  <Bars label="B" data={rowsOf(n)} x={x} series={[bar('a'), bar('b')]} />
 )
 
 afterEach(() => {
@@ -66,7 +66,7 @@ describe('SSR hydrate', () => {
   })
   test('a table and a summary hydrate clean too', async () => {
     const node = (
-      <Lines ariaLabel="L" data={rowsOf(20)} x={x} series={[a]} table summary="Twenty points" />
+      <Lines label="L" data={rowsOf(20)} x={x} series={[a]} table summary="Twenty points" />
     )
     expect(await hydrate(node)).toEqual([])
   })

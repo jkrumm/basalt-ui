@@ -12,7 +12,7 @@ import { buttonVariants } from './button'
 import { Popover, PopoverContent, PopoverTrigger } from './popover'
 
 /**
- * The named colour tokens a swatch can carry. A free colour value is not a choice: the palette decides.
+ * The named color tokens a swatch can carry. A free color value is not a choice: the palette decides.
  * `accent-<name>` is one of the package's accents (`ACCENT_NAMES`, basalt-ui/core/appearance), painted in that
  * accent's own fill whatever accent the page wears: the swatches of an accent picker.
  */
@@ -79,7 +79,7 @@ export const swatchPickerVariants = cva('grid w-fit grid-cols-4 gap-2 pointer-co
 /**
  * The swatch table: a 28 px disc of one token. It stays 28 px on every pointer and grows only its
  * invisible `::after` hit area to 44 px for a coarse one. The picked swatch carries a check and a
- * ring set off from the disc, so the state never rides on colour alone.
+ * ring set off from the disc, so the state never rides on color alone.
  */
 const swatchVariants = cva(
   'relative inline-flex size-7 cursor-pointer items-center justify-center rounded-full text-on-brand focus-ring transition-shadow after:absolute after:top-1/2 after:left-1/2 after:size-7 after:-translate-1/2 pointer-coarse:after:size-11 hover:opacity-90 data-checked:ring-2 data-checked:ring-foreground data-checked:ring-offset-2 data-checked:ring-offset-background data-disabled:cursor-not-allowed data-disabled:opacity-50',
@@ -90,7 +90,7 @@ export const swatchPickerParts = ['swatch-picker'] as const
 
 export type SwatchOption = {
   value: SwatchToken
-  /** The colour's name; every swatch is named by it, never by its colour. */
+  /** The color's name; every swatch is named by it, never by its color. */
   label: string
   disabled?: boolean
 }
@@ -99,7 +99,7 @@ export type SwatchPickerProps = {
   options: readonly SwatchOption[]
   value?: SwatchToken | undefined
   onValueChange?: (value: SwatchToken) => void
-  /** `inline` draws the grid in place; `menu` draws a trigger with the picked colour that opens it. */
+  /** `inline` draws the grid in place; `menu` draws a trigger with the picked color that opens it. */
   display?: 'inline' | 'menu'
   name?: string
   disabled?: boolean
@@ -126,16 +126,16 @@ function Dot({ token }: { token: SwatchToken }): ReactElement {
 }
 
 /**
- * A small set of named colour tokens as swatches, picked by a ring and a check. The value is the
- * token's name (`brand`, `chart-3`), never a colour value, so a picked colour follows the theme in
+ * A small set of named color tokens as swatches, picked by a ring and a check. The value is the
+ * token's name (`brand`, `chart-3`), never a color value, so a picked color follows the theme in
  * both schemes. `display="menu"` folds the grid into a popover behind a trigger that shows the
- * picked colour, for a field with little room. Arrow keys move through the swatches; it joins a Base
+ * picked color, for a field with little room. Arrow keys move through the swatches; it joins a Base
  * UI `Field` when wrapped in one.
  *
- * @useWhen the user tags a record with one colour of the palette: a stage, a label, a calendar
- * @neverWhen any colour is allowed (a free colour picker is not part of basalt) or the choice is not a colour
+ * @useWhen the user tags a record with one color of the palette: a stage, a label, a calendar
+ * @neverWhen any color is allowed (a free color picker is not part of basalt) or the choice is not a color
  * @example
- * <SwatchPicker aria-label="Stage colour" value={colour} onValueChange={setColour}
+ * <SwatchPicker aria-label="Stage color" value={color} onValueChange={setColor}
  *   options={[{ value: 'good', label: 'Green' }, { value: 'warn', label: 'Amber' }]} />
  */
 export function SwatchPicker({

@@ -109,7 +109,7 @@ describe('reviewer rubric', () => {
   it('does not contradict the v3 doctrine: tinted delta badge, ink-inverted primary', () => {
     expect(rubric).toContain('tinted delta badge')
     expect(rubric).toContain('the primary action is ink-inverted')
-    expect(rubric).not.toContain('text in its trend colour')
+    expect(rubric).not.toContain('text in its trend color')
     expect(rubric).not.toContain('references/catalogue.md')
     expect(rubric).not.toContain('references/states.md')
   })

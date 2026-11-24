@@ -39,7 +39,7 @@ Inset({ className, ...props }: PartProps<"div">): ReactElement
 
 ### `IconTile`
 
-The neutral tile behind a band icon. It has no tone: colour belongs to a verdict, not to a card.
+The neutral tile behind a band icon. It has no tone: color belongs to a verdict, not to a card.
 
 ```ts
 IconTile({ className, ...props }: PartProps<"span">): ReactElement

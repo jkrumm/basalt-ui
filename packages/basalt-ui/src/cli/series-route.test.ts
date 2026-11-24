@@ -1,5 +1,5 @@
 /**
- * The one consumer route for app series colours, built the way the README documents it in a fixture
+ * The one consumer route for app series colors, built the way the README documents it in a fixture
  * app: `init` seeds `src/basalt.tokens.ts`, the app writes its pairs there, `tokens:css --extra` emits
  * the variables, and the stylesheet entry imports them. A chart takes the pair; an HTML mark takes the
  * `groupTokens` ref, which must resolve to a custom property that sheet declares for both schemes.

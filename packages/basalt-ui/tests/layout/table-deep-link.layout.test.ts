@@ -117,7 +117,7 @@ for (const mode of MODES)
     })
   })
 
-/** The alpha of a computed colour: `rgba()`, `color(srgb r g b / a)` or `rgb(r g b / a%)`; 1 when none. */
+/** The alpha of a computed color: `rgba()`, `color(srgb r g b / a)` or `rgb(r g b / a%)`; 1 when none. */
 const alphaOf = (color: string): number => {
   if (color === 'transparent') return 0
   const slash = /\/\s*([\d.]+)(%?)/.exec(color)

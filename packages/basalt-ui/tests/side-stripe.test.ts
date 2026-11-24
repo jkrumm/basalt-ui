@@ -1,5 +1,5 @@
 /**
- * No coloured bar on one edge anywhere in the package: the `side-stripe` form of `basalt/tw-off-law`
+ * No colored bar on one edge anywhere in the package: the `side-stripe` form of `basalt/tw-off-law`
  * guards app code, but the package's own source is linted on the repo config, which loads no basalt
  * rule. This reads every class-like string literal and template text in `src/` and runs the same
  * detector over its tokens.
@@ -45,7 +45,7 @@ function stripes(path: string): string[] {
 }
 
 describe('side stripes', () => {
-  test('no class string in src/ draws a coloured bar on one edge', () => {
+  test('no class string in src/ draws a colored bar on one edge', () => {
     expect(files(SRC).flatMap(stripes)).toEqual([])
   })
 })

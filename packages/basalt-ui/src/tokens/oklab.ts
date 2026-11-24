@@ -1,5 +1,5 @@
 /**
- * OKLab / OKLCH and colour-vision-deficiency simulation — dependency-free.
+ * OKLab / OKLCH and color-vision-deficiency simulation — dependency-free.
  *
  * OKLab is Ottosson's definition (https://bottosson.github.io/posts/oklab/); the CVD matrices are
  * Machado, Oliveira & Fernandes (2009), "A Physiologically-based Model for Simulation of Color
@@ -69,7 +69,7 @@ export function hexToOklch(hex: string): Oklch {
   return { L, C: Math.hypot(a, b), h: h < 0 ? h + 360 : h }
 }
 
-/** Euclidean OKLab distance ×100 between two hex colours. */
+/** Euclidean OKLab distance ×100 between two hex colors. */
 export function deltaEOk(hexA: string, hexB: string): number {
   const x = hexToOklab(hexA)
   const y = hexToOklab(hexB)
@@ -89,7 +89,7 @@ export function simulateCvd(hex: string, kind: CvdKind): string {
   return linearToHex(simulateCvdLinear(hex, kind))
 }
 
-/** OKLab ΔE×100 between two colours as a dichromat sees them — no 8-bit round trip. */
+/** OKLab ΔE×100 between two colors as a dichromat sees them — no 8-bit round trip. */
 export function deltaEOkCvd(hexA: string, hexB: string, kind: CvdKind): number {
   const x = linearToOklab(simulateCvdLinear(hexA, kind))
   const y = linearToOklab(simulateCvdLinear(hexB, kind))

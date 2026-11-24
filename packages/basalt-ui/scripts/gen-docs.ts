@@ -75,11 +75,12 @@ export const fixtureRoots = (dir: string): GenRoots => ({
 
 // ── Names ────────────────────────────────────────────────────────────────────────────────────────
 
-/** `StatCard` → `stat-card`, `createSearchStore` → `create-search-store`, `BASALT` → `basalt`. */
+/** `StatCard` → `stat-card`, `createSearchStore` → `create-search-store`, `MOTION_DURATION` → `motion-duration`. */
 export function kebab(name: string): string {
   return name
     .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
     .replace(/([A-Z]+)([A-Z][a-z])/g, '$1-$2')
+    .replaceAll('_', '-')
     .toLowerCase()
 }
 

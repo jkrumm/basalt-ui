@@ -30,9 +30,9 @@ export function emphasis<T>(
   return highlighted === null || highlighted === s.key || highlighted === s.parent ? 1 : DIMMED
 }
 
-/** The share of the card's muted ink a dimmed mark takes in dark: the floor under a dark series colour. */
+/** The share of the card's muted ink a dimmed mark takes in dark: the floor under a dark series color. */
 const DARK_DIM_INK = 0.3
-/** The same in light, where the dim fades a light series colour into the pale card: the floor keeps it at 3:1. */
+/** The same in light, where the dim fades a light series color into the pale card: the floor keeps it at 3:1. */
 const LIGHT_DIM_INK = 0.6
 
 const mixed = (color: string, opacity: number): string =>
@@ -58,9 +58,9 @@ function isInkValue(value: string): boolean {
 }
 
 /**
- * Whether a series colour is a step of the ink scale: a grey hex (or a `light-dark()` pair of them) or
+ * Whether a series color is a step of the ink scale: a grey hex (or a `light-dark()` pair of them) or
  * one of the ink tokens. `dimmedPaint` mixes the card's muted ink into a mark as its floor, which is
- * the colour of such a step already, so a dimmed ink-step bar looked as it does at rest: it dims by
+ * the color of such a step already, so a dimmed ink-step bar looked as it does at rest: it dims by
  * `INK_STEP_DIM` of its resting opacity instead.
  */
 export function isInkStep(color: string): boolean {
@@ -75,9 +75,9 @@ export type BarState = 'rest' | 'focused' | 'dimmed'
 const share = (v: number): number => Math.round(v * 1000) / 10
 
 /**
- * The opaque colour a bar of `color` shows on the card, per state: the exact composite of what
+ * The opaque color a bar of `color` shows on the card, per state: the exact composite of what
  * `barMarks` paints (`strength` at rest, `focusedPaint` on the focused datum, `dimmedPaint` on the
- * others), flattened over the card so a colour function can read its lightness. A dimmed bar is
+ * others), flattened over the card so a color function can read its lightness. A dimmed bar is
  * `color`, the card's muted ink and the card in the weights `dimmedPaint` mixes them.
  */
 export function barOnCard(color: string, strength: number, state: BarState): string {
@@ -101,19 +101,19 @@ export function barOnCard(color: string, strength: number, state: BarState): str
 const INK_FLIP = 0.565
 
 /**
- * The ink for text standing on `surface` (an opaque colour): black on a light fill, white on a dark
- * one, whichever reads better, through a relative colour so it follows both schemes and every state
+ * The ink for text standing on `surface` (an opaque color): black on a light fill, white on a dark
+ * one, whichever reads better, through a relative color so it follows both schemes and every state
  * of the fill without a measured value.
  */
 export function inkOn(surface: string): string {
   return `oklch(from ${surface} clamp(0, calc((${INK_FLIP} - l) * 1000), 1) 0 0)`
 }
 
-/** The share of the card's ink the focused mark takes, so it rises past its resting colour as the rest falls. */
+/** The share of the card's ink the focused mark takes, so it rises past its resting color as the rest falls. */
 const FOCUS_INK = 0.4
 
 /**
- * The paint of the mark that holds the focus while the rest dim: its colour at full strength with
+ * The paint of the mark that holds the focus while the rest dim: its color at full strength with
  * two fifths of the card's ink, so a neutral mark among neutral marks reads at 1.5 to 2 times the
  * contrast of its dimmed neighbours (a 0.55 faded bar included) and an accent in dark lifts off the card.
  */
@@ -124,7 +124,7 @@ export function focusedPaint(color: string): string {
 /**
  * The paint of a mark while ANOTHER datum holds the focus, `strength` being what it draws at
  * otherwise: `DIMMED` of it with the card's muted ink mixed in on the light card, `DIMMED_TEXT` of
- * it with the same ink on the dark one, so a series colour near the card's own keeps a floor against
+ * it with the same ink on the dark one, so a series color near the card's own keeps a floor against
  * the card instead of vanishing into it. Bars and lines dim through this one function.
  */
 export function dimmedPaint(color: string, strength = 1): string {
@@ -133,7 +133,7 @@ export function dimmedPaint(color: string, strength = 1): string {
   return `light-dark(${light}, ${dark})`
 }
 
-/** What a dimmed line in its own hue keeps of its colour: the rest is the card's muted ink, a floor against the card. */
+/** What a dimmed line in its own hue keeps of its color: the rest is the card's muted ink, a floor against the card. */
 const HUE_STRENGTH = 0.8
 const HUE_LIGHT_INK = 0.12
 const HUE_DARK_INK = 0.08
@@ -141,7 +141,7 @@ const HUE_DARK_INK = 0.08
 const HUE_WEIGHT = 0.75
 
 /**
- * The paint of a line that stays in its own hue while another datum holds the focus: its colour at
+ * The paint of a line that stays in its own hue while another datum holds the focus: its color at
  * reduced strength with a light touch of the card's muted ink for the floor, so two or more lines
  * stay told apart where `dimmedPaint` would turn them all the same slate.
  */
@@ -292,7 +292,7 @@ export function cursorDots<T, X extends ChartX>(
 ): ChartMarks {
   const { getMarker } = s
   // `dot.fill` is constant but a state style's is not: one mark whose focused fill is the datum's
-  // own `getMarker` colour, resolved once per row here rather than on every focus repaint. The map
+  // own `getMarker` color, resolved once per row here rather than on every focus repaint. The map
   // is keyed by the row OBJECT: the engine hands the same objects back as the state context's datum.
   const colors = getMarker
     ? new Map(rows.map((r) => [r, getMarker(r.datum)?.color ?? s.color]))

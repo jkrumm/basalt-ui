@@ -22,7 +22,7 @@ delta or status and is neutral outside a frame.
 
 ```ts
 Sparkline(props: SparklineProps): ReactElement
-  series: readonly SparkPoint[]
+  points: readonly SparkPoint[]
   height: number | "fill"
   width?: number
   form?: "line" | "area"
@@ -39,9 +39,9 @@ Sparkline(props: SparklineProps): ReactElement
 ## Example
 
 ```tsx
-<Sparkline series={perDay} height={72} axisLabels={['Mon', 'Today', 'Sun']} label="Shipped per day" />
+<Sparkline points={perDay} height={72} axisLabels={['Mon', 'Today', 'Sun']} label="Shipped per day" />
 <Sparkline
-  series={weeks.map((w) => ({ value: w.hours, label: w.name }))}
+  points={weeks.map((w) => ({ value: w.hours, label: w.name }))}
   cap={12}
   height={56}
   axisLabels={['W41', 'Time in queue', 'W52']}

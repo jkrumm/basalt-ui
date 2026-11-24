@@ -14,7 +14,7 @@ The words on a page state facts: a precise noun, its scope, a live number, each 
 - A delta names what it compares to ("vs last week"); a unit sits beside the figure, spelled short.
 - The footer states two facts at most, each one the marks do not say. [type:FootFacts]
 - A domain word unfamiliar to a stranger carries an [InfoHint](node_modules/basalt-ui/docs/info-hint.md) whose definition is read from the app's glossary (`defineGlossary`) and retyped nowhere.
-- Every KPI card has one plain sentence of what its figure means and which way is good ("Merged pull requests. Higher is better."), in the `info` slot of the [StatCard](node_modules/basalt-ui/docs/stat-card.md); the delta's polarity says the same in colour. [type:StatCardProps]
+- Every KPI card has one plain sentence of what its figure means and which way is good ("Merged pull requests. Higher is better."), in the `info` slot of the [StatCard](node_modules/basalt-ui/docs/stat-card.md); the delta's polarity says the same in color. [type:StatCardProps]
 - A figure nobody counted is a dash with its reason, "Not measured, <why>". `value: null` on the StatCard draws the dash; the caption or the sub line names the reason. A zero is a measurement.
 - A time reads relative ("3 hours ago") with the absolute time on hover: `useFormat().relative` for the text, the `dateTime` form for the hover, or the table's `relativeTime` column, which carries both.
 - An origin is a word plus its source ("Manual, from the CLI"; "Webhook, from GitHub").

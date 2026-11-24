@@ -11,7 +11,7 @@ afterEach(cleanup)
 describe('className reaches the root', () => {
   test('className is appended, never a replacement, and the title renders', () => {
     const { container } = render(
-      <Callout kind="warn" title="Heads up" className="my-callout">
+      <Callout tone="warn" title="Heads up" className="my-callout">
         <p>Rate-limited.</p>
       </Callout>,
     )
@@ -45,7 +45,7 @@ describe('a title-less callout still names its kind, so it is never tint-only', 
 
   for (const [kind, word] of KINDS) {
     test(kind, () => {
-      const { container } = render(<Callout kind={kind}>body</Callout>)
+      const { container } = render(<Callout tone={kind}>body</Callout>)
       expect(container.querySelector('[data-callout-kind-word]')?.textContent).toBe(word)
     })
   }
@@ -61,19 +61,15 @@ describe('the kind maps onto the alert tone', () => {
 
   for (const [kind, role, tint] of TONES) {
     test(kind, () => {
-      render(<Callout kind={kind}>body</Callout>)
+      render(<Callout tone={kind}>body</Callout>)
       expect(screen.getByRole(role).className).toContain(tint)
     })
   }
 })
 
 describe('tone', () => {
-  test('takes the tone of Alert and wins over the deprecated kind', () => {
-    render(
-      <Callout tone="bad" kind="info">
-        body
-      </Callout>,
-    )
+  test('takes the tone of Alert', () => {
+    render(<Callout tone="bad">body</Callout>)
     expect(screen.getByRole('alert').className).toContain('bg-bad-tint')
   })
 

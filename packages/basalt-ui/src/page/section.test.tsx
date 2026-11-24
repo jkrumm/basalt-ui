@@ -67,7 +67,7 @@ describe('Section', () => {
         { value: 'b', label: 'Beta' },
       ],
     })
-    render(<Section title="Latency" tabs={{ handle: view, label: 'Latency view' }} />)
+    render(<Section title="Latency" tabs={{ state: view, label: 'Latency view' }} />)
     const home = section().querySelector('header [data-slot="section-tabs"]')
     expect(home?.querySelector('[data-slot="tabs"]')).not.toBeNull()
     expect(screen.getByRole('tablist', { name: 'Latency view' })).toBeDefined()

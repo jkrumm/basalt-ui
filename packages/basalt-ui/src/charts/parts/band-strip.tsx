@@ -38,7 +38,6 @@ import {
   toneOf,
 } from './band-fold'
 import type { Group, NamedChartState } from './band-fold'
-import { chartName } from '../chart-name'
 import type { ChartName } from '../contract'
 import { emphasis } from '../marks'
 import { rowX } from '../types'
@@ -557,17 +556,8 @@ export function BandStrip<T, X extends ChartX = ChartX, K extends string = strin
     }
   }, [tooltip, absentKey, getBand, states])
 
-  const {
-    ariaLabel: legacyName,
-    label,
-    legend,
-    height,
-    state: chartState,
-    className,
-    style,
-    ...spec
-  } = rest
-  const ariaLabel = chartName({ label, ariaLabel: legacyName })
+  const { label, legend, height, state: chartState, className, style, ...spec } = rest
+  const ariaLabel = label
   const stable = useShallowStable({
     ...spec,
     data,

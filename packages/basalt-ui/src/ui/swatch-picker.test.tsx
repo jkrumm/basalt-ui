@@ -18,7 +18,7 @@ function Picker(props: { display?: 'inline' | 'menu'; onBlur?: () => void }): Re
   const [value, setValue] = useState<SwatchToken | undefined>('good')
   return (
     <SwatchPicker
-      aria-label="Stage colour"
+      aria-label="Stage color"
       options={options}
       value={value}
       onValueChange={setValue}
@@ -29,9 +29,9 @@ function Picker(props: { display?: 'inline' | 'menu'; onBlur?: () => void }): Re
 }
 
 describe('swatch-picker', () => {
-  test('inline: a named radio group, every swatch named by its colour, the picked one checked', () => {
+  test('inline: a named radio group, every swatch named by its color, the picked one checked', () => {
     const { getByRole, getAllByRole } = render(<Picker />)
-    expect(getByRole('radiogroup', { name: 'Stage colour' })).toBeDefined()
+    expect(getByRole('radiogroup', { name: 'Stage color' })).toBeDefined()
     expect(getAllByRole('radio').map((r) => r.getAttribute('aria-label'))).toEqual([
       'Green',
       'Amber',
@@ -47,40 +47,40 @@ describe('swatch-picker', () => {
     expect(getByRole('radio', { name: 'Red' }).hasAttribute('data-disabled')).toBe(true)
   })
 
-  test('the fill is a token class, never a colour value', () => {
+  test('the fill is a token class, never a color value', () => {
     const { getByRole } = render(<Picker />)
     expect(getByRole('radio', { name: 'Green' }).className).toContain('bg-good')
     expect(getByRole('radio', { name: 'Green' }).getAttribute('style')).toBeNull()
   })
 
-  test('menu: the trigger shows the picked colour and opens the grid', () => {
+  test('menu: the trigger shows the picked color and opens the grid', () => {
     const { getByRole, queryByRole } = render(<Picker display="menu" />)
-    const trigger = getByRole('button', { name: 'Stage colour: Green' })
+    const trigger = getByRole('button', { name: 'Stage color: Green' })
     expect(queryByRole('radiogroup')).toBeNull()
     fireEvent.click(trigger)
-    expect(getByRole('radiogroup', { name: 'Stage colour' })).toBeDefined()
+    expect(getByRole('radiogroup', { name: 'Stage color' })).toBeDefined()
   })
 
   test('menu: the panel is named by aria-labelledby, else by aria-label, else by the catalog', () => {
     const { getByRole, unmount } = render(
       <>
-        <span id="who">Pipeline colour</span>
+        <span id="who">Pipeline color</span>
         <SwatchPicker aria-labelledby="who" display="menu" options={options} value="good" />
       </>,
     )
     fireEvent.click(getByRole('button'))
-    expect(getByRole('radiogroup', { name: 'Pipeline colour' })).toBeDefined()
+    expect(getByRole('radiogroup', { name: 'Pipeline color' })).toBeDefined()
     unmount()
     const bare = render(<SwatchPicker display="menu" options={options} value="good" />)
     fireEvent.click(bare.getByRole('button'))
-    expect(document.querySelector('[role="dialog"]')?.getAttribute('aria-label')).toBe('Colour')
+    expect(document.querySelector('[role="dialog"]')?.getAttribute('aria-label')).toBe('Color')
   })
 
-  test('menu: picking a colour closes the menu and fires onBlur once', () => {
+  test('menu: picking a color closes the menu and fires onBlur once', () => {
     let blurs = 0
     const { getByRole } = render(
       <SwatchPicker
-        aria-label="Stage colour"
+        aria-label="Stage color"
         display="menu"
         options={options}
         value="good"
@@ -100,7 +100,7 @@ describe('swatch-picker', () => {
     let blurs = 0
     const { getByRole } = render(
       <SwatchPicker
-        aria-label="Stage colour"
+        aria-label="Stage color"
         display="menu"
         options={options}
         onBlur={() => (blurs += 1)}
@@ -116,7 +116,7 @@ describe('swatch-picker', () => {
     let blurs = 0
     const { getByRole } = render(
       <SwatchPicker
-        aria-label="Stage colour"
+        aria-label="Stage color"
         display="menu"
         options={options}
         value="good"

@@ -11,7 +11,7 @@ A part names itself only where `chartLabels.fits(label, { width })` says the lab
 
 For marks on a time or value track, see the `seam-track` recipe.
 
-Colours come from the app's series file as `var(--basalt-*)` references, never literals.
+Colors come from the app's series file as `var(--basalt-*)` references, never literals.
 
 ```tsx
 import { chartLabels, useChartFocus } from 'basalt-ui/charts'

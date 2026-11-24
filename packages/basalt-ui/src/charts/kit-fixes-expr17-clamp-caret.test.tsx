@@ -1,7 +1,7 @@
 /**
  * Expression cycle 17 (`v3-expr-17-kit-fixes` 3, n81 and n82): the caret of a clamped bar sits inside the
- * bar's own body, so it is cut in the card's colour; in the bar's colour it is the bar's. A caret on a
- * dot, which has no body, keeps the series colour.
+ * bar's own body, so it is cut in the card's color; in the bar's color it is the bar's. A caret on a
+ * dot, which has no body, keeps the series color.
  */
 import { describe, expect, test } from 'bun:test'
 import { renderToString } from 'react-dom/server'
@@ -16,7 +16,7 @@ const fillOf = (html: string, key: string): string | undefined =>
   new RegExp(`<text data-ts-key="${key}[^"]*"[^>]*?fill="([^"]*)"`).exec(html)?.[1]
 
 describe('a clamp caret', () => {
-  test('on an ink-step bar is cut in the card colour', () => {
+  test('on an ink-step bar is cut in the card color', () => {
     const html = renderToString(
       <Bars<Row>
         label="V"

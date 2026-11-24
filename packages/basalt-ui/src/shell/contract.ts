@@ -6,7 +6,7 @@
  */
 import type { ReactNode } from 'react'
 import type { ControlsSlot, IconComponent, NavTarget } from '../core/ports'
-import type { FavouritesStore } from '../page/contract'
+import type { FavoritesStore } from '../page/contract'
 import type { DefinedNav, NavBadges } from '../router/nav/types'
 import type { SizeClass } from '../page/use-size-class'
 
@@ -117,10 +117,10 @@ export type AppShellProps<N extends DefinedNav = DefinedNav> = {
   /** A workspace switcher in the brand zone; on a phone its options are rows of the More surface. */
   workspace?: WorkspaceSwitcher
   /**
-   * Where the rail's Favourites section keeps its entries. Default: `persisted` under
-   * `basalt:<storageKey>-favourites`.
+   * Where the rail's Favorites section keeps its entries. Default: `persisted` under
+   * `basalt:<storageKey>-favorites`.
    */
-  favourites?: FavouritesStore
+  favorites?: FavoritesStore
   /**
    * The key the rail's collapse is stored under; the width the reader dragged it to lives beside it
    * under `<storageKey>-width`.

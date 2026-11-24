@@ -29,7 +29,7 @@ describe('row surfaces', () => {
       )
     })
 
-    test(`${side}: every text colour clears AA on both row surfaces`, () => {
+    test(`${side}: every text color clears AA on both row surfaces`, () => {
       for (const surface of ['rowHover', 'rowSelected'] as const) {
         const bg = data.surface[surface][side]
         const text = [

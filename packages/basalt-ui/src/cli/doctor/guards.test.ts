@@ -62,8 +62,8 @@ describe('check 11: budgets, ejects, weakened config, DESIGN.md', () => {
   it('fails when the counted waivers outgrow the record, naming lint, in either spelling', async () => {
     const dir = healthy('app', {
       'src/page.tsx':
-        '// oxlint-disable-next-line basalt/colour-literal -- why\nexport const a = 1\n' +
-        '// eslint-disable-next-line basalt/colour-literal -- why\nexport const b = 1\n',
+        '// oxlint-disable-next-line basalt/color-literal -- why\nexport const a = 1\n' +
+        '// eslint-disable-next-line basalt/color-literal -- why\nexport const b = 1\n',
     })
     const r = await runCheck(dir, 11)
     expect(r.status).toBe('fail')

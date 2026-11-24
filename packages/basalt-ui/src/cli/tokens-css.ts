@@ -40,7 +40,7 @@ function generatedHeader(version: string, command: string, flags: string[]): str
 /**
  * Space- and number-normalize the argument list of a legacy color function so the emitted file
  * survives a repo's formatter (`rgba(255,255,255,0.6)` and `rgba(255, 255, 255, 0.6)` are the same
- * colour; `0.10` becomes `0.1`). FORMATTING ONLY: token values are untouched, and only a bare decimal
+ * color; `0.10` becomes `0.1`). FORMATTING ONLY: token values are untouched, and only a bare decimal
  * literal is touched (never a `%`, a `var()` or a unit). Exported for tests.
  */
 export function normalizeColorFunctions(css: string): string {

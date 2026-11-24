@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react'
 
-/** The site parts' inline glyphs: 16px, stroke follows the text colour, hidden from assistive tech. */
+/** The site parts' inline glyphs: 16px, stroke follows the text color, hidden from assistive tech. */
 const PATHS = {
   sun: 'M8 2.5v1M8 12.5v1M2.5 8h1M12.5 8h1M4.1 4.1l.7.7M11.2 11.2l.7.7M4.1 11.9l.7-.7M11.2 4.8l.7-.7M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z',
   moon: 'M13 9.5A5.5 5.5 0 0 1 6.5 3a5.5 5.5 0 1 0 6.5 6.5Z',

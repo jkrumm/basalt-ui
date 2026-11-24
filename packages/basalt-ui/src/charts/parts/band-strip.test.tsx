@@ -31,7 +31,7 @@ const none: BandStripSeries<Slot> = {
 const getBand = (d: Slot): BandSpan => ({ state: d.s })
 
 const props = (
-  over: Partial<Omit<BandStripProps<Slot, string>, 'label' | 'ariaLabel'>> = {},
+  over: Partial<Omit<BandStripProps<Slot, string>, 'label'>> = {},
 ): BandStripProps<Slot, string> => ({
   label: 'Availability',
   data: slots(10, (i) => (i % 3 === 0 ? 'down' : 'up')),

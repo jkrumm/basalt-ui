@@ -19,7 +19,7 @@ export function rejected(): void {
     data: [],
     x,
     series: [
-      // @ts-expect-error a series has no `tone`: colour is a { light, dark } pair from the app's series file
+      // @ts-expect-error a series has no `tone`: color is a { light, dark } pair from the app's series file
       { mark: 'line', key: 'v', label: 'V', color, y, tone: 'good' },
     ],
   })
@@ -27,7 +27,7 @@ export function rejected(): void {
     ariaLabel: 'V',
     data: [],
     x,
-    // @ts-expect-error a free colour string is not a series colour
+    // @ts-expect-error a free color string is not a series color
     series: [{ mark: 'line', key: 'v', label: 'V', color: '#ff0000', y }],
   })
   CartesianChart({

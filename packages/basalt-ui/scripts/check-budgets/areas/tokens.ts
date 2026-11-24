@@ -209,7 +209,7 @@ export const raises: Raises = {
       from: 1876,
       to: 1877,
       consumer:
-        "the AppShell work surface (Issue 2851): `--basalt-shadow-card` is the hairline ring in both schemes, so a card on the surface's own colour reads by its edge",
+        "the AppShell work surface (Issue 2851): `--basalt-shadow-card` is the hairline ring in both schemes, so a card on the surface's own color reads by its edge",
       repo: 'basalt-ui',
     },
     {

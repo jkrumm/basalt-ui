@@ -178,7 +178,7 @@ describe('router templates', () => {
       const page = lint('src/routes/_app/index.tsx')
       expect(page.code, page.out).toBe(0)
       expect(page.out).not.toMatch(/\berror\b|\b[1-9]\d* warnings?\b/)
-      expect(lint('src/routes/_app/bad.tsx').out).toContain('basalt(colour-literal)')
+      expect(lint('src/routes/_app/bad.tsx').out).toContain('basalt(color-literal)')
     } finally {
       rmSync(dir, { recursive: true, force: true })
     }

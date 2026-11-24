@@ -59,7 +59,7 @@ function isNavTarget(value: unknown): value is NavTarget {
 
 /**
  * The URL a target or an in-app path opens, for a store that must keep it as text (the shell's
- * favourites). `undefined` for a path that leaves the app or a target this router cannot build.
+ * favorites). `undefined` for a path that leaves the app or a target this router cannot build.
  */
 export function targetHref(router: AnyRouter, target: string | NavTarget): string | undefined {
   if (typeof target === 'string') return isInAppPath(target) ? target : undefined

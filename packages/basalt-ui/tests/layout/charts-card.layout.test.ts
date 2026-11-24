@@ -4,7 +4,7 @@
  * stale, error and empty and as a Suspense fallback; a chart slot at twice the box height does not
  * move the card; a `fill` card takes its parent; a `tall` card keeps a 288 px box at phone width; the tooltip stays inside the card on both axes and
  * off the plot's tick labels; a failed series reads unavailable with the chart still drawn; nothing
- * pushes the page sideways; axe finds nothing serious or critical in either colour scheme.
+ * pushes the page sideways; axe finds nothing serious or critical in either color scheme.
  *
  * The page is self-contained: `fixture/charts-card.css` is compiled with the Tailwind CLI into a temp
  * directory and `fixture/charts-card-fixture.tsx` is bundled in memory (its CSS modules included).

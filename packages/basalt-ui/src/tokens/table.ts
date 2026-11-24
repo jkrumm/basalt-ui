@@ -1,10 +1,10 @@
 /**
  * The v3 token table: the ONE authored list (docs/v3/concepts/tokens-visual.md 3.2). `emit.ts`
  * generates `tokens.css`, the `BASALT` type, the `check-tokens` name list and the zone A denial from it;
- * `gates.ts` proves its colours. A name is public once it is a row here, so adding one is a
+ * `gates.ts` proves its colors. A name is public once it is a row here, so adding one is a
  * deliberate edit with a count test behind it (`table.test.ts`: 74 booked + `input`, ceiling 90).
  *
- * Colour values come from `deriveV3` (HCT, hex out): the table never carries a hex. A value is a
+ * Color values come from `deriveV3` (HCT, hex out): the table never carries a hex. A value is a
  * `{ light, dark }` pair, or a scalar string for a scheme-free role. Pre-mixed alpha roles
  * (`hairline`, `hover`, `selected`, `scrim`, `input`, `grid`, `crosshair`) are `color-mix` strings
  * over `var(--basalt-ink)`, so `/NN` on them would compound; `tw-off-law` denies it on those flagged `premixed`.
@@ -319,7 +319,7 @@ export const TOKENS: readonly TokenDef[] = [
   {
     name: 'shadow-card',
     family: 'shadow',
-    role: 'Card edge: a 1 px hairline ring and no drop, so a card reads on a ground of its own colour',
+    role: 'Card edge: a 1 px hairline ring and no drop, so a card reads on a ground of its own color',
     value: () => ({
       light: '0 0 0 1px var(--basalt-hairline)',
       dark: '0 0 0 1px var(--basalt-hairline)',
@@ -556,7 +556,7 @@ export type Density = keyof typeof DENSITY
  */
 export const COARSE = { 'ctl-h': '2.75rem', 'row-h': '2.75rem', hit: '2.75rem' } as const
 
-/** Tailwind-only colour aliases, which name no `--basalt-*` of their own (3.2). */
+/** Tailwind-only color aliases, which name no `--basalt-*` of their own (3.2). */
 export const COLOR_ALIASES: readonly { readonly tw: string; readonly token: string }[] = [
   { tw: '--color-primary', token: 'ink' },
   { tw: '--color-primary-foreground', token: 'canvas' },
@@ -590,7 +590,7 @@ export function tokenByName(name: string): TokenDef {
 }
 
 /**
- * Every Tailwind theme variable the table feeds: direct targets, the colour aliases, and the
+ * Every Tailwind theme variable the table feeds: direct targets, the color aliases, and the
  * `-tint` of each status tone (and `destructive`). Order is table order, so output is stable.
  */
 export function bridgeEntries(): BridgeEntry[] {

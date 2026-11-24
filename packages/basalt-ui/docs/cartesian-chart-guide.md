@@ -9,7 +9,7 @@ slots: []
 # CartesianChart guide
 
 The one cartesian chart. `series` is a union by `mark` (`line`, `bar`, `dot`) and the single source of
-colour, legend entry and tooltip row. `Lines` and `Bars` are this component with the series narrowed
+color, legend entry and tooltip row. `Lines` and `Bars` are this component with the series narrowed
 to lines, or to bars plus line overlays. Source: `src/charts/parts/`. The props, the signature and
 the example are in `cartesian-chart.md`.
 
@@ -25,7 +25,7 @@ an absence: a gap, no tooltip row). Shared: `format`, `axis`, `note`, `role`, `l
 | `bar`  | `stack`, `opacity: (d) => number`, `values: true or (v, d) => text`, `valuesAt: 'segment'`, `highlight: (d) => boolean` |
 | `dot`  | `r: (d) => number`                                                                                                      |
 
-There is no `tone`, no free colour and no numeric stroke width: each is a type error. `weight` is the
+There is no `tone`, no free color and no numeric stroke width: each is a type error. `weight` is the
 closed stroke scale.
 
 `values` labels each bar at its end (a stack once, by its total) clear of the rules, the captions and
@@ -131,10 +131,10 @@ ticks; `x.tickFormat` takes the ticks alone, so the axis reads `Nov 12` while th
 `ceil` up) or `(extent) => extent`. The extent is what the plot draws: on stacked bars the stack totals',
 so `([lo, hi]) => [lo, Math.min(hi, 120)]` caps a stack and leaves a chart under the cap alone. A domain narrower than the data, a tuple or a capping function
 (`([lo, hi]) => [lo, Math.min(hi, 80)]`), draws each datum past it on the plot's edge with a caret in
-its series colour and the true value beside the caret (right of it, else left, dropped when neither
+its series color and the true value beside the caret (right of it, else left, dropped when neither
 has room); the tooltip and the focus readout read it too. A stack of two or more
 bar series with a page-set domain stops at the plot's edge under one caret per x, and the label beside
-the caret is the true stack total in the value ink (no segment's colour); a segment labelled with
+the caret is the true stack total in the value ink (no segment's color); a segment labelled with
 `valuesAt: 'segment'` keeps its own true value inside the part that is drawn; a `normalized` stack
 never clamps.
 

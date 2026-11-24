@@ -228,7 +228,7 @@
 
 /* Opaque in both schemes: a tinted `--basalt-tooltip-surface` can be translucent and the card's footer ghosts
  * through a tooltip that opens over it (a slotted `Bars`). The tint is layered over the elevated
- * surface, so a consumer's `tooltipBg` and `--basalt-tooltip-surface` still colour it. The engine's
+ * surface, so a consumer's `tooltipBg` and `--basalt-tooltip-surface` still color it. The engine's
  * own value is inline. */
 :global(.ts-chart-tooltip) {
   background: linear-gradient(

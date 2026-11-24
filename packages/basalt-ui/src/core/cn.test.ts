@@ -18,7 +18,7 @@ function sourceFiles(dir: string): string[] {
 }
 
 describe('cn: disambiguation', () => {
-  test('text size and text colour coexist', () => {
+  test('text size and text color coexist', () => {
     expect(cn('text-display', 'text-red-500')).toBe('text-display text-red-500')
     expect(cn('text-red-500', 'text-display')).toBe('text-red-500 text-display')
     expect(cn('text-good', 'text-lg')).toBe('text-good text-lg')
@@ -34,7 +34,7 @@ describe('cn: disambiguation', () => {
     expect(cn('text-left', 'text-sm', 'text-ellipsis')).toBe('text-left text-sm text-ellipsis')
   })
 
-  test('outline width, style and colour are separate', () => {
+  test('outline width, style and color are separate', () => {
     expect(cn('outline-brand', 'outline-solid')).toBe('outline-brand outline-solid')
     expect(cn('outline-2', 'outline-solid', 'outline-brand')).toBe(
       'outline-2 outline-solid outline-brand',
@@ -42,7 +42,7 @@ describe('cn: disambiguation', () => {
     expect(cn('outline-dashed', 'outline-solid')).toBe('outline-solid')
   })
 
-  test('border width, style and colour are separate', () => {
+  test('border width, style and color are separate', () => {
     expect(cn('border', 'border-line')).toBe('border border-line')
     expect(cn('border-2', 'border-4')).toBe('border-4')
     expect(cn('border-dashed', 'border-solid')).toBe('border-solid')
@@ -51,7 +51,7 @@ describe('cn: disambiguation', () => {
     expect(cn('border-t-2', 'border-4')).toBe('border-4')
   })
 
-  test('shadow size vs colour, rounded, bg, font', () => {
+  test('shadow size vs color, rounded, bg, font', () => {
     expect(cn('shadow-card', 'shadow-overlay')).toBe('shadow-overlay')
     expect(cn('shadow-card', 'shadow-good')).toBe('shadow-card shadow-good')
     expect(cn('rounded-card', 'rounded-t-ctrl')).toBe('rounded-card rounded-t-ctrl')

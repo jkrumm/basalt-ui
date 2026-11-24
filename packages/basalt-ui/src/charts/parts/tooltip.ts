@@ -36,7 +36,7 @@ const line = (color: string): string =>
 const dot = (color: string): string =>
   `radial-gradient(circle closest-side, ${color} 0 99%, transparent 100%) center / 6px 6px no-repeat`
 
-/** The engine row `color` for a swatch shape: a plain colour for `solid`, a `background` for the rest. */
+/** The engine row `color` for a swatch shape: a plain color for `solid`, a `background` for the rest. */
 export function swatchBackground(color: string, swatch: RowSwatch = 'solid'): string {
   if (swatch === 'dashed') return dashed(color)
   if (swatch === 'line') return line(color)
@@ -44,7 +44,7 @@ export function swatchBackground(color: string, swatch: RowSwatch = 'solid'): st
   return color
 }
 
-/** Tooltip rows as the engine's: the swatch folded into the colour, a row with no colour keeps none. */
+/** Tooltip rows as the engine's: the swatch folded into the color, a row with no color keeps none. */
 export function engineRows(rows: readonly TooltipRow[]): EngineTooltipRow[] {
   return rows.map(({ label, value, color, swatch }) => ({
     label,

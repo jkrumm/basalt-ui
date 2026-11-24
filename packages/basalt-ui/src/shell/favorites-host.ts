@@ -1,26 +1,26 @@
 /**
- * The shell's side of favourites: the list from the store (the app's, else a `persisted` one under
- * `<storageKey>-favourites`) and the three ways to change it. A toggle resolves the record's target
+ * The shell's side of favorites: the list from the store (the app's, else a `persisted` one under
+ * `<storageKey>-favorites`) and the three ways to change it. A toggle resolves the record's target
  * to an href through the router, because a `NavTarget` is opaque and a store keeps text.
  */
 import { useRouter } from '@tanstack/react-router'
 import { useMemo, useSyncExternalStore } from 'react'
-import type { FavouriteEntry, FavouritesStore } from '../page/contract'
-import { persistedFavourites, rememberFavouriteGlyph } from '../page/favourites'
-import type { FavouritesApi } from '../page/favourites'
+import type { FavoriteEntry, FavoritesStore } from '../page/contract'
+import { persistedFavorites, rememberFavoriteGlyph } from '../page/favorites'
+import type { FavoritesApi } from '../page/favorites'
 import { targetHref } from '../router/nav-target'
 
-const NONE: readonly FavouriteEntry[] = []
+const NONE: readonly FavoriteEntry[] = []
 
-export function useFavouritesApi(
-  store: FavouritesStore | undefined,
+export function useFavoritesApi(
+  store: FavoritesStore | undefined,
   storageKey: string,
-): FavouritesApi {
+): FavoritesApi {
   const router = useRouter()
-  const fallback = useMemo(() => persistedFavourites(`${storageKey}-favourites`), [storageKey])
+  const fallback = useMemo(() => persistedFavorites(`${storageKey}-favorites`), [storageKey])
   const active = store ?? fallback
   const entries = useSyncExternalStore(active.subscribe, active.get, () => NONE)
-  return useMemo<FavouritesApi>(
+  return useMemo<FavoritesApi>(
     () => ({
       entries,
       toggle(input) {
@@ -31,7 +31,7 @@ export function useFavouritesApi(
         }
         const href = targetHref(router, input.target)
         if (href === undefined) return
-        rememberFavouriteGlyph(input.id, input.icon)
+        rememberFavoriteGlyph(input.id, input.icon)
         active.set([...now, { id: input.id, label: input.label, href }])
       },
       remove(id) {

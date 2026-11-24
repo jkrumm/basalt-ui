@@ -114,7 +114,7 @@ describe('scaleSpace floors a base >= 1 at 1, never lets it round down to 0', ()
   })
 })
 
-describe('STATUS.excellent is a fill, not a text colour', () => {
+describe('STATUS.excellent is a fill, not a text color', () => {
   // Keeps the "fill-only" JSDoc and `basalt/status-fill-as-text` honest: if a retune ever lifts the
   // light `excellent` to AA this fails, and the guard's premise is up for review. Dark clears AA by
   // accident of the forest ramp; the guard is scheme-blind because the light side does not.

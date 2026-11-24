@@ -1,6 +1,6 @@
 /**
  * Expression cycle 13 kit fixes, the IntervalTrack legend (`v3-expr-13-kit-fixes` 9, finding .37): in both
- * schemes a series' legend swatch paints the colour its spans are painted with (the tint of a solid span,
+ * schemes a series' legend swatch paints the color its spans are painted with (the tint of a solid span,
  * the stroke of an outline), read from the computed styles of the rendered span and swatch. Fixture:
  * `fixture/kit-expr13-interval-legend-fixture.tsx`.
  */
@@ -58,7 +58,7 @@ for (const [scheme, viewport] of [
   ['dark', WIDE],
 ] as const) {
   layout(`the legend swatch matches its span at ${viewport.name}, ${scheme}`, () => {
-    test("each series' swatch paints the colour its spans paint", async () => {
+    test("each series' swatch paints the color its spans paint", async () => {
       const page = await open(viewport, scheme)
       for (const { key, span, swatch } of await paints(page)) {
         expect(swatch, `the ${key} swatch`).toBe(span)

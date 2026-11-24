@@ -54,7 +54,7 @@ describe('checkTokens', () => {
 
   it('keeps the nearest name within the kind the unknown name asks for', () => {
     const known = packageTokenNames()
-    // a colour role is never a type size, a spacing name gets a spacing token
+    // a color role is never a type size, a spacing name gets a spacing token
     expect(nearestToken('--basalt-text-muted', known)).toBe('--basalt-ink-muted')
     expect(nearestToken('--basalt-space-1', known)).toBe('--basalt-rhythm-1')
     expect(nearestToken('--basalt-brand-500', known)).toBe('--basalt-brand')

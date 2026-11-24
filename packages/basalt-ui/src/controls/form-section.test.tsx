@@ -172,12 +172,12 @@ describe('FormSection phase', () => {
     expect(settled.getByRole('group', { name: 'General' }).getAttribute('aria-busy')).toBeNull()
   })
 
-  test('the footer band keeps the card surface and the frame keeps an edge under forced colours', () => {
+  test('the footer band keeps the card surface and the frame keeps an edge under forced colors', () => {
     const { container } = render(section())
     const frame = container.querySelector('[data-slot="form-section-box"]')!
     expect(frame.className).toContain('forced-colors:border')
     const footer = container.querySelector('[data-slot="form-section-footer"]')!
-    // The inset token is the page colour in dark: a band painted with it reads as the page.
+    // The inset token is the page color in dark: a band painted with it reads as the page.
     expect(footer.className).not.toContain('bg-inset')
     expect(footer.className).toContain('border-t')
   })

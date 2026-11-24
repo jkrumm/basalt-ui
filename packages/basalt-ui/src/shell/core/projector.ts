@@ -39,7 +39,7 @@ export type RailRow = {
   readonly disabled: boolean
   readonly badge: NavBadge | null
   readonly rollup: NavBadge | null
-  /** `warn` when the rollup carries attention: the one attention colour. */
+  /** `warn` when the rollup carries attention: the one attention color. */
   readonly tone: BadgeTone
   readonly children: readonly RailRow[]
 }

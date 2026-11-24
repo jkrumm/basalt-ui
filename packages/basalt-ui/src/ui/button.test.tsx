@@ -79,7 +79,7 @@ describe('button module', () => {
     expect(a?.getAttribute('href')).toBe('/home')
   })
 
-  test('Pressable has no colour of its own', () => {
+  test('Pressable has no color of its own', () => {
     const { getByRole } = render(<Pressable size="chip">Tag</Pressable>)
     expect(getByRole('button').className).not.toContain('bg-')
   })

@@ -1,6 +1,6 @@
 /**
  * Expression cycle 17 (`v3-expr-17-kit-fixes` 5, n82 quiet and n84 spike at 390): a value label that a rule
- * crosses sits on a card-coloured backing and the vertical rules are drawn under the labels, so the rule gives
+ * crosses sits on a card-colored backing and the vertical rules are drawn under the labels, so the rule gives
  * way to the number.
  */
 import { describe, expect, test } from 'bun:test'
@@ -42,7 +42,7 @@ describe('backingMarks', () => {
 })
 
 describe('a zero value a rule runs through', () => {
-  test('is written on a card-coloured backing', () => {
+  test('is written on a card-colored backing', () => {
     const html = renderToString(
       <Bars<{ k: string; a: number }>
         label="V"

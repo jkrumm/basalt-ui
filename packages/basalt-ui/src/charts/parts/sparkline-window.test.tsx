@@ -26,8 +26,8 @@ describe('Sparkline label row', () => {
     expect(
       labels(
         <Sparkline
-          series={points}
-          ariaLabel="S"
+          points={points}
+          label="S"
           height={72}
           axisLabels={['1 Oct', '12 wk', '22 Oct']}
         />,
@@ -36,16 +36,16 @@ describe('Sparkline label row', () => {
   })
 
   test('no axisLabels states no row, and the plot keeps the whole height', () => {
-    expect(labels(<Sparkline series={points} ariaLabel="S" height={72} />)).toEqual([])
+    expect(labels(<Sparkline points={points} label="S" height={72} />)).toEqual([])
     const el = document.createElement('div')
-    el.innerHTML = renderToString(<Sparkline series={points} ariaLabel="S" height={72} />)
+    el.innerHTML = renderToString(<Sparkline points={points} label="S" height={72} />)
     expect(el.querySelector('svg')?.getAttribute('viewBox')).toBe('0 0 100 72')
   })
 
   test('the row is hidden from assistive tech: the live region carries the readout', () => {
     const el = document.createElement('div')
     el.innerHTML = renderToString(
-      <Sparkline series={points} ariaLabel="S" height={72} axisLabels={['a', 'b', 'c']} />,
+      <Sparkline points={points} label="S" height={72} axisLabels={['a', 'b', 'c']} />,
     )
     expect(el.querySelector('[data-slot="spark-labels"]')?.getAttribute('aria-hidden')).toBe('true')
   })
@@ -53,7 +53,7 @@ describe('Sparkline label row', () => {
   test('an hourly series within one day reads its day with each point', () => {
     const hourly = [0, 1, 2].map((i) => ({ at: Date.UTC(2026, 9, 1, i), value: i }))
     const { getByRole } = render(
-      <Sparkline series={hourly} ariaLabel="S" height={72} axisLabels={['0h', 'now', '2h']} />,
+      <Sparkline points={hourly} label="S" height={72} axisLabels={['0h', 'now', '2h']} />,
     )
     fireEvent.keyDown(getByRole('group'), { key: 'Home' })
     expect(document.querySelector('[data-slot="spark-live"]')?.textContent).toContain('Oct 1')

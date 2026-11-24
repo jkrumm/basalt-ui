@@ -38,7 +38,7 @@ type Probe = (typeof PROBES)[number]
 
 const retry = (): undefined => undefined
 
-/** The series colour the Upstream figure belongs to; the layout test reads it back per scheme. */
+/** The series color the Upstream figure belongs to; the layout test reads it back per scheme. */
 const UPSTREAM = { light: '#0b6bcb', dark: '#5aa9f0' }
 
 const phaseOf = (probe: Probe): Pick<StatCellProps, 'phase' | 'empty'> => {
@@ -75,7 +75,7 @@ const fleet = (): StatCellElement[] => [
   <StatCell
     key="services"
     icon={glyph}
-    label="Services healthy"
+    title="Services healthy"
     value="5 / 6"
     status={{ tone: 'warn', label: '1 degraded' }}
     chart={trend}
@@ -83,7 +83,7 @@ const fleet = (): StatCellElement[] => [
   <StatCell
     key="deploys"
     icon={glyph}
-    label="Deploys"
+    title="Deploys"
     value={164}
     delta={{ value: '+12%', polarity: 'up-good', label: BASE }}
     chart={trend}
@@ -91,7 +91,7 @@ const fleet = (): StatCellElement[] => [
   <StatCell
     key="failure"
     icon={glyph}
-    label="Failure rate"
+    title="Failure rate"
     value="11.0"
     unit="%"
     delta={{ value: '+2.4 pts', polarity: 'up-bad', label: BASE }}
@@ -100,7 +100,7 @@ const fleet = (): StatCellElement[] => [
   <StatCell
     key="median"
     icon={glyph}
-    label="Median duration"
+    title="Median duration"
     value={174}
     unit="s"
     delta={{ value: '-14 s', polarity: 'up-bad', label: BASE }}
@@ -120,18 +120,18 @@ const cells = (probe: Probe): StatCellElement[] => {
   return [
     <StatCell
       key="down"
-      label="Downstream"
+      title="Downstream"
       value={412}
       unit="Mbit/s"
       delta={{ value: '+3%', polarity: 'up-good' }}
       sub="Measured 06:40"
       {...phase}
     />,
-    <StatCell key="up" label="Upstream" swatch={UPSTREAM} value={44} unit="Mbit/s" {...phase} />,
+    <StatCell key="up" title="Upstream" swatch={UPSTREAM} value={44} unit="Mbit/s" {...phase} />,
     <StatCell
       key="recovery"
-      label="Recovery"
-      qualifier="7 day"
+      title="Recovery"
+      subtitle="7 day"
       info="Readiness from sleep and training load."
       value={82}
       unit="%"
@@ -161,7 +161,7 @@ const cells = (probe: Probe): StatCellElement[] => {
     />,
     <StatCell
       key="sleep"
-      label="Sleep, with a label long enough to need truncating"
+      title="Sleep, with a label long enough to need truncating"
       value="7 h 12 m"
       chart={chart}
       sub="Last night"
@@ -170,7 +170,7 @@ const cells = (probe: Probe): StatCellElement[] => {
     />,
     <StatCell
       key="strain"
-      label="Strain"
+      title="Strain"
       value={14.2}
       rows={[
         { label: 'Mon', value: 12 },
@@ -180,7 +180,7 @@ const cells = (probe: Probe): StatCellElement[] => {
       ]}
       {...phase}
     />,
-    <StatCell key="load" label="Load" value={null} {...phase} />,
+    <StatCell key="load" title="Load" value={null} {...phase} />,
   ]
 }
 
@@ -250,7 +250,7 @@ function Fixture(): ReactElement {
       </div>
       <div data-testid="cg-cards-one">
         <StatGroup variant="cards" label="One card">
-          <StatCell label="Downstream" value={412} unit="Mbit/s" />
+          <StatCell title="Downstream" value={412} unit="Mbit/s" />
         </StatGroup>
       </div>
       <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,20rem),1fr))] items-start gap-4">

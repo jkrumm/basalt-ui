@@ -32,7 +32,7 @@ function Fixture(): ReactElement {
           className="w-48"
           id="ud-day"
           value={day}
-          onChange={(v) => {
+          onValueChange={(v) => {
             setDay(v)
             setLastDay(v)
           }}
@@ -42,7 +42,7 @@ function Fixture(): ReactElement {
           className="w-64"
           id="ud-range"
           value={range}
-          onChange={(r) => {
+          onValueChange={(r) => {
             setRange(r)
             setLastRange(`${r.from}..${r.to}`)
           }}

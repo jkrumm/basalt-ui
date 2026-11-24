@@ -1,6 +1,6 @@
 ---
 name: setScheme
-use when: 'a control or a command switches the colour scheme, or an async restore must re-apply the stored one'
+use when: 'a control or a command switches the color scheme, or an async restore must re-apply the stored one'
 never when: 'the app picks the first scheme at mount (pass `BasaltProvider` `scheme`), or code writes `data-theme` or `basalt:scheme` by hand'
 subpath: basalt-ui
 peers: []

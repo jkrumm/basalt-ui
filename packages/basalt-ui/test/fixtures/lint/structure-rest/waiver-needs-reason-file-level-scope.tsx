@@ -1,4 +1,4 @@
-// Blocks: see colour-literal.tsx.
+// Blocks: see color-literal.tsx.
 
 // @invalid
 // raw-scroll is waivable file-wide only on a deepRender path
@@ -21,7 +21,7 @@ const a = 1
 // @invalid
 // @filename src/stage/overlay.ts
 // @options {"deepRender":["src/stage/overlay.ts"]}
-/* oxlint-disable basalt/colour-literal, basalt/viewport-keyed -- one unlisted rule is enough */
+/* oxlint-disable basalt/color-literal, basalt/viewport-keyed -- one unlisted rule is enough */
 const a = 1
 
 // @invalid
@@ -39,7 +39,7 @@ const a = 1
 // @valid
 // @filename apps/desktop/src/features/editor/stage/overlay.ts
 // @options {"deepRender":["apps/desktop/src/features/editor/stage/overlay.ts"]}
-/* oxlint-disable basalt/colour-literal -- canvas overlay draws raw pixels */
+/* oxlint-disable basalt/color-literal -- canvas overlay draws raw pixels */
 const a = 1
 
 // @valid

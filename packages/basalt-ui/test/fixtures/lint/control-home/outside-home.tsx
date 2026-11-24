@@ -1,4 +1,4 @@
-// Blocks: a `// @valid` or `// @invalid` header starts one (see structure-rest/colour-literal.tsx).
+// Blocks: a `// @valid` or `// @invalid` header starts one (see structure-rest/color-literal.tsx).
 // Every invalid block reports `outside-home` once unless `// @errors` says otherwise.
 
 // @invalid

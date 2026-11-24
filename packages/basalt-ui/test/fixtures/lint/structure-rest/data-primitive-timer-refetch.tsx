@@ -1,4 +1,4 @@
-// Blocks: see colour-literal.tsx.
+// Blocks: see color-literal.tsx.
 
 // @invalid
 setInterval(() => queryClient.invalidateQueries({ queryKey: ['gyms'] }), 5000)

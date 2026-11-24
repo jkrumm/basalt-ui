@@ -6,8 +6,8 @@ import { NON_FINITE, useFormat } from '../core/format'
 
 /**
  * The `Num` cva table: tabular numerals so a column of figures lines up, and a `tone` for the
- * verdict colour. `tone` is the closed vocabulary of `src/core/ports.ts`; the default inherits the
- * surrounding text colour.
+ * verdict color. `tone` is the closed vocabulary of `src/core/ports.ts`; the default inherits the
+ * surrounding text color.
  *
  * @example
  * numVariants({ tone: 'bad' }) // class string for a non-`Num` element

@@ -8,7 +8,7 @@ import { NON_FINITE, useFormat } from '../core/format'
 import type { MeterSpec, MeterZone, Tone } from '../core/ports'
 
 /**
- * The `Meter` cva table: a bar and a readout line under it. Without `zones`, `tone` colours the
+ * The `Meter` cva table: a bar and a readout line under it. Without `zones`, `tone` colors the
  * fill (default `neutral`); with zones each zone brings its own tone and `tone` is not read.
  *
  * @example
@@ -101,14 +101,14 @@ const pct = (fraction: number): string => `${fraction * 100}%`
 
 /**
  * A gauge for a value on a scale. With `zones` the track is tinted by zone, a marker sits at the
- * value and the active zone's word is printed under it, so a verdict is never colour alone; every
+ * value and the active zone's word is printed under it, so a verdict is never color alone; every
  * zone must carry a `label`. Without zones it is a neutral bar. `label` names the meter for
  * assistive tech, `format` prints the value (default the page locale's number) and `caption` the
  * words after it that name it on screen ("US$13.89 spent", "of 150 listed"). `ticks` mark a range's
  * ends or a limit on the track, `cause` says why in a line under the readout. The track is 8 px and
  * the readout line 16 px under a 4 px gap, so a meter is 28 px (a tick row adds 20, a `cause` its
- * lines); a `StatCard` `chartHeight` below that clips the readout, so a meter in its chart slot sets
- * `chartHeight={28}` at least. A list of meters
+ * lines); a `StatCard` `height` below that clips the readout, so a meter in its chart slot sets
+ * `height={28}` at least. A list of meters
  * joins one `useChartFocus` through the seam: the list spreads `focus.target`, each meter
  * `focus.item(i)`, and the page renders `focus.live` once.
  *

@@ -16,7 +16,7 @@ import type { IconComponent } from '../../core/ports'
 /** Envelope version for a persisted fold flag. Bump only if the value stops being a boolean. */
 export const FOLD_VERSION = 1
 
-/** Status tone on a list row; reads `--basalt-status-*`, never a literal colour. */
+/** Status tone on a list row; reads `--basalt-status-*`, never a literal color. */
 export type BlockTone = 'good' | 'warn' | 'bad'
 
 /** One row inside a `list` block. */

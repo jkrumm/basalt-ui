@@ -155,7 +155,7 @@
   "rules": {
     "basalt/viewport-keyed": "error",
     "basalt/dark-fork": "error",
-    "basalt/fixed-colour": "error",
+    "basalt/fixed-color": "error",
     "basalt/status-fill-as-text": "error",
     "basalt/raw-scroll": "off",
     "basalt/tw-off-law": [
@@ -169,7 +169,7 @@
     "basalt/logical-properties": "off",
     "basalt/import-boundary": "off",
     "basalt/primitive-bypass": "off",
-    "basalt/colour-literal": "error",
+    "basalt/color-literal": "error",
     "basalt/motion-literal": "error",
     "basalt/waiver-needs-reason": "error",
     "basalt/data-primitive": "off",
@@ -196,7 +196,7 @@
           "*-scrim-wash",
           "*-border"
         ],
-        "message": "\"{{className}}\" is a raw colour. Use one theme class with no dark: variant (tokens switch per scheme): ink is text-foreground or text-muted-foreground, status text text-good or text-brand, a surface bg-background, bg-card or bg-popover, a line border-border. Token names are not classes: canvas is bg-background, raised is bg-popover, hover is bg-accent, hairline is border-border, ink is text-foreground, ink-muted is text-muted-foreground, ink-faint is text-faint. No colour is added per app."
+        "message": "\"{{className}}\" is a raw color. Use one theme class with no dark: variant (tokens switch per scheme): ink is text-foreground or text-muted-foreground, status text text-good or text-brand, a surface bg-background, bg-card or bg-popover, a line border-border. Token names are not classes: canvas is bg-background, raised is bg-popover, hover is bg-accent, hairline is border-border, ink is text-foreground, ink-muted is text-muted-foreground, ink-faint is text-faint. No color is added per app."
       }
     ],
     "shadcn/no-arbitrary-values": [
@@ -275,7 +275,7 @@
       "rules": {
         "basalt/viewport-keyed": "off",
         "basalt/dark-fork": "off",
-        "basalt/fixed-colour": "off",
+        "basalt/fixed-color": "off",
         "basalt/status-fill-as-text": "off",
         "basalt/raw-scroll": "off",
         "basalt/tw-off-law": "off",

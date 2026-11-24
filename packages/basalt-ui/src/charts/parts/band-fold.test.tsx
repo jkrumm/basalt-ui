@@ -14,7 +14,7 @@ describe('foldBands', () => {
     const seen: string[][] = []
     renderToString(
       <BandStrip
-        ariaLabel="Availability"
+        label="Availability"
         data={data}
         x={(d) => d.t}
         states={[{ key: 'up', label: 'Up', color: 'var(--basalt-good)' }]}

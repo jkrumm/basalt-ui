@@ -12,9 +12,9 @@ import { flattenNavEntries, resolveActive } from '../router/nav/resolve-active'
 import type { AnyNavConfig, DefinedNav } from '../router/nav/types'
 import { Button } from '../ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet'
-import { FavouritesContext } from '../page/favourites'
+import { FavoritesContext } from '../page/favorites'
 import { createShellHost, useClaim } from './app-shell-host'
-import { useFavouritesApi } from './favourites-host'
+import { useFavoritesApi } from './favorites-host'
 import { ChromeHost, useChromeRoot } from './chrome'
 import type { AppShellProps } from './contract'
 import { createNavRuntime } from './core/nav-runtime'
@@ -142,7 +142,7 @@ export function AppShell<N extends DefinedNav>({
   account,
   search,
   workspace,
-  favourites,
+  favorites,
   storageKey = DEFAULT_STORAGE_KEY,
   compactHeader = 'show',
   chrome = 'web',
@@ -205,7 +205,7 @@ export function AppShell<N extends DefinedNav>({
   const phoneNav = usePhoneNav()
   const rail = useRailState(storageKey, sizeClass)
   const railWidth = useRailWidthState(storageKey)
-  const favouritesApi = useFavouritesApi(favourites, storageKey)
+  const favoritesApi = useFavoritesApi(favorites, storageKey)
   const claim = readAsideClaim(asideNode)
   // A bound aside claims while closed too (the phone's header button needs it); beside main a
   // closed one is no region.
@@ -284,7 +284,7 @@ export function AppShell<N extends DefinedNav>({
     <ChromeHost chrome={chrome} host={shellHost.host}>
       <RailControlProvider value={rail}>
         <RailWidthProvider value={railWidth}>
-          <FavouritesContext value={favouritesApi}>
+          <FavoritesContext value={favoritesApi}>
             <ShellOverlayContext value={overlaySlot}>
               <ShellDockContext value={dock}>
                 <ShellGrid
@@ -321,7 +321,7 @@ export function AppShell<N extends DefinedNav>({
                 </ShellGrid>
               </ShellDockContext>
             </ShellOverlayContext>
-          </FavouritesContext>
+          </FavoritesContext>
         </RailWidthProvider>
       </RailControlProvider>
     </ChromeHost>

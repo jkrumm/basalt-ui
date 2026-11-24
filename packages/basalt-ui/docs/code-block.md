@@ -12,9 +12,9 @@ slots: [code-block]
 A fenced code block: the source always on screen in a box that scrolls on its own, highlighted
 with shiki once the block is settled and the language is known, plain otherwise (an unknown
 language, a streaming tail, a shiki that fails to load). The highlight is part of the render: a
-server render that waits for boundaries (a streaming render, Astro) ships the coloured markup and
+server render that waits for boundaries (a streaming render, Astro) ships the colored markup and
 the client hydrates it as it is; `renderToString` cannot wait, so it ships the plain block and the
-browser colours it. A block over 50 000 characters stays plain (the cost of colouring it is paid
+browser colors it. A block over 50 000 characters stays plain (the cost of coloring it is paid
 on the server's thread). The copy button is hidden while the block is still streaming. The dark palette follows `[data-theme='dark']`.
 
 ## Signature

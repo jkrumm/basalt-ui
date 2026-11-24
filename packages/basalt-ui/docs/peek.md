@@ -26,7 +26,7 @@ Peek(props: PeekProps): ReactElement | null
   kind?: string  // The record kind (`issue`): its presentation, its side width and its window's size are remembered on the device per kind
   defaultPresent?: "page" | "peek" | "window"  // How a kind opens until the reader picks another in `Open as`: a form that is written in one go (a mail composer) opens as a `window`
   fullPage?: string | NavTarget  // The record's own page
-  favourite?: FavouriteInput  // Draws a star in the header that adds the record to the shell rail's Favourites; nothing outside an `AppShell` or on a phone, where the rail is not drawn
+  favorite?: FavoriteInput  // Draws a star in the header that adds the record to the shell rail's Favorites; nothing outside an `AppShell` or on a phone, where the rail is not drawn
   onClose: () => void  // Escape, the close button and Back: the caller decides how the address changes (`usePeek().close`)
   onPin?: () => void  // Draws a button that moves the record into the shell's `Dock` (`usePeek().pin`)
   actions?: PanelActions  // The record's own actions, data like `PageBar` actions: the first two in the header, the rest in its More menu (a third alone stays inline)
@@ -37,7 +37,7 @@ Peek(props: PeekProps): ReactElement | null
   children?: ReactNode
 ```
 
-`FavouriteInput`, `PeekProps` import from `basalt-ui/page`: `import type { FavouriteInput, PeekProps } from 'basalt-ui/page'`.
+`FavoriteInput`, `PeekProps` import from `basalt-ui/page`: `import type { FavoriteInput, PeekProps } from 'basalt-ui/page'`.
 
 `IconComponent`, `NavTarget`, `RecordSequence` import from `basalt-ui`: `import type { IconComponent, NavTarget, RecordSequence } from 'basalt-ui'`.
 

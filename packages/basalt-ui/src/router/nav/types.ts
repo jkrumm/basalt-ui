@@ -6,7 +6,7 @@
  *
  * Why not flat (`{ id, label, to, search }`) via a carrier over `ValidateLinkOptions`:
  * `Constrain<T, C> = (T extends C ? T : never) | C` is an ASSIGNABILITY check, and assignability
- * does not do excess-property checking, so `{ id, label, to: '/charts', colour: 'red' }` compiles
+ * does not do excess-property checking, so `{ id, label, to: '/charts', color: 'red' }` compiles
  * silently. Compile-verified. A config whose selling point is "typos are compile errors" cannot
  * have a hole exactly where metadata typos live.
  */

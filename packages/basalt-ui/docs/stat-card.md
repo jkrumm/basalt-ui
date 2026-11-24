@@ -35,9 +35,9 @@ StatCard(props: StatCardProps): ReactElement
   status?: Verdict  // The verdict home: dot plus word
   sub?: string
   subMono?: boolean  // The sub line is a time or an id: drawn in the mono face with tabular numerals
-  chart?: BoxSlot  // Called only in `ready` and `stale`, in a fixed clipping box of `chartHeight` (72 px: plot 56 + label row 16)
-  chartHeight?: number  // The chart box's height in px, default 72
-  xLabels?: readonly [string, string, string]  // The three labels under the chart (start, middle, end), drawn in the 16 px row so the slot draws the plot alone
+  chart?: BoxSlot  // Called only in `ready` and `stale`, in a fixed clipping box of `height` (72 px: plot 56 + label row 16)
+  height?: number  // The chart box's height in px, default 72
+  axisLabels?: readonly [string, string, string]  // The three labels under the chart (start, middle, end), drawn in the 16 px row so the slot draws the plot alone
   footer?: FootFacts
   controls?: ControlsSlot<"widget">
   menu?: CardMenu
@@ -60,8 +60,8 @@ StatCard(props: StatCardProps): ReactElement
   value={388}
   delta={{ value: '+12%', polarity: 'up-good' }}
   phase={query}
-  chart={(box) => <Sparkline series={perDay} height={box.height} label="Shipped per day" />}
-  xLabels={["Mon", "Thu", "Sun"]}
+  chart={(box) => <Sparkline points={perDay} height={box.height} label="Shipped per day" />}
+  axisLabels={["Mon", "Thu", "Sun"]}
   footer={[{ label: 'Open', value: 12 }, { label: 'Merged', value: 4 }]}
 />
 ```

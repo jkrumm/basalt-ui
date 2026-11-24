@@ -2,7 +2,7 @@ import { carried } from './define'
 
 /**
  * Per-datum bar `opacity`. Carried by `shadeBars`/`barMarks`. A per-datum `fill` is not here:
- * `contract.ts` has no such field (a colour per datum is a second series), so it needs an amendment.
+ * `contract.ts` has no such field (a color per datum is a second series), so it needs an amendment.
  */
 export const barOpacity = carried({
   id: 'per-datum opacity',

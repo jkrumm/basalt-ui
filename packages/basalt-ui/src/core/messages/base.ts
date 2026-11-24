@@ -39,7 +39,7 @@ export const base = {
   'base.tags.remove': (_f, tag) => `Remove ${tag}`,
   'base.otp.character': (_f, index, length) => `Character ${index} of ${length}`,
   'base.matrix.all': 'All',
-  'base.swatch.menu': 'Colour',
+  'base.swatch.menu': 'Color',
   'base.matrix.allForRow': (_f, row) => `All for ${row}`,
   'base.matrix.allForColumn': (_f, column) => `${column} for every row`,
 } satisfies Partial<BasaltMessages>

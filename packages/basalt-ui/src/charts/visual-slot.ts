@@ -2,7 +2,7 @@
  * Set by a host that already shows the reading as its hero (a `StatCard` sparkline slot, a strip
  * cell's `visual`). A `Meter` reads it: a zoned track drops the reading it would draw at the marker
  * (the headline is not printed twice; `reading` overrides), and a plain bar or ring with no `tone` or
- * `color` of its own takes the host's `tone` as its verdict colour. Internal: never exported.
+ * `color` of its own takes the host's `tone` as its verdict color. Internal: never exported.
  */
 import { createContext } from 'react'
 import type { Tone } from '../common/props'

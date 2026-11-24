@@ -41,7 +41,7 @@ function TwoLines() {
   const focus = useChartFocus(HOURS, { announce: (d) => `hour ${d.h}` })
   return (
     <CartesianChart<Hour>
-      ariaLabel="Models"
+      label="Models"
       data={HOURS}
       x={{ value: (d) => d.h }}
       series={[
@@ -102,7 +102,7 @@ describe('the dark dim floor', () => {
     const focus = useChartFocus(STAGES, { announce: (d) => d.stage })
     return (
       <CartesianChart<Stage>
-        ariaLabel="Pace"
+        label="Pace"
         data={STAGES}
         x={{ value: (d) => d.stage }}
         series={[{ key: 'ms', label: 'ms', color: COLOR, mark: 'bar', y: (d) => d.ms }]}

@@ -13,7 +13,7 @@ import type { ChartTheme } from '@tanstack/charts/types/core'
 import { BASALT } from '../../tokens'
 
 /**
- * The chart layer's colour roles, each one v3 token. The 2.x `BASALT` names this replaces (`axis`,
+ * The chart layer's color roles, each one v3 token. The 2.x `BASALT` names this replaces (`axis`,
  * `ink2`, `surface.panel`, `neutral`, `status.*`, the `*-solid`/`*-ref`/`*-soft` fills) are not in
  * the v3 sheet; a chart file reads a role from here, never the 2.x name.
  */
@@ -47,7 +47,7 @@ export const CV_STATUS = {
   neutral: CV.neutral,
 } as const
 
-/** The two stops of an area's vertical fade, as the share of the series colour kept. */
+/** The two stops of an area's vertical fade, as the share of the series color kept. */
 export const AREA_TOP = '22%'
 export const AREA_BOTTOM = '1%'
 

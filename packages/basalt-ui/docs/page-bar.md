@@ -19,7 +19,7 @@ instead of stacking two bands.
 ## Signature
 
 ```ts
-PageBar<K extends string = string, L extends string = string>({ title, identity, parent, controls, tabs, search, connection, refresh, layout, settings, favourite, actions, }: PageBarProps<K, L>): ReactElement | null
+PageBar<K extends string = string, L extends string = string>({ title, identity, parent, controls, tabs, search, connection, refresh, layout, settings, favorite, actions, }: PageBarProps<K, L>): ReactElement | null
   title?: string  // Breadcrumb leaf and `h1` in a shell; the visible `h1` without one
   identity?: PageIdentity  // A record page's identity: the band draws the title as a heading with its face, subtitle and tags (the title is then the visible `h1` in a shell too, and the breadcrumb leaf is kept)
   parent?: { label: string; href: string | NavTarget; }
@@ -30,13 +30,13 @@ PageBar<K extends string = string, L extends string = string>({ title, identity,
   settings?: PageSettings  // After `layout`, before `actions`
   connection?: ConnectionView  // `useConnection()`: draws `ConnectionIndicator` in the end slot, before `refresh`
   refresh?: { scope: "page" | "global"; } & { syncing: boolean; lastCompletedAt?: number; onSync(): void; error?: string; }
-  favourite?: FavouriteInput  // The record this page is: a star that adds it to the shell rail's Favourites
+  favorite?: FavoriteInput  // The record this page is: a star that adds it to the shell rail's Favorites
   actions?: readonly [PageAction?, PageAction?, PageAction?, PageAction?, PageAction?]  // At most 5, at most one `primary`, none required
 ```
 
 `ConnectionView` import from `basalt-ui/data`: `import type { ConnectionView } from 'basalt-ui/data'`.
 
-`FavouriteInput`, `PageAction`, `PageBarProps`, `PageIdentity`, `PageLayout`, `PageSearch`, `PageSettings`, `PageTabs` import from `basalt-ui/page`: `import type { FavouriteInput, PageAction, PageBarProps, PageIdentity, PageLayout, PageSearch, PageSettings, PageTabs } from 'basalt-ui/page'`.
+`FavoriteInput`, `PageAction`, `PageBarProps`, `PageIdentity`, `PageLayout`, `PageSearch`, `PageSettings`, `PageTabs` import from `basalt-ui/page`: `import type { FavoriteInput, PageAction, PageBarProps, PageIdentity, PageLayout, PageSearch, PageSettings, PageTabs } from 'basalt-ui/page'`.
 
 `NavTarget` import from `basalt-ui`: `import type { NavTarget } from 'basalt-ui'`.
 

@@ -21,7 +21,7 @@ afterEach(() => {
 describe('AppearanceSwitcher', () => {
   test('four rows: theme, accent, density, layout, each a named group', () => {
     const { getByRole } = render(<AppearanceSwitcher accents={['blue', 'violet', 'teal']} />)
-    for (const name of ['Theme', 'Accent colour', 'Density', 'Layout'])
+    for (const name of ['Theme', 'Accent color', 'Density', 'Layout'])
       expect(getByRole('radiogroup', { name })).toBeTruthy()
   })
 
@@ -59,7 +59,7 @@ describe('AppearanceSwitcher', () => {
 
   test('the accent row hides when the app ships fewer than two accents', () => {
     const { queryByRole } = render(<AppearanceSwitcher accents={['blue']} />)
-    expect(queryByRole('radiogroup', { name: 'Accent colour' })).toBeNull()
+    expect(queryByRole('radiogroup', { name: 'Accent color' })).toBeNull()
   })
 
   test('rows picks and orders the rows', () => {

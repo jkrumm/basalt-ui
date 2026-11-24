@@ -113,7 +113,7 @@ export const rows: readonly RowDef[] = [
 
     // 207000 -> 208500 (Issue 3088): 207019 B measured, +~1.5 KB gz for the board and gallery frames (`LayoutPhase`: skeleton
     // lanes and cards, the arm's message with no table head above it), eager so a first load is never blank.
-    // 208500 -> 212700 (Issue 3106): 212200 B measured; the table reads the page barrel's parts, which gained the favourite star.
+    // 208500 -> 212700 (Issue 3106): 212200 B measured; the table reads the page barrel's parts, which gained the favorite star.
     // 212700 -> 222400 (Issue 3102): 221902 B measured; the table's selects draw the shared list engine.
     // 222400 -> 222600 (Issue 3141, bench-inbox-mail): 222412 B measured; `BulkBar` gains its list form (a count and typed actions, no table).
     // 222600 -> 226200 (Issue 3206): 225987 B measured; the detail Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points.
@@ -157,7 +157,7 @@ export const raises: Raises = {
       from: 208500,
       to: 212700,
       consumer:
-        "the benchmark against Accordee (owner direction 2026-11-21, docs/v3/issues/bench/README.md, plan row bench-shell-nav, Issue 3106): a workspace switcher in the brand zone, a Favourites rail section the reader fills from a record's star and reorders (SortableList), and a rail the reader resizes",
+        "the benchmark against Accordee (owner direction 2026-11-21, docs/v3/issues/bench/README.md, plan row bench-shell-nav, Issue 3106): a workspace switcher in the brand zone, a Favorites rail section the reader fills from a record's star and reorders (SortableList), and a rail the reader resizes",
       repo: 'basalt-ui',
     },
     {

@@ -93,8 +93,8 @@ export type TableDisplay = {
  */
 export type TableLayout = 'table' | 'list' | 'board' | 'gallery'
 
-/** A body row height: the density row of `dense`, `normal` and `comfortable` (`--basalt-row-h`). */
-export type RowHeight = 'compact' | 'default' | 'comfortable'
+/** A body row height, in the density words: the row of `dense`, `normal` or `comfortable` (`--basalt-row-h`). */
+export type RowHeight = 'dense' | 'normal' | 'comfortable'
 
 /** A footer or group reduce: `count` counts the rows with a value, the rest read a numeric column. */
 export type Aggregate = 'sum' | 'mean' | 'min' | 'max' | 'count'

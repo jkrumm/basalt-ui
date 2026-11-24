@@ -64,7 +64,7 @@ describe('MermaidDiagram', () => {
     }
   })
 
-  test('the theme is --pele-* custom properties set to var(--basalt-*) tokens, no literal colour', async () => {
+  test('the theme is --pele-* custom properties set to var(--basalt-*) tokens, no literal color', async () => {
     const { container } = render(<MermaidDiagram code={'graph TD\n  A --> B'} />)
     await drawn(container)
     const wrapper = container.querySelector('[data-slot="mermaid"]')

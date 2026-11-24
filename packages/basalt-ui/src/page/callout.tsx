@@ -5,14 +5,9 @@ import { page } from '../core/messages/page'
 import { useMessages } from '../core/messages/use-messages'
 import { Alert } from '../ui/alert'
 
-/** One of the four 2.x callout kinds; each is the `Alert` tone of the same name. */
-export type CalloutKind = 'info' | 'good' | 'warn' | 'bad'
-
 export type CalloutProps = {
   /** Semantic tone, the values of `Alert`: drives the tint, the glyph and the announcement. Default `'info'`. */
   tone?: Tone
-  /** @deprecated Use `tone`; removed in the next minor. */
-  kind?: CalloutKind
   title?: string
   /** Layout only (`my-6`). */
   className?: string
@@ -33,9 +28,9 @@ export type CalloutProps = {
  *   <p>This endpoint is rate-limited to 60 requests/minute.</p>
  * </Callout>
  */
-export function Callout({ tone, kind, title, className, children }: CalloutProps): ReactElement {
+export function Callout({ tone, title, className, children }: CalloutProps): ReactElement {
   const t = useMessages(page)
-  const resolved = tone ?? kind ?? 'info'
+  const resolved = tone ?? 'info'
   const kindWord = {
     info: t('page.kindInfo'),
     good: t('page.kindGood'),

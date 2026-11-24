@@ -116,7 +116,7 @@ async function open(
   await page.raw.waitForSelector('[data-testid="fs-8"] [data-slot="filter-set"]')
   if (scheme === 'dark') {
     await page.raw.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'))
-    // The colour transition of every control runs for 150 ms after the scheme flips.
+    // The color transition of every control runs for 150 ms after the scheme flips.
     await page.raw.waitForTimeout(300)
   }
   await page.settle()

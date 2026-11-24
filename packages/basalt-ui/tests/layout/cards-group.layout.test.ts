@@ -169,7 +169,7 @@ type RuledCell = {
   top: number
   ruleLeft: string
   ruleTop: string
-  ruleColour: string
+  ruleColor: string
   ink: string
   figureClipped: boolean
   base: string | null
@@ -192,7 +192,7 @@ async function ruledCells(
         top: r.top,
         ruleLeft: style.borderLeftWidth,
         ruleTop: style.borderTopWidth,
-        ruleColour: style.borderLeftColor,
+        ruleColor: style.borderLeftColor,
         ink: style.color,
         figureClipped: figure.scrollWidth > figure.clientWidth + 1,
         base: el.querySelector('[data-slot="stat-base"]')?.textContent ?? null,
@@ -223,7 +223,7 @@ layout('StatGroup strip: ruled cells at 1800 and 390', () => {
         cells.forEach((cell, i) => {
           expect(cell.ruleLeft, `cell ${i} left rule`).toBe('1px')
           expect(cell.ruleTop, `cell ${i} top rule`).toBe('1px')
-          expect(cell.ruleColour, `cell ${i} rule is a hairline, not ink`).not.toBe(cell.ink)
+          expect(cell.ruleColor, `cell ${i} rule is a hairline, not ink`).not.toBe(cell.ink)
           // The first cell of a line sits 1 px left of the card, which clips its left rule.
           const first = i % perLine === 0
           if (first) near(cell.left, card.left - 1, `cell ${i} starts the line`)
@@ -405,11 +405,11 @@ layout('StatGroup, StatCell and DataPanel', () => {
         }
       })
 
-      for (const [scheme, colour] of [
+      for (const [scheme, color] of [
         [undefined, 'rgb(11, 107, 203)'],
         ['dark', 'rgb(90, 169, 240)'],
       ] as const) {
-        test(`a swatch paints its series colour${scheme ? ` in ${scheme}` : ''}, before the label`, async () => {
+        test(`a swatch paints its series color${scheme ? ` in ${scheme}` : ''}, before the label`, async () => {
           const page = await open(viewport, scheme)
           const swatches = await page.raw.evaluate(() =>
             [...document.querySelectorAll('[data-slot="stat-swatch"]')].map((el) => {
@@ -423,7 +423,7 @@ layout('StatGroup, StatCell and DataPanel', () => {
             }),
           )
           expect(swatches.length).toBeGreaterThan(0)
-          for (const s of swatches) expect(s).toEqual({ fill: colour, size: [8, 8], before: true })
+          for (const s of swatches) expect(s).toEqual({ fill: color, size: [8, 8], before: true })
         })
       }
 

@@ -22,7 +22,7 @@ const EMPTY_BIN_R = 2
 const SHADE_FLOOR = 0.4
 
 /**
- * Bar series that share one colour and set no opacity of their own would draw identical bars. They
+ * Bar series that share one color and set no opacity of their own would draw identical bars. They
  * step down from full strength to `SHADE_FLOOR` in series order (the first is the strongest), so the
  * legend swatches and the plot tell them apart by more than the label. A chart with a per-datum
  * `opacity` keeps its own shades. Every bar series leaves with a `fillOpacity`.
@@ -279,7 +279,7 @@ export function barMarks<D>(plot: PlotContext<D, ChartX>, input: BarMarksInput<D
   const rows = visibleBars.flatMap((s) => plot.rows(s.key))
   if (rows.length === 0) return []
   const h = plot.highlighted
-  /** The series colour, the brand accent for a highlighted datum. */
+  /** The series color, the brand accent for a highlighted datum. */
   const colorOf = (row: PlotRow<D, ChartX>): string | undefined => {
     const bar = byKey.get(row.series)
     return bar?.highlight?.(row.datum) ? CV.brand : bar?.color
@@ -298,9 +298,9 @@ export function barMarks<D>(plot: PlotContext<D, ChartX>, input: BarMarksInput<D
     const strength = base * emphasis(h, { key: row.series })
     if (plot.focused === null) return paint(color, strength)
     // A `focus` holding a datum dims every other bar (`dimmedPaint`: the dark card's floor included)
-    // and lifts the focused one past its resting colour (`focusedPaint`).
+    // and lifts the focused one past its resting color (`focusedPaint`).
     if (row.datum === plot.focused) return focusedPaint(color)
-    // An ink-step bar fades by opacity (`INK_STEP_DIM`): `dimmedPaint`'s floor is its own colour. It fades here, in its
+    // An ink-step bar fades by opacity (`INK_STEP_DIM`): `dimmedPaint`'s floor is its own color. It fades here, in its
     // paint, so a focus held outside the chart (a table row, a list) dims it as it dims a hue; a state the engine
     // resolves on its own hover never ran for such a focus.
     if (isInkStep(color)) return paint(color, strength * INK_STEP_DIM)
@@ -317,7 +317,7 @@ export function barMarks<D>(plot: PlotContext<D, ChartX>, input: BarMarksInput<D
       y: 'y',
       z: 'series',
       fill,
-      // Series of one colour differ by shade alone: a surface hairline keeps stacked segments apart.
+      // Series of one color differ by shade alone: a surface hairline keeps stacked segments apart.
       ...(sharedColor && layout !== 'grouped' && { stroke: CV.surface, strokeWidth: 1 }),
       // The hovered x is its own highlight: the bar reads at full strength.
       states: [{ when: { focus: 'x' }, style: { fill: solid } }],

@@ -11,13 +11,13 @@ This file is the order of work and a map. The law is `.claude/rules/basalt-*.md`
 1. **Question.** Before code, write three lines: who opens this page, the one question it answers, the figures that answer it. The answer at rest is one hero figure that is the answer, not a count of things ([concept](references/concept.md)).
 2. **Surface.** List the parts the answer needs (the mark, the figure, the detail list or table), where each sits and what they share. Parts that show the same items share one focus, and parts that answer one question sit beside each other ([concept](references/concept.md) § Plan the surface).
 3. **Form.** Read [parts](references/parts.md), then pick each form from the shape of the data with the question-to-form table in the AGENTS block ([encoding](references/encoding.md)). A figure that fits no shipped form is reported to the user, never faked with a hand-built box. Open the doc of every part before you write its props.
-4. **Parts.** Write each part from its reference in the next section. Compose the shipped parts with theme tokens; the rules guard colour, spacing and imports.
+4. **Parts.** Write each part from its reference in the next section. Compose the shipped parts with theme tokens; the rules guard color, spacing and imports.
 5. **States and copy.** Every part takes its phase from the query and keeps every slot in every phase ([states](references/states.md)). Then cut the words until each fact sits in one slot ([copy](references/copy.md)).
 6. **Look.** Build, run `basalt-ui shot <route>` (needs `playwright` installed), open every frame, fix at the source and shoot again, until the Done list holds.
 
 ## Read before you write
 
-- **A chart, a sparkline, a heat grid or any drawn mark:** load the `basalt-charts` skill for the code, and read the branch of [charts](references/charts.md) the chart needs: form, colour, labels, view or honest marks.
+- **A chart, a sparkline, a heat grid or any drawn mark:** load the `basalt-charts` skill for the code, and read the branch of [charts](references/charts.md) the chart needs: form, color, labels, view or honest marks.
 - **A list, a table or a second chart of the same items:** [linked-parts](../basalt-charts/references/linked-parts.md).
 - **A card, a figure or a strip of figures:** [cards](references/cards.md): the console anatomy, a base for every figure, what a footer holds.
 - **A table or a list of records:** [table](references/table.md): the mode, column kinds and priority, the phone layout.

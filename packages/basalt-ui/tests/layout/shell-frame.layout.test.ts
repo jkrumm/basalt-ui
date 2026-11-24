@@ -64,7 +64,7 @@ const VIEWPORTS: readonly { viewport: Viewport; gutter: number; rail: number }[]
   { viewport: PHONE, gutter: 8, rail: 0 },
 ]
 
-/** The work surface as laid out: its outer box, its inner top, its edges and the two planes' colours. */
+/** The work surface as laid out: its outer box, its inner top, its edges and the two planes' colors. */
 async function surfaceOf(p: LayoutPage) {
   return p.raw.evaluate(() => {
     const el = document.querySelector<HTMLElement>('[data-slot="shell-surface"]')
@@ -396,11 +396,11 @@ layout('the two planes: the rail on the frame, one work surface for the page', (
 
   for (const scheme of ['light', 'dark'] as const) {
     for (const { viewport, rail } of VIEWPORTS) {
-      test(`${scheme} ${viewport.name}: ${rail === 0 ? 'flush' : 'a panel'} on a frame of another colour, no hairline on the rail`, async () => {
+      test(`${scheme} ${viewport.name}: ${rail === 0 ? 'flush' : 'a panel'} on a frame of another color, no hairline on the rail`, async () => {
         const p = await openFixture(specOf(), viewport)
         await p.raw.evaluate((s) => document.documentElement.setAttribute('data-theme', s), scheme)
         const g = await surfaceOf(p)
-        expect(g.surface, 'the surface and the frame are two colours').not.toBe(g.frame)
+        expect(g.surface, 'the surface and the frame are two colors').not.toBe(g.frame)
         expect(g.railEdge, 'the rail draws no hairline: the planes divide it').toBe(0)
         const header = (await p.box('header', HEADER)).box
         expect(
@@ -482,7 +482,7 @@ layout('the two planes: the rail on the frame, one work surface for the page', (
     }
   })
 
-  test('a padded page keeps the gutter and its card reads by a hairline ring on the surface colour', async () => {
+  test('a padded page keeps the gutter and its card reads by a hairline ring on the surface color', async () => {
     const p = await openFixture(specOf({ card: true }), DESKTOP_1440)
     const card = await p.raw.evaluate(() => {
       const el = document.querySelector<HTMLElement>('[data-slot="card"]')
@@ -496,7 +496,7 @@ layout('the two planes: the rail on the frame, one work surface for the page', (
         border: parseFloat(s.borderTopWidth) || 0,
       }
     })
-    expect(card.bg, 'no ground contrast: the card is the surface colour').toBe(card.surface)
+    expect(card.bg, 'no ground contrast: the card is the surface color').toBe(card.surface)
     expect(card.shadow, 'the ring is the card shadow').toMatch(/0px 0px 0px 1px/)
     expect(card.border, 'one edge: no border beside the ring').toBe(0)
     expect(parseFloat(await p.computed(PAGE_MAIN, 'padding-left'))).toBe(24)

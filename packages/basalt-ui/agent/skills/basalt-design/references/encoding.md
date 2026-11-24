@@ -14,12 +14,12 @@ Which form carries which shape of data, and what the marks may say. The question
 - Events in order are an [EventList](node_modules/basalt-ui/docs/event-list.md). Intervals on a time axis (a stay, a run, a notice window) get one row each, drawn as a bar on the axis.
 - A series that must dim on focus is [CartesianChart](node_modules/basalt-ui/docs/cartesian-chart.md) marks: [Lines](node_modules/basalt-ui/docs/lines.md) ignores marks and so cannot dim, while [Bars](node_modules/basalt-ui/docs/bars.md) dims through its own `opacity`.
 
-## Colour follows the entity
+## Color follows the entity
 
 - An entity that earns a hue keeps it on every chart and card where it appears, whatever its rank; most entities earn none and stay neutral.
-- Colour is a budget: neutral by default, one accent on one series or mark class per view, one status hue. Two series in the accent is a failed budget, and so are seven family hues on one chart; fold the tail into "Other" and keep the rest neutral. One measure drawn at two grains counts as two classes ([chart-color](chart-color.md)).
-- A status is a word or a dot with its tone, so a reader without colour still has the verdict. [lint:status-fill-as-text]
-- Text takes a text token; a series colour is a fill. [lint:colour-literal]
+- Color is a budget: neutral by default, one accent on one series or mark class per view, one status hue. Two series in the accent is a failed budget, and so are seven family hues on one chart; fold the tail into "Other" and keep the rest neutral. One measure drawn at two grains counts as two classes ([chart-color](chart-color.md)).
+- A status is a word or a dot with its tone, so a reader without color still has the verdict. [lint:status-fill-as-text]
+- Text takes a text token; a series color is a fill. [lint:color-literal]
 
 ## Tooltips enhance
 
@@ -45,5 +45,5 @@ Which form carries which shape of data, and what the marks may say. The question
 not guarded:
 
 - Use one axis per chart; a second value scale is a second chart.
-- Never encode a category in the rank of its colour, and never cycle a palette.
+- Never encode a category in the rank of its color, and never cycle a palette.
 - A marker restating the headline value adds nothing; mark the target or the limit.

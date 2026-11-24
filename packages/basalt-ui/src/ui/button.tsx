@@ -48,7 +48,7 @@ export const buttonVariants = cva(
 )
 
 /**
- * The `Pressable` cva table. No colour axis: `Pressable` has no look of its own, it owns focus,
+ * The `Pressable` cva table. No color axis: `Pressable` has no look of its own, it owns focus,
  * the hit area and a layout rhythm (`row`, `chip`).
  *
  * @example

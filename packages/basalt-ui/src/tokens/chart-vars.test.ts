@@ -133,7 +133,7 @@ describe('the categorical solver', () => {
 })
 
 describe('the names', () => {
-  test('VIZ_COLOR_NAMES are the opaque Viz rows of the table, in order, and colour roles', () => {
+  test('VIZ_COLOR_NAMES are the opaque Viz rows of the table, in order, and color roles', () => {
     const viz = TOKENS.filter((t) => t.family === 'viz').map((t) => t.name)
     expect(viz.filter((n) => n !== 'grid' && n !== 'crosshair')).toEqual([...VIZ_COLOR_NAMES])
     for (const n of VIZ_COLOR_NAMES) expect(COLOR_NAMES_V3).toContain(n)

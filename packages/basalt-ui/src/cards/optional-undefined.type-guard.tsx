@@ -21,7 +21,7 @@ declare const meter: MeterSpec | undefined
 declare const chart: BoxSlot | undefined
 /** `StatCell` holds `rows` to at most four, so a maybe-value of two rows. */
 declare const rows: readonly [StatRow, StatRow] | undefined
-declare const xLabels: readonly [string, string, string] | undefined
+declare const axisLabels: readonly [string, string, string] | undefined
 declare const footer: FootFacts | undefined
 declare const controls: ControlsSlot<'widget'> | undefined
 declare const menu: CardMenu | undefined
@@ -30,9 +30,9 @@ declare const fact: Fact | undefined
 
 export const everyCellField: ReactElement = (
   <StatCell
-    label="Too weak this week"
+    title="Too weak this week"
     swatch={swatch}
-    qualifier={text}
+    subtitle={text}
     info={text}
     value={value}
     unit={text}
@@ -60,7 +60,7 @@ export const everyCardField: ReactElement = (
     sub={text}
     subMono={flag}
     chart={chart}
-    xLabels={xLabels}
+    axisLabels={axisLabels}
     footer={footer}
     controls={controls}
     menu={menu}
@@ -77,7 +77,7 @@ export const maybeSecondary: ReactElement = (
 )
 
 export const monoSub: ReactElement = (
-  <StatCell label="Last drop" value={3} unit="min" sub="2026-11-16 03:12" subMono />
+  <StatCell title="Last drop" value={3} unit="min" sub="2026-11-16 03:12" subMono />
 )
 
 // @ts-expect-error a footer still holds at most two facts

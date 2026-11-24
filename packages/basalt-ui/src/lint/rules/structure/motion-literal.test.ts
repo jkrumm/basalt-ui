@@ -11,7 +11,7 @@ import { RuleTester } from 'eslint'
 
 import { buildRule, formMessage } from '../../factory'
 import { isEnabled } from '../../rule-table'
-import { FIXTURES_ROOT, parseFixture } from './colour-literal.cases'
+import { FIXTURES_ROOT, parseFixture } from './color-literal.cases'
 import { SUITES } from './motion-literal.cases'
 import { motionLiteralRules } from './motion-literal'
 

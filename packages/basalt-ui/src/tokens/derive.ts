@@ -560,7 +560,7 @@ export const INK_FROM_2X = {
  * under protanopia and deuteranopia (`chart-N-cvd-*`), so the emitter would refuse the default seed. */
 export const VIBRANCY_RANGE_V3 = { min: -4, max: 5 } as const
 
-/** The v3 colour roles the table lists with a `{ light, dark }` pair. */
+/** The v3 color roles the table lists with a `{ light, dark }` pair. */
 export const COLOR_NAMES_V3 = [
   'canvas',
   'inset',

@@ -88,7 +88,7 @@ const disabledSuites: Suite[] = entries.flatMap(([id, entry]) =>
 const BRIDGE = [{ profile: 'bridge' }]
 const bridgeSuite = (): Suite => {
   const entry = CLASS_RULES['tw-off-law']
-  const gated = ['surface-recipe', 'app-colour', 'app-colour-arbitrary', 'fixed-width']
+  const gated = ['surface-recipe', 'app-color', 'app-color-arbitrary', 'fixed-width']
   const live = entry.forms.filter(isEnabled)
   return {
     name: 'tw-off-law (bridge)',

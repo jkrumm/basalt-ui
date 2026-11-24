@@ -6,7 +6,7 @@
  * `multiple` raises each pressed option, a drag fires `onValueChange` while moving and
  * `onValueCommitted` once on release, the value text is `1,5` in `de-DE`, the hit floor is 24 px
  * for a fine pointer and 44 px for a coarse one, nothing pushes the page sideways, and axe finds
- * nothing serious or critical in either colour scheme.
+ * nothing serious or critical in either color scheme.
  *
  * The page is self-contained: `fixture/ui-range.css` is compiled with the Tailwind CLI into a temp
  * directory and `fixture/ui-range-fixture.tsx` is bundled in memory, both inlined into a document

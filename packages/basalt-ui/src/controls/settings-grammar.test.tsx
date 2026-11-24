@@ -144,7 +144,7 @@ describe('FormField row', () => {
 })
 
 describe('FormActionRow', () => {
-  test('the action is in the row; danger tone reads in the verdict colour', () => {
+  test('the action is in the row; danger tone reads in the verdict color', () => {
     const { container, getByRole } = render(
       <FormActionRow
         label="Revoke key"

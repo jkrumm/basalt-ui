@@ -6,7 +6,7 @@ import type { BasaltMessages } from './index'
  * the button that opens it below 1200px, and
  * `page.kind*` name a title-less callout's kind for assistive tech, and `page.moreActions`
  * `page.closeAside` and `page.backToList` name the page bar's overflow button, `page.recordActions` a panel header's, the aside's close button, `page.closePeek` a `Peek`'s or `Dock`'s, `page.pinPanel` a `Peek`'s dock button, `page.resizePeek` the label of its width handle, `page.resizeList` a split page's list handle, and a split page's way back to its list, `page.openFullPage` names a `Peek`'s link to the record's own page, `page.previousRecord` and `page.nextRecord` a panel's steps through its opener's records, `page.openAs` and `page.present*` the presentation menu, `page.minimise` and `page.restore` a window's, and `page.itemAttention` and `page.itemActions` name an `InnerNav` item's dot
- * and its actions menu, `page.favourite` and `page.unfavourite` the favourite star's action, and `page.propertyEdit`, `page.propertyEmpty`, `page.propertyInvalid` and `page.propertyRange` name
+ * and its actions menu, `page.favorite` and `page.unfavorite` the favorite star's action, and `page.propertyEdit`, `page.propertyEmpty`, `page.propertyInvalid` and `page.propertyRange` name
  * a `PropertyList` row's edit button, its unset value and its two validation errors.
  */
 export type PageMessages = Record<
@@ -38,8 +38,8 @@ export type PageMessages = Record<
   | 'page.restore'
   | 'page.propertyEmpty'
   | 'page.propertyInvalid'
-  | 'page.favourite'
-  | 'page.unfavourite',
+  | 'page.favorite'
+  | 'page.unfavorite',
   string
 > &
   Record<'page.minRead', (f: Format, minutes: number) => string> &
@@ -73,8 +73,8 @@ export const page = {
   'page.presentPage': 'Full page',
   'page.minimise': 'Minimise',
   'page.restore': 'Restore',
-  'page.favourite': 'Add to favourites',
-  'page.unfavourite': 'Remove from favourites',
+  'page.favorite': 'Add to favorites',
+  'page.unfavorite': 'Remove from favorites',
   'page.itemActions': (_f, label) => `Actions for ${label}`,
   'page.propertyEdit': (_f, label) => `Edit ${label}`,
   'page.propertyEmpty': 'Not set',

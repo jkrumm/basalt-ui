@@ -17,7 +17,7 @@ describe('StatCell text wraps', () => {
   test('an error cause does not truncate and its track grows with it', () => {
     const { container } = render(
       <StatCell
-        label="Backlog"
+        title="Backlog"
         phase={{ tag: 'error', message: 'Gateway timed out', retry: () => undefined }}
       />,
     )
@@ -32,7 +32,7 @@ describe('StatCell text wraps', () => {
   test('a delta base label does not truncate and may drop under its pill', () => {
     const { container } = render(
       <StatCell
-        label="Messages"
+        title="Messages"
         value="166,228"
         delta={{ value: '+2,258%', polarity: 'neutral', label: 'vs prior 30 d' }}
         phase="ready"

@@ -62,7 +62,7 @@ describe('the two forms', () => {
   })
 
   test('both forms carry the accessible name', () => {
-    const { container, getByRole } = show(<ViewTabs handle={handleOf()} label="Overview view" />)
+    const { container, getByRole } = show(<ViewTabs state={handleOf()} label="Overview view" />)
     expect(getByRole('tablist', { name: 'Overview view' })).not.toBeNull()
     expect(container.querySelector('[data-slot="segmented"]')?.getAttribute('aria-label')).toBe(
       'Overview view',
@@ -70,14 +70,14 @@ describe('the two forms', () => {
   })
 
   test('the name defaults to View', () => {
-    const { getByRole } = show(<ViewTabs handle={handleOf()} />)
+    const { getByRole } = show(<ViewTabs state={handleOf()} />)
     expect(getByRole('tablist', { name: 'View' })).not.toBeNull()
   })
 
   test('past three options the narrow form is a named Select, the strip stays', () => {
     const many = [...TABS, { value: 'logs', label: 'Logs' }]
     const { container, getByRole } = show(
-      <ViewTabs handle={handleOf('overview', many)} label="Section" />,
+      <ViewTabs state={handleOf('overview', many)} label="Section" />,
     )
     expect(container.querySelector('[data-slot="segmented"]')).toBeNull()
     expect(container.querySelector('[data-slot="select"]')).not.toBeNull()
@@ -86,7 +86,7 @@ describe('the two forms', () => {
   })
 
   test('the value comes from the handle in both forms', () => {
-    const { getByRole, container } = show(<ViewTabs handle={handleOf('history')} />)
+    const { getByRole, container } = show(<ViewTabs state={handleOf('history')} />)
     expect(getByRole('tab', { name: 'History' }).getAttribute('aria-selected')).toBe('true')
     const pressed = container.querySelector('[data-slot="segmented-item"][data-pressed]')
     expect(pressed?.textContent).toBe('History')
@@ -94,7 +94,7 @@ describe('the two forms', () => {
 
   test('a tab click writes through the handle; so does a track click', () => {
     const handle = handleOf()
-    const { getByRole, container } = show(<ViewTabs handle={handle} />)
+    const { getByRole, container } = show(<ViewTabs state={handle} />)
     fireEvent.click(getByRole('tab', { name: 'History' }))
     expect(handle.writes).toEqual(['history'])
     const items = container.querySelectorAll<HTMLElement>('[data-slot="segmented-item"]')
@@ -103,12 +103,12 @@ describe('the two forms', () => {
   })
 
   test('disabled makes every tab inert', () => {
-    const { getAllByRole } = show(<ViewTabs handle={handleOf()} disabled />)
+    const { getAllByRole } = show(<ViewTabs state={handleOf()} disabled />)
     for (const tab of getAllByRole('tab')) expect(tab.hasAttribute('data-disabled')).toBe(true)
   })
 
   test('className is layout only and lands on the one root', () => {
-    const { container } = show(<ViewTabs handle={handleOf()} className="probe" />)
+    const { container } = show(<ViewTabs state={handleOf()} className="probe" />)
     expect(container.querySelectorAll('.probe')).toHaveLength(1)
     expect(container.querySelector('[data-slot="view-tabs"]')?.classList.contains('probe')).toBe(
       true,
@@ -125,7 +125,7 @@ describe('only', () => {
   ]
 
   test("'sm-down' keeps a tab off the strip, 'sm-up' keeps it off the track", () => {
-    const { getAllByRole, container } = show(<ViewTabs handle={handleOf()} options={options} />)
+    const { getAllByRole, container } = show(<ViewTabs state={handleOf()} options={options} />)
     expect(getAllByRole('tab').map((t) => t.textContent)).toEqual(['Overview', 'History', 'Export'])
     const track = [...container.querySelectorAll('[data-slot="segmented-item"]')]
     expect(track.map((t) => t.textContent)).toEqual(['Overview', 'History', 'Train'])
@@ -133,7 +133,7 @@ describe('only', () => {
 
   test('a row offers every option: a panel is one width', () => {
     const { container, queryByRole } = show(
-      <ViewTabs handle={handleOf()} options={options} label="Mode" />,
+      <ViewTabs state={handleOf()} options={options} label="Mode" />,
       'row',
     )
     expect(queryByRole('tablist')).toBeNull()
@@ -145,7 +145,7 @@ describe('only', () => {
 
 describe('inside a row home (PageAside)', () => {
   test('a label above one full-width form, named by that label', () => {
-    const { container, queryByRole } = show(<ViewTabs handle={handleOf()} label="Mode" />, 'row')
+    const { container, queryByRole } = show(<ViewTabs state={handleOf()} label="Mode" />, 'row')
     const root = container.querySelector('[data-slot="view-tabs"]') as HTMLElement
     expect(root.dataset['presentation']).toBe('row')
     expect(root.querySelector('span')?.textContent).toBe('Mode')
@@ -174,7 +174,7 @@ describe('over a router', () => {
     const { app } = await mountApp({
       url: '/p?tab=history',
       store: vt,
-      page: () => <ViewTabs handle={vt.field.tab} />,
+      page: () => <ViewTabs state={vt.field.tab} />,
     })
     const html = renderToString(app)
     expect(html).toMatch(/<button[^>]*aria-selected="true"[^>]*>History<\/button>/)
@@ -186,7 +186,7 @@ describe('over a router', () => {
     const { app } = await mountApp({
       url: '/p',
       store: vt,
-      page: () => <ViewTabs handle={vt.field.tab} />,
+      page: () => <ViewTabs state={vt.field.tab} />,
     })
     expect(renderToString(app)).toMatch(/aria-selected="true"[^>]*>Overview</)
   })
@@ -196,7 +196,7 @@ describe('over a router', () => {
     const { app, router, history } = await mountApp({
       url: '/p?tab=overview',
       store: vt,
-      page: () => <ViewTabs handle={vt.field.tab} />,
+      page: () => <ViewTabs state={vt.field.tab} />,
     })
     const { getByRole } = render(app)
     await waitFor(() => getByRole('tab', { name: 'Overview' }))
@@ -223,8 +223,8 @@ describe('over a router', () => {
 // Compile-time (`tsc`): the handle form refuses a value/onChange pair and a size.
 const bound = memoryHandle<string>('tab', 'overview', { kind: 'enum', options: TABS })
 // @ts-expect-error `value` belongs to the handle, not the call site
-export const withValue = <ViewTabs handle={bound} value="overview" />
+export const withValue = <ViewTabs state={bound} value="overview" />
 // @ts-expect-error `onChange` belongs to the handle, not the call site
-export const withOnChange = <ViewTabs handle={bound} onChange={() => {}} />
+export const withOnChange = <ViewTabs state={bound} onChange={() => {}} />
 // @ts-expect-error `size` is the home's tier, never the control's
-export const withSize = <ViewTabs handle={bound} size="sm" />
+export const withSize = <ViewTabs state={bound} size="sm" />

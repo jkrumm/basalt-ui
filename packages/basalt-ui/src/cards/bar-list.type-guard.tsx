@@ -40,7 +40,7 @@ export const barNoClassName: ReactElement = (
 )
 
 export const barNoColor: ReactElement = (
-  // @ts-expect-error a list takes no colour
+  // @ts-expect-error a list takes no color
   <BarList title="Top projects" items={items} color="red" />
 )
 
@@ -98,7 +98,7 @@ export const eventNoClassName: ReactElement = (
 )
 
 export const eventNoColor: ReactElement = (
-  // @ts-expect-error a list takes no colour
+  // @ts-expect-error a list takes no color
   <EventList title="Activity" items={[]} color="red" />
 )
 

@@ -123,7 +123,7 @@ const noteStyle: CSSProperties = { color: CV.axis, flex: 'none' }
 const labelStyle: CSSProperties = { minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }
 
 /**
- * A legend entry that may be a sign-coloured bar: `colorNegative` is the below-zero colour and the
+ * A legend entry that may be a sign-colored bar: `colorNegative` is the below-zero color and the
  * swatch splits `color` | `colorNegative`. Only `DualPanel`'s bar sets it; the entry stays one
  * toggle, so the sign halves hide together.
  */
@@ -131,7 +131,7 @@ export type SignedSeries<T> = ChartSeries<T> & { colorNegative?: string | undefi
 
 /**
  * A bar key that carries the mark its cells draw: `glyph` is the text (a `!`, a `×`) and `glyphInk` its
- * colour on the swatch's own fill. Only `Heatmap`'s state keys set it, so a stated cell and its key match.
+ * color on the swatch's own fill. Only `Heatmap`'s state keys set it, so a stated cell and its key match.
  */
 export type GlyphKey = { glyph?: string | undefined; glyphInk?: string | undefined }
 
@@ -141,7 +141,7 @@ type SwatchStyle = Pick<
 > &
   GlyphKey
 
-/** A swatch fill: the series colour, or a hard-stop split for a sign-coloured bar. */
+/** A swatch fill: the series color, or a hard-stop split for a sign-colored bar. */
 const swatchFill = (s: SwatchStyle): string =>
   s.colorNegative ? `linear-gradient(90deg, ${s.color} 50%, ${s.colorNegative} 50%)` : s.color
 
@@ -193,7 +193,7 @@ function Swatch({ s, mode }: { s: SwatchStyle; mode: LegendMode }): ReactElement
   if ((s.mark ?? 'line') === 'line') return <LineSwatch s={s} compact={mode === 'dots'} />
   // One shape per mark kind at every width: a bar is a rounded square, compact (8) or wide (10).
   const size = mode === 'dots' ? 8 : 10
-  // A scatter's key: a filled dot, or a hollow ring of the same size and colour.
+  // A scatter's key: a filled dot, or a hollow ring of the same size and color.
   if (s.mark === 'dot' || s.mark === 'ring')
     return (
       <span
@@ -209,7 +209,7 @@ function Swatch({ s, mode }: { s: SwatchStyle; mode: LegendMode }): ReactElement
         }}
       />
     )
-  // An open mark's key: the bar's square, outlined in the colour.
+  // An open mark's key: the bar's square, outlined in the color.
   if (s.mark === 'hollow')
     return (
       <span
@@ -226,7 +226,7 @@ function Swatch({ s, mode }: { s: SwatchStyle; mode: LegendMode }): ReactElement
       />
     )
   // A state key carries its cells' mark: a 12 px square (the heat cell's glyph floor) whose fill fades
-  // in its own colour, so the glyph stays at full ink.
+  // in its own color, so the glyph stays at full ink.
   if (s.glyph)
     return (
       <span

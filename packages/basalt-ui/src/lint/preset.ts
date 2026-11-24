@@ -133,9 +133,9 @@ export const VIEWPORT_ALLOW = [...VIEWPORT_VARIANTS, 'min-[*]', 'max-[*]'].flatM
 ])
 
 /**
- * `no-raw-colors` reads `shadow-<anything>` as a colour utility and flags the shadow sizes; the
- * sizes are not colours. `shadow-<colour>` stays checked. Limit: the rule cannot tell a type step
- * (`text-title`) from a colour name, so an unknown `text-*` is still called out as a colour.
+ * `no-raw-colors` reads `shadow-<anything>` as a color utility and flags the shadow sizes; the
+ * sizes are not colors. `shadow-<color>` stays checked. Limit: the rule cannot tell a type step
+ * (`text-title`) from a color name, so an unknown `text-*` is still called out as a color.
  */
 const SHADOW_SIZES = ['2xs', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', 'inner', 'none'].map(
   (size) => `shadow-${size}`,
@@ -151,7 +151,7 @@ const PREMIXED_ALPHA = zoneAPremixed.map((name) => `*-${name}`)
 
 /**
  * A `--basalt-*` token name written as a class (`bg-hover`, `bg-canvas`) is no class: the theme reads the
- * token under another name. Both colour messages print the class for each such token (lint-4.14),
+ * token under another name. Both color messages print the class for each such token (lint-4.14),
  * generated from the `@theme inline` map, so `bg-hover` is told `bg-accent`, not its nearest spelling.
  */
 const TOKEN_CLASSES = `Token names are not classes: ${Object.entries(zoneATokenClasses)
@@ -168,7 +168,7 @@ export const SHADCN_MESSAGE_MAX = 500
  * at-rule ban (lint-3.12). `{{suggestions|...}}` is a universal slot, so it never prints raw.
  *
  * Bridge's `no-raw-colors` names its fix by role and prints no `{{suggestions}}` (lint-4.13): shadcn
- * picks them by colour distance alone and keeps the token's variants (`withBase`), so `dark:bg-gray-900`
+ * picks them by color distance alone and keeps the token's variants (`withBase`), so `dark:bg-gray-900`
  * got `dark:bg-primary` (dark-fork), `text-gray-400` got `text-dim-bar` (status-fill-as-text) and a
  * border got `border-seq-1`, and the rule takes no option to filter them. The role list holds only
  * classes the bridge class forms pass.
@@ -184,9 +184,9 @@ export const SHADCN_MESSAGES: Readonly<
     // One string for every kind of value (the option takes no per-kind form), so it names the fix by kind;
     // only a spacing value takes a ladder step, which is what app-spacing would reject on a margin.
     'no-arbitrary-values':
-      '"{{className}}" hardcodes an off-token value. By kind: a colour comes from Status, Lozenge, DeltaBadge or a Num tone; overflow is ui/scroll-area, or the page owns the scroll; space around an element is gap on the parent; a spacing value is a step of the spacing ladder (integers, halves below 4); a width belongs to the parent container, and one computed from data is BarList, ui/progress or ui/meter.',
-    'no-raw-colors': `"{{className}}" is no colour the theme declares. ${TOKEN_CLASSES} Otherwise app colour comes from Status, Lozenge, DeltaBadge or a Num tone; the palette is derived, so no colour is declared per app. A shadow or a type step is not a colour: check its spelling.`,
-    // One string for the four reports (a property, a dynamic object, a raw colour in a custom
+      '"{{className}}" hardcodes an off-token value. By kind: a color comes from Status, Lozenge, DeltaBadge or a Num tone; overflow is ui/scroll-area, or the page owns the scroll; space around an element is gap on the parent; a spacing value is a step of the spacing ladder (integers, halves below 4); a width belongs to the parent container, and one computed from data is BarList, ui/progress or ui/meter.',
+    'no-raw-colors': `"{{className}}" is no color the theme declares. ${TOKEN_CLASSES} Otherwise app color comes from Status, Lozenge, DeltaBadge or a Num tone; the palette is derived, so no color is declared per app. A shadow or a type step is not a color: check its spelling.`,
+    // One string for the four reports (a property, a dynamic object, a raw color in a custom
     // property, a `<style>` element). shadcn's own text sends a dynamic value to a custom property,
     // which this rule does not read: a bar sized through one (`w-(--w)`, `grow-(--g)`) is
     // `basalt/primitive-bypass`'s html-data-marks, so this text claims no custom-property route
@@ -197,7 +197,7 @@ export const SHADCN_MESSAGES: Readonly<
     'no-unknown-classes': `"{{className}}" is no class or variant this project's Tailwind knows. ${TOKEN_CLASSES} Nearest spelling: {{suggestions|none}}. A radius is rounded-ctrl or rounded-chip; a card surface is owned by Card and Inset; no class or variant is declared per app.`,
   }
   const bridge = {
-    'no-raw-colors': `"{{className}}" is a raw colour. Use one theme class with no dark: variant (tokens switch per scheme): ink is text-foreground or text-muted-foreground, status text text-good or text-brand, a surface bg-background, bg-card or bg-popover, a line border-border. ${TOKEN_CLASSES} No colour is added per app.`,
+    'no-raw-colors': `"{{className}}" is a raw color. Use one theme class with no dark: variant (tokens switch per scheme): ink is text-foreground or text-muted-foreground, status text text-good or text-brand, a surface bg-background, bg-card or bg-popover, a line border-border. ${TOKEN_CLASSES} No color is added per app.`,
   }
   return { bridge, site: bridge, parts: owned, app: owned }
 })()
@@ -359,7 +359,7 @@ const offAll = (names: readonly string[]): Rules => Object.fromEntries(names.map
  * bought `no-arbitrary-values`, `no-inline-styles` (a primitive's geometry is calc, anchor and
  * position values and a virtualised list's measured height) and `require-static-classes` (a seed
  * builds its classes with `cva` and merges the caller's `className`, the shape that rule cannot
- * read). The colour rules stay on.
+ * read). The color rules stay on.
  */
 function structureZone(files: readonly string[], inputs: PresetInputs): Override {
   const input = presetInput(inputs.table)

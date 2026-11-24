@@ -9,7 +9,7 @@ import type { Rule } from 'eslint'
 import { Linter, RuleTester } from 'eslint'
 
 import { buildRule, formMessage } from '../../factory'
-import { FIXTURES_ROOT, parseFixture } from './colour-literal.cases'
+import { FIXTURES_ROOT, parseFixture } from './color-literal.cases'
 import { pageRootRules } from './page-root'
 
 RuleTester.describe = describe

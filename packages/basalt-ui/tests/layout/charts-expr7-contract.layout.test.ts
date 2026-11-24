@@ -3,7 +3,7 @@
  * 390. (b): an entity column's main text and a footer fact value set with `mono` draw in the mono
  * face with tabular numerals inside their card, the same text without it stays sans, and the flag
  * moves no card. (c): a stacked `BarList` of twelve long names keeps every name whole at both widths,
- * draws each row's parts inside its track in the series' colours, and shows its legend.
+ * draws each row's parts inside its track in the series' colors, and shows its legend.
  *
  * The page is self-contained like `charts-expr6-contract.layout.test.ts`.
  */
@@ -124,7 +124,7 @@ type StackedRow = {
   segments: number
   /** The parts' summed width minus the track's width: > 0.5 means a part overflows. */
   spill: number
-  colours: string[]
+  colors: string[]
 }
 
 const stackedRows = (page: LayoutPage): Promise<StackedRow[]> =>
@@ -141,7 +141,7 @@ const stackedRows = (page: LayoutPage): Promise<StackedRow[]> =>
           cut: label.scrollWidth - label.clientWidth,
           segments: parts.length,
           spill: right - track.getBoundingClientRect().right,
-          colours: parts.map((p) => getComputedStyle(p).backgroundColor),
+          colors: parts.map((p) => getComputedStyle(p).backgroundColor),
         }
       },
     ),
@@ -194,13 +194,13 @@ layout('a stacked BarList keeps every name, expression cycle 7', () => {
         for (const row of rows) expect(row.cut, row.label).toBeLessThanOrEqual(0)
       })
 
-      test("each row's parts stack inside its track in four series colours; the zero row draws none", async () => {
+      test("each row's parts stack inside its track in four series colors; the zero row draws none", async () => {
         const page = await open(viewport)
         const rows = await stackedRows(page)
         for (const row of rows.slice(0, 11)) {
           expect(row.segments, row.label).toBe(4)
           expect(row.spill, row.label).toBeLessThanOrEqual(0.5)
-          expect(new Set(row.colours).size, row.label).toBe(4)
+          expect(new Set(row.colors).size, row.label).toBe(4)
         }
         expect(rows[11]!.segments).toBe(0)
       })

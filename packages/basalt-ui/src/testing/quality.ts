@@ -80,9 +80,9 @@ async function setScheme(page: PageLike, scheme: Scheme): Promise<void> {
 // ── animations ────────────────────────────────────────────────────────────────────────────────
 
 /**
- * Fading colours are read blended, so every assertion that reads colour waits for this first. Only a
+ * Fading colors are read blended, so every assertion that reads color waits for this first. Only a
  * time-driven animation (on `document.timeline`) can settle: one on a scroll or view timeline, such as the
- * article progress bar, is "running" for as long as the page exists and never blends a colour.
+ * article progress bar, is "running" for as long as the page exists and never blends a color.
  */
 async function animationsSettled(page: PageLike): Promise<void> {
   await page.emulateMedia({ reducedMotion: 'reduce' })
@@ -472,8 +472,8 @@ function inspectRing(focused: Element): string[] {
     return (hi + 0.05) / (lo + 0.05)
   }
   const ring = parse(s.outlineColor)
-  if (ring === null) return [...problems, `outline colour ${s.outlineColor} unreadable`]
-  if (ring[3] < 1) problems.push(`outline colour ${s.outlineColor} is translucent`)
+  if (ring === null) return [...problems, `outline color ${s.outlineColor} unreadable`]
+  if (ring[3] < 1) problems.push(`outline color ${s.outlineColor} is translucent`)
   // The nearest opaque background above the element is the surface the ring sits on.
   const fill = (e: Element | null): [number, number, number, number] => {
     for (let n = e; n !== null; n = n.parentElement) {
@@ -651,7 +651,7 @@ export interface Quality {
  * ```
  *
  * @useWhen a browser test must prove a route is accessible, never scrolls the document sideways and keeps focus visible and unobscured
- * @neverWhen the test runs in jsdom or happy-dom (these read layout and computed colour), or checks the markup of a single component
+ * @neverWhen the test runs in jsdom or happy-dom (these read layout and computed color), or checks the markup of a single component
  */
 export const quality: Quality = Object.freeze({
   setScheme,

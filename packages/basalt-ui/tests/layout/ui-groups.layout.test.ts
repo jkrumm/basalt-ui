@@ -270,12 +270,10 @@ layout('control vocabulary and groups', () => {
               '[data-testid="bg-v"] [data-slot="button-group"] > :nth-child(2)',
             )
             const before = second === null ? null : getComputedStyle(second, '::before')
-            return before === null
-              ? null
-              : { height: before.height, colour: before.backgroundColor }
+            return before === null ? null : { height: before.height, color: before.backgroundColor }
           })
           expect(rule?.height, 'a stacked button draws a hairline over its fused edge').toBe('1px')
-          expect(rule?.colour).not.toBe('rgba(0, 0, 0, 0)')
+          expect(rule?.color).not.toBe('rgba(0, 0, 0, 0)')
         })
 
         test(`${scheme}: ControlGroup keeps 2 px, fills its box and keeps a grow-0 child`, async () => {

@@ -1,8 +1,8 @@
 /**
  * Expression cycle 11 (`v3-expr-11-kit-fixes` 4 and 6a): the ink of a value label standing on a bar is
  * chosen against the fill the bar shows in its state (at rest, focused, dimmed), not fixed to the
- * card's colour or ink: that was 2.96:1 light and 1.44:1 dark on a highlighted bar, and a white label
- * on a dimmed bar took the bar's own dimmed colour. Computed from the shipped tokens in both schemes;
+ * card's color or ink: that was 2.96:1 light and 1.44:1 dark on a highlighted bar, and a white label
+ * on a dimmed bar took the bar's own dimmed color. Computed from the shipped tokens in both schemes;
  * the rendered geometry is `tests/layout/charts-expr11-labels.layout.test.ts`.
  */
 import { describe, expect, test } from 'bun:test'
@@ -122,7 +122,7 @@ describe('a label on a bar reads at 4.5:1 in every state and scheme', () => {
           expect(contrastRatio(inkHex(surface, scheme), fill)).toBeGreaterThanOrEqual(4.5)
         })
 
-  test('the old ink, the card colour (white on a blue bar), did not: a dimmed or resting fill falls under 4.5', () => {
+  test('the old ink, the card color (white on a blue bar), did not: a dimmed or resting fill falls under 4.5', () => {
     const worst = SCHEMES.flatMap(([, scheme]) =>
       COLORS.flatMap((c) =>
         (['rest', 'dimmed'] as const).map((state) =>

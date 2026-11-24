@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * Emit `zone-a.ts` beside this file: the earned colour names, the theme classes of the pre-mixed
+ * Emit `zone-a.ts` beside this file: the earned color names, the theme classes of the pre-mixed
  * tokens, the fill-only names, the utilities zone A (app code) may not use and the theme class each
  * renamed token is read through, from `zoneADenial()` and the `@theme inline` map
  * (`bridgeEntries()`), so `emit.ts` and the token table stay the one source.
@@ -31,7 +31,7 @@ function declareRecord(name: string, entries: readonly (readonly [string, string
   return `export const ${name} = {\n${entries.map(([k, v]) => `  ${key(k)}: '${v}',\n`).join('')}} as const`
 }
 
-/** The class a token's colour is written through: the first `--color-*` the theme points at it. */
+/** The class a token's color is written through: the first `--color-*` the theme points at it. */
 const themeNameOf = (token: string): string | undefined =>
   bridgeEntries()
     .find((e) => e.token === token && e.tw.startsWith(COLOR) && !e.tw.endsWith('-tint'))

@@ -84,8 +84,8 @@ const CARDS = cn(
  *
  * @example
  * <StatGroup variant="strip" label="Fleet health">
- *   <StatCell icon={Rocket} label="Deploys" value={164} delta={{ value: '+12%', polarity: 'up-good', label: 'vs prior 7 days' }} chart={perDay} phase={query} />
- *   <StatCell icon={Clock} label="Median duration" value={174} unit="s" delta={{ value: '-14 s', polarity: 'up-bad', label: 'vs prior 7 days' }} phase={query} />
+ *   <StatCell icon={Rocket} title="Deploys" value={164} delta={{ value: '+12%', polarity: 'up-good', label: 'vs prior 7 days' }} chart={perDay} phase={query} />
+ *   <StatCell icon={Clock} title="Median duration" value={174} unit="s" delta={{ value: '-14 s', polarity: 'up-bad', label: 'vs prior 7 days' }} phase={query} />
  * </StatGroup>
  */
 export function StatGroup({ variant, label, children }: StatGroupProps): ReactElement | null {
@@ -159,7 +159,7 @@ function withContext(children: StatGroupProps['children']): StatCellElement[] {
   for (const child of Children.toArray(children)) {
     if (!isValidElement<StatCellProps>(child)) continue
     if (hasContext(child.props)) kept.push(child)
-    else dropped.push(child.props.label)
+    else dropped.push(child.props.title)
   }
   if (dropped.length > 0) {
     warnOnce(

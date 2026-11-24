@@ -44,7 +44,7 @@ function Fixture() {
     <main className="flex max-w-3xl min-w-0 flex-col gap-6 p-4 text-foreground">
       <section className={BOX} data-testid="ro-days">
         <CartesianChart
-          ariaLabel="Views against days since the last edit"
+          label="Views against days since the last edit"
           data={PAGES}
           x={ageX}
           y={{ domain: [0, 500] }}
@@ -55,7 +55,7 @@ function Fixture() {
       </section>
       <section className={BOX} data-testid="ro-int">
         <CartesianChart
-          ariaLabel="Whole numbers on whole ticks"
+          label="Whole numbers on whole ticks"
           data={STEPS}
           x={stepX}
           series={[{ mark: 'dot', key: 'v', label: 'Value', color: blue, y: (d: Pt) => d.v }]}
@@ -63,7 +63,7 @@ function Fixture() {
       </section>
       <section className={BOX} data-testid="ro-pct">
         <CartesianChart
-          ariaLabel="A percent axis"
+          label="A percent axis"
           data={PERCENT}
           x={stepX}
           y={{ domain: [0, 100], format: (v: number) => `${v}%` }}
@@ -72,7 +72,7 @@ function Fixture() {
       </section>
       <section className={BOX} data-testid="ro-cur">
         <CartesianChart
-          ariaLabel="A currency axis"
+          label="A currency axis"
           data={MONEY}
           x={stepX}
           y={{ domain: [0, 250], format: (v: number) => `$${v}` }}
@@ -81,7 +81,7 @@ function Fixture() {
       </section>
       <section className={BOX} data-testid="ro-date">
         <CartesianChart
-          ariaLabel="A line over days"
+          label="A line over days"
           data={DAYS}
           x={dayX}
           series={[{ mark: 'line', key: 'v', label: 'Requests', color: blue, y: (d: Day) => d.v }]}
@@ -89,7 +89,7 @@ function Fixture() {
       </section>
       <section className={BOX} data-testid="ro-band">
         <CartesianChart
-          ariaLabel="Bars over days"
+          label="Bars over days"
           data={DAYS}
           x={dayX}
           series={[{ mark: 'bar', key: 'v', label: 'Requests', color: blue, y: (d: Day) => d.v }]}

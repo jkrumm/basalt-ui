@@ -48,15 +48,15 @@ function editDistance(a: string, b: string): number {
   return row[b.length] ?? 0
 }
 
-/** The kind a family belongs to: every colour role is one kind, a type size is another. */
+/** The kind a family belongs to: every color role is one kind, a type size is another. */
 const KIND_OF_FAMILY: Readonly<Record<TokenFamily, string>> = {
-  surface: 'colour',
-  interaction: 'colour',
-  line: 'colour',
-  ink: 'colour',
-  brand: 'colour',
-  status: 'colour',
-  viz: 'colour',
+  surface: 'color',
+  interaction: 'color',
+  line: 'color',
+  ink: 'color',
+  brand: 'color',
+  status: 'color',
+  viz: 'color',
   shadow: 'shadow',
   radius: 'radius',
   size: 'size',
@@ -75,8 +75,9 @@ const KIND_WORDS: Readonly<Record<string, string>> = {
   gap: 'spacing',
   margin: 'spacing',
   padding: 'spacing',
-  color: 'colour',
-  colour: 'colour',
+  color: 'color',
+  // The British spelling an author may write in a token name; basalt's own names never carry it.
+  colour: 'color',
 }
 
 const segmentsOf = (name: string): string[] => name.replace(/^--basalt-/, '').split('-')
@@ -96,7 +97,7 @@ function kindOfSegment(segment: string): string | undefined {
 const SCALE_STEP = /^(?:\d*x?s|sm|md|lg|\d*x?l)$/
 
 /**
- * The kind an unknown name asks for: its qualifier (last segment, `muted` is a colour) beats its head
+ * The kind an unknown name asks for: its qualifier (last segment, `muted` is a color) beats its head
  * (`text` is a type size), unless the qualifier is a scale step (`--basalt-radius-lg` is a radius, not
  * the type size `text-lg`); a head that is a kind word (`space`) names the kind directly.
  */

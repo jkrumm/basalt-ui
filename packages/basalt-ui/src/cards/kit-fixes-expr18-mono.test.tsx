@@ -16,7 +16,7 @@ describe('mono on a stat row and a summary fact', () => {
   test('a mono StatRow value is drawn in the mono face; a plain one is not', () => {
     const { getByText } = render(
       <StatCell
-        label="Held"
+        title="Held"
         value={47}
         unit="min"
         rows={[

@@ -14,7 +14,7 @@ import type { DetailHost } from '../../core/ports'
 import { Button } from '../../ui/button'
 import { Menu, MenuContent, MenuItem, MenuTrigger } from '../../ui/menu'
 import { TableBody, TableCell, TableRow } from '../../ui/table'
-import type { DataTableInstance, RowAction, RowHeight } from '../contract'
+import type { DataTableInstance, RowAction } from '../contract'
 import { cellAttributes } from '../core/kinds-cells'
 import type { CellEnv, KindSpec } from '../core/kinds-spec'
 import type { PlannedColumn } from '../core/plan'
@@ -41,12 +41,6 @@ import type { TreeInfo } from './tree-row-model'
 /** The height a `spark` draws in; the table owns the box at every phase. */
 const BOX_HEIGHT = 24
 
-const DENSITY: Record<RowHeight, 'dense' | 'normal' | 'comfortable'> = {
-  compact: 'dense',
-  default: 'normal',
-  comfortable: 'comfortable',
-}
-
 /**
  * The `data-density` of a view's row height, on the body and on `DataTable`'s scroller: it rebinds the
  * density row (`--basalt-row-h`), so the body rows (a bespoke layout's `DataTableBody` too) and a
@@ -54,7 +48,7 @@ const DENSITY: Record<RowHeight, 'dense' | 'normal' | 'comfortable'> = {
  * control height; nothing when the app's density holds.
  */
 export function bodyDensity<T>(model: TableModel<T>): { 'data-density'?: string } {
-  return model.rowHeight === undefined ? {} : { 'data-density': DENSITY[model.rowHeight] }
+  return model.rowHeight === undefined ? {} : { 'data-density': model.rowHeight }
 }
 
 function RowActions<T>({

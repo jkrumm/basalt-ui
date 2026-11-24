@@ -7,7 +7,7 @@ export type ChartSeriesSpec = {
   key: string
   /** The legend and tooltip name. */
   label: string
-  /** Which of the five chart colours (`--basalt-chart-1` to `-5`). Default: the series' position. */
+  /** Which of the five chart colors (`--basalt-chart-1` to `-5`). Default: the series' position. */
   color?: 1 | 2 | 3 | 4 | 5
 }
 
@@ -39,7 +39,7 @@ function xOf(row: ChartRow, key: string): Date | string | number {
   return typeof value === 'string' && ISO_DATE.test(value) ? new Date(value) : value
 }
 
-function colour(index: number, pick: ChartSeriesSpec['color']): { light: string; dark: string } {
+function color(index: number, pick: ChartSeriesSpec['color']): { light: string; dark: string } {
   const token = `var(--basalt-chart-${pick ?? (index % 5) + 1})`
   return { light: token, dark: token }
 }
@@ -89,7 +89,7 @@ export function ChartIsland({
               mark: 'bar' as const,
               key: s.key,
               label: s.label,
-              color: colour(i, s.color),
+              color: color(i, s.color),
               y: value(s.key),
             }))}
           />
@@ -103,7 +103,7 @@ export function ChartIsland({
               mark: 'line' as const,
               key: s.key,
               label: s.label,
-              color: colour(i, s.color),
+              color: color(i, s.color),
               y: value(s.key),
             }))}
           />

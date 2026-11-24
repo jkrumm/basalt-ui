@@ -258,7 +258,7 @@ export type StatusOptions<O extends string = string, T = unknown> = CommonOption
     tone?: (value: O) => Tone
     /** `'multi'` filters by a checklist of the options; the user can also rank them from the header. */
     filter?: 'multi'
-    /** The toned dot alone, its word for assistive tech and on hover: a column of states read by colour at a glance. */
+    /** The toned dot alone, its word for assistive tech and on hover: a column of states read by color at a glance. */
     lamp?: boolean
   } & AgeOption<T>
 export type DeltaOptions = CommonOptions &

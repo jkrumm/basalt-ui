@@ -53,7 +53,7 @@ function apply(value: Scheme): void {
  * and mirrors the declared cookie. `setScheme()` re-reads storage and applies, overriding any attribute: call it after an
  * async restore (same-tab localStorage writes fire no storage event).
  *
- * @useWhen a control or a command switches the colour scheme, or an async restore must re-apply the stored one
+ * @useWhen a control or a command switches the color scheme, or an async restore must re-apply the stored one
  * @neverWhen the app picks the first scheme at mount (pass `BasaltProvider` `scheme`), or code writes `data-theme` or `basalt:scheme` by hand
  */
 export function setScheme(value?: Scheme, options: { cookie?: string; key?: string } = {}): void {

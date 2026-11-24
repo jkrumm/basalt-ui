@@ -13,8 +13,8 @@ A ranked list on one shared scale: label, a thin bar against the largest value, 
 text and an optional muted second figure (`secondary`: a share, a status word, or the counts a
 stacked row's segments carry, "11 gained, 9 dropped"). Each row is a link, a button or plain text. It holds
 one body height at every phase, scrolls past `bodyRows`, and its loading skeleton draws the rows it
-will become. Colour belongs to a verdict, so a single bar is neutral; a row with `parts` stacks
-them in the colours of `series`, and the name stays on its own line above the bar at every width.
+will become. Color belongs to a verdict, so a single bar is neutral; a row with `parts` stacks
+them in the colors of `series`, and the name stays on its own line above the bar at every width.
 
 ## Signature
 
@@ -34,8 +34,8 @@ BarList<I = unknown>(props: BarListProps<I>): ReactElement
   max?: number  // The scale end every bar fills against
   bodyRows?: number  // The body holds this many rows of height at every phase; more rows scroll
   format?: (value: number) => string  // Formats each value
-  series?: readonly LegendEntry[]  // The series a row's `parts` stack by: their order (first at the bar's start), their colour and a legend row under the header
-  legend?: false  // `false` draws no legend row for `series`: the page's one legend sits elsewhere (a `ChartCard legend` beside it keys the same colours), so the card does not repeat it
+  series?: readonly LegendEntry[]  // The series a row's `parts` stack by: their order (first at the bar's start), their color and a legend row under the header
+  legend?: false  // `false` draws no legend row for `series`: the page's one legend sits elsewhere (a `ChartCard legend` beside it keys the same colors), so the card does not repeat it
   mono?: boolean  // Draw every label in the mono face with tabular figures: ids, hashes, paths
 ```
 

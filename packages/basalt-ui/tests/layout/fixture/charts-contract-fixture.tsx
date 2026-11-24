@@ -49,7 +49,7 @@ function Labels() {
         title="Named senders"
         chart={(box) => (
           <CartesianChart<Sender>
-            ariaLabel="Open rate against mails a week"
+            label="Open rate against mails a week"
             data={senders}
             height={box.height}
             x={{ value: (s) => s.perWeek, domain: [0, 6] }}
@@ -107,7 +107,7 @@ function TimeZone() {
         title="Ride window"
         chart={(box) => (
           <CartesianChart<Hour>
-            ariaLabel="Wind by hour"
+            label="Wind by hour"
             data={hours}
             height={box.height}
             x={{ value: (h) => h.at }}
@@ -137,7 +137,7 @@ function LogZone() {
         title="Mute candidates"
         chart={(box) => (
           <CartesianChart<Sender>
-            ariaLabel="Open rate against mails a week, log"
+            label="Open rate against mails a week, log"
             data={senders}
             height={box.height}
             x={{ value: (s) => s.perWeek, scale: 'log', domain: [1, 100] }}

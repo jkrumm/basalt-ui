@@ -227,7 +227,7 @@ export const raises: Raises = {
       from: 10000,
       to: 10100,
       consumer:
-        'the wizard dialog (Issue 2940): the theme gains the `scrim-wash` colour, four bytes over the old ceiling in every primitive that carries the class merger',
+        'the wizard dialog (Issue 2940): the theme gains the `scrim-wash` color, four bytes over the old ceiling in every primitive that carries the class merger',
       repo: 'basalt-ui',
     },
   ],

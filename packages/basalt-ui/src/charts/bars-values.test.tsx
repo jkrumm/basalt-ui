@@ -131,7 +131,7 @@ describe('value labels', () => {
 })
 
 describe('highlight', () => {
-  test('a highlighted bar draws in the accent, the others in the series colour', () => {
+  test('a highlighted bar draws in the accent, the others in the series color', () => {
     const html = render({ series: [bar({ highlight: (d) => d.k === 'two' })] })
     const fills = [...html.matchAll(/<rect data-ts-key="bars:[^"]*:(\w+)"[^>]*?fill="([^"]*)"/g)]
     const fillOf = (k: string) => fills.find((m) => m[1] === k)?.[2]

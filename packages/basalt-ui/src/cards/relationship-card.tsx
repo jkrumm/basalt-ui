@@ -17,7 +17,7 @@ export type RelationshipFact = {
 
 /** How close the link is: a word in a tone, and the score behind it. */
 export type RelationshipStrength = {
-  /** The word: `Strong`, `Weak`. Colour never carries it alone. */
+  /** The word: `Strong`, `Weak`. Color never carries it alone. */
   label: string
   tone?: Tone
   /** The number behind the word, printed beside it. */

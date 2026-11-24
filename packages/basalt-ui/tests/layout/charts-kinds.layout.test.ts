@@ -2,7 +2,7 @@
  * v3 charts, kinds (docs/v3/concepts/charts-cards-kanban.md section 9): `Lines`, `Bars`,
  * `CartesianChart` and `selection` in real Chrome at 1440, 768, 390 and 320. Asserted here because
  * happy-dom has no geometry: nothing pushes the page sideways, axe finds nothing serious or critical
- * in either colour scheme, every plot has a real box, the opt-in table is out of sight but in the
+ * in either color scheme, every plot has a real box, the opt-in table is out of sight but in the
  * tree, and a click or Enter on a point selects it.
  *
  * The page is self-contained: `fixture/charts-kinds.css` is compiled with the Tailwind CLI into a temp

@@ -61,7 +61,7 @@ function Grid() {
         {focus.readout('15 failures', (d) => `${d.row} ${d.col}h ${d.v}%`)}
       </output>
       <Heatmap
-        ariaLabel="Failures"
+        label="Failures"
         data={CELLS}
         getRow={(d) => d.row}
         getCol={(d) => d.col}
@@ -150,7 +150,7 @@ function Pace3() {
     <div>
       <output data-readout="">{focus.readout('+98 s', (d) => `${d.stage} ${d.behind} s`)}</output>
       <CartesianChart
-        ariaLabel="Pace"
+        label="Pace"
         data={STAGES}
         x={{ value: (d) => d.stage }}
         series={[{ key: 'behind', label: 'Behind', color: COLOR, mark: 'bar', y: (d) => d.behind }]}

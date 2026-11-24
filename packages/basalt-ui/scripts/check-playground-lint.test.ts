@@ -31,7 +31,7 @@ describe('check-playground-lint', () => {
     expect(stdout).toContain('--basalt-warning is not a token. Did you mean --basalt-warn?')
   })
 
-  test('a hex colour in a stylesheet fails the stylelint preset', () => {
+  test('a hex color in a stylesheet fails the stylelint preset', () => {
     const { code, stdout } = run({ 'a.css': '.x { color: #fff; }\n' })
     expect(code).toBe(1)
     expect(stdout).toContain('stylelint/color-no-hex')

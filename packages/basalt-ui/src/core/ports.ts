@@ -59,9 +59,6 @@ export type Delta = {
  */
 export type Verdict = { tone: Tone; label: string }
 
-/** @deprecated Use `Verdict`, which no `ui/*` component shares a name with; removed in the next minor. */
-export type Status = Verdict
-
 export type MeterZone = { to: number; tone: Tone; label: string }
 
 export type MeterSpec = {

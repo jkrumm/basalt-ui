@@ -109,11 +109,8 @@ describe('pre-edit denies what doctor rejects', () => {
     const project = app({})
     expect(preEdit(project, 'src/a.tsx', '/* oxlint-disable */\nexport {}\n').code).toBe(2)
     expect(
-      preEdit(
-        project,
-        'src/a.tsx',
-        '/* oxlint-disable basalt/colour-literal -- why */\nexport {}\n',
-      ).code,
+      preEdit(project, 'src/a.tsx', '/* oxlint-disable basalt/color-literal -- why */\nexport {}\n')
+        .code,
     ).toBe(0)
   })
 

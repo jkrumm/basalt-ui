@@ -17,7 +17,7 @@ for a screen reader; both are the consumer's words.
 
 ```ts
 SiteCallout({ tone, title, toneLabel, children, className, }: SiteCalloutProps): ReactElement
-  tone?: Tone  // The tint and the glyph colour
+  tone?: Tone  // The tint and the glyph color
   title?: string  // The visible headline
   toneLabel?: string  // What the note is, for a screen reader when there is no title ("Warning")
   children: ReactNode

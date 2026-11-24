@@ -23,7 +23,7 @@ What a mark claims is what the data holds: every fill named, every value reachab
 
 - The cells that answer carry their value: `annotate` returns a short mark ("1.2k", "4+") for those and `null` for the rest. The kit drops a note wider than its cell, so a row of bare grey is an `annotate` too wide.
 - At 390 the grid omits cell values, so a value that answers also needs another carrier: the footer names the cell ("Wed 03:00") or a list sits under the grid.
-- The legend says the cap and the unit: `formatLegend` ends the ramp at its cap ("4+"), `legend.label` names the unit and `tooltip.valueLabel` names the measure. Cap the colour `domain` below the extreme and `annotate` the clipped cell with its true value.
+- The legend says the cap and the unit: `formatLegend` ends the ramp at its cap ("4+"), `legend.label` names the unit and `tooltip.valueLabel` names the measure. Cap the color `domain` below the extreme and `annotate` the clipped cell with its true value.
 - A partial cell is a `states` entry returned by `getState`, drawn and legended as its own state.
 - `tickCols` adds the ticks the reader tells time by ("00", "06", "12", "18") to the kit's stride; `formatCol` returning `''` thins a tick.
 - `data` has a stable identity (module scope or memoized): without the React Compiler a focused grid re-renders in a loop.

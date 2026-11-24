@@ -10,7 +10,7 @@ const text = (container: HTMLElement): string | null | undefined =>
 describe('StatCell error title', () => {
   test('the default error names the cell, as a ChartCard names its title', () => {
     const { container } = render(
-      <StatCell label="Wi-Fi signal" phase={{ tag: 'error', retry: () => undefined }} />,
+      <StatCell title="Wi-Fi signal" phase={{ tag: 'error', retry: () => undefined }} />,
     )
     expect(text(container)).toBe('Could not load Wi-Fi signal.')
   })
@@ -18,7 +18,7 @@ describe('StatCell error title', () => {
   test("the page's message is the text, not only a tooltip", () => {
     const { container } = render(
       <StatCell
-        label="Wi-Fi signal"
+        title="Wi-Fi signal"
         phase={{ tag: 'error', message: 'The router did not answer.', retry: () => undefined }}
       />,
     )
@@ -26,23 +26,23 @@ describe('StatCell error title', () => {
   })
 
   test('a blank message and a kind keep their own text', () => {
-    const blank = render(<StatCell label="Recovery" phase={{ tag: 'error', message: '  ' }} />)
+    const blank = render(<StatCell title="Recovery" phase={{ tag: 'error', message: '  ' }} />)
     expect(text(blank.container)).toBe('Could not load recovery.')
     cleanup()
     const forbidden = render(
-      <StatCell label="Recovery" phase={{ tag: 'error', kind: 'forbidden', message: 'No.' }} />,
+      <StatCell title="Recovery" phase={{ tag: 'error', kind: 'forbidden', message: 'No.' }} />,
     )
     expect(text(forbidden.container)).toBe('You do not have access to this.')
   })
 
   test('a lowercased plain label and a kind keep their text', () => {
     const named = render(
-      <StatCell label="Recovery" phase={{ tag: 'error', retry: () => undefined }} />,
+      <StatCell title="Recovery" phase={{ tag: 'error', retry: () => undefined }} />,
     )
     expect(text(named.container)).toBe('Could not load recovery.')
     cleanup()
     const forbidden = render(
-      <StatCell label="Recovery" phase={{ tag: 'error', kind: 'forbidden' }} />,
+      <StatCell title="Recovery" phase={{ tag: 'error', kind: 'forbidden' }} />,
     )
     expect(text(forbidden.container)).toBe('You do not have access to this.')
   })

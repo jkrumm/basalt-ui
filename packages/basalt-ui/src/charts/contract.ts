@@ -10,8 +10,7 @@ import type { KeyboardEvent, PointerEvent, ReactElement } from 'react'
 
 // ---- Frame types ---------------------------------------------------------------------------
 
-// One declaration holds each: `core/phase.ts`, exported from `basalt-ui/cards`. `basalt-ui/charts`
-// keeps deprecated aliases for one minor (`charts/index.ts`).
+// One declaration holds each: `core/phase.ts`, exported from `basalt-ui/cards` alone.
 
 // ---- Series -------------------------------------------------------------------------------
 
@@ -82,7 +81,7 @@ export type Series<D> = SeriesBase<D> &
         valuesAt?: 'end' | 'segment'
         /**
          * The bars that answer the chart's question: drawn in the brand accent instead of the series
-         * colour, in the plot and the tooltip, and their value labels drop last. One series stays one
+         * color, in the plot and the tooltip, and their value labels drop last. One series stays one
          * legend entry.
          */
         highlight?: (d: D) => boolean
@@ -321,16 +320,8 @@ export type CustomMarks<D> = {
   readonly build: (plot: ChartPlot<D>) => readonly unknown[]
 }
 
-/**
- * The accessible name of a chart, required: `label`. `ariaLabel` is the deprecated name for one minor;
- * a chart takes exactly one of the two.
- */
-export type ChartName =
-  | { label: string; ariaLabel?: undefined }
-  | {
-      /** @deprecated Use `label`; removed in the next minor. */ ariaLabel: string
-      label?: undefined
-    }
+/** The accessible name of a chart, required: `label`. */
+export type ChartName = { label: string }
 
 export type CartesianChartBase<D> = {
   data: readonly D[]
@@ -365,7 +356,7 @@ export type SparkPoint =
   | { value: number | null; at?: Date | number | undefined; label?: string | undefined }
 
 export type SparklineBase = {
-  series: readonly SparkPoint[]
+  points: readonly SparkPoint[]
   height: number | 'fill'
   width?: number
   form?: 'line' | 'area'

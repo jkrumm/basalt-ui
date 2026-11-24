@@ -14,12 +14,12 @@ function Fixture(): ReactElement {
       <div data-testid="ex-strip">
         <StatGroup variant="strip" label="Headline figures">
           <StatCell
-            label="Due now"
+            title="Due now"
             value={null}
             phase="ready"
             empty={{ cause: 'Nothing is waiting. Add one to start.' }}
           />
-          <StatCell label="Last session" value={3} unit="days ago" phase="ready" />
+          <StatCell title="Last session" value={3} unit="days ago" phase="ready" />
         </StatGroup>
       </div>
     </main>

@@ -182,7 +182,7 @@ export const BASALT = {
   hover: 'var(--basalt-hover)',
   selected: 'var(--basalt-selected)',
   hairline: 'var(--basalt-hairline)',
-  // The page-coloured surface a mark sits on: a dot's ring, a halo.
+  // The page-colored surface a mark sits on: a dot's ring, a halo.
   surface: 'var(--basalt-surface)',
 
   // Ink ramp — primary, secondary, quietest body text.

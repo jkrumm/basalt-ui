@@ -14,7 +14,7 @@ export const rows: readonly RowDef[] = [
     id: 'page-symbols',
     order: 440,
     label: 'public value symbols, ./page (exact, export-surface shard)',
-    ceiling: 28, // Issue 3106 (shell nav): `FavouriteToggle`, `useFavourite`; Issue 2995 (settings grammar): `SettingsLayout`; v3 dock: `Dock`; v3 peek: `Peek`; Issue 3087: `PropertyList`
+    ceiling: 28, // Issue 3106 (shell nav): `FavoriteToggle`, `useFavorite`; Issue 2995 (settings grammar): `SettingsLayout`; v3 dock: `Dock`; v3 peek: `Peek`; Issue 3087: `PropertyList`
     measure: () => readSurface()['./page']?.length ?? 0,
   },
   {
@@ -36,7 +36,7 @@ export const rows: readonly RowDef[] = [
     // width stores and the phone's bottom sheet.
     // 125700 -> 129000 (Issue 2938): 128756 B measured; the PageBar view row: the search box (`ui/input`), counted pill tabs, the layout toggle and the settings button.
     // 129000 -> 132000 (Issue 3087): 131625 B measured; PageBar draws a record identity (`EntityTitle`, `Avatar`) and `PropertyList` edits a row in place (`Input`, `NativeSelect`).
-    // 132000 -> 137000 (Issue 3106): 136381 B measured; the favourite star, its context and default store, and the star on the page bar and the panel header.
+    // 132000 -> 137000 (Issue 3106): 136381 B measured; the favorite star, its context and default store, and the star on the page bar and the panel header.
     // 137000 -> 140500 (Issue 3206): 140222 B measured; the Sheet behind Peek and the aside carries Base UI's VirtualKeyboardProvider, a grabber and snap points.
     ceiling: 140500,
     measure: () => measureSource(reExportAll({ page: 'page/index' })),
@@ -56,7 +56,7 @@ export const raises: Raises = {
       from: 132000,
       to: 137000,
       consumer:
-        "the benchmark against Accordee (owner direction 2026-11-21, docs/v3/issues/bench/README.md, plan row bench-shell-nav, Issue 3106): a workspace switcher in the brand zone, a Favourites rail section the reader fills from a record's star and reorders (SortableList), and a rail the reader resizes",
+        "the benchmark against Accordee (owner direction 2026-11-21, docs/v3/issues/bench/README.md, plan row bench-shell-nav, Issue 3106): a workspace switcher in the brand zone, a Favorites rail section the reader fills from a record's star and reorders (SortableList), and a rail the reader resizes",
       repo: 'basalt-ui',
     },
     {
@@ -141,7 +141,7 @@ export const raises: Raises = {
     {
       from: 26,
       to: 28,
-      consumer: 'the playground supplier page and peek layer draw the favourite star (Issue 3106)',
+      consumer: 'the playground supplier page and peek layer draw the favorite star (Issue 3106)',
       repo: 'basalt-ui',
     },
     {

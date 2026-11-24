@@ -21,7 +21,7 @@ test('a partial prefix highlighted first does not change the final highlight', a
   await highlight('const x: n', 'ts')
   const final = await highlight(CODE, 'ts')
   expect(final).toBe(await highlight(CODE, 'ts'))
-  // `:` and `=` are keyword-coloured in github-light-default, not the variable blue
+  // `:` and `=` are keyword-colored in github-light-default, not the variable blue
   expect(final).toMatch(/--shiki-light:#CF222E;--shiki-dark:#F97583">:</)
 })
 

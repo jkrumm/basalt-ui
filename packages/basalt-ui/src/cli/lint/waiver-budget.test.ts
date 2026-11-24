@@ -79,7 +79,7 @@ describe('the waiver budget in an app', () => {
   it('passes a first reasoned waiver and records its count', async () => {
     const dir = app({
       'src/brand.ts':
-        "// oxlint-disable-next-line basalt/colour-literal -- the brand mark keeps its print hex\nexport const BRAND_MARK = '#ff0000'\n",
+        "// oxlint-disable-next-line basalt/color-literal -- the brand mark keeps its print hex\nexport const BRAND_MARK = '#ff0000'\n",
     })
     const first = await lint(dir)
     expect(first.code, first.log).toBe(0)
@@ -93,7 +93,7 @@ describe('the waiver budget in an app', () => {
   it('fails an unreasoned waiver', async () => {
     const dir = app({
       'src/bare.ts':
-        "// oxlint-disable-next-line basalt/colour-literal\nexport const BARE = '#00ff00'\n",
+        "// oxlint-disable-next-line basalt/color-literal\nexport const BARE = '#00ff00'\n",
     })
     const out = await lint(dir)
     expect(out.code).toBe(1)

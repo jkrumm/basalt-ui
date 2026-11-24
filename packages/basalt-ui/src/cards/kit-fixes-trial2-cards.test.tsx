@@ -28,7 +28,7 @@ describe('StatCell empty with a query', () => {
 
   test('rows loaded: the figure shows and the empty text does not', () => {
     const { container } = render(
-      <StatCell label="Readings" value={42} phase={settled([1, 2, 3])} empty={empty} />,
+      <StatCell title="Readings" value={42} phase={settled([1, 2, 3])} empty={empty} />,
     )
     expect(phaseOf(container)).toBe('ready')
     expect(container.textContent).toContain('42')
@@ -37,7 +37,7 @@ describe('StatCell empty with a query', () => {
 
   test('an empty array: the cause shows', () => {
     const { container } = render(
-      <StatCell label="Readings" value={42} phase={settled([])} empty={empty} />,
+      <StatCell title="Readings" value={42} phase={settled([])} empty={empty} />,
     )
     expect(phaseOf(container)).toBe('empty')
     expect(container.textContent).toContain('No readings yet')
@@ -45,15 +45,15 @@ describe('StatCell empty with a query', () => {
 
   test('an object result: `when` reads the settled data', () => {
     const none = { cause: 'No readings yet', when: (d: unknown) => (d as { n: number }).n === 0 }
-    const full = render(<StatCell label="R" value={1} phase={settled({ n: 3 })} empty={none} />)
+    const full = render(<StatCell title="R" value={1} phase={settled({ n: 3 })} empty={none} />)
     expect(phaseOf(full.container)).toBe('ready')
     cleanup()
-    const zero = render(<StatCell label="R" value={1} phase={settled({ n: 0 })} empty={none} />)
+    const zero = render(<StatCell title="R" value={1} phase={settled({ n: 0 })} empty={none} />)
     expect(phaseOf(zero.container)).toBe('empty')
   })
 
   test('a Phase keeps its rule: empty applies whenever it is set', () => {
-    const { container } = render(<StatCell label="R" value={1} phase="ready" empty={empty} />)
+    const { container } = render(<StatCell title="R" value={1} phase="ready" empty={empty} />)
     expect(phaseOf(container)).toBe('empty')
   })
 })
@@ -65,7 +65,7 @@ describe('StatCell meter', () => {
   test('takes the cell unit and as many digits as the figure shows', () => {
     const { container } = render(
       <StatCell
-        label="Win rate"
+        title="Win rate"
         value={92.5}
         unit="%"
         meter={{ label: 'Win rate', value: 92.52912, max: 100 }}
@@ -78,7 +78,7 @@ describe('StatCell meter', () => {
   test('a meter with its own format keeps it', () => {
     const { container } = render(
       <StatCell
-        label="Win rate"
+        title="Win rate"
         value={92.5}
         unit="%"
         meter={{ label: 'Win rate', value: 92.52912, max: 100, format: (v) => `~${Math.round(v)}` }}
@@ -89,7 +89,7 @@ describe('StatCell meter', () => {
 
   test('a figure that is no number never prints more than two digits', () => {
     const { container } = render(
-      <StatCell label="Sleep" value="7h 20m" meter={{ label: 'Sleep', value: 0.123456, max: 1 }} />,
+      <StatCell title="Sleep" value="7h 20m" meter={{ label: 'Sleep', value: 0.123456, max: 1 }} />,
     )
     expect(readout(container)).toContain('0.12')
     expect(readout(container)).not.toContain('0.123')
@@ -99,7 +99,7 @@ describe('StatCell meter', () => {
 describe('StatCell rows', () => {
   test('a mapped readonly array of rows draws, at most four', () => {
     const rows: readonly StatRow[] = ['a', 'b', 'c', 'd', 'e'].map((label) => ({ label, value: 1 }))
-    const { container } = render(<StatCell label="Sleep" value={1} rows={rows} />)
+    const { container } = render(<StatCell title="Sleep" value={1} rows={rows} />)
     expect(container.querySelectorAll('[data-slot="stat-row"]').length).toBe(4)
   })
 })
@@ -117,7 +117,7 @@ describe('StatGroup error', () => {
         {LABELS.map((label, i) => (
           <StatCell
             key={label}
-            label={label}
+            title={label}
             value={1}
             phase={failed(`TypeError: raw ${i}`, refetch)}
           />
@@ -136,8 +136,8 @@ describe('StatGroup error', () => {
   test('a failed cell beside a ready one names itself, never the raw error', () => {
     const { container } = render(
       <StatGroup variant="strip" label="Link health">
-        <StatCell label="Downstream" value={1} phase={failed('TypeError: raw', () => undefined)} />
-        <StatCell label="Upstream" value={44} />
+        <StatCell title="Downstream" value={1} phase={failed('TypeError: raw', () => undefined)} />
+        <StatCell title="Upstream" value={44} />
       </StatGroup>,
     )
     expect(container.textContent).toContain('Could not load downstream.')

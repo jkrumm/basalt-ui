@@ -6,7 +6,7 @@ import type { Delta } from '../core/ports'
 
 /**
  * The `Lozenge` cva table: a tinted word chip. `tone` is the closed verdict vocabulary; the tint is
- * the tone's own colour at the theme's tint percentage, so text contrast is the token gate's.
+ * the tone's own color at the theme's tint percentage, so text contrast is the token gate's.
  *
  * @example
  * lozengeVariants({ tone: 'good' }) // class string for a non-`Lozenge` element
@@ -80,7 +80,7 @@ type BadgeProps<E extends 'span'> = Omit<ComponentProps<E>, 'className' | 'child
 
 export type LozengeProps = BadgeProps<'span'> &
   VariantProps<typeof lozengeVariants> & {
-    /** The word. A lozenge never carries colour alone. */
+    /** The word. A lozenge never carries color alone. */
     children: string
   }
 
@@ -88,7 +88,7 @@ export type LozengeProps = BadgeProps<'span'> &
  * A tinted word chip for a state: `Draft`, `Overdue`.
  *
  * @useWhen a state, a count or a change needs a small chip beside a label: `Lozenge` for a word, `CountBadge` for a number, `DeltaBadge` for a change against a period
- * @neverWhen the verdict is a dot and a word on one entity (use Status), or the chip would carry colour alone
+ * @neverWhen the verdict is a dot and a word on one entity (use Status), or the chip would carry color alone
  *
  * @example
  * <Lozenge tone="warn">Overdue</Lozenge>
@@ -181,7 +181,7 @@ export type DeltaBadgeProps = Omit<BadgeProps<'span'>, 'children'> & {
 
 /**
  * A change against a period. The arrow is the direction, the tint is the verdict; a zero change is
- * a neutral chip with a minus glyph, a `neutral` polarity never takes a verdict colour, and a string
+ * a neutral chip with a minus glyph, a `neutral` polarity never takes a verdict color, and a string
  * with no sign (`2 of 3 scheduled`, `53 % of all`) is a neutral chip with no arrow.
  *
  * @example

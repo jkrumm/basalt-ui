@@ -122,14 +122,14 @@ const articleProgressRules =
   '  @keyframes basalt-article-progress {\n    to {\n      transform: scaleX(1);\n    }\n  }\n'
 
 /**
- * Tailwind 4 draws a border with no colour utility in currentColor, so a page's bare `border-b`,
+ * Tailwind 4 draws a border with no color utility in currentColor, so a page's bare `border-b`,
  * `divide-y` or `border` painted full ink while every kit part (which names `border-border`) drew
  * the hairline. The default is the hairline token, in the `basalt` layer: after preflight, before
- * every utility, so a named colour and a kit part still win. `outline` and `ring` stay currentColor
+ * every utility, so a named color and a kit part still win. `outline` and `ring` stay currentColor
  * on purpose: they mark focus, where ink is the safe default (`focus-ring` names brand itself).
  */
 const borderRules =
-  '  /* A border with no colour utility is the hairline, not ink (Tailwind 4 defaults to currentColor). */\n' +
+  '  /* A border with no color utility is the hairline, not ink (Tailwind 4 defaults to currentColor). */\n' +
   '  *,\n  ::after,\n  ::before,\n  ::backdrop,\n  ::file-selector-button {\n    border-color: var(--basalt-hairline);\n  }\n'
 
 /**
@@ -156,7 +156,7 @@ function tailwindCss(variant: 'app' | 'static' = 'app'): string {
       : "@import './prose.css';\n@import './touch.css' layer(basalt);\n" +
         STATIC_SOURCES.map((s) => `@source '${s}';\n`).join('')
   const entries = bridgeEntries()
-  const colours = entries.filter((e) => e.tw.startsWith('--color-'))
+  const colors = entries.filter((e) => e.tw.startsWith('--color-'))
   const others = entries.filter((e) => !e.tw.startsWith('--color-'))
 
   const utilities = [
@@ -211,7 +211,7 @@ function tailwindCss(variant: 'app' | 'static' = 'app'): string {
     ) +
     block(
       '@theme inline',
-      colours.map((e) => `${e.tw}: ${e.value}`),
+      colors.map((e) => `${e.tw}: ${e.value}`),
     ) +
     block('@theme', [
       '--spacing: 0.25rem',

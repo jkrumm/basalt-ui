@@ -159,7 +159,7 @@
   text-underline-offset: 2px;
 }
 @layer basalt {
-  /* A border with no colour utility is the hairline, not ink (Tailwind 4 defaults to currentColor). */
+  /* A border with no color utility is the hairline, not ink (Tailwind 4 defaults to currentColor). */
   *,
   ::after,
   ::before,

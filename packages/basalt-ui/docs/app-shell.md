@@ -28,7 +28,7 @@ shows its nav label, and a path no route matches shows `Not found`, in the crumb
 ## Signature
 
 ```ts
-AppShell<N extends DefinedNav>({ nav, brand, badges, blocks, globalControls, globalActions, settings, account, search, workspace, favourites, storageKey, compactHeader, chrome, frame, children, }: AppShellProps<N>): ReactElement
+AppShell<N extends DefinedNav>({ nav, brand, badges, blocks, globalControls, globalActions, settings, account, search, workspace, favorites, storageKey, compactHeader, chrome, frame, children, }: AppShellProps<N>): ReactElement
   nav: N
   brand: ShellBrand
   badges?: NoInfer<Partial<Record<Extract<keyof NavIndex<N>, string>, NavBadge>>>
@@ -39,7 +39,7 @@ AppShell<N extends DefinedNav>({ nav, brand, badges, blocks, globalControls, glo
   account?: Account
   search?: { onOpen: () => void; }
   workspace?: WorkspaceSwitcher  // A workspace switcher in the brand zone; on a phone its options are rows of the More surface
-  favourites?: FavouritesStore  // Where the rail's Favourites section keeps its entries
+  favorites?: FavoritesStore  // Where the rail's Favorites section keeps its entries
   storageKey?: string  // The key the rail's collapse is stored under; the width the reader dragged it to lives beside it under `<storageKey>-width`
   chrome?: ShellChrome
   frame?: ShellFrame  // Default `panel`
@@ -47,7 +47,7 @@ AppShell<N extends DefinedNav>({ nav, brand, badges, blocks, globalControls, glo
   children?: ReactNode
 ```
 
-`FavouritesStore` import from `basalt-ui/page`: `import type { FavouritesStore } from 'basalt-ui/page'`.
+`FavoritesStore` import from `basalt-ui/page`: `import type { FavoritesStore } from 'basalt-ui/page'`.
 
 `NavBadge` import from `basalt-ui/router`: `import type { NavBadge } from 'basalt-ui/router'`.
 

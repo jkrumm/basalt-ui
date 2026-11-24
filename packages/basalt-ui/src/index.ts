@@ -52,25 +52,6 @@ export type {
   RecordSequence,
 } from './core/ports'
 
-// The frame's value types live on `basalt-ui/cards` and `ControlHandle` on `basalt-ui/router`; these five stay one minor as aliases of the
-// same types (migration rows `cards-frame-types-*` and `router-control-handle`).
-import type { Empty as CardsEmpty, FrameState as CardsFrameState } from './core/phase'
-import type {
-  ControlHandle as RouterControlHandle,
-  Phase as CardsPhase,
-  QueryStateLike as CardsQueryStateLike,
-} from './core/ports'
-
-/** @deprecated Import `ControlHandle` from `basalt-ui/router`; this alias is removed in the next minor. */
-export type ControlHandle<T> = RouterControlHandle<T>
-/** @deprecated Import `Phase` from `basalt-ui/cards`; this alias is removed in the next minor. */
-export type Phase = CardsPhase
-/** @deprecated Import `QueryStateLike` from `basalt-ui/cards`; this alias is removed in the next minor. */
-export type QueryStateLike = CardsQueryStateLike
-/** @deprecated Import `Empty` from `basalt-ui/cards`; this alias is removed in the next minor. */
-export type Empty = CardsEmpty
-/** @deprecated Import `FrameState` from `basalt-ui/cards`; this alias is removed in the next minor. */
-export type FrameState = CardsFrameState
 export type {
   Channel,
   ChannelOptions,

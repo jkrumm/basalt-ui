@@ -40,13 +40,7 @@ describe('summary', () => {
   })
   test('a given summary wins and renders hidden but in the tree', () => {
     const html = renderToString(
-      <CartesianChart
-        ariaLabel="V"
-        data={rowsOf(4)}
-        x={x}
-        series={[v]}
-        summary="Rising all week"
-      />,
+      <CartesianChart label="V" data={rowsOf(4)} x={x} series={[v]} summary="Rising all week" />,
     )
     expect(html).toContain('Rising all week')
     expect(html).toContain('data-basalt-chart-summary')
@@ -57,7 +51,7 @@ describe('table opt-in', () => {
   const tableOf = (n: number, table?: boolean): string =>
     renderToString(
       <CartesianChart
-        ariaLabel="V"
+        label="V"
         data={rowsOf(n)}
         x={x}
         series={[v]}
@@ -107,7 +101,7 @@ describe('selection', () => {
     let called = 0
     const html = renderToString(
       <CartesianChart
-        ariaLabel="V"
+        label="V"
         data={data}
         x={x}
         series={[v]}
@@ -129,7 +123,7 @@ describe('marks', () => {
     let seen: { rows: number; height: number; keys: string[] } | undefined
     renderToString(
       <CartesianChart
-        ariaLabel="V"
+        label="V"
         data={rowsOf(5)}
         x={x}
         series={[v]}
@@ -152,7 +146,7 @@ describe('marks', () => {
     const centres = (spread?: 'x'): string[] => {
       const html = renderToString(
         <CartesianChart
-          ariaLabel="V"
+          label="V"
           data={[...same, { t: Date.UTC(2026, 8, 30), v: 1 }]}
           x={x}
           y={{ domain: [0, 10] }}
@@ -188,7 +182,7 @@ describe('marks', () => {
       | undefined
     renderToString(
       <CartesianChart
-        ariaLabel="V"
+        label="V"
         data={rowsOf(5)}
         x={x}
         y={{ domain: [0, 10] }}
@@ -217,7 +211,7 @@ describe('marks', () => {
 
   test('an x zone is an x range with a y bound; a y zone stays a y band', () => {
     const spec = toEngineSpec({
-      ariaLabel: 'V',
+      label: 'V',
       data: rowsOf(3),
       x,
       series: [v],
@@ -252,7 +246,7 @@ describe('marks', () => {
     const first = rowsOf(5)[0]?.t ?? 0
     host.innerHTML = renderToString(
       <CartesianChart
-        ariaLabel="V"
+        label="V"
         data={rowsOf(5)}
         x={x}
         series={[v]}
@@ -276,7 +270,7 @@ describe('marks', () => {
     const host = document.createElement('div')
     host.innerHTML = renderToString(
       <CartesianChart
-        ariaLabel="V"
+        label="V"
         data={rowsOf(5)}
         x={x}
         series={[{ mark: 'dot', key: 'd', label: 'Dots', color: pair('accent'), y: (d) => d.v }]}
@@ -295,9 +289,9 @@ describe('legend naming', () => {
     y: (d) => d.v,
   }
   const hideWide = (series: Series<Row>[]): boolean =>
-    renderToString(
-      <CartesianChart ariaLabel="V" data={rowsOf(4)} x={x} series={series} />,
-    ).includes('data-hide-wide')
+    renderToString(<CartesianChart label="V" data={rowsOf(4)} x={x} series={series} />).includes(
+      'data-hide-wide',
+    )
 
   test('lines alone hand the legend to end labels at the wide class', () => {
     expect(hideWide([v, { ...v, key: 'w', label: 'Other' }])).toBe(true)
@@ -310,14 +304,14 @@ describe('legend naming', () => {
 describe('seams', () => {
   const props = { data: rowsOf(3), x, series: [v] }
   test('the registry is identity until charts-2b fills it', () => {
-    const spec = toEngineSpec({ ariaLabel: 'V', ...props })
+    const spec = toEngineSpec({ label: 'V', ...props })
     expect(applySeams(spec, props)).toBe(spec)
   })
   test('registered seams run in order and see the v3 props', () => {
     const tag =
       (name: string): Seam =>
       (spec) => ({ ...spec, cursorGroup: `${spec.cursorGroup ?? ''}${name}` })
-    const spec = toEngineSpec({ ariaLabel: 'V', ...props })
+    const spec = toEngineSpec({ label: 'V', ...props })
     expect(applySeams(spec, props, [tag('a'), tag('b')]).cursorGroup).toBe('ab')
   })
 })

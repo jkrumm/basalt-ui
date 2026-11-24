@@ -121,7 +121,7 @@ describe('segmented module', () => {
     expect(getByText('Locked').hasAttribute('data-disabled')).toBe(true)
   })
 
-  test('the pressed option keeps a frame under forced colours, where the shadow is dropped', () => {
+  test('the pressed option keeps a frame under forced colors, where the shadow is dropped', () => {
     const html = renderToString(
       <Segmented aria-label="Range" options={OPTIONS} defaultValue="week" />,
     )

@@ -7,7 +7,7 @@
 
 ## Identity
 
-{{APP_NAME}} inherits the basalt-ui identity. Every colour is derived by `basalt-ui tokens:css` from
+{{APP_NAME}} inherits the basalt-ui identity. Every color is derived by `basalt-ui tokens:css` from
 the flags recorded in `.basalt/manifest.json`, so this region names no value. Silence means "the defaults, unchanged".
 
 - **Accent hue:** {{ACCENT_HUE}} (one accent, spent where a decision turns on it)
@@ -20,7 +20,7 @@ _A person writes this: what the app is for, who reads it, the tone it keeps. Age
 
 ## Series
 
-The colour of a metric is authored once, as a `{ light, dark }` pair under `series.<group>.<key>` in
+The color of a metric is authored once, as a `{ light, dark }` pair under `series.<group>.<key>` in
 {{SERIES_MODULE_PATH}}; a chart takes the pair, an HTML mark `groupTokens('<group>', …)`'s variable. A
 series earns a hue for a trend, a status or a split a reader must tell apart; the rest stay neutral.
 

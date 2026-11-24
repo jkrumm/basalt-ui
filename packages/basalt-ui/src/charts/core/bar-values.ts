@@ -308,7 +308,7 @@ function slotPx<T, X extends ChartX>(input: BarValuesInput<T, X>): number {
 /**
  * The value labels as text marks and the boxes they took, in plot px, for the marks a page draws
  * later to keep clear of. Outside the bar's end first; a label that finds no room there stands
- * inside the bar's end, in the card's own colour, when it fits the bar; else it is dropped.
+ * inside the bar's end, in the card's own color, when it fits the bar; else it is dropped.
  */
 function endValueLabels<T, X extends ChartX>(
   given: BarValuesInput<T, X>,
@@ -664,7 +664,7 @@ function endValueLabels<T, X extends ChartX>(
       (p) => [p.key, (found[Number(p.key)] as Candidate<X>).onBar] as const,
     ),
   ])
-  // A label a rule or a line piece still crosses (every clear spot was taken) sits on a card-coloured
+  // A label a rule or a line piece still crosses (every clear spot was taken) sits on a card-colored
   // backing: the rule gives way to the number. A label on a bar's body keeps the bar behind it; one on a
   // bar too short to carry it (a zero) is read against the card, in the card's muted ink.
   const backed = new Set(

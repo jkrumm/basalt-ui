@@ -53,7 +53,7 @@ function Fixture() {
       <section className={BOX} data-testid="ck-lines">
         <h2 className="text-sm">Lines</h2>
         <Lines
-          ariaLabel="Requests and errors per day"
+          label="Requests and errors per day"
           data={rows}
           x={x}
           series={[lineA, lineB]}
@@ -62,12 +62,12 @@ function Fixture() {
       </section>
       <section className={BOX} data-testid="ck-bars">
         <h2 className="text-sm">Bars</h2>
-        <Bars ariaLabel="Requests and errors, stacked" data={rows} x={x} series={[barA, barB]} />
+        <Bars label="Requests and errors, stacked" data={rows} x={x} series={[barA, barB]} />
       </section>
       <section className={BOX} data-testid="ck-mixed">
         <h2 className="text-sm">Mixed</h2>
         <CartesianChart
-          ariaLabel="Requests as bars, errors as a line, spikes as dots"
+          label="Requests as bars, errors as a line, spikes as dots"
           data={rows}
           x={x}
           series={[
@@ -86,7 +86,7 @@ function Fixture() {
       <section className={BOX} data-testid="ck-select">
         <h2 className="text-sm">Selection</h2>
         <Lines
-          ariaLabel="Requests per day, selectable"
+          label="Requests per day, selectable"
           data={rows}
           x={x}
           series={[lineA]}
