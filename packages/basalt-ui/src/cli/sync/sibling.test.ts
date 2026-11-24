@@ -264,6 +264,16 @@ describe('init --profile app in a declared sibling', () => {
     expect(snapshot(dir)).toEqual(first)
   })
 
+  it('claims the dirname prefix on a fresh clone, where no root sync has placed a basalt-v3-* file', async () => {
+    const dir = repo()
+    await appInit(dir, 'apps/x-v3')
+    rmSync(join(dir, '.claude'), { recursive: true, force: true })
+    addSibling(dir, 'y-v3')
+    expect((await appInit(dir, 'apps/y-v3')).code).toBe(0)
+    const parsed = parseManifest(readFileSync(join(dir, 'apps/y-v3/.basalt/manifest.json'), 'utf8'))
+    expect('manifest' in parsed && parsed.manifest.sibling).toBe('basalt-v3-y-v3-')
+  })
+
   it('gives a second sibling basalt-v3-<dirname>-* names and overwrites neither app', async () => {
     const dir = repo()
     await rootSync(dir, false)

@@ -4,10 +4,10 @@
  * a root session sees it: rules and skills under a `basalt-v3-` name so the root install's own
  * `basalt-*` files are never touched. A ledger path starting `repo:` is relative to the repo root.
  */
-import { existsSync, readdirSync } from 'node:fs'
 import { basename, relative, resolve } from 'node:path'
 
-import { findRepoRoot } from '../index'
+import { collectWorkspacePackages, findRepoRoot } from '../index'
+import { readManifest } from '../manifest'
 import type { Manifest } from '../manifest'
 import { isSiblingApp } from '../resolver'
 
@@ -33,18 +33,17 @@ export function siblingOf(root: string, manifest: Manifest): Sibling | null {
   }
 }
 
-const holdsPrefixed = (repoRoot: string): boolean =>
-  ['rules', 'skills'].some((dir) => {
-    const at = resolve(repoRoot, '.claude', dir)
-    return existsSync(at) && readdirSync(at).some((name) => name.startsWith(SIBLING_PREFIX))
-  })
-
 /**
- * The prefix a first `init` claims: the plain one, or the directory-named one when the repo already
- * holds another sibling's `basalt-v3-*` files. Recorded in the manifest, so a later run keeps it.
+ * The prefix a first `init` claims: the plain one, or the directory-named one when another sibling
+ * in the repo already records the plain one. Read from the siblings' tracked manifests, never from
+ * the placed `basalt-v3-*` files: those are gitignored, so a fresh clone does not have them.
  */
 export function claimPrefix(root: string): string {
-  return holdsPrefixed(findRepoRoot(root)) ? `${SIBLING_PREFIX}${basename(root)}-` : SIBLING_PREFIX
+  const taken = collectWorkspacePackages(findRepoRoot(root)).packages.some(({ dir }) => {
+    const read = readManifest(dir)
+    return read !== null && 'manifest' in read && read.manifest.sibling === SIBLING_PREFIX
+  })
+  return taken ? `${SIBLING_PREFIX}${basename(root)}-` : SIBLING_PREFIX
 }
 
 /** `basalt-<name>` -> `<prefix><name>`. */
