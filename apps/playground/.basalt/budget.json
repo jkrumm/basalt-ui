@@ -5,12 +5,5 @@
   "waivers": 4,
   "escapes": 3,
   "profileFloor": "app",
-  "raises": [
-    {
-      "field": "waivers",
-      "from": 0,
-      "to": 64,
-      "consumer": "basalt-ui playground: the expression-trial scenarios, kept as their builders left them"
-    }
-  ]
+  "raises": []
 }

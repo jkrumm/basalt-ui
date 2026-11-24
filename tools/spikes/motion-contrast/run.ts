@@ -436,7 +436,9 @@ async function runQ8() {
         })
         try {
           await quality.setScheme(page, cell.scheme)
-          await page.goto((cell.pseudo ? harness.pseudoOrigin : harness.origin) + route)
+          await page.goto(
+            (cell.pseudo ? harness.pseudoOrigin : harness.origin)('playground') + route,
+          )
           await page.waitForSelector('[data-slot], main', { timeout: 15_000 })
           await page.evaluate(async () => {
             await Promise.all(document.getAnimations().map((a) => a.finished.catch(() => null)))
