@@ -125,13 +125,13 @@ type Series<D> = SeriesBase<D> & Y<D> & ({ mark: 'line'; curve?: CurveName; dash
   | { mark: 'bar'; stack?: string; opacity?: (d: D) => number } | { mark: 'dot'; r?: (d: D) => number })
 type LegendEntry = { key: string; label: string; color: SeriesColor; swatch?: 'solid' | 'dashed'; failed?: boolean }   // no fake series for legends
 
-type CartesianChartProps<D> = { data: readonly D[]; x: XConfig<D>; y?: YConfig; series: readonly Series<D>[]; ariaLabel: string; summary?: string; table?: boolean
+type CartesianChartProps<D> = { data: readonly D[]; x: XConfig<D>; y?: YConfig; series: readonly Series<D>[]; label: string; summary?: string; table?: boolean
   height?: number | 'fill'; phase?: Phase | QueryStateLike; tooltip?: ChartTooltipConfig<D> | false; zones?: ...; refLines?: ...; cursor?: string; selection?: ChartSelection<D>; marks?: CustomMarks<D> }
 // CartesianChart.custom((plot) => marks[]) is the only way to build CustomMarks; lint --stats counts it.
 // y: { domain?: [number, number] | { floor?: number; ceil?: number; pad?: number } | ((v: Extent) => Extent); gutter?: number }
 
 type SparkPoint = number | null | { at: Date | number; value: number | null }
-type SparklineProps = { series: readonly SparkPoint[]; ariaLabel: string; height: number | 'fill'; width?: number; form?: 'line' | 'area'
+type SparklineProps = { points: readonly SparkPoint[]; label: string; height: number | 'fill'; width?: number; form?: 'line' | 'area'
   reference?: number | 'mean' | { min: number; max: number }; axisLabels?: readonly [string, string, string]; format?: (v: number) => string; summary?: string }
 type MiniBarsProps = Omit<SparklineProps, 'form' | 'reference'> & { highlight?: number | 'last' }
 
@@ -153,7 +153,7 @@ type ChartCardProps = FrameState & { figure?: ChartFigure; footer?: FootFacts; c
 <StatCard icon={GitMerge} title="Shipped" subtitle="vs last week, all projects" info="Merged PRs." value={388} phase={query} empty={query.data?.length ? null : { cause: 'No merges yet' }}
   delta={{ value: 378, polarity: 'up-good' }} sub="Most since March" href="/flow?state=done"
   controls={filterSlot([spec(flow.widget.shipped.range, 'Range')])}   // bound: the same handle, the widget inherits globals.field.range
-  chart={(box) => <MiniBars series={perDay} height={box.height} axisLabels={['Mon', 'Today', 'Sun']} ariaLabel="Shipped per day" />}
+  chart={(box) => <MiniBars points={perDay} height={box.height} axisLabels={['Mon', 'Today', 'Sun']} label="Shipped per day" />}
   footer={[{ label: 'Open', value: 12 }, { label: 'Merged', value: 4 }]} />
 
 <KanbanCard id={i.id} title={i.title} href={`/issues/${i.id}`} age="2 h" chips={chipsOf(i)}
