@@ -82,7 +82,6 @@ export const BASALT_NAMES: readonly string[] = [
   '--basalt-ink-muted',
   '--basalt-ink2',
   '--basalt-input',
-  '--basalt-input-fz-floor',
   '--basalt-inset',
   '--basalt-legend-text',
   '--basalt-line',

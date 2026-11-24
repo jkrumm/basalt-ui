@@ -110,7 +110,8 @@ export const rows: readonly RowDef[] = [
     // 1539 B measured (zlib default level), +5 percent rounded up; 1876 with the motion scale (1786 B, raise row below);
     // 1877 with the card ring in both schemes (1787 B, Issue 2851).
     // 1892 with `--basalt-scrim-wash` in both schemes (1801 B, Issue 2940).
-    ceiling: 1892,
+    // 1902 with the control height on a coarse pointer at every density (1811 B, Issue 3206).
+    ceiling: 1902,
     measure: () => gzipFileBytes(join(CSS_DIR, 'tokens.css')),
   },
   {
@@ -190,6 +191,13 @@ export const rows: readonly RowDef[] = [
 
 export const raises: Raises = {
   'tokens-css-gzip': [
+    {
+      from: 1892,
+      to: 1902,
+      consumer:
+        'the mobile foundation (owner direction 2026-11-24, Issue 3206): the control height token rises to 44 px on a coarse pointer at every density, so a component keeps no patch of its own',
+      repo: 'basalt-ui',
+    },
     {
       from: 1877,
       to: 1892,

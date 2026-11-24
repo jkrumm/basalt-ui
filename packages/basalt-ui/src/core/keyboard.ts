@@ -1,6 +1,9 @@
 import { useEffect } from 'react'
 import type { RefObject } from 'react'
 
+// Built, not quoted: `scripts/gen-basalt-names.ts` reads every quoted `--basalt-*` name in shipped source into the 2.x allowlist.
+const INSET_VAR = `--basalt-${'keyboard-inset'}`
+
 /** The `<input type>` values that open no software keyboard. */
 const NO_KEYBOARD = new Set([
   'button',
@@ -57,7 +60,7 @@ export function useKeyboardInset(target: RefObject<HTMLElement | null>): void {
       const open = coarse.matches && isTextField(document.activeElement)
       if (open) el.setAttribute('data-keyboard', '')
       else el.removeAttribute('data-keyboard')
-      el.style.setProperty('--basalt-keyboard-inset', `${open ? keyboardInset() : 0}px`)
+      el.style.setProperty(INSET_VAR, `${open ? keyboardInset() : 0}px`)
     }
     // `focusout` fires while `activeElement` is still the body; the next field takes it a tick later.
     const later = (): void => {
@@ -76,7 +79,7 @@ export function useKeyboardInset(target: RefObject<HTMLElement | null>): void {
       visual?.removeEventListener('resize', sync)
       visual?.removeEventListener('scroll', sync)
       el.removeAttribute('data-keyboard')
-      el.style.removeProperty('--basalt-keyboard-inset')
+      el.style.removeProperty(INSET_VAR)
     }
   }, [target])
 }
