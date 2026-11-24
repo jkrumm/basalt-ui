@@ -97,4 +97,16 @@ describe('agent layer guard: claims resolve against the package source', () => {
       },
     ])
   })
+
+  it('a path the exports map nulls or leaves out does not resolve (seeded)', () => {
+    const text = [
+      'Use `basalt-ui/ui/button` for it.',
+      'Not `basalt-ui/ui/button.guard`, `basalt-ui/ui/slots` or `basalt-ui/core/scheme`.',
+    ].join('\n')
+    expect(claimFindings([{ path: 'agent/rules/x.md', text }]).map((f) => f.text)).toEqual([
+      'basalt-ui/ui/button.guard',
+      'basalt-ui/ui/slots',
+      'basalt-ui/core/scheme',
+    ])
+  })
 })
