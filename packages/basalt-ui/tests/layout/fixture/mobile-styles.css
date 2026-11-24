@@ -1,0 +1,5 @@
+/*
+ * The `mobile-inputs` test's second sheet: `styles.css` alone, with bare elements and no Tailwind
+ * utility, so what it computes comes from `touch.css` through `styles.css` and nothing else.
+ */
+@import '../../../src/styles.css';

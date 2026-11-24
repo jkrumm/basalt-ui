@@ -86,9 +86,11 @@ function scalarBlocks(tokens: readonly ResolvedToken[]): string {
     `@media (pointer: coarse) {\n` +
     block(
       ":root:not([data-density]),\n[data-density='dense'],\n[data-density='normal']",
-      [basaltDecl('row-h', COARSE['row-h'])],
+      [basaltDecl('ctl-h', COARSE['ctl-h']), basaltDecl('row-h', COARSE['row-h'])],
       1,
     ) +
+    // `comfortable` keeps its 48 px row, so only the control height rises (40 px to 44 px).
+    block("[data-density='comfortable']", [basaltDecl('ctl-h', COARSE['ctl-h'])], 1) +
     block(':root', [basaltDecl('hit', COARSE.hit)], 1) +
     `}\n` +
     // The one reduced-motion policy: every motion token ends at once, so anything timed by a token

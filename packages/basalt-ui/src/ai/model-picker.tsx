@@ -107,7 +107,7 @@ export function ModelPicker(props: ModelPickerProps): ReactElement {
                 <BaseCombobox.Input
                   aria-label={t('ai.modelSearch')}
                   placeholder={t('ai.modelSearch')}
-                  className="h-ctl w-full rounded-chip bg-transparent px-2 text-sm text-foreground outline-none placeholder:text-faint pointer-coarse:min-h-11 pointer-coarse:text-base"
+                  className="h-ctl w-full rounded-chip bg-transparent px-2 text-sm text-foreground outline-none placeholder:text-faint"
                 />
               </div>
               <div className="min-h-0 flex-1 overflow-y-auto p-1">

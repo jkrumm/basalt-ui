@@ -86,7 +86,7 @@ function anchorOf<K extends string>(
 }
 
 const LINK =
-  'flex h-ctl min-w-0 flex-1 items-center gap-2 rounded-ctrl px-2.5 text-sm whitespace-nowrap text-muted-foreground focus-ring hover:bg-accent hover:text-foreground pointer-coarse:min-h-11 aria-[current=page]:bg-selected aria-[current=page]:font-medium aria-[current=page]:text-foreground'
+  'flex h-ctl min-w-0 flex-1 items-center gap-2 rounded-ctrl px-2.5 text-sm whitespace-nowrap text-muted-foreground focus-ring hover:bg-accent hover:text-foreground aria-[current=page]:bg-selected aria-[current=page]:font-medium aria-[current=page]:text-foreground'
 
 function Badge({ badge }: { badge: NonNullable<InnerNavItem['badge']> }): ReactElement {
   const t = useMessages(page)

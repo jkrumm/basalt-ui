@@ -42,6 +42,7 @@ const pending = (): void => {}
 const TOKENS_DIR = import.meta.dir
 const SRC_DIR = join(TOKENS_DIR, '..')
 const stylesCss = readFileSync(join(SRC_DIR, 'styles.css'), 'utf8')
+const touchCss = readFileSync(join(SRC_DIR, 'css/touch.css'), 'utf8')
 
 const SIDES = ['light', 'dark'] as const
 const NEUTRALS: readonly DeriveConfig['neutral'][] = ['zinc', 'neutral', 'stone', 'slate']
@@ -292,7 +293,7 @@ describe('token invariants (docs/v3/evidence/self-tokens-theme.md §d)', () => {
   test.todo('d12 layer statement first: no basalt rule is unlayered (tok-t3)', pending)
 
   test('d13 iOS floor: inputs get font-size max(16px, ...) and it is !important, and lg is the 16px rung', () => {
-    const rule = stylesCss.match(
+    const rule = touchCss.match(
       /input\s*,\s*\n?\s*select\s*,\s*\n?\s*textarea\s*\{\s*\n?\s*font-size:\s*([^;]+);/,
     )
     expect(rule).not.toBeNull()

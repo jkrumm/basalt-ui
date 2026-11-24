@@ -21,11 +21,11 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: 'bg-primary text-primary-foreground hover:bg-primary/90',
+        primary: 'bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/80',
         secondary:
-          'bg-secondary text-foreground shadow-raised hover:bg-accent forced-colors:border forced-colors:border-current',
-        ghost: 'text-foreground hover:bg-accent',
-        danger: 'bg-bad-tint text-bad hover:brightness-90',
+          'bg-secondary text-foreground shadow-raised hover:bg-accent active:bg-accent active:brightness-95 forced-colors:border forced-colors:border-current',
+        ghost: 'text-foreground hover:bg-accent active:bg-accent active:brightness-95',
+        danger: 'bg-bad-tint text-bad hover:brightness-90 active:brightness-80',
       },
       size: {
         md: '',
@@ -34,9 +34,9 @@ export const buttonVariants = cva(
       shape: { default: '', icon: '' },
     },
     compoundVariants: [
-      { size: 'md', shape: 'default', class: 'h-ctl px-3 pointer-coarse:min-h-11' },
+      { size: 'md', shape: 'default', class: 'h-ctl px-3' },
       { size: 'sm', shape: 'default', class: 'h-6 px-2' },
-      { size: 'md', shape: 'icon', class: 'size-ctl pointer-coarse:size-11' },
+      { size: 'md', shape: 'icon', class: 'size-ctl' },
       {
         size: 'sm',
         shape: 'icon',

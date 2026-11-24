@@ -33,7 +33,7 @@ export type SiteFieldProps = {
 
 /** The same look as `Input` and `Button`, restated because `basalt-ui/ui` pulls in Base UI and this subpath needs react alone. */
 const CONTROL =
-  'w-full min-w-0 rounded-ctrl border border-input bg-background px-3 text-sm text-foreground placeholder:text-faint focus-ring transition-colors user-invalid:border-bad pointer-coarse:min-h-11 pointer-coarse:text-base'
+  'w-full min-w-0 rounded-ctrl border border-input bg-background px-3 text-sm text-foreground placeholder:text-faint focus-ring transition-colors user-invalid:border-bad'
 
 /**
  * A native form: it posts to `action` with no client JavaScript. The browser validates `required` and
@@ -150,7 +150,7 @@ export function SiteSubmit({
       type="submit"
       data-slot="button"
       className={cn(
-        'inline-flex h-ctl shrink-0 cursor-pointer items-center justify-center gap-1.5 self-start rounded-ctrl bg-primary px-3 text-sm font-medium whitespace-nowrap text-primary-foreground select-none focus-ring transition-colors hover:bg-primary/90 pointer-coarse:min-h-11',
+        'inline-flex h-ctl shrink-0 cursor-pointer items-center justify-center gap-1.5 self-start rounded-ctrl bg-primary px-3 text-sm font-medium whitespace-nowrap text-primary-foreground select-none focus-ring transition-colors hover:bg-primary/90',
         className,
       )}
     >

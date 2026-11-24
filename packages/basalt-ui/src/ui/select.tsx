@@ -44,12 +44,12 @@ export const selectVariants = cva('relative block w-full min-w-0')
  * selectTriggerVariants({ size: 'sm' })
  */
 export const selectTriggerVariants = cva(
-  'flex w-full min-w-0 cursor-pointer items-center justify-between gap-2 rounded-ctrl border border-input bg-background text-left text-foreground focus-ring transition-colors data-placeholder:text-faint data-readonly:cursor-default data-readonly:border-transparent data-readonly:bg-inset data-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base',
+  'flex w-full min-w-0 cursor-pointer items-center justify-between gap-2 rounded-ctrl border border-input bg-background text-left text-foreground focus-ring transition-colors data-placeholder:text-faint data-readonly:cursor-default data-readonly:border-transparent data-readonly:bg-inset data-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50 pointer-coarse:text-base',
   {
     variants: {
       size: {
         md: 'h-ctl px-3 text-sm',
-        sm: 'h-6 px-2 text-xs',
+        sm: 'h-6 px-2 text-xs pointer-coarse:h-ctl',
       },
     },
     defaultVariants: { size: 'md' },
@@ -75,7 +75,7 @@ export const selectContentVariants = cva(
  * selectItemVariants({ size: 'sm' })
  */
 export const selectItemVariants = cva(
-  'relative flex w-full cursor-default items-center rounded-chip text-left outline-none select-none data-highlighted:bg-accent data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base',
+  'relative flex w-full cursor-default items-center rounded-chip text-left outline-none select-none data-highlighted:bg-accent active:bg-accent data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base',
   {
     variants: {
       size: {
@@ -461,7 +461,7 @@ function SearchableSelect({
                     })}
                 data-slot="select-search"
                 placeholder={t('select.search')}
-                className="mb-1 h-ctl w-full rounded-chip border border-input bg-background px-2 text-sm text-foreground focus-ring placeholder:text-faint pointer-coarse:min-h-11 pointer-coarse:text-base"
+                className="mb-1 h-ctl w-full rounded-chip border border-input bg-background px-2 text-sm text-foreground focus-ring placeholder:text-faint"
               />
               <OptionListBody
                 list={list}

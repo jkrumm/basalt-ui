@@ -4,6 +4,7 @@
 @import 'tailwindcss';
 @import './tokens.css' layer(theme);
 @import './fonts.css';
+@import './touch.css' layer(basalt);
 @custom-variant dark {
   &:where([data-theme='dark'], [data-theme='dark'] *) {
     @slot;
@@ -185,13 +186,6 @@
     -webkit-box-shadow: 0 0 0 100vh var(--basalt-surface) inset;
     -webkit-text-fill-color: var(--basalt-ink);
     caret-color: var(--basalt-ink);
-  }
-  @media (pointer: coarse) {
-    input,
-    select,
-    textarea {
-      font-size: max(16px, 1em) !important;
-    }
   }
   /* A mark drawn through useChartFocus dims as the kit marks do (charts/core/theme DIMMED). */
   [data-chart-mark][data-dimmed] {
