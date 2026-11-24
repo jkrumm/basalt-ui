@@ -28,10 +28,10 @@ bun add basalt-ui
 That is the whole install. A create-vite React app already has `react`, `react-dom` and `vite`; `init`
 (step 2) installs the rest of the `app` profile's peers (`tailwindcss`, `@tailwindcss/vite`,
 `@base-ui/react`, `@tanstack/react-router`, `@tanstack/react-query`, `@tanstack/router-plugin`) and the lint
-tools. Most go in at the exact pin it prints; three are ranges (`@base-ui/react` `~1.9.0`,
-`@tanstack/react-router` `^1.170.0`, `@tanstack/react-query` `^5.104.0`) and `@tanstack/router-plugin`
-is pinned at `1.168.40` but accepts any newer 1.x, so an app already on a newer version inside the range keeps it,
-and a fresh install takes the newest one and saves it exactly. A
+tools. Every peer has a range matched to how tightly basalt is coupled to it (the table in `MAINTAINING.md` §
+Peers: a caret for a stable package, a tilde for one whose internals basalt reads, an exact pin for 0.x tooling).
+`@tanstack/router-plugin` is pinned at `1.168.40` but accepts any newer 1.x. An app already on a version inside the
+range keeps it, and a fresh install takes the newest one and saves it exactly. A
 dependency the app already had whose version falls outside the range or pin is changed, and `init` prints
 one line for it (for example `oxlint ^1.90.0` moves to the preset's pin). Installing the peers yourself first only pins them twice. A peer a subpath
 needs that `init` does not install (`./charts`, `./table`) is named by `basalt()` (the Vite plugin)
@@ -69,7 +69,7 @@ plugin, no marketplace and no second version to track. `init` writes at the git 
 - `.basalt/manifest.json` — the profile, the declared roots, the `tokens:css` outputs and the sha256 of every managed file `sync` placed
 - the `tokens:css` outputs (`--tokens-out`, `--tokens-json-out`, `--extra`, with the `--accent --neutral --vibrancy --selector` flags recorded in the manifest)
 - `.stylelintrc.basalt.json` for every profile; `.oxlintrc.basalt.json` and an `.oxlintrc.json` that extends it from `site` up
-- the profile's peers at exact pins (stylelint and postcss-html; `site` and above add oxlint and `@shadcn/lint`), installed with the lockfile's package manager (`--no-install` prints the command instead)
+- the profile's peers within their declared ranges, saved exactly (stylelint and postcss-html; `site` and above add oxlint and `@shadcn/lint`), installed with the lockfile's package manager (`--no-install` prints the command instead)
 - above `tokens`: `.claude/rules/basalt-*.md`, `.claude/skills/basalt-*`, the managed `<!-- basalt:begin/end -->` block in `AGENTS.md`, and a thin `DESIGN.md` seed when no declared root has one
 - `.basalt/budget.json` (the seeded ceilings) and the formatter ignore for the managed paths
 - `site` (static pages on Astro) writes no router scaffold and no Vite patch: `init` prints the `basaltAstro()` line for `astro.config` from `basalt-ui/astro` and the tokens stylesheet import
@@ -359,8 +359,8 @@ bun add @tanstack/charts d3-scale
 ```
 
 `./charts` is framework-free (see [Framework-free boundary](#framework-free-boundary) above) but not
-dependency-free: it needs `@tanstack/charts` and `d3-scale`, both pinned exact (`1.5.0` and
-`4.0.2`). They ship as optional peers, not bundled dependencies, so a `./tokens`-only consumer never
+dependency-free: it needs `@tanstack/charts` and `d3-scale`, at `~1.5.0` and
+`^4.0.2`. They ship as optional peers, not bundled dependencies, so a `./tokens`-only consumer never
 installs them. visx is gone: no dependency, peer or re-export.
 
 `CartesianChart` is the entry point: it compiles one engine definition and owns the measured

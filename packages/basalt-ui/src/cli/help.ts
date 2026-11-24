@@ -197,7 +197,7 @@ export const USAGE =
   '     [--start]\n' +
   '  The one door into an install. The profile is declared, never inferred (exit 1 without it); each --root\n' +
   '  (default .) is declared with it. Paths are relative to the repo root. Writes .basalt/manifest.json and the\n' +
-  "  token outputs, installs the profile's peers at exact pins with the lockfile's package manager, places the\n" +
+  "  token outputs, installs the profile's peers within their declared ranges, saved exactly, with the lockfile's package manager, places the\n" +
   '  managed files and presets through sync, seeds .basalt/budget.json and DESIGN.md, at app writes the router scaffold (main.tsx, routes, nav) once, writes the formatter\n' +
   '  ignore, and ends in doctor, then the session note when its run wrote agent-read files. --no-install prints the install command instead of running it. Running it\n' +
   '  twice changes nothing. Vite and CSS are patched only for a stock shape; otherwise the lines are printed.\n' +
