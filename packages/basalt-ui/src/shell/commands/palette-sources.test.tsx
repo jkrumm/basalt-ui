@@ -17,6 +17,7 @@ import { AppShell } from '../app-shell'
 import { isApplePlatform } from './chord'
 import { CommandPalette } from './command-palette'
 import { defineCommands } from './define-commands'
+import { openResult } from './palette-sources'
 import type { PaletteResult, PaletteSource } from './palette-sources'
 import { defineNav } from '../../../tests/support/router-nav'
 
@@ -219,5 +220,27 @@ describe('palette sources', () => {
     expect(second).not.toHaveBeenCalled()
     expect(router.state.location.pathname).toBe('/')
     await waitFor(() => expect(document.querySelector('[data-slot="command-palette"]')).toBeNull())
+  })
+})
+
+describe('openResult', () => {
+  const fakeRouter = () => ({ navigate: mock(() => Promise.resolve()) })
+
+  test('an in-app path goes through the router', () => {
+    const router = fakeRouter()
+    openResult(router as never, '/jobs/7')
+    expect(router.navigate).toHaveBeenCalledWith({ href: '/jobs/7' })
+  })
+
+  test('a script, a protocol-relative or a plain-http URL from a source never leaves the app', () => {
+    const assign = spyOn(window.location, 'assign').mockImplementation(() => undefined)
+    const router = fakeRouter()
+    for (const to of ['javascript:alert(1)', '//evil.example/p', 'data:text/html,x', '/\\evil']) {
+      openResult(router as never, to)
+    }
+    expect(assign).not.toHaveBeenCalled()
+    openResult(router as never, 'https://example.com/a')
+    expect(assign).toHaveBeenCalledWith('https://example.com/a')
+    assign.mockRestore()
   })
 })
