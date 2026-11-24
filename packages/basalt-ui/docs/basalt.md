@@ -9,7 +9,7 @@ slots: []
 
 # basalt
 
-The v3 Vite plugin: fails the build on a missing peer (`bun add …`) or a stale ejected seed
+The v3 Vite plugin: fails the build on a missing peer (an `add …` line) or a stale ejected seed
 (`basalt-ui sync`), aliases ejected primitives, writes `.basalt/sources.css` and owns the head
 (theme script, theme-color, manifest). A module that imports `basalt-ui/table` also gets
 `basalt-ui/table.css`, the table tiers, so the app never imports it. Full contract: `docs/vite.md`.
