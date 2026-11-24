@@ -82,7 +82,7 @@ export function RailResizeHandle(): ReactElement | null {
       onKeyDown={onKeyDown}
       onDoubleClick={reset}
       className={cn(
-        'group/resize absolute inset-y-0 end-0 z-20 flex w-2 cursor-ew-resize touch-none justify-end outline-none @max-[120px]:hidden',
+        'group/resize absolute inset-y-0 end-0 z-20 flex w-2 cursor-ew-resize touch-none justify-end focus-ring focus-visible:-outline-offset-2 @max-[120px]:hidden',
         'focus-visible:[&>span]:bg-brand data-dragging:[&>span]:bg-brand hover:[&>span]:bg-brand',
       )}
     >
