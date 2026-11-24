@@ -73,7 +73,7 @@ const PER_PRIMITIVE: Readonly<Record<string, number>> = {
   segmented: 15000, // 14087 B
   select: 72000, // 51614 B; 71719 B with the list engine and the searchable list on Base UI Combobox (Issue 3102)
   separator: 7500, // 6767 B
-  sheet: 45300, // 41473 B; 45114 B with the panel header, the scrolling body, the footer band and the width handle (Issue 2939)
+  sheet: 48000, // 47748 B with Base UI's VirtualKeyboardProvider, a grabber and snap points (Issue 3206); 45300 B before; 41473 B; 45114 B with the panel header, the scrolling body, the footer band and the width handle (Issue 2939)
   skeleton: 7000, // 6522 B
   slider: 21000, // 19636 B
   'sortable-list': 18000, // 16970 B with the drag engine it loads on first registration
@@ -106,7 +106,8 @@ export const rows: readonly RowDef[] = [
     label: 'ui ten-primitive page (gzip B minus base0, src/ui, peers bundled)',
     // 81600 B measured. Informative target 95 KB (gap-perf 6.1); the seed is the measurement.
     // 86000 -> 104100 (Issue 3102): 103626 B measured; Select draws the shared option row and opens a searchable list on Base UI Combobox.
-    ceiling: 104100,
+    // 104100 -> 104300 (Issue 3206): 104193 B measured; the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points.
+    ceiling: 104300,
     measure: () => measureSource(page(TEN)),
   },
   {
@@ -118,7 +119,8 @@ export const rows: readonly RowDef[] = [
     // 157700 -> 158600 (Issue 2996): 158482 B measured; the page's Checkbox and RadioGroup also hold the card variant over `ChoiceCard`.
     // 158600 -> 158800 (Issue 3109): 158756 B measured; the Tabs trigger draws a count, an attention tone and a tone dot, which the page's Tabs carry.
     // 158800 -> 167300 (Issue 3102): 166769 B measured; Select and Combobox share the list engine, its option row and its state rows.
-    ceiling: 167300,
+    // 167300 -> 170500 (Issue 3206): 170340 B measured; the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points.
+    ceiling: 170500,
     measure: () => measureSource(page([...TEN, ...REST_OF_25])),
   },
   ...Object.entries(PER_PRIMITIVE).map(([name, ceiling], i): RowDef => ({
@@ -141,6 +143,13 @@ export const rows: readonly RowDef[] = [
 
 export const raises: Raises = {
   'ui-page-ten': [
+    {
+      from: 104100,
+      to: 104300,
+      consumer:
+        'the mobile foundation (owner direction 2026-11-24, Issue 3206): a bottom Sheet with a grabber, snap points and the Base UI VirtualKeyboardProvider that lifts a form above the software keyboard, a shell keyboard inset and pressed styles on touch',
+      repo: 'basalt-ui',
+    },
     {
       from: 86000,
       to: 104100,
@@ -168,6 +177,13 @@ export const raises: Raises = {
     },
   ],
   'ui-page-25': [
+    {
+      from: 167300,
+      to: 170500,
+      consumer:
+        'the mobile foundation (owner direction 2026-11-24, Issue 3206): a bottom Sheet with a grabber, snap points and the Base UI VirtualKeyboardProvider that lifts a form above the software keyboard, a shell keyboard inset and pressed styles on touch',
+      repo: 'basalt-ui',
+    },
     {
       from: 158800,
       to: 167300,
@@ -216,6 +232,13 @@ export const raises: Raises = {
     },
   ],
   'ui-prim-sheet': [
+    {
+      from: 45300,
+      to: 48000,
+      consumer:
+        'the mobile foundation (owner direction 2026-11-24, Issue 3206): a bottom Sheet with a grabber, snap points and the Base UI VirtualKeyboardProvider that lifts a form above the software keyboard, a shell keyboard inset and pressed styles on touch',
+      repo: 'basalt-ui',
+    },
     {
       from: 44000,
       to: 45300,

@@ -116,13 +116,21 @@ export const rows: readonly RowDef[] = [
     // 208500 -> 212700 (Issue 3106): 212200 B measured; the table reads the page barrel's parts, which gained the favourite star.
     // 212700 -> 222400 (Issue 3102): 221902 B measured; the table's selects draw the shared list engine.
     // 222400 -> 222600 (Issue 3141, bench-inbox-mail): 222412 B measured; `BulkBar` gains its list form (a count and typed actions, no table).
-    ceiling: 222600,
+    // 222600 -> 226200 (Issue 3206): 225987 B measured; the detail Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points.
+    ceiling: 226200,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
 
 export const raises: Raises = {
   'table-own': [
+    {
+      from: 222600,
+      to: 226200,
+      consumer:
+        'the mobile foundation (owner direction 2026-11-24, Issue 3206): a bottom Sheet with a grabber, snap points and the Base UI VirtualKeyboardProvider that lifts a form above the software keyboard, a shell keyboard inset and pressed styles on touch',
+      repo: 'basalt-ui',
+    },
     {
       from: 222400,
       to: 222600,

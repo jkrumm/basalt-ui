@@ -68,7 +68,8 @@ export const rows: readonly RowDef[] = [
     id: 'cli-lines',
     order: 110,
     label: 'CLI non-test lines (src/cli/**)',
-    ceiling: 13338,
+    // 13338 -> 13400 (Issue 3206): `init` places the viewport meta in an app's index.html and seeds the phone shot viewports (cli/init/steps.ts, cli/init/index.ts).
+    ceiling: 13400,
     measure: () =>
       totalLines(
         walkFiles(join(PKG_ROOT, 'src/cli'), /\.tsx?$/).filter((p) => !/\.test\.tsx?$/.test(p)),
@@ -78,6 +79,13 @@ export const rows: readonly RowDef[] = [
 
 export const raises: Raises = {
   'cli-lines': [
+    {
+      from: 13338,
+      to: 13400,
+      consumer:
+        'a fresh `init` app has the viewport meta with viewport-fit=cover and both shot viewports (Issue 3206): the phone contract the basalt-design phone reference states',
+      repo: 'basalt-ui',
+    },
     {
       from: 8879,
       to: 8923,

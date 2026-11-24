@@ -77,7 +77,8 @@ export const rows: readonly RowDef[] = [
     // 146600 -> 161800 (Issue 3106): 161405 B measured; the workspace switcher (menu radios, avatar), the Favourites section (`SortableList`) and the rail's width handle.
     // 161800 -> 169000 (Issue 3102): 168504 B measured; the palette draws its rows and group headers through the list engine.
     // 169000 -> 181000 (Issue 3205): 180751 B measured; the two phone nav trial variants and the palette's phone sheet, lazy chunks this row counts and an app loads only when a variant is picked.
-    ceiling: 181000,
+    // 181000 -> 184500 (Issue 3206): the shell's keyboard inset, the More surface's Sheet with Base UI's VirtualKeyboardProvider, a grabber and snap points.
+    ceiling: 184500,
     measure: () => measureSource(reExportAll({ shell: 'shell/index' })),
   },
   {
@@ -114,6 +115,13 @@ export const raises: Raises = {
       to: 181000,
       consumer:
         'the phone nav trial the owner judges on his phone (Issue 3205): a bar of nav sections with a tray (A) or a short drawer (B), and More sliding the app aside to reveal the rail, behind one seam, loaded with lazy() only when the playground picks one; the variant he does not pick is deleted after his answer and this row ratchets back',
+      repo: 'basalt-ui',
+    },
+    {
+      from: 181000,
+      to: 184500,
+      consumer:
+        'the mobile foundation (owner direction 2026-11-24, Issue 3206): a bottom Sheet with a grabber, snap points and the Base UI VirtualKeyboardProvider that lifts a form above the software keyboard, a shell keyboard inset and pressed styles on touch',
       repo: 'basalt-ui',
     },
     {
