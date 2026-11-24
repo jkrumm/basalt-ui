@@ -19,5 +19,26 @@
   "storage": [],
   "urls": [],
   "attrs": [],
-  "rules": []
+  "rules": [
+    {
+      "old": "basalt/colour-literal",
+      "new": "basalt/color-literal",
+      "severity": "error"
+    },
+    {
+      "old": "basalt/fixed-colour",
+      "new": "basalt/fixed-color",
+      "severity": "error"
+    },
+    {
+      "old": "basalt/app-colour",
+      "new": "basalt/app-color",
+      "severity": "error"
+    },
+    {
+      "old": "basalt/app-colour-arbitrary",
+      "new": "basalt/app-color-arbitrary",
+      "severity": "error"
+    }
+  ]
 }

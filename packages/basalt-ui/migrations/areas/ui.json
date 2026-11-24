@@ -276,7 +276,7 @@
       "kind": "map",
       "from": "@mantine/core#ColorSwatch",
       "to": "basalt-ui/ui/status#Swatch",
-      "note": "takes a typed VX series colour; no inline style"
+      "note": "takes a typed VX series color; no inline style"
     },
     {
       "profiles": ["parts", "app"],
@@ -942,6 +942,36 @@
       "profiles": ["parts", "app"],
       "manual": true,
       "note": "size is the height step (md | sm) and shape is default | icon, so an icon button picks its height like a text one; the aria-label is still required by type"
+    },
+    {
+      "id": "ui-datepicker-onvaluechange",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/ui/date-picker#DatePicker.onChange",
+      "to": "onValueChange",
+      "profiles": ["parts", "app"],
+      "codemod": "props",
+      "verify": "tsc",
+      "note": "a value callback is `onValueChange` on every primitive; the picker no longer takes both"
+    },
+    {
+      "id": "ui-daterangepicker-onvaluechange",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/ui/date-picker#DateRangePicker.onChange",
+      "to": "onValueChange",
+      "profiles": ["parts", "app"],
+      "codemod": "props",
+      "verify": "tsc",
+      "note": "a value callback is `onValueChange` on every primitive; the picker no longer takes both"
+    },
+    {
+      "id": "ui-calendar-onvaluechange",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/ui/calendar#Calendar.onChange",
+      "to": "onValueChange",
+      "profiles": ["parts", "app"],
+      "codemod": "props",
+      "verify": "tsc",
+      "note": "a value callback is `onValueChange` on every primitive; a `Schedule` `miniMonth` takes it too"
     }
   ],
   "tokens": {

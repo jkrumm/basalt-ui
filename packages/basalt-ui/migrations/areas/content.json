@@ -126,7 +126,7 @@
       "id": "content-CalloutKind",
       "kind": "removed",
       "from": "basalt-ui/content#CalloutKind",
-      "to": "ComponentProps<typeof Callout>['kind']",
+      "to": "ComponentProps<typeof Callout>['tone']",
       "profiles": ["app"],
       "manual": true,
       "note": "the type is not exported from basalt-ui/page (the type-barrel ceiling is a freeze-g2 row)"
