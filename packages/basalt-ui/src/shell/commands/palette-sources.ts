@@ -57,6 +57,10 @@ function recentsStore(source: PaletteSource) {
   })
 }
 
+/** Whether a result may be opened: an in-app path, or a URL the untrusted policy admits; never empty. */
+const opensSafely = (href: string): boolean =>
+  href !== '' && (isInAppPath(href) || safeUrl(href, 'untrusted') !== null)
+
 function isRecent(value: unknown): value is Recent {
   if (typeof value !== 'object' || value === null) return false
   const { id, title, kind, detail, to } = value as Record<string, unknown>
@@ -64,7 +68,7 @@ function isRecent(value: unknown): value is Recent {
     typeof id === 'string' &&
     typeof title === 'string' &&
     typeof to === 'string' &&
-    (isInAppPath(to) || safeUrl(to, 'untrusted') !== null) &&
+    opensSafely(to) &&
     (kind === undefined || typeof kind === 'string') &&
     (detail === undefined || typeof detail === 'string')
   )
@@ -106,17 +110,19 @@ export function rememberRecent(
   )
 }
 
-/** Navigates to a result's `to`: an in-app path or target through the router, any other string by the browser. */
+/**
+ * Navigates to a result's `to`: an in-app path or target through the router; any other string only
+ * when the untrusted URL policy admits it (https, mailto, tel, same-origin), by the browser. An empty
+ * or refused one does nothing.
+ */
 export function openResult(router: AnyRouter, to: string | NavTarget): void {
   const href = typeof to === 'string' ? to : targetHref(router, to)
-  if (href === undefined) return
+  if (href === undefined || !opensSafely(href)) return
   if (isInAppPath(href)) {
     void router.navigate({ href } as never)
     return
   }
-  // A source's rows are data from a search: only a URL the untrusted policy admits leaves the app.
-  const safe = safeUrl(href, 'untrusted')
-  if (safe !== null) window.location.assign(safe)
+  window.location.assign(href)
 }
 
 export type SourceRows = { source: PaletteSource; results: readonly PaletteResult[] }

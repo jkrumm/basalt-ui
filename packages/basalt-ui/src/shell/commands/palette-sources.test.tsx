@@ -235,7 +235,14 @@ describe('openResult', () => {
   test('a script, a protocol-relative or a plain-http URL from a source never leaves the app', () => {
     const assign = spyOn(window.location, 'assign').mockImplementation(() => undefined)
     const router = fakeRouter()
-    for (const to of ['javascript:alert(1)', '//evil.example/p', 'data:text/html,x', '/\\evil']) {
+    for (const to of [
+      'javascript:alert(1)',
+      '//evil.example/p',
+      'http://example.com/a',
+      'data:text/html,x',
+      '/\\evil',
+      '',
+    ]) {
       openResult(router as never, to)
     }
     expect(assign).not.toHaveBeenCalled()
