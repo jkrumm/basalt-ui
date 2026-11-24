@@ -108,8 +108,8 @@ describe('sources', () => {
     const real = loadSources(entries)
     expect(real.lintIds.has('import-boundary')).toBe(true)
     expect(real.typeNames.has('PageBarProps')).toBe(true)
-    // `ShellNav` is declared in shell/contract.ts and exported by no entry
-    expect(real.typeNames.has('ShellNav')).toBe(false)
+    // `CoreNavConfig` is declared in shell/core/types.ts and exported by no entry
+    expect(real.typeNames.has('CoreNavConfig')).toBe(false)
     expect(entries.get('basalt-ui/page')?.has('PageBarProps')).toBe(true)
   })
 
