@@ -24,7 +24,8 @@ above the page. Open state stays with the caller (`open`/`onOpenChange`) or the 
 with no provider.
 
 ```ts
-Menu(props: MenuProps): ReactElement
+Menu({ present, open, defaultOpen, onOpenChange, ...props }: MenuProps): ReactElement
+  present?: OverlayPresent  // How the list opens: `auto` is an action sheet from the bottom on a phone (compact width, coarse pointer) and the anchored popup elsewhere; `popup` and `sheet` force one
 ```
 
 ### `MenuTrigger`

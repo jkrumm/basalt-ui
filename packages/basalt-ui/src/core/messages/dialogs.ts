@@ -10,6 +10,7 @@ import type { BasaltMessages } from './index'
  * - `toast.undo`: the label of a toast's Undo action;
  * - `dialog.close`, `sheet.close`: the name of the corner close button.
  * - `sheet.resize`: the label of a right sheet's width handle.
+ * - `sheet.done`: the button that closes a picker presented as a sheet (a date picker's calendar).
  */
 export type DialogsMessages = Record<
   | 'toast.viewport'
@@ -17,7 +18,8 @@ export type DialogsMessages = Record<
   | 'toast.undo'
   | 'dialog.close'
   | 'sheet.close'
-  | 'sheet.resize',
+  | 'sheet.resize'
+  | 'sheet.done',
   string
 >
 
@@ -28,4 +30,5 @@ export const dialogs = {
   'dialog.close': 'Close',
   'sheet.close': 'Close',
   'sheet.resize': 'Resize panel',
+  'sheet.done': 'Done',
 } satisfies Partial<BasaltMessages>

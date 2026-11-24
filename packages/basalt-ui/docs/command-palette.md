@@ -19,12 +19,13 @@ the shell's search row the same open state (`search={{ onOpen }}`, as in the exa
 ## Signature
 
 ```ts
-CommandPalette({ commands, rank, open: openProp, onOpenChange, placeholder, }: CommandPaletteProps): ReactElement
+CommandPalette({ commands, rank, open: openProp, onOpenChange, placeholder, present, }: CommandPaletteProps): ReactElement
   commands: CommandSet
   rank?: RankFn  // Orders and filters the rows for a query
   open?: boolean  // Controlled state, for `AppShell search={{ onOpen }}`; without it the palette keeps its own
   onOpenChange?: (open: boolean) => void
   placeholder?: string
+  present?: OverlayPresent  // How it opens: `auto` is a full-height sheet with the field on top on a phone (compact width, coarse pointer) and the centred dialog elsewhere; `popup` and `sheet` force one
 ```
 
 ## Example

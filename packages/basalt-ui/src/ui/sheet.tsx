@@ -149,6 +149,16 @@ export type SheetContentProps = Layout<Omit<BaseDrawer.Popup.Props, 'title'>> & 
   actions?: ReactNode
   /** A band under the scrolling body for a form's actions. */
   footer?: ReactNode
+  /**
+   * No header and no close button: the children fill the sheet, and `title` only names it for
+   * assistive tech. A picker's list (`Select`, `Menu`, `Combobox`) opens in a plain sheet on a
+   * phone.
+   */
+  plain?: boolean
+}
+type SheetFrameProps = Layout<Omit<BaseDrawer.Popup.Props, 'title'>> & {
+  /** Drawn after the grabber and before the children: a right sheet's resize handle. */
+  handle?: ReactNode
 }
 export type SheetTitleProps = Layout<BaseDrawer.Title.Props>
 export type SheetCloseProps = Layout<BaseDrawer.Close.Props>
@@ -252,6 +262,53 @@ export function SheetTrigger({ className, ...props }: SheetTriggerProps): ReactE
 }
 
 /**
+ * The frame every sheet is drawn in: the portal, the scrim, the viewport and the popup with its
+ * grabber, keyboard provider and safe-area padding. `SheetContent` fills it with the panel anatomy,
+ * or with the bare children under `plain`.
+ */
+function SheetFrame({
+  className,
+  style,
+  ref,
+  handle,
+  children,
+  ...props
+}: SheetFrameProps): ReactElement {
+  const { placement, snapped } = useContext(FrameContext)
+  const right = placement === 'right'
+  return (
+    <ControlScopeProvider value={null}>
+      <BaseDrawer.VirtualKeyboardProvider>
+        <BaseDrawer.Portal>
+          <BaseDrawer.Backdrop
+            forceRender
+            className="fixed inset-0 z-50 bg-scrim transition-opacity duration-slow data-starting-style:opacity-0 data-ending-style:opacity-0 motion-reduce:transition-none"
+          />
+          <BaseDrawer.Viewport className="fixed inset-0 z-50 flex overflow-hidden data-ending-style:pointer-events-none">
+            <BaseDrawer.Popup
+              {...props}
+              ref={ref}
+              data-slot="sheet-content"
+              style={style}
+              className={cn(
+                sheetContentVariants({ placement }),
+                snapped &&
+                  'h-[90dvh] max-h-none pb-[calc(env(safe-area-inset-bottom)+var(--drawer-snap-point-offset,0px))] translate-y-[calc(var(--drawer-snap-point-offset,0px)+var(--drawer-swipe-movement-y,0px))]',
+                className,
+              )}
+            >
+              {!right && GRABBER}
+              {handle}
+              {children}
+            </BaseDrawer.Popup>
+          </BaseDrawer.Viewport>
+        </BaseDrawer.Portal>
+      </BaseDrawer.VirtualKeyboardProvider>
+    </ControlScopeProvider>
+  )
+}
+
+/**
  * The sheet panel with its backdrop, drawn in the one panel anatomy `Peek`, `Dock` and
  * `PageAside` share: a header at the bar height (`tag`, `title`, `actions`, the close button), a
  * body that scrolls and an optional `footer` band for a form's actions. `title` is required and
@@ -267,13 +324,14 @@ export function SheetContent({
   tag,
   actions,
   footer,
+  plain,
   className,
   style,
   ref,
   children,
   ...props
 }: SheetContentProps): ReactElement {
-  const { placement, snapped } = useContext(FrameContext)
+  const { placement } = useContext(FrameContext)
   const t = useMessages(dialogs)
   const popup = useRef<HTMLDivElement | null>(null)
   const width = usePanelWidth({ store: sheetWidth(), name: 'sheet', min: SHEET_MIN })
@@ -282,70 +340,62 @@ export function SheetContent({
     ? { maxWidth: SHEET_MAX, ...(width.width !== null && { width: `${width.width}px` }) }
     : undefined
   return (
-    <ControlScopeProvider value={null}>
-      <BaseDrawer.VirtualKeyboardProvider>
-        <BaseDrawer.Portal>
-          <BaseDrawer.Backdrop
-            forceRender
-            className="fixed inset-0 z-50 bg-scrim transition-opacity duration-slow data-starting-style:opacity-0 data-ending-style:opacity-0 motion-reduce:transition-none"
+    <SheetFrame
+      {...props}
+      ref={(el: HTMLDivElement | null) => {
+        popup.current = el
+        if (typeof ref === 'function') ref(el)
+        else if (ref) ref.current = el
+      }}
+      style={typeof style === 'function' ? style : { ...style, ...sized }}
+      {...(className !== undefined && { className })}
+      handle={
+        right && (
+          <PanelHandle
+            panel={popup}
+            min={SHEET_MIN}
+            label={t('sheet.resize')}
+            onResize={width.resize}
+            onCommit={width.commit}
           />
-          <BaseDrawer.Viewport className="fixed inset-0 z-50 flex overflow-hidden data-ending-style:pointer-events-none">
-            <BaseDrawer.Popup
-              {...props}
-              ref={(el: HTMLDivElement | null) => {
-                popup.current = el
-                if (typeof ref === 'function') ref(el)
-                else if (ref) ref.current = el
-              }}
-              data-slot="sheet-content"
-              style={typeof style === 'function' ? style : { ...style, ...sized }}
-              className={cn(
-                sheetContentVariants({ placement }),
-                snapped &&
-                  'h-[90dvh] max-h-none pb-[calc(env(safe-area-inset-bottom)+var(--drawer-snap-point-offset,0px))] translate-y-[calc(var(--drawer-snap-point-offset,0px)+var(--drawer-swipe-movement-y,0px))]',
-                className,
-              )}
-            >
-              {!right && GRABBER}
-              {right && (
-                <PanelHandle
-                  panel={popup}
-                  min={SHEET_MIN}
-                  label={t('sheet.resize')}
-                  onResize={width.resize}
-                  onCommit={width.commit}
-                />
-              )}
-              <BaseDrawer.Content className="flex min-h-0 flex-1 flex-col">
-                <header data-panel="header" className={PANEL_HEADER}>
-                  {tag !== undefined && <span className={PANEL_TAG}>{tag}</span>}
-                  <SheetTitle className={PANEL_TITLE}>{title}</SheetTitle>
-                  <div className="flex shrink-0 items-center gap-1">
-                    {actions}
-                    {actions !== undefined && actions !== null && (
-                      <span aria-hidden="true" className={PANEL_DIVIDER} />
-                    )}
-                    <SheetClose data-panel="close" />
-                  </div>
-                </header>
-                {/* A native scroll, so the sheet renders only its own slots. */}
-                <div
-                  data-panel="body"
-                  className={cn(PANEL_BODY, 'flex flex-col gap-4 overflow-y-auto')}
-                >
-                  {children}
-                </div>
-                {footer !== undefined && footer !== null && footer !== false && (
-                  <div data-panel="footer" className={PANEL_FOOTER}>
-                    {footer}
-                  </div>
+        )
+      }
+    >
+      <BaseDrawer.Content className="flex min-h-0 flex-1 flex-col">
+        {plain === true ? (
+          <>
+            <SheetTitle className="sr-only">{title}</SheetTitle>
+            {children}
+          </>
+        ) : (
+          <>
+            <header data-panel="header" className={PANEL_HEADER}>
+              {tag !== undefined && <span className={PANEL_TAG}>{tag}</span>}
+              <SheetTitle className={PANEL_TITLE}>{title}</SheetTitle>
+              <div className="flex shrink-0 items-center gap-1">
+                {actions}
+                {actions !== undefined && actions !== null && (
+                  <span aria-hidden="true" className={PANEL_DIVIDER} />
                 )}
-              </BaseDrawer.Content>
-            </BaseDrawer.Popup>
-          </BaseDrawer.Viewport>
-        </BaseDrawer.Portal>
-      </BaseDrawer.VirtualKeyboardProvider>
-    </ControlScopeProvider>
+                <SheetClose data-panel="close" />
+              </div>
+            </header>
+            {/* A native scroll, so the sheet renders only its own slots. */}
+            <div
+              data-panel="body"
+              className={cn(PANEL_BODY, 'flex flex-col gap-4 overflow-y-auto')}
+            >
+              {children}
+            </div>
+            {footer !== undefined && footer !== null && footer !== false && (
+              <div data-panel="footer" className={PANEL_FOOTER}>
+                {footer}
+              </div>
+            )}
+          </>
+        )}
+      </BaseDrawer.Content>
+    </SheetFrame>
   )
 }
 

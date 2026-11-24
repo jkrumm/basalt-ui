@@ -25,6 +25,7 @@ Combobox<Value = string, Multiple extends boolean | undefined = false>(props: Co
   className?: string  // Layout only (`w-full`, `w-64`, `flex-1`)
   options?: ListSource<Value>  // Options and groups (`{ label, options }`), or a loader `(query, { signal }) => Promise<...>` called on open and on each change of the text, the last call aborted
   children?: ReactNode
+  present?: OverlayPresent
   onCreate?: (text: string) => Value | ((text: string) => Value)  // Makes the combobox creatable
   size?: "sm" | "md" | null  [with options + aria-label]
   aria-label: string

@@ -9,9 +9,13 @@ import { scopeClass, useControlScope } from '../core/control-scope'
 import type { CalendarDate } from '../core/format'
 import { useFormat } from '../core/format'
 import { date as dateMessages } from '../core/messages/date'
+import { dialogs } from '../core/messages/dialogs'
 import { useMessages } from '../core/messages/use-messages'
 import { toCalendarDate, toLocalDate, useCalendarProps } from './calendar-grid'
 import type { CalendarRange } from './calendar-grid'
+import { Button } from './button'
+import { useOverlay, useSheetPresent } from './overlay-presenter'
+import type { OverlayPresent } from './overlay-presenter'
 import { Popover, PopoverContent, PopoverTrigger } from './popover'
 
 export type { CalendarRange } from './calendar-grid'
@@ -60,6 +64,11 @@ type Layout = VariantProps<typeof datePickerVariants> & {
   disabled?: boolean
   /** Shown in the trigger while no day is picked. Default: the English or app-supplied message. */
   placeholder?: string
+  /**
+   * How the calendar opens: `auto` is a bottom sheet with a Done button on a phone (compact
+   * width, coarse pointer) and the anchored popup elsewhere; `popup` and `sheet` force one.
+   */
+  present?: OverlayPresent
 }
 
 /** The accessible name a picker must carry: a label, or the id of one. */
@@ -139,13 +148,16 @@ function PickerShell({
   text: string | null
   placeholder: string
   name: DatePickerName
-  layout: Pick<Layout, 'className' | 'id' | 'disabled' | 'size'>
+  layout: Pick<Layout, 'className' | 'id' | 'disabled' | 'size' | 'present'>
   open: boolean
   setOpen: (next: boolean) => void
   children: ReactElement
 }): ReactElement {
   const autoId = useId()
   const scope = useControlScope()
+  const phone = useSheetPresent('auto')
+  // a calendar is a picker, not a panel: on a phone it is always a sheet
+  const present: OverlayPresent = layout.present ?? (phone ? 'sheet' : 'popup')
   const id = layout.id ?? autoId
   const shown = text ?? placeholder
   // A FormField hands its control `aria-invalid`; it marks the trigger, never the popup.
@@ -158,7 +170,7 @@ function PickerShell({
       ? { 'aria-label': `${popupName['aria-label']}: ${shown}` }
       : { 'aria-labelledby': `${popupName['aria-labelledby']} ${id}` }
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} present={present}>
       <PopoverTrigger
         // oxlint-disable-next-line jsx-a11y/control-has-associated-label -- the trigger is named by aria-label or aria-labelledby spread below, and holds the value as text
         render={<button type="button" data-slot={slot} />}
@@ -178,8 +190,26 @@ function PickerShell({
       </PopoverTrigger>
       <PopoverContent {...(popupName as DatePickerName)} align="start" className="w-auto">
         {children}
+        <SheetDone />
       </PopoverContent>
     </Popover>
+  )
+}
+
+/** The Done button under a calendar presented as a sheet: the sheet has no anchor to click away from. */
+function SheetDone(): ReactElement | null {
+  const overlay = useOverlay()
+  const t = useMessages(dialogs)
+  if (overlay?.sheet !== true) return null
+  return (
+    <Button
+      type="button"
+      variant="primary"
+      className="mt-3 w-full"
+      onClick={() => overlay.setOpen(false)}
+    >
+      {t('sheet.done')}
+    </Button>
   )
 }
 
@@ -208,6 +238,7 @@ export function DatePicker({
   className,
   id,
   disabled,
+  present,
   open,
   defaultOpen,
   onOpenChange,
@@ -235,6 +266,7 @@ export function DatePicker({
       name={name}
       layout={{
         size,
+        ...(present !== undefined && { present }),
         ...(className !== undefined && { className }),
         ...(id !== undefined && { id }),
         ...(disabled !== undefined && { disabled }),
@@ -285,6 +317,7 @@ export function DateRangePicker({
   className,
   id,
   disabled,
+  present,
   open,
   defaultOpen,
   onOpenChange,
@@ -325,6 +358,7 @@ export function DateRangePicker({
       name={name}
       layout={{
         size,
+        ...(present !== undefined && { present }),
         ...(className !== undefined && { className }),
         ...(id !== undefined && { id }),
         ...(disabled !== undefined && { disabled }),

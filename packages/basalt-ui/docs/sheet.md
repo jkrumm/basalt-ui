@@ -59,12 +59,13 @@ edge a handle on its start edge resizes it (pointer, or ArrowLeft and ArrowRight
 handle, Enter or a double click to reset), and the device remembers the width.
 
 ```ts
-SheetContent({ title, tag, actions, footer, className, style, ref, children, ...props }: SheetContentProps): ReactElement
+SheetContent({ title, tag, actions, footer, plain, className, style, ref, children, ...props }: SheetContentProps): ReactElement
   className?: string  // Layout only (`w-120`, `mt-2`)
   title: ReactNode  // The accessible name and the visible heading
   tag?: string  // A short mono tag before the title (`#12`)
   actions?: ReactNode  // Controls drawn in the header before the close button: a record's previous and next, a link
   footer?: ReactNode  // A band under the scrolling body for a form's actions
+  plain?: boolean  // No header and no close button: the children fill the sheet, and `title` only names it for assistive tech
 ```
 
 ### `SheetTitle`

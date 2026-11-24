@@ -66,9 +66,10 @@ type Mount = {
   body?: ReactElement
   area?: string
   onOpenChange?: CommandPaletteProps['onOpenChange']
+  present?: CommandPaletteProps['present']
 }
 
-async function mountShell({ commands, rank, body, area, onOpenChange }: Mount) {
+async function mountShell({ commands, rank, body, area, onOpenChange, present }: Mount) {
   const root = createRootRoute({
     component: () => (
       <AppShell nav={NAV} brand={{ name: 'Basalt' }}>
@@ -77,6 +78,7 @@ async function mountShell({ commands, rank, body, area, onOpenChange }: Mount) {
           commands={commands}
           {...(rank !== undefined && { rank })}
           {...(onOpenChange !== undefined && { onOpenChange })}
+          {...(present !== undefined && { present })}
         />
       </AppShell>
     ),
@@ -250,6 +252,24 @@ describe('palette', () => {
     expect(rows).not.toContain('Secret')
     expect(rows).not.toContain('Off')
     expect(rows).not.toContain('Command palette')
+  })
+
+  test('present="sheet" opens it as a sheet with the field on top; the default is the dialog', async () => {
+    await mountShell({ commands: COMMANDS })
+    press('k', { mod: true })
+    await waitFor(() => expect(labels().length).toBeGreaterThan(0))
+    expect(
+      document.querySelector('[data-slot="dialog-content"] [data-slot="command-palette"]'),
+    ).not.toBeNull()
+    expect(document.querySelector('[data-slot="sheet-content"]')).toBeNull()
+    cleanup()
+    await mountShell({ commands: COMMANDS, present: 'sheet' })
+    press('k', { mod: true })
+    await waitFor(() => expect(labels().length).toBeGreaterThan(0))
+    expect(
+      document.querySelector('[data-slot="sheet-content"] [data-slot="command-palette"]'),
+    ).not.toBeNull()
+    expect(document.querySelector('[data-slot="dialog-content"]')).toBeNull()
   })
 
   test('ranks with the default rank: a prefix beats a later substring', async () => {

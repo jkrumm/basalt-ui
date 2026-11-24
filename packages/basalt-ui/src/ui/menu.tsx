@@ -1,8 +1,19 @@
 import { Menu as BaseMenu } from '@base-ui/react/menu'
 import { cva } from 'class-variance-authority'
+import { useState } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
 import { ControlScopeProvider } from '../core/control-scope'
+import { ListSheet } from './list-sheet'
+import {
+  OverlayProvider,
+  SHEET_LIST_CLASS,
+  SHEET_POSITIONER,
+  SHEET_POSITIONER_CLASS,
+  useOverlay,
+  useOverlayRoot,
+} from './overlay-presenter'
+import type { OverlayPresent } from './overlay-presenter'
 
 /**
  * The `MenuContent` cva table: the popup of a list of actions, at least 10 rem wide and never taller
@@ -51,7 +62,13 @@ export type MenuPlacement = Pick<
   'anchor' | 'side' | 'align' | 'sideOffset' | 'alignOffset'
 >
 
-export type MenuProps = BaseMenu.Root.Props
+export type MenuProps = BaseMenu.Root.Props & {
+  /**
+   * How the list opens: `auto` is an action sheet from the bottom on a phone (compact width,
+   * coarse pointer) and the anchored popup elsewhere; `popup` and `sheet` force one.
+   */
+  present?: OverlayPresent
+}
 export type MenuTriggerProps = Layout<BaseMenu.Trigger.Props>
 export type MenuContentProps = Layout<Omit<BaseMenu.Popup.Props, 'ref'>> &
   MenuPlacement & {
@@ -126,8 +143,26 @@ function Glyph({ d, className }: { d: string; className?: string }): ReactElemen
  *   </MenuContent>
  * </Menu>
  */
-export function Menu(props: MenuProps): ReactElement {
-  return <BaseMenu.Root {...props} />
+export function Menu({
+  present,
+  open,
+  defaultOpen,
+  onOpenChange,
+  ...props
+}: MenuProps): ReactElement {
+  const presenter = useOverlayRoot<Parameters<NonNullable<BaseMenu.Root.Props['onOpenChange']>>[1]>(
+    {
+      present,
+      open,
+      defaultOpen,
+      onOpenChange,
+    },
+  )
+  return (
+    <OverlayProvider value={presenter.overlay}>
+      <BaseMenu.Root {...props} {...presenter.root} />
+    </OverlayProvider>
+  )
 }
 
 /**
@@ -162,6 +197,35 @@ export function MenuContent({
   children,
   ...props
 }: MenuContentProps): ReactElement {
+  const overlay = useOverlay()
+  // Base UI may name a menu by its trigger; the sheet around it then takes the same name
+  const [labelledBy, setLabelledBy] = useState<string | null>(null)
+  if (overlay?.sheet === true) {
+    const label = props['aria-label']
+    const name =
+      label !== undefined
+        ? { 'aria-label': label }
+        : labelledBy !== null
+          ? { 'aria-labelledby': labelledBy }
+          : undefined
+    return (
+      <ListSheet portal={BaseMenu.Portal} name={name}>
+        <BaseMenu.Positioner style={SHEET_POSITIONER} className={SHEET_POSITIONER_CLASS}>
+          <BaseMenu.Popup
+            {...props}
+            ref={(el: HTMLDivElement | null) => {
+              const id = el?.getAttribute('aria-labelledby')
+              if (id !== null && id !== undefined) setLabelledBy(id)
+            }}
+            data-slot="menu-content"
+            className={SHEET_LIST_CLASS}
+          >
+            {children}
+          </BaseMenu.Popup>
+        </BaseMenu.Positioner>
+      </ListSheet>
+    )
+  }
   return (
     <ControlScopeProvider value={null}>
       <BaseMenu.Portal {...(container !== undefined && { container })}>
@@ -293,29 +357,49 @@ export function MenuSub({
   className,
   ...props
 }: MenuSubProps): ReactElement {
+  const parent = useOverlay()
+  // a submenu of an action sheet is a second sheet over it; of a popup, a popup beside it
+  const presenter = useOverlayRoot<Parameters<NonNullable<BaseMenu.Root.Props['onOpenChange']>>[1]>(
+    {
+      present: parent?.sheet === true ? 'sheet' : 'popup',
+    },
+  )
+  const sheet = presenter.overlay.sheet
   return (
-    <BaseMenu.SubmenuRoot>
-      <BaseMenu.SubmenuTrigger
-        {...props}
-        label={label}
-        data-slot="menu-sub"
-        className={cn(menuItemVariants(), className)}
-      >
-        {label}
-        <Glyph d="M6 4l4 4-4 4" className="text-muted-foreground" />
-      </BaseMenu.SubmenuTrigger>
-      <BaseMenu.Portal>
-        <BaseMenu.Positioner
-          {...(sideOffset !== undefined && { sideOffset })}
-          alignOffset={alignOffset}
-          className="z-50 outline-none"
+    <OverlayProvider value={presenter.overlay}>
+      <BaseMenu.SubmenuRoot {...presenter.root}>
+        <BaseMenu.SubmenuTrigger
+          {...props}
+          label={label}
+          data-slot="menu-sub"
+          className={cn(menuItemVariants(), className)}
         >
-          <BaseMenu.Popup data-slot="menu-content" className={menuContentVariants()}>
-            {children}
-          </BaseMenu.Popup>
-        </BaseMenu.Positioner>
-      </BaseMenu.Portal>
-    </BaseMenu.SubmenuRoot>
+          {label}
+          <Glyph d="M6 4l4 4-4 4" className="text-muted-foreground" />
+        </BaseMenu.SubmenuTrigger>
+        {sheet ? (
+          <ListSheet name={{ 'aria-label': label }} portal={BaseMenu.Portal}>
+            <BaseMenu.Positioner style={SHEET_POSITIONER} className={SHEET_POSITIONER_CLASS}>
+              <BaseMenu.Popup data-slot="menu-content" className={SHEET_LIST_CLASS}>
+                {children}
+              </BaseMenu.Popup>
+            </BaseMenu.Positioner>
+          </ListSheet>
+        ) : (
+          <BaseMenu.Portal>
+            <BaseMenu.Positioner
+              {...(sideOffset !== undefined && { sideOffset })}
+              alignOffset={alignOffset}
+              className="z-50 outline-none"
+            >
+              <BaseMenu.Popup data-slot="menu-content" className={menuContentVariants()}>
+                {children}
+              </BaseMenu.Popup>
+            </BaseMenu.Positioner>
+          </BaseMenu.Portal>
+        )}
+      </BaseMenu.SubmenuRoot>
+    </OverlayProvider>
   )
 }
 

@@ -44,13 +44,15 @@ padding, the title and description are read by assistive tech only, and the chil
 `WizardDialog`) draw their own top bar with a `DialogClose`.
 
 ```ts
-DialogContent({ title, description, meta, actions, size, className, children, ...props }: DialogContentProps): ReactElement
+DialogContent({ title, description, meta, actions, size, form, present, className, children, ...props }: DialogContentProps): ReactElement
   className?: string  // Layout only (`w-full`, `mt-2`)
   title: ReactNode  // The accessible name and the visible heading
   description?: ReactNode  // One sentence under the title; it also describes the dialog to assistive tech
   size?: "sm" | "md" | "lg" | "wide" | "split" | null
   meta?: ReactNode  // A muted line under the title, such as a file's size and date
   actions?: readonly DialogAction[]  // Icon actions between the title and the close, at most four
+  form?: boolean  // The panel holds a form (or, at `size="split"`, the wizard): on a phone (compact width, coarse pointer) it opens as a full-height sheet from the bottom instead of centred
+  present?: OverlayPresent  // Forces the presentation: `popup` centred, `sheet` full height from the bottom, `auto` by `form` and the viewport
 ```
 
 ### `DialogTitle`
