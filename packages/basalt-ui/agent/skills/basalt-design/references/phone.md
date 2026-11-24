@@ -16,7 +16,7 @@ What basalt does on a phone by itself, and what an app must not add. The touch r
 
 ## Safe areas
 
-- The shell pads top, left, right and bottom with `env(safe-area-inset-*)`. The viewport meta's `viewport-fit=cover` makes those insets real.
+- The shell pads top, left and right with `env(safe-area-inset-*)`, and its root pads the bottom from `md`; on a phone the bottom bar pads its own inset. The viewport meta's `viewport-fit=cover` makes those insets real.
 - An app adds no safe-area padding to the frame or to a page. Page code gets the gutter from `Page`.
 - A full-height surface uses `dvh` (`h-dvh`, `min-h-dvh`), never `vh`.
 

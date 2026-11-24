@@ -106,7 +106,7 @@ export const REFERENCE_BYTE_BUDGETS: Readonly<Record<string, number>> = {
   'agent/skills/basalt-design/references/encoding.md': 4_739,
   'agent/skills/basalt-design/references/forms.md': 10_807,
   'agent/skills/basalt-design/references/motion.md': 5_834,
-  'agent/skills/basalt-design/references/phone.md': 2_856,
+  'agent/skills/basalt-design/references/phone.md': 2_934,
   'agent/skills/basalt-design/references/state.md': 2_266,
   'agent/skills/basalt-design/references/states.md': 4_921,
   'agent/skills/basalt-design/references/table.md': 15_865,

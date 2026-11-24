@@ -1,7 +1,9 @@
 import { cleanup, fireEvent, render } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
 import { renderToString } from 'react-dom/server'
-import { NumberField, numberFieldParts } from './number-field'
+import { inputAddonVariants } from './control-group'
+import { NumberField, numberFieldParts, numberFieldVariants } from './number-field'
+import { segmentedVariants } from './segmented'
 
 afterEach(cleanup)
 
@@ -55,6 +57,9 @@ describe('number-field module', () => {
     const { getByLabelText, container } = render(<NumberField aria-label="Qty" />)
     expect(getByLabelText('Qty').className).toMatch(/(^| )-my-px( |$)/)
     expect(container.querySelector('[data-slot="number-field"]')?.className).toContain('h-ctl')
+    expect(numberFieldVariants({ size: 'sm' })).toContain('pointer-coarse:h-ctl')
+    expect(inputAddonVariants({ size: 'sm' })).toContain('pointer-coarse:h-ctl')
+    expect(segmentedVariants({ size: 'sm' })).toContain('pointer-coarse:min-h-ctl')
     expect(getByLabelText('Increase').className).toContain('after:-inset-y-px')
   })
 
