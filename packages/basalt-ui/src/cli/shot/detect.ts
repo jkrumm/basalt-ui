@@ -1,5 +1,5 @@
 /**
- * `basalt-ui shot detect [--out <dir>] [--lint <oxlint-json-file>]` — the deterministic floor under
+ * `basalt-ui shot detect [--out <dir>] [--lint <oxlint-json-file>] [--facts <dir>]` — the deterministic floor under
  * the design reviewer: the [measured] items, read from `metrics.json` with no model in the loop,
  * plus the `basalt/*` diagnostics of an `oxlint --format json` report. Contrast is axe's, not read.
  *
@@ -20,15 +20,18 @@
  * | craft-1/nested-radius-step      | style   | P1                                          |
  * | craft-2/font-sizes              | style   | P1                                          |
  * | lint/basalt/<rule>              | style   | P1 for an error, P2 for a warning           |
+ * | communication-5/repeated-* | content | P2 (`--facts`): a word, phrase or constant said in several places |
  *
- * Score = 100 − (25·P0 + 10·P1 + 3·P2 + 1·P3), floored at 0; null when no anchor resolved.
+ * Score = 100 − (25·P0 + 10·P1 + 3·P2 + 1·P3), null when no anchor resolved. A score can go below 0, so two rounds compare.
  */
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { join, relative, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 
 import { LAST_SHOT, PAGE_ANCHOR, parseViewport } from './types'
 import type { AnchorMetrics, Scale, ShotMetrics, Sides } from './types'
+import { countFacts } from './facts'
+import type { FactCount, FactFile } from './facts'
 
 export type Severity = 'P0' | 'P1' | 'P2' | 'P3'
 export type Layer = 'content' | 'layout' | 'style'
@@ -68,12 +71,13 @@ const FONT_SIZE_LIMIT = 3
 const EMPTY_LIMIT = 0.4
 const NESTED_MIN_STEP_PX = 3
 const POLISH_PX = 1
-const USAGE_LINE = 'usage: basalt-ui shot detect [--out <dir>] [--lint <oxlint-json-file>]'
+const USAGE_LINE =
+  'usage: basalt-ui shot detect [--out <dir>] [--lint <oxlint-json-file>] [--facts <dir>]'
 
 class DetectError extends Error {}
 
 export const scoreOf = (findings: readonly Finding[]): number =>
-  Math.max(0, 100 - findings.reduce((sum, f) => sum + WEIGHT[f.severity], 0))
+  100 - findings.reduce((sum, f) => sum + WEIGHT[f.severity], 0)
 
 const countsOf = (findings: readonly Finding[]): Record<Severity, number> =>
   Object.fromEntries(
@@ -342,7 +346,12 @@ export function detectFindings(m: ShotMetrics, lint?: LintReport): Finding[] {
       grouped.set(key, { ...d, where: d.where ? [d.where] : [] })
     }
   }
-  return [...grouped.values()].sort(
+  return sortFindings([...grouped.values()])
+}
+
+/** Content, then layout, then style; within a layer the most severe first. */
+function sortFindings(findings: Finding[]): Finding[] {
+  return findings.toSorted(
     (x, y) =>
       LAYERS.indexOf(x.layer) - LAYERS.indexOf(y.layer) ||
       SEVERITIES.indexOf(x.severity) - SEVERITIES.indexOf(y.severity),
@@ -389,6 +398,54 @@ function outDirOf(cwd: string, out: string | undefined): string {
   return resolve(cwd, named)
 }
 
+/** The page's `.tsx` files, recursively and without the tests, in path order so every run counts the same text. */
+function factFiles(dir: string, cwd: string): FactFile[] {
+  let names: string[]
+  try {
+    names = readdirSync(dir, { encoding: 'utf8', recursive: true })
+  } catch (error) {
+    throw new DetectError(`--facts ${dir} is unreadable: ${(error as Error).message}`)
+  }
+  return names
+    .filter((name) => name.endsWith('.tsx') && !name.endsWith('.test.tsx'))
+    .toSorted()
+    .map((name) => {
+      const path = join(dir, name)
+      return { path: relative(cwd, path), text: readFileSync(path, 'utf8') }
+    })
+}
+
+/** One P2 per fact the page says more than once, anchored at the page dir and cited to its files. */
+function factFindings(
+  facts: readonly FactCount[],
+  anchor: string,
+  files: readonly string[],
+): Finding[] {
+  return facts.map((fact): Finding => ({
+    rule: `communication-5/repeated-${fact.kind}`,
+    severity: 'P2',
+    layer: 'content',
+    anchor,
+    where: [],
+    cite: files.join(', '),
+    defect: `${
+      fact.kind === 'constant'
+        ? `constant '${fact.text}' is read in ${fact.count} places`
+        : `'${fact.text}' is said in ${fact.count} strings`
+    }: cut it from all but one`,
+  }))
+}
+
+/** The fact findings of the `.tsx` files under `dir`. */
+function factsOf(dir: string, cwd: string): Finding[] {
+  const files = factFiles(dir, cwd)
+  return factFindings(
+    countFacts(files),
+    relative(cwd, dir) || '.',
+    files.map((file) => file.path),
+  )
+}
+
 /** A compact, plain-text table: severity, rule, component, where, defect. */
 function table(findings: readonly Finding[]): string[] {
   const rows = findings.map((f) => [
@@ -415,11 +472,11 @@ export async function detect(
 ): Promise<number> {
   const log = deps.log ?? ((line: string) => console.log(line))
   try {
-    let values: { out?: string | undefined; lint?: string | undefined }
+    let values: { out?: string | undefined; lint?: string | undefined; facts?: string | undefined }
     try {
       const parsed = parseArgs({
         args: [...flags],
-        options: { out: { type: 'string' }, lint: { type: 'string' } },
+        options: { out: { type: 'string' }, lint: { type: 'string' }, facts: { type: 'string' } },
         allowPositionals: true,
       })
       const [positional] = parsed.positionals
@@ -434,13 +491,27 @@ export async function detect(
       )
     }
     const outDir = outDirOf(cwd, values.out)
-    const metrics = readMetrics(join(outDir, 'metrics.json'))
-    const findings = detectFindings(
-      metrics,
-      values.lint ? readLint(resolve(cwd, values.lint)) : undefined,
-    )
+    const metricsPath = join(outDir, 'metrics.json')
+    // `--facts` alone: a page with no shot round in its out dir still gets its fact count, and no score.
+    const factsOnly = values.facts !== undefined && !existsSync(metricsPath)
+    if (factsOnly && values.lint !== undefined)
+      throw new DetectError(`--lint needs ${metricsPath}: its findings join the measured ones`)
+    const metrics = factsOnly ? undefined : readMetrics(metricsPath)
+    const facts = values.facts === undefined ? [] : factsOf(resolve(cwd, values.facts), cwd)
+    const findings = metrics
+      ? sortFindings([
+          ...detectFindings(metrics, values.lint ? readLint(resolve(cwd, values.lint)) : undefined),
+          ...facts,
+        ])
+      : facts
     const counts = countsOf(findings)
-    const score = metrics.anchors.length === 0 ? null : scoreOf(findings)
+    const score = metrics && metrics.anchors.length > 0 ? scoreOf(findings) : null
+    const scoreText =
+      score !== null
+        ? `score ${score}`
+        : metrics
+          ? 'nothing measured (no anchor resolved: not a score)'
+          : 'no metrics.json: facts only, no score'
     const at = (deps.now ?? (() => new Date()))().toISOString()
     const rel = relative(cwd, join(outDir, 'detect.json'))
     try {
@@ -462,7 +533,7 @@ export async function detect(
       .map((s) => `${s} ${counts[s]}`)
       .join(', ')
     log(
-      `[detect] ${findings.length === 0 ? 'no findings' : `${findings.length} findings (${summary})`} · ${score === null ? 'nothing measured (no anchor resolved: not a score)' : `score ${score}`} · ${rel}`,
+      `[detect] ${findings.length === 0 ? 'no findings' : `${findings.length} findings (${summary})`} · ${scoreText} · ${rel}`,
     )
     for (const line of table(findings)) log(line)
     return counts.P0 + counts.P1 > 0 ? 2 : 0
