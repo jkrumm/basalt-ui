@@ -1,5 +1,9 @@
 import { describe, expect, test } from 'bun:test'
-import { routePaths, scenarioPaths } from '../packages/basalt-ui/tests/quality/matrix/routes'
+import {
+  EXPRESSION_INDEX,
+  routePaths,
+  scenarioPaths,
+} from '../packages/basalt-ui/tests/quality/matrix/routes'
 import {
   CAP_CELLS,
   SMOKE_PARTS,
@@ -32,13 +36,15 @@ describe('the graph of the real tree', () => {
   })
 
   test('its pages are the routes and scenarios the matrix runs', () => {
-    expect(new Set(quality.pages.keys())).toEqual(new Set([...routePaths(), ...scenarioPaths()]))
+    expect(new Set(quality.pages.keys())).toEqual(
+      new Set([...routePaths(), EXPRESSION_INDEX, ...scenarioPaths()]),
+    )
   })
 
   test('its cells are the sampled matrix: two per route of routes.ts, two per page of the hover guard', () => {
-    const pages = new Set([...routePaths(), ...scenarioPaths()])
+    const pages = new Set([...routePaths(), EXPRESSION_INDEX, ...scenarioPaths()])
     const cells = [...quality.pages.keys()].reduce((sum, page) => sum + quality.cost(page), 0)
-    expect(cells).toBe(2 * routePaths().length + 2 * pages.size)
+    expect(cells).toBe(2 * (routePaths().length + 1) + 2 * pages.size)
   })
 
   test('the smoke sets name real pages, one per family', () => {
@@ -95,26 +101,45 @@ describe('selectMatrix', () => {
   })
 
   test('a scenario runs its own route', () => {
-    expect(pagesOf(run(['apps/playground/src/scenarios/expr/n87/ExprN87.tsx']))).toEqual([
+    expect(pagesOf(run(['apps/expression/src/scenarios/expr/n87/ExprN87.tsx']))).toEqual([
       '/scenarios/expr-n87',
+    ])
+  })
+
+  test("a fixture of the expression app runs the routes that import it, none of the playground's", () => {
+    const file = 'apps/expression/src/scenarios/expr/c12/fixture.ts'
+    const sel = run([file])
+    expect(rendering(file)).toContain('/scenarios/expr-c12')
+    expect(pagesOf(sel)).toEqual(rendering(file).toSorted())
+    expect(pagesOf(sel).every((route) => route.startsWith('/scenarios/expr-'))).toBe(true)
+  })
+
+  test('a module of the expression shell runs the smoke set, which carries the expression index', () => {
+    expect(pagesOf(run(['apps/expression/src/routes/__root.tsx']))).toEqual([...SMOKE_ROUTES])
+    expect(SMOKE_ROUTES).toContain(EXPRESSION_INDEX)
+  })
+
+  test('the playground keeps no expression scenario to run', () => {
+    expect(pagesOf(run(['apps/playground/src/scenarios/mdx-scenario.tsx']))).toEqual([
+      '/scenarios/mdx',
     ])
   })
 
   test('a branch of new scenarios runs those routes only', () => {
     const sel = run(
       [
-        'apps/playground/src/scenarios/expr/n87/ExprN87.tsx',
-        'apps/playground/src/scenarios/expr/n88/DESIGN.md',
-        'apps/playground/src/scenarios/registry.tsx',
-        'apps/playground/src/scenarios/scenario-info.ts',
-        'apps/playground/src/demo/series.ts',
+        'apps/expression/src/scenarios/expr/n87/ExprN87.tsx',
+        'apps/expression/src/scenarios/expr/n88/DESIGN.md',
+        'apps/expression/src/scenarios/registry.tsx',
+        'apps/expression/src/scenarios/scenario-info.ts',
+        'apps/expression/src/demo/series.ts',
       ],
       {
         diffs: {
-          'apps/playground/src/scenarios/registry.tsx':
+          'apps/expression/src/scenarios/registry.tsx':
             "+import { ExprN87Scenario } from './expr/n87/ExprN87'\n",
-          'apps/playground/src/scenarios/scenario-info.ts': "+  {\n+    id: 'expr-n88',\n",
-          'apps/playground/src/demo/series.ts': '+export const N87_SERIES = {}\n',
+          'apps/expression/src/scenarios/scenario-info.ts': "+  {\n+    id: 'expr-n88',\n",
+          'apps/expression/src/demo/series.ts': '+export const N87_SERIES = {}\n',
         },
       },
     )
@@ -122,8 +147,10 @@ describe('selectMatrix', () => {
   })
 
   test('a changed line in the registry reaches every scenario: the smoke set', () => {
-    const sel = run(['apps/playground/src/scenarios/registry.tsx'], {
-      diffs: { 'apps/playground/src/scenarios/registry.tsx': '-  mdx: a,\n+  mdx: b,\n' },
+    const sel = run(['apps/expression/src/scenarios/registry.tsx'], {
+      diffs: {
+        'apps/expression/src/scenarios/registry.tsx': "-  'expr-c10': a,\n+  'expr-c10': b,\n",
+      },
     })
     expect(pagesOf(sel)).toEqual([...SMOKE_ROUTES])
   })

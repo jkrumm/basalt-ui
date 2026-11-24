@@ -38,7 +38,9 @@ export const webkit: Lane = async () => {
     )
     for (const descriptor of DESCRIPTORS) {
       for (const route of routes) {
-        findings.push(...(await webkitCell(browser, descriptor, exemplar.origin, route)))
+        findings.push(
+          ...(await webkitCell(browser, descriptor, exemplar.origin('playground'), route)),
+        )
       }
     }
   } finally {

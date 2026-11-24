@@ -42,6 +42,7 @@ export const QUALITY_INPUTS: readonly string[] = [
   'packages/basalt-ui/tests/support',
   'packages/basalt-ui/package.json',
   'apps/playground',
+  'apps/expression',
   'package.json',
   'bun.lock',
 ]
@@ -86,15 +87,16 @@ export const BUILD_SHAPE: readonly string[] = [
 ]
 
 /**
- * One route per part family, at the matrix's two sampled cells and its two hover cells each (24 cells): the controls kit
- * (the primitives), the cards, the charts, the data table, the whole form and the authored MDX page. Every page renders
- * the shell, so it needs no route of its own.
+ * One route per part family, at the matrix's two sampled cells and its two hover cells each (28 cells): the controls kit
+ * (the primitives), the cards, the charts, the data table, the whole form, the authored MDX page and the expression app's
+ * index (the only page of the second shell). Every other page renders a shell, so it needs no route of its own.
  */
 export const SMOKE_ROUTES: readonly string[] = [
   '/cards',
   '/charts',
   '/kit/controls',
   '/kit/forms/whole',
+  '/scenarios',
   '/scenarios/mdx',
   '/table',
 ]
@@ -118,11 +120,18 @@ export const CAP_CELLS = 48
 /** The most Astro parts a reached set measures locally: the whole matrix is 90 parts in about five minutes. */
 export const CAP_PARTS = 24
 
-const SCENARIOS = 'apps/playground/src/scenarios'
-const INFO = `${SCENARIOS}/scenario-info.ts`
-const REGISTRY = `${SCENARIOS}/registry.tsx`
+/** The two apps the quality matrix serves; each registers scenarios under `src/scenarios`. */
+const APPS = ['apps/playground', 'apps/expression'] as const
+type AppDir = (typeof APPS)[number]
+const infoOf = (app: AppDir): string => `${app}/src/scenarios/scenario-info.ts`
+const registryOf = (app: AppDir): string => `${app}/src/scenarios/registry.tsx`
+const INFOS: readonly string[] = APPS.map(infoOf)
 /** Files a new scenario adds lines to; an additive diff of one adds only the new scenario's page. */
-const ADDITIVE: readonly string[] = [INFO, REGISTRY, 'apps/playground/src/demo/series.ts']
+const ADDITIVE: readonly string[] = APPS.flatMap((app) => [
+  infoOf(app),
+  registryOf(app),
+  `${app}/src/demo/series.ts`,
+])
 
 /** Files the graph reads; a changed file of another kind (an image, a font, a config) it cannot place. */
 const READABLE = /\.(?:[cm]?[jt]sx?|css|mdx|md|json|astro)$/
@@ -259,7 +268,7 @@ export function selectMatrix(input: SelectInput): Selection {
       if (!ADDITIVE.includes(file)) return null
       const diff = diffOf(file)
       if (!additiveOnly(diff)) return null
-      const routes = file === INFO ? addedIds(diff).map((id) => `/scenarios/${id}`) : []
+      const routes = INFOS.includes(file) ? addedIds(diff).map((id) => `/scenarios/${id}`) : []
       return { pages: routes, reason: `additive lines, ${routes.length} new scenario routes` }
     },
   })
@@ -316,19 +325,20 @@ export function selectAstro(
 
 // ── the real tree ─────────────────────────────────────────────────────────────────────────────────
 
-const PLAYGROUND_SRC = 'apps/playground/src'
-const ROUTES = `${PLAYGROUND_SRC}/routes`
+const routesOf = (app: AppDir): string => `${app}/src/routes`
 /** The generated route tree imports every route: the walk from main.tsx stops there, the routes are walked one by one. */
-const ROUTE_TREE = `${PLAYGROUND_SRC}/routeTree.gen.ts`
+const routeTreeOf = (app: AppDir): string => `${app}/src/routeTree.gen.ts`
 
-/** Route files, relative to the routes dir without `.tsx`, skipping the `__`/`-` entries TanStack's generator ignores. */
-function routeNames(root: string, prefix = ''): string[] {
-  return readdirSync(join(root, ROUTES, prefix), { withFileTypes: true }).flatMap((entry) => {
-    if (entry.name.startsWith('__') || entry.name.startsWith('-')) return []
-    const rel = prefix === '' ? entry.name : `${prefix}/${entry.name}`
-    if (entry.isDirectory()) return routeNames(root, rel)
-    return entry.name.endsWith('.tsx') ? [rel.slice(0, -'.tsx'.length)] : []
-  })
+/** Route files of an app, relative to its routes dir without `.tsx`, skipping the `__`/`-` entries TanStack's generator ignores. */
+function routeNames(root: string, app: AppDir, prefix = ''): string[] {
+  return readdirSync(join(root, routesOf(app), prefix), { withFileTypes: true }).flatMap(
+    (entry) => {
+      if (entry.name.startsWith('__') || entry.name.startsWith('-')) return []
+      const rel = prefix === '' ? entry.name : `${prefix}/${entry.name}`
+      if (entry.isDirectory()) return routeNames(root, app, rel)
+      return entry.name.endsWith('.tsx') ? [rel.slice(0, -'.tsx'.length)] : []
+    },
+  )
 }
 
 const segments = (name: string): string[] =>
@@ -347,39 +357,38 @@ function layoutsOf(name: string, names: readonly string[]): string[] {
   })
 }
 
-/** The ids of scenario-info.ts, in order: the first is the matrix's `/scenarios/$name`. */
-function scenarioIds(root: string): string[] {
-  return [...readFileSync(join(root, INFO), 'utf8').matchAll(/\bid:\s*'([\w-]+)'/g)].map(
+/** The ids of an app's scenario-info.ts, in order: the playground's first is the matrix's `/scenarios/$name`. */
+function scenarioIds(root: string, app: AppDir): string[] {
+  return [...readFileSync(join(root, infoOf(app)), 'utf8').matchAll(/\bid:\s*'([\w-]+)'/g)].map(
     (m) => m[1] as string,
   )
 }
 
 /** registry.tsx: `'expr-n87': (p) => <ExprN87Scenario` and `import { ExprN87Scenario } from './expr/n87/ExprN87'`. */
-function scenarioModules(root: string, graph: ImportGraph): Map<string, string> {
-  const source = readFileSync(join(root, REGISTRY), 'utf8')
+function scenarioModules(root: string, app: AppDir, graph: ImportGraph): Map<string, string> {
+  const registry = registryOf(app)
+  const source = readFileSync(join(root, registry), 'utf8')
   const from = new Map<string, string>()
   for (const m of source.matchAll(/^import\s*\{([^}]+)\}\s*from\s*'([^']+)'/gm))
     for (const name of (m[1] as string).split(',')) from.set(name.trim(), m[2] as string)
   const out = new Map<string, string>()
   for (const m of source.matchAll(/^\s*'?([\w-]+)'?:\s*\([^)]*\)\s*=>\s*<(\w+)/gm)) {
     const specifier = from.get(m[2] as string)
-    const file = specifier === undefined ? null : graph.resolve(REGISTRY, specifier)
+    const file = specifier === undefined ? null : graph.resolve(registry, specifier)
     if (file !== null) out.set(m[1] as string, file)
   }
   return out
 }
 
-/** The quality matrix over the working tree: every route of routes.ts and every scenario, as the matrix names them. */
+/**
+ * The quality matrix over the working tree: every route of routes.ts and every scenario, as the matrix names them. The
+ * playground serves its route files and its scenarios, the expression app its index and its scenarios (the route
+ * `/scenarios` is the expression index, the only route file of that app the matrix samples).
+ */
 export function qualityModel(root: string): PageModel & { unresolved: string[]; ids: string[] } {
   const graph = createImportGraph(root)
-  const ids = scenarioIds(root)
-  const names = routeNames(root).toSorted()
-  const shared = graph.reach(
-    [`${PLAYGROUND_SRC}/main.tsx`, `${ROUTES}/__root.tsx`],
-    new Set([ROUTE_TREE]),
-  )
-  shared.delete(ROUTE_TREE)
-  const stop = new Set([REGISTRY])
+  const ids = scenarioIds(root, 'apps/playground')
+  const shared = new Set<string>()
   const pages = new Map<string, Set<string>>()
   /** quality-matrix cells per route: two per occurrence in routes.ts (a `x.tsx` and `x/index.tsx` share a path) */
   const sampled = new Map<string, number>()
@@ -388,30 +397,45 @@ export function qualityModel(root: string): PageModel & { unresolved: string[]; 
     for (const file of files) set.add(file)
     pages.set(path, set)
   }
-  for (const name of names) {
-    // the path routes.ts gives a route file: only a trailing `index` is dropped
-    const path = `/${name
-      .split(/[./]/)
-      .filter((part, i, all) => !(part === 'index' && i === all.length - 1))
-      .map((part) => (part === '$name' ? ids[0] : part === '$id' ? '12' : part))
-      .join('/')}`
-    sampled.set(path, (sampled.get(path) ?? 0) + 2)
-    add(
-      path,
-      graph.reach(
-        layoutsOf(name, names).map((n) => `${ROUTES}/${n}.tsx`),
-        stop,
-      ),
-    )
-  }
-  const scenarioRoute = graph.reach([`${ROUTES}/scenarios.$name.tsx`], stop)
-  const modules = scenarioModules(root, graph)
-  for (const id of ids) {
-    const module = modules.get(id)
-    add(`/scenarios/${id}`, [
-      ...scenarioRoute,
-      ...(module === undefined ? [REGISTRY] : graph.reach([module])),
-    ])
+  for (const app of APPS) {
+    const routes = routesOf(app)
+    const registry = registryOf(app)
+    const names = routeNames(root, app).toSorted()
+    for (const file of graph.reach(
+      [`${app}/src/main.tsx`, `${routes}/__root.tsx`],
+      new Set([routeTreeOf(app)]),
+    ))
+      shared.add(file)
+    shared.delete(routeTreeOf(app))
+    const stop = new Set([registry])
+    // The expression app's matrix routes are its index alone: its `/` redirects and its scenarios are hover pages.
+    const matrixNames =
+      app === 'apps/playground' ? names : names.filter((n) => n === 'scenarios.index')
+    for (const name of matrixNames) {
+      // the path routes.ts gives a route file: only a trailing `index` is dropped
+      const path = `/${name
+        .split(/[./]/)
+        .filter((part, i, all) => !(part === 'index' && i === all.length - 1))
+        .map((part) => (part === '$name' ? ids[0] : part === '$id' ? '12' : part))
+        .join('/')}`
+      sampled.set(path, (sampled.get(path) ?? 0) + 2)
+      add(
+        path,
+        graph.reach(
+          layoutsOf(name, names).map((n) => `${routes}/${n}.tsx`),
+          stop,
+        ),
+      )
+    }
+    const scenarioRoute = graph.reach([`${routes}/scenarios.$name.tsx`], stop)
+    const modules = scenarioModules(root, app, graph)
+    for (const id of scenarioIds(root, app)) {
+      const module = modules.get(id)
+      add(`/scenarios/${id}`, [
+        ...scenarioRoute,
+        ...(module === undefined ? [registry] : graph.reach([module])),
+      ])
+    }
   }
   // what every cell runs besides the page: the assertions (`quality.*`) and the document's pre-paint script
   const harness = graph.reach(

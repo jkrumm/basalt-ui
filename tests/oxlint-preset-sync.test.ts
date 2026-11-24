@@ -88,6 +88,13 @@ describe('repo oxlint config sync contract', () => {
     expect(parsed.extends).toEqual(['./.oxlintrc.basalt.json'])
   })
 
+  it('apps/expression extends the same app preset its install renders', () => {
+    const parsed = JSON.parse(
+      readFileSync(join(root, 'apps/expression/.oxlintrc.json'), 'utf8'),
+    ) as { extends?: string[] }
+    expect(parsed.extends).toEqual(['./.oxlintrc.basalt.json'])
+  })
+
   it('the repo config actually parses in oxlint', () => {
     const result = Bun.spawnSync([
       OXLINT_BIN,
@@ -149,13 +156,14 @@ describe('React-compiler rules stay on', () => {
   const topLevelRules = (path: string): Record<string, unknown> =>
     (JSON.parse(readFileSync(path, 'utf8')) as { rules: Record<string, unknown> }).rules
 
-  it.each([join(root, '.oxlintrc.json'), join(root, 'apps/playground/.oxlintrc.json')])(
-    '%s sets all seven rules to error',
-    (path) => {
-      const rules = topLevelRules(path)
-      for (const rule of COMPILER_RULES) expect(rules[rule]).toBe('error')
-    },
-  )
+  it.each([
+    join(root, '.oxlintrc.json'),
+    join(root, 'apps/playground/.oxlintrc.json'),
+    join(root, 'apps/expression/.oxlintrc.json'),
+  ])('%s sets all seven rules to error', (path) => {
+    const rules = topLevelRules(path)
+    for (const rule of COMPILER_RULES) expect(rules[rule]).toBe('error')
+  })
 
   it('playground overrides match the projection (drift = red)', () => {
     const committed = readOverrides(join(root, 'apps/playground/.oxlintrc.json'))

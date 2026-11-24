@@ -1,0 +1,1670 @@
+{
+  "plugins": [
+    "react",
+    "typescript",
+    "jsx-a11y"
+  ],
+  "jsPlugins": [
+    "basalt-ui/lint",
+    "@shadcn/lint"
+  ],
+  "settings": {
+    "shadcn": {
+      "themeImports": [
+        "^basalt-ui/"
+      ]
+    },
+    "jsx-a11y": {
+      "components": {
+        "Accordion": "div",
+        "AccordionContent": "div",
+        "AccordionItem": "div",
+        "AccordionTrigger": "div",
+        "Alert": "div",
+        "AlertDialogContent": "div",
+        "AlertDialogTrigger": "div",
+        "Autocomplete": "div",
+        "AutocompleteContent": "div",
+        "AutocompleteInput": "div",
+        "AutocompleteItem": "div",
+        "Avatar": "div",
+        "AvatarStack": "div",
+        "Button": "button",
+        "ButtonGroup": "div",
+        "Calendar": "div",
+        "Card": "div",
+        "CardBand": "div",
+        "CardInfo": "div",
+        "CardPhase": "div",
+        "Checkbox": "div",
+        "CheckboxGroup": "div",
+        "CheckboxMatrix": "div",
+        "ChoiceCard": "div",
+        "Collapsible": "div",
+        "CollapsibleContent": "div",
+        "CollapsibleTrigger": "div",
+        "Combobox": "div",
+        "ComboboxChip": "div",
+        "ComboboxChips": "div",
+        "ComboboxContent": "div",
+        "ComboboxInput": "div",
+        "ComboboxItem": "div",
+        "ControlGroup": "div",
+        "CopyButton": "button",
+        "CountBadge": "div",
+        "DatePicker": "div",
+        "DateRangePicker": "div",
+        "DeltaBadge": "div",
+        "DialogClose": "div",
+        "DialogContent": "div",
+        "DialogDescription": "div",
+        "DialogTitle": "div",
+        "DialogTrigger": "div",
+        "EntityChip": "div",
+        "EntityTitle": "div",
+        "Field": "div",
+        "FieldDescription": "div",
+        "FieldError": "div",
+        "FieldLabel": "label",
+        "Fieldset": "fieldset",
+        "FieldsetLegend": "legend",
+        "FileUpload": "div",
+        "Form": "form",
+        "IconTile": "div",
+        "InfoHint": "div",
+        "Input": "input",
+        "InputAddon": "div",
+        "InputGroup": "div",
+        "Inset": "div",
+        "Kbd": "kbd",
+        "Lozenge": "div",
+        "MenuCheckboxItem": "div",
+        "MenuContent": "div",
+        "MenuGroup": "div",
+        "MenuItem": "div",
+        "MenuRadioGroup": "div",
+        "MenuRadioItem": "div",
+        "MenuSeparator": "div",
+        "MenuSub": "div",
+        "MenuTrigger": "div",
+        "Meter": "div",
+        "NativeSelect": "select",
+        "Num": "div",
+        "NumberField": "input",
+        "OneTimeCode": "div",
+        "PasswordInput": "input",
+        "PopoverContent": "div",
+        "PopoverTrigger": "div",
+        "Pressable": "button",
+        "PreviewCardContent": "div",
+        "PreviewCardTrigger": "div",
+        "Progress": "div",
+        "QuickPicks": "div",
+        "Radio": "div",
+        "RadioGroup": "div",
+        "ResizableHandle": "div",
+        "ResizablePanel": "div",
+        "ResizablePanelGroup": "div",
+        "Ring": "div",
+        "ScrollArea": "div",
+        "Segmented": "div",
+        "SegmentedItem": "div",
+        "Select": "div",
+        "SelectContent": "div",
+        "SelectGroup": "div",
+        "SelectItem": "div",
+        "SelectTrigger": "div",
+        "SelectValue": "div",
+        "Separator": "div",
+        "SheetClose": "div",
+        "SheetContent": "div",
+        "SheetTitle": "div",
+        "SheetTrigger": "div",
+        "Skeleton": "div",
+        "Slider": "div",
+        "SortableList": "div",
+        "Spinner": "div",
+        "Status": "div",
+        "Swatch": "div",
+        "SwatchPicker": "div",
+        "Switch": "div",
+        "Table": "table",
+        "TableBody": "tbody",
+        "TableCaption": "caption",
+        "TableCell": "td",
+        "TableHead": "th",
+        "TableHeader": "thead",
+        "TableRow": "tr",
+        "Tabs": "div",
+        "TabsContent": "div",
+        "TabsList": "div",
+        "TabsTrigger": "div",
+        "TagInput": "div",
+        "Textarea": "textarea",
+        "Toast": "div",
+        "ToastClose": "div",
+        "ToastDescription": "div",
+        "ToastTitle": "div",
+        "ToastViewport": "div",
+        "Toolbar": "div",
+        "ToolbarButton": "div",
+        "ToolbarGroup": "div",
+        "ToolbarSeparator": "div",
+        "Tooltip": "div",
+        "VirtualList": "div"
+      }
+    },
+    "basalt": {
+      "pins": {
+        "oxlint": "1.93.0",
+        "@shadcn/lint": "0.2.5"
+      }
+    }
+  },
+  "rules": {
+    "basalt/viewport-keyed": "error",
+    "basalt/dark-fork": "error",
+    "basalt/fixed-colour": "error",
+    "basalt/status-fill-as-text": "error",
+    "basalt/raw-scroll": "error",
+    "basalt/tw-off-law": "error",
+    "basalt/app-spacing": "error",
+    "basalt/motion-off-scale": "error",
+    "basalt/logical-properties": "off",
+    "basalt/import-boundary": "error",
+    "basalt/primitive-bypass": "error",
+    "basalt/colour-literal": "error",
+    "basalt/motion-literal": "error",
+    "basalt/waiver-needs-reason": "error",
+    "basalt/data-primitive": "error",
+    "basalt/router-search": "error",
+    "basalt/control-home": "error",
+    "basalt/untrusted-markdown": "error",
+    "basalt/page-root": "error",
+    "shadcn/no-raw-colors": [
+      "error",
+      {
+        "allow": [
+          "shadow-2xs",
+          "shadow-xs",
+          "shadow-sm",
+          "shadow-md",
+          "shadow-lg",
+          "shadow-xl",
+          "shadow-2xl",
+          "shadow-inner",
+          "shadow-none",
+          "*-accent",
+          "*-selected",
+          "*-scrim",
+          "*-scrim-wash",
+          "*-border"
+        ],
+        "message": "\"{{className}}\" is no colour the theme declares. Token names are not classes: canvas is bg-background, raised is bg-popover, hover is bg-accent, hairline is border-border, ink is text-foreground, ink-muted is text-muted-foreground, ink-faint is text-faint. Otherwise app colour comes from Status, Lozenge, DeltaBadge or a Num tone; the palette is derived, so no colour is declared per app. A shadow or a type step is not a colour: check its spelling."
+      }
+    ],
+    "shadcn/no-arbitrary-values": [
+      "error",
+      {
+        "allow": [
+          "grid-cols-[*]",
+          "grid-rows-[*]",
+          "*:grid-cols-[*]",
+          "*:grid-rows-[*]"
+        ],
+        "message": "\"{{className}}\" hardcodes an off-token value. By kind: a colour comes from Status, Lozenge, DeltaBadge or a Num tone; overflow is ui/scroll-area, or the page owns the scroll; space around an element is gap on the parent; a spacing value is a step of the spacing ladder (integers, halves below 4); a width belongs to the parent container, and one computed from data is BarList, ui/progress or ui/meter."
+      }
+    ],
+    "shadcn/no-unknown-classes": [
+      "error",
+      {
+        "allow": [
+          "sm:*",
+          "*:sm:*",
+          "max-sm:*",
+          "*:max-sm:*",
+          "min-sm:*",
+          "*:min-sm:*",
+          "md:*",
+          "*:md:*",
+          "max-md:*",
+          "*:max-md:*",
+          "min-md:*",
+          "*:min-md:*",
+          "lg:*",
+          "*:lg:*",
+          "max-lg:*",
+          "*:max-lg:*",
+          "min-lg:*",
+          "*:min-lg:*",
+          "xl:*",
+          "*:xl:*",
+          "max-xl:*",
+          "*:max-xl:*",
+          "min-xl:*",
+          "*:min-xl:*",
+          "2xl:*",
+          "*:2xl:*",
+          "max-2xl:*",
+          "*:max-2xl:*",
+          "min-2xl:*",
+          "*:min-2xl:*",
+          "min-[*]:*",
+          "*:min-[*]:*",
+          "max-[*]:*",
+          "*:max-[*]:*"
+        ],
+        "message": "\"{{className}}\" is no class or variant this project's Tailwind knows. Token names are not classes: canvas is bg-background, raised is bg-popover, hover is bg-accent, hairline is border-border, ink is text-foreground, ink-muted is text-muted-foreground, ink-faint is text-faint. Nearest spelling: {{suggestions|none}}. A radius is rounded-ctrl or rounded-chip; a card surface is owned by Card and Inset; no class or variant is declared per app."
+      }
+    ],
+    "shadcn/no-inline-styles": [
+      "error",
+      {
+        "message": "An inline style sets a value outside the design system. A bar, column or mark sized from data is BarList from basalt-ui/cards, ui/progress, ui/meter or a chart kind; any other value is a class, or a theme token in CSS."
+      }
+    ],
+    "shadcn/require-static-classes": [
+      "error",
+      {
+        "componentImports": [
+          "^basalt-ui/ui/"
+        ]
+      }
+    ],
+    "shadcn/no-restyle": [
+      "error",
+      {
+        "allow": [
+          "layout"
+        ],
+        "message": {
+          "spacing": "\"{{className}}\" is not allowed on <{{component}}>: it owns its spacing. Use its size prop if it has one, or gap-* on the parent for space around it."
+        },
+        "componentImports": [
+          "^basalt-ui/ui/"
+        ],
+        "contracts": [
+          {
+            "pattern": "^Alert$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Alert owns its height and display: eject it (basalt-ui eject alert) to change them."
+          },
+          {
+            "pattern": "^Avatar$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Avatar owns its height and display: use size (xs, sm, md, lg) and shape (person, object), or eject it (basalt-ui eject avatar)."
+          },
+          {
+            "pattern": "^AvatarStack$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "AvatarStack owns its height and display: use size (xs, sm, md, lg), or eject it (basalt-ui eject avatar)."
+          },
+          {
+            "pattern": "^Lozenge$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Lozenge owns its height and display: eject it (basalt-ui eject badge) to change them."
+          },
+          {
+            "pattern": "^CountBadge$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "CountBadge owns its height and display: eject it (basalt-ui eject badge) to change them."
+          },
+          {
+            "pattern": "^DeltaBadge$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "DeltaBadge owns its height and display: eject it (basalt-ui eject badge) to change them."
+          },
+          {
+            "pattern": "^Button$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Button owns its height and display: use size (md, sm) and shape (default, icon), or eject it (basalt-ui eject button)."
+          },
+          {
+            "pattern": "^Pressable$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Pressable owns its height and display: use size (none, row, chip), or eject it (basalt-ui eject button)."
+          },
+          {
+            "pattern": "^Calendar$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Calendar owns its height and display: use size (md, sm), or eject it (basalt-ui eject calendar)."
+          },
+          {
+            "pattern": "^Card$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Card owns its height and display: eject it (basalt-ui eject card) to change them."
+          },
+          {
+            "pattern": "^CheckboxMatrix$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "CheckboxMatrix owns its height and display: eject it (basalt-ui eject checkbox-matrix) to change them."
+          },
+          {
+            "pattern": "^CheckboxGroup$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "CheckboxGroup owns its height and display: eject it (basalt-ui eject checkbox) to change them."
+          },
+          {
+            "pattern": "^Checkbox$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Checkbox owns its height and display: eject it (basalt-ui eject checkbox) to change them."
+          },
+          {
+            "pattern": "^ChoiceCard$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "ChoiceCard owns its height and display: eject it (basalt-ui eject choice-card) to change them."
+          },
+          {
+            "pattern": "^Combobox$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Combobox owns its height and display: eject it (basalt-ui eject combobox) to change them."
+          },
+          {
+            "pattern": "^ComboboxInput$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "ComboboxInput owns its height and display: use size (md, sm), or eject it (basalt-ui eject combobox)."
+          },
+          {
+            "pattern": "^ComboboxContent$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "ComboboxContent owns its height and display: eject it (basalt-ui eject combobox) to change them."
+          },
+          {
+            "pattern": "^ComboboxItem$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "ComboboxItem owns its height and display: use size (sm, md, lg), or eject it (basalt-ui eject combobox)."
+          },
+          {
+            "pattern": "^ComboboxChips$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "ComboboxChips owns its height and display: use size (md, sm), or eject it (basalt-ui eject combobox)."
+          },
+          {
+            "pattern": "^ComboboxChip$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "ComboboxChip owns its height and display: eject it (basalt-ui eject combobox) to change them."
+          },
+          {
+            "pattern": "^Autocomplete$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Autocomplete owns its height and display: eject it (basalt-ui eject combobox) to change them."
+          },
+          {
+            "pattern": "^AutocompleteInput$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "AutocompleteInput owns its height and display: use size (md, sm), or eject it (basalt-ui eject combobox)."
+          },
+          {
+            "pattern": "^AutocompleteContent$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "AutocompleteContent owns its height and display: eject it (basalt-ui eject combobox) to change them."
+          },
+          {
+            "pattern": "^AutocompleteItem$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "AutocompleteItem owns its height and display: eject it (basalt-ui eject combobox) to change them."
+          },
+          {
+            "pattern": "^ButtonGroup$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "ButtonGroup owns its height and display: eject it (basalt-ui eject control-group) to change them."
+          },
+          {
+            "pattern": "^ControlGroup$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "ControlGroup owns its height and display: eject it (basalt-ui eject control-group) to change them."
+          },
+          {
+            "pattern": "^InputGroup$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "InputGroup owns its height and display: eject it (basalt-ui eject control-group) to change them."
+          },
+          {
+            "pattern": "^InputAddon$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "InputAddon owns its height and display: use size (md, sm), or eject it (basalt-ui eject control-group)."
+          },
+          {
+            "pattern": "^DatePicker$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "DatePicker owns its height and display: use size (md, sm), or eject it (basalt-ui eject date-picker)."
+          },
+          {
+            "pattern": "^DialogContent$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "DialogContent owns its height and display: use size (sm, md, lg, wide, split), or eject it (basalt-ui eject dialog)."
+          },
+          {
+            "pattern": "^AlertDialogContent$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "AlertDialogContent owns its height and display: eject it (basalt-ui eject dialog) to change them."
+          },
+          {
+            "pattern": "^EntityTitle$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "EntityTitle owns its height and display: use size (sm, md, lg), or eject it (basalt-ui eject entity)."
+          },
+          {
+            "pattern": "^EntityChip$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "EntityChip owns its height and display: eject it (basalt-ui eject entity) to change them."
+          },
+          {
+            "pattern": "^Field$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Field owns its height and display: eject it (basalt-ui eject field) to change them."
+          },
+          {
+            "pattern": "^Fieldset$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Fieldset owns its height and display: eject it (basalt-ui eject field) to change them."
+          },
+          {
+            "pattern": "^Form$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Form owns its height and display: eject it (basalt-ui eject field) to change them."
+          },
+          {
+            "pattern": "^FileUpload$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "FileUpload owns its height and display: eject it (basalt-ui eject file-upload) to change them."
+          },
+          {
+            "pattern": "^Input$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Input owns its height and display: use size (md, sm), or eject it (basalt-ui eject input)."
+          },
+          {
+            "pattern": "^Kbd$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Kbd owns its height and display: eject it (basalt-ui eject kbd) to change them."
+          },
+          {
+            "pattern": "^MenuContent$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "MenuContent owns its height and display: eject it (basalt-ui eject menu) to change them."
+          },
+          {
+            "pattern": "^MenuItem$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "MenuItem owns its height and display: eject it (basalt-ui eject menu) to change them."
+          },
+          {
+            "pattern": "^Meter$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Meter owns its height and display: eject it (basalt-ui eject meter) to change them."
+          },
+          {
+            "pattern": "^Num$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Num owns its height and display: eject it (basalt-ui eject num) to change them."
+          },
+          {
+            "pattern": "^NumberField$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "NumberField owns its height and display: use size (md, sm), or eject it (basalt-ui eject number-field)."
+          },
+          {
+            "pattern": "^OneTimeCode$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "OneTimeCode owns its height and display: eject it (basalt-ui eject one-time-code) to change them."
+          },
+          {
+            "pattern": "^PopoverContent$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "PopoverContent owns its height and display: eject it (basalt-ui eject popover) to change them."
+          },
+          {
+            "pattern": "^Progress$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Progress owns its height and display: eject it (basalt-ui eject progress) to change them."
+          },
+          {
+            "pattern": "^Ring$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Ring owns its height and display: eject it (basalt-ui eject progress) to change them."
+          },
+          {
+            "pattern": "^QuickPicks$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "QuickPicks owns its height and display: eject it (basalt-ui eject quick-picks) to change them."
+          },
+          {
+            "pattern": "^RadioGroup$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "RadioGroup owns its height and display: eject it (basalt-ui eject radio-group) to change them."
+          },
+          {
+            "pattern": "^Radio$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Radio owns its height and display: eject it (basalt-ui eject radio-group) to change them."
+          },
+          {
+            "pattern": "^ScrollArea$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "ScrollArea owns its height and display: bound it with max-h-*, or eject it (basalt-ui eject scroll-area)."
+          },
+          {
+            "pattern": "^Segmented$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Segmented owns its height and display: use size (md, sm), or eject it (basalt-ui eject segmented)."
+          },
+          {
+            "pattern": "^SegmentedItem$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "SegmentedItem owns its height and display: use size (md, sm), or eject it (basalt-ui eject segmented)."
+          },
+          {
+            "pattern": "^Select$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Select owns its height and display: eject it (basalt-ui eject select) to change them."
+          },
+          {
+            "pattern": "^SelectTrigger$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "SelectTrigger owns its height and display: use size (md, sm), or eject it (basalt-ui eject select)."
+          },
+          {
+            "pattern": "^SelectContent$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "SelectContent owns its height and display: eject it (basalt-ui eject select) to change them."
+          },
+          {
+            "pattern": "^SelectItem$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "SelectItem owns its height and display: use size (sm, md), or eject it (basalt-ui eject select)."
+          },
+          {
+            "pattern": "^NativeSelect$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "NativeSelect owns its height and display: use size (md, sm), or eject it (basalt-ui eject select)."
+          },
+          {
+            "pattern": "^Separator$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Separator owns its height and display: eject it (basalt-ui eject separator) to change them."
+          },
+          {
+            "pattern": "^SheetContent$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "SheetContent owns its height and display: eject it (basalt-ui eject sheet) to change them."
+          },
+          {
+            "pattern": "^Skeleton$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Skeleton owns its height and display: match the text style it stands in for (text-sm, text-lg) on it or its parent, or eject it (basalt-ui eject skeleton)."
+          },
+          {
+            "pattern": "^Spinner$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Spinner owns its height and display: eject it (basalt-ui eject skeleton) to change them."
+          },
+          {
+            "pattern": "^Slider$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Slider owns its height and display: eject it (basalt-ui eject slider) to change them."
+          },
+          {
+            "pattern": "^SortableList$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "SortableList owns its height and display: eject it (basalt-ui eject sortable-list) to change them."
+          },
+          {
+            "pattern": "^Status$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Status owns its height and display: eject it (basalt-ui eject status) to change them."
+          },
+          {
+            "pattern": "^Swatch$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Swatch owns its height and display: eject it (basalt-ui eject status) to change them."
+          },
+          {
+            "pattern": "^SwatchPicker$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "SwatchPicker owns its height and display: eject it (basalt-ui eject swatch-picker) to change them."
+          },
+          {
+            "pattern": "^Switch$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Switch owns its height and display: eject it (basalt-ui eject switch) to change them."
+          },
+          {
+            "pattern": "^Table$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Table owns its height and display: use size (md, sm), or eject it (basalt-ui eject table)."
+          },
+          {
+            "pattern": "^Tabs$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Tabs owns its height and display: use size (md, sm), or eject it (basalt-ui eject tabs)."
+          },
+          {
+            "pattern": "^TagInput$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "TagInput owns its height and display: eject it (basalt-ui eject tag-input) to change them."
+          },
+          {
+            "pattern": "^Textarea$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Textarea owns its height and display: use size (md, sm), or eject it (basalt-ui eject textarea)."
+          },
+          {
+            "pattern": "^ToastViewport$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "ToastViewport owns its height and display: eject it (basalt-ui eject toast) to change them."
+          },
+          {
+            "pattern": "^Toast$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Toast owns its height and display: eject it (basalt-ui eject toast) to change them."
+          },
+          {
+            "pattern": "^Toolbar$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Toolbar owns its height and display: eject it (basalt-ui eject toolbar) to change them."
+          },
+          {
+            "pattern": "^ToolbarGroup$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "ToolbarGroup owns its height and display: eject it (basalt-ui eject toolbar) to change them."
+          },
+          {
+            "pattern": "^ToolbarSeparator$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "ToolbarSeparator owns its height and display: eject it (basalt-ui eject toolbar) to change them."
+          },
+          {
+            "pattern": "^Tooltip$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "Tooltip owns its height and display: eject it (basalt-ui eject tooltip) to change them."
+          },
+          {
+            "pattern": "^VirtualList$",
+            "allow": [
+              "layout"
+            ],
+            "deny": [
+              "h-*",
+              "min-h-*",
+              "size-*",
+              "hidden",
+              "flex",
+              "block",
+              "grid",
+              "inline-flex"
+            ],
+            "message": "VirtualList owns its height and display: eject it (basalt-ui eject virtual-list) to change them."
+          }
+        ]
+      }
+    ],
+    "no-use-before-define": [
+      "error",
+      {
+        "functions": false,
+        "classes": false,
+        "typedefs": false,
+        "variables": true
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/routes/**"
+      ],
+      "rules": {
+        "react/only-export-components": "off"
+      }
+    }
+  ]
+}

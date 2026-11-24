@@ -16,7 +16,7 @@ const lineCount = (path: string): number => readFileSync(path, 'utf8').split('\n
 describe('playground budget', () => {
   it(`keeps src/routes to ${MAX_ROUTE_FILES} files`, () => {
     // routes/cycle/ hosts the improvement cycles' builds (docs/v3/CYCLES.md) whose state lives in
-    // the URL, which the scenario route drops: cycle evidence, like scenarios/expr below, not demo routes.
+    // the URL, which the scenario route drops: cycle evidence, not demo routes.
     // routes/kit/ and routes/recipes/ are the reference gallery, one page per capability, and routes/ref/
     // the reference pages, one per archetype on one domain: none of them demo sprawl.
     const files = filesUnder(join(import.meta.dir, 'routes')).filter(
@@ -34,11 +34,7 @@ describe('playground budget', () => {
     const files = [
       ...filesUnder(join(import.meta.dir, 'demo')),
       ...filesUnder(join(import.meta.dir, 'scenarios')),
-    ]
-      // scenarios/expr holds the expression cycles' trial builds, kept as their builders left them
-      // (docs/v3/EXPRESSION.md § The loop): cycle evidence that grows per cycle, not demo code.
-      .filter((f) => !f.startsWith(join(import.meta.dir, 'scenarios', 'expr') + sep))
-      .filter((f) => /\.(ts|tsx|css)$/.test(f) && !f.includes('.test.'))
+    ].filter((f) => /\.(ts|tsx|css)$/.test(f) && !f.includes('.test.'))
     const total = files.reduce((sum, f) => sum + lineCount(f), 0)
     expect(total, `demo + scenarios have ${total} non-test lines`).toBeLessThanOrEqual(
       MAX_DEMO_LINES,

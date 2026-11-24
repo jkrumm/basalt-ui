@@ -15,9 +15,9 @@ import {
   MODEL_NAMES,
   QUIET_WEEK,
   weekNamed,
-} from '../../scenarios/expr/n41/fixture'
-import { FIRST_MODELS, summarize } from '../../scenarios/expr/n41/summary'
-import type { Hour } from '../../scenarios/expr/n41/summary'
+} from '../../demo/router-week'
+import { FIRST_MODELS, summarize } from '../../demo/router-week-summary'
+import type { Hour } from '../../demo/router-week-summary'
 import { validateShotSearch } from '../../scenarios/shot-state'
 
 export const Route = createFileRoute('/kit/bar-list-series')({
@@ -33,7 +33,7 @@ const noop = (): void => undefined
 const MODEL_OF = new Map<string, string>(Object.entries(FIRST_TRY))
 
 /**
- * n41's router week (scenarios/expr/n41) through the shipped join: a `BarList` of request kinds
+ * A router week (demo/router-week) through the shipped join: a `BarList` of request kinds
  * beside hourly bars stacked by the model tried first. Each kind stands for its first-try model,
  * so `focusSeries` joins the list to the chart with no adapter, and the chart takes the phone
  * height that keeps its axis readable at 390 (`height="tall"`).

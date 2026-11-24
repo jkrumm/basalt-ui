@@ -35,7 +35,11 @@ export const print: Lane = async ({ openBrowser }) => {
     for (const route of routes) {
       const routeContext = await browser.newContext({ locale: 'en-US', reducedMotion: 'reduce' })
       try {
-        const report = await printRoute(await routeContext.newPage(), exemplar.origin, route)
+        const report = await printRoute(
+          await routeContext.newPage(),
+          exemplar.origin('playground'),
+          route,
+        )
         cells.push({ route, ...report })
       } finally {
         await routeContext.close()

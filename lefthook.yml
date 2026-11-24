@@ -5,7 +5,7 @@ pre-commit:
   parallel: true
   commands:
     # Keeps the npm-published package's commits free of consumer-app changes (apps/playground,
-    # apps/marketing) so the release path filter + changelog stay clean. .oxlintrc.json and tests/
+    # apps/expression, apps/marketing) so the release path filter + changelog stay clean. .oxlintrc.json and tests/
     # are the package's own generated output/drift-gates; bunfig.toml, the root package.json, and
     # bun.lock are the root-level test-harness surface (DOM test preload config + the shared
     # devDependencies it needs — happy-dom, @testing-library/*, react/react-dom — since Bun
@@ -32,10 +32,15 @@ pre-commit:
     # 2.x one, both registered as `basalt`, so one oxlint process cannot load both.
     oxlint:
       glob: '*.{js,jsx,ts,tsx,cjs,mjs}'
-      run: bunx oxlint --ignore-pattern 'apps/playground/**' --no-error-on-unmatched-pattern {staged_files}
+      run: bunx oxlint --ignore-pattern 'apps/playground/**' --ignore-pattern 'apps/expression/**' --no-error-on-unmatched-pattern {staged_files}
 
     oxlint-playground:
       root: 'apps/playground/'
+      glob: '*.{js,jsx,ts,tsx,cjs,mjs}'
+      run: bunx oxlint --deny-warnings --report-unused-disable-directives --no-error-on-unmatched-pattern {staged_files}
+
+    oxlint-expression:
+      root: 'apps/expression/'
       glob: '*.{js,jsx,ts,tsx,cjs,mjs}'
       run: bunx oxlint --deny-warnings --report-unused-disable-directives --no-error-on-unmatched-pattern {staged_files}
 

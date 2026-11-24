@@ -1,0 +1,151 @@
+{
+  "reportDescriptionlessDisables": true,
+  "reportInvalidScopeDisables": true,
+  "reportNeedlessDisables": true,
+  "overrides": [
+    {
+      "files": [
+        "**/*.astro",
+        "**/*.mdx",
+        "**/*.html"
+      ],
+      "customSyntax": "postcss-html"
+    }
+  ],
+  "ignoreFiles": [
+    "src/tokens.css",
+    "src/basalt.tokens.css",
+    "src/accents.css"
+  ],
+  "rules": {
+    "color-no-hex": [
+      true,
+      {
+        "message": "A hex colour `%s` is authored colour. Use a `--basalt-*` colour token (`var(--basalt-ink)`), or `color-mix` over one."
+      }
+    ],
+    "color-named": [
+      "never",
+      {
+        "message": "The named colour `%s` is authored colour. Use a `--basalt-*` colour token, or `color-mix` over one."
+      }
+    ],
+    "function-disallowed-list": [
+      [
+        "rgb",
+        "rgba",
+        "hsl",
+        "hsla",
+        "hwb",
+        "lab",
+        "lch",
+        "oklab",
+        "oklch",
+        "color",
+        "light-dark"
+      ],
+      {
+        "message": "`%s()` writes a colour by hand. Use the `--basalt-*` colour token of the property's role (a surface for a background, an ink for text), or `color-mix(in oklab, var(--basalt-token) 40%, transparent)` over that token for an alpha; a token already switches per scheme."
+      }
+    ],
+    "declaration-property-value-disallowed-list": [
+      {
+        "/^(?:scroll-)?(?:padding|margin)(?:-[a-z]+)*$|^(?:grid-)?(?:row-|column-)?gap$|^inset(?:-[a-z]+)*$|^(?:top|right|bottom|left)$|^font(?:-size)?$/": [
+          "/(?<![\\w])[+-]?(?:\\d*\\.)?\\d+(?:px|rem|em|ex|ch|lh|rlh|cap|ic|vw|vh|vmin|vmax|vi|vb|[sld]v[whib]|[sld]vmin|[sld]vmax|cq[whib]|cqmin|cqmax|pt|pc|cm|mm|q|in)\\b/i",
+          "/\\bcalc\\(/i"
+        ],
+        "/^(?:background(?:-[a-z]+)*|border(?:-[a-z]+)*|outline(?:-[a-z]+)*|box-shadow)$/": [
+          "/var\\(\\s*--(?:basalt|color)-(?:(?:good|warn|bad|info|brand|chart|seq|destructive)(?:-[a-z0-9-]+)?|[a-z0-9-]*-tint)\\s*[,)]/i"
+        ],
+        "/.*/": [
+          "/color-mix\\((?!\\s*in\\s+[a-z0-9-]+(?:\\s+(?:shorter|longer|increasing|decreasing)\\s+hue)?\\s*,\\s*(?:var\\(--basalt-[a-z0-9-]+\\)|transparent)(?:\\s+[\\d.]+%)?\\s*,\\s*(?:var\\(--basalt-[a-z0-9-]+\\)|transparent)(?:\\s+[\\d.]+%)?\\s*\\))/i"
+        ],
+        "/^color$/": [
+          "/var\\(\\s*--(?:basalt|color)-(?:brand-fill|dim-bar|chart-1|chart-2|chart-3|chart-4|chart-5|seq-1|seq-2|seq-3|seq-4|seq-5|[a-z0-9-]*-tint)\\s*[,)]/i"
+        ],
+        "/^grid-(?:template(?:-columns|-rows)?|auto-(?:columns|rows))$/": [
+          "/(?<![\\w])[+-]?(?:\\d*\\.)?\\d+(?:px|rem|em|ex|ch|lh|rlh|cap|ic|vw|vh|vmin|vmax|vi|vb|[sld]v[whib]|[sld]vmin|[sld]vmax|cq[whib]|cqmin|cqmax|pt|pc|cm|mm|q|in)\\b/i"
+        ],
+        "/^(?:(?:min-)?width|flex(?:-basis)?)$/": [
+          "/(?<![\\w.])(?:(?:38[5-9]|39\\d|[4-9]\\d{2}|\\d{4,})(?:\\.\\d+)?px|(?:2[5-9]|[3-9]\\d|\\d{3,})(?:\\.\\d+)?rem)(?![\\w%])/i"
+        ],
+        "/^overflow(?:-x|-y|-block|-inline)?$/": [
+          "/\\b(?:auto|scroll|overlay)\\b/i"
+        ],
+        "/^(?:transition|animation)(?:-(?:duration|delay|timing-function))?$/": [
+          "/(?<![\\w.])(?!-?0+(?:\\.0+)?m?s(?![\\w-]))-?(?:\\d+\\.\\d+|\\.\\d+|\\d+)m?s(?![\\w-])/i",
+          "/(?<![\\w-])(?:cubic-bezier|steps|linear)\\(/i",
+          "/(?<![\\w-])(?:ease|ease-in|ease-out|ease-in-out|linear)(?![\\w-])/i"
+        ]
+      },
+      {
+        "message": "Disallowed `%s: %s`. By property: padding, margin, gap and inset (top, right, bottom, left) take a --basalt-rhythm-* token (--basalt-rhythm-1 to -3), 0, auto or %, and font size a --basalt-text-* token, never a raw length or calc(); background, border, outline and shadow take the colour role of their surface, never a status, chart or brand colour: a status colour or tint is Status, Lozenge, DeltaBadge or a Num tone, a chart colour belongs to a chart kind, and only a brand tint is var(--basalt-selected) or a surface token; color-mix runs over --basalt tokens or transparent only; color takes a text role (Status or Num tone from parts; text-good or text-brand at bridge), never a fill-only role (chart, seq, the brand fill, a status tint); grid-template, grid-template-columns and -rows, grid-auto-columns and -rows size tracks by fr, auto or minmax(0,1fr), never a raw length; width, min-width and a flex basis above 384px are parent-owned (size the container, not the child); overflow auto|scroll is ui/scroll-area, or let Page own the scroll; transition and animation take their time and easing from the motion scale: var(--basalt-dur-*) and var(--basalt-ease-*), never a literal time, a cubic-bezier, steps or linear timing function, or an easing keyword (0s and 0ms, the reduced-motion end state, stay legal)."
+      }
+    ],
+    "declaration-property-value-allowed-list": [
+      {
+        "/^border(?:-[a-z]+)*-radius$/": [
+          "/^(?:(?:var\\(--basalt-[a-z0-9-]+\\)|0|none|inherit)|50%|9999px|calc\\(\\s*infinity\\s*\\*\\s*1px\\s*\\))(?:\\s+(?:(?:var\\(--basalt-[a-z0-9-]+\\)|0|none|inherit)|50%|9999px|calc\\(\\s*infinity\\s*\\*\\s*1px\\s*\\)))*$/i"
+        ],
+        "/^(?:border(?:-[a-z]+)*-radius|box-shadow|line-height|letter-spacing)$/": [
+          "/^(?:var\\(--basalt-[a-z0-9-]+\\)|0|none|inherit)(?:\\s*[,\\s]\\s*(?:var\\(--basalt-[a-z0-9-]+\\)|0|none|inherit))*$/i"
+        ]
+      },
+      {
+        "message": "Disallowed `%s: %s`. Radius, shadow, line height and letter spacing take a `--basalt-*` token, `0`, `none` or `inherit`; a radius also takes `50%` or `9999px` for a circle or a pill (`rounded-full` in a class)."
+      }
+    ],
+    "property-disallowed-list": [
+      [
+        "/^--basalt-/",
+        "/^(?:--color-background|--color-inset|--color-card|--color-popover|--color-surface|--color-accent|--color-selected|--color-scrim|--color-scrim-wash|--color-border|--color-input|--color-foreground|--color-muted-foreground|--color-faint|--color-brand|--color-ring|--color-brand-fill|--color-on-brand|--color-good|--color-good-tint|--color-warn|--color-warn-tint|--color-bad|--color-bad-tint|--color-destructive|--color-destructive-tint|--color-info|--color-info-tint|--color-line|--color-dim-bar|--color-grid|--color-crosshair|--color-chart-1|--color-chart-2|--color-chart-3|--color-chart-4|--color-chart-5|--color-seq-1|--color-seq-2|--color-seq-3|--color-seq-4|--color-seq-5|--radius-card|--radius-inset|--radius-ctrl|--radius-chip|--font-sans|--font-head|--font-mono|--font-weight-normal|--font-weight-medium|--font-weight-semibold|--color-primary|--color-primary-foreground|--color-secondary|--color-muted)$/"
+      ],
+      {
+        "message": "Never declare `%s`: a `--basalt-*` token is derived from the palette config, and a `--color-*`, `--radius-*` or `--font-*` theme name maps it, so neither is authored. Read it with `var()`, or retune `basalt()` options."
+      }
+    ],
+    "declaration-no-important": [
+      true,
+      {
+        "message": "Never force a style with `!important`. Add a variant or prop on the component, or raise the layer."
+      }
+    ],
+    "media-feature-name-disallowed-list": [
+      [
+        "/^(?:min-|max-)?(?:width|height|aspect-ratio|device-[a-z-]+|orientation)$/",
+        "prefers-color-scheme"
+      ],
+      {
+        "message": "The media feature `%s` keys styles on the window or the system scheme. A viewport feature (width, height, aspect ratio, orientation): key on the container, `@container` with a named size (`@narrow`, `@regular`, `@wide`), or `useSizeClass()` for chrome. `prefers-color-scheme`: tokens switch per scheme, so use a `--basalt-*` token instead of a dark fork."
+      }
+    ],
+    "selector-disallowed-list": [
+      [
+        "/\\[\\s*data-slot/",
+        "/\\.mantine-/",
+        "/\\[\\s*data-theme/",
+        "/\\.dark(?![\\w-])/",
+        "/\\[\\s*class\\s*[~*^]=\\s*[\"']?dark/"
+      ],
+      {
+        "message": "Never select `%s`. A `data-slot` or `.mantine-*` selector reaches into a component: use the component's own prop or variant, or eject it (basalt-ui eject <name>). A `data-theme` or `.dark` selector forks a colour per scheme: tokens switch per scheme, so use a `--basalt-*` token instead."
+      }
+    ],
+    "at-rule-disallowed-list": [
+      [
+        "utility",
+        "theme",
+        "custom-variant",
+        "variant",
+        "plugin",
+        "apply",
+        "config",
+        "custom-media",
+        "tailwind"
+      ],
+      {
+        "message": "`%s` adds to or rebuilds what the package owns: a utility class, a theme colour, a variant, the classes of a plugin, a class list the class rules check or a tailwind.config file that declares them. Take colour from Status, Lozenge, DeltaBadge or a Num tone (the palette is derived, never declared per app); tokens switch per scheme, so a `@variant dark` fork is a `--basalt-*` token instead (add the token instead of forking); long-form text is `Prose` from basalt-ui/page, never a typography plugin; compose the shipped component and its variants, or a `--basalt-*` token in a module stylesheet. A `@custom-media` names a viewport query: key on the container, `@container` with a named size (`@narrow`, `@regular`, `@wide`). `@tailwind` is Tailwind v3's layer directive: the package owns the layers, so the one basalt stylesheet import is all a module needs, and no layer is written."
+      }
+    ]
+  }
+}

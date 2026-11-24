@@ -74,10 +74,11 @@ the engine's react entry outside `src/charts/host.tsx`. Ground truth: `docs/v3/A
 bun install                # install all workspaces
 bun run dev                # = dev:playground
 bun run dev:playground     # start the playground consumer
-bun run lint               # oxlint: the repo on the 2.x config, then apps/playground on the v3 app preset (0 findings; loads basalt-ui/lint from dist, so build first)
+bun run dev:expression     # start the expression scenarios app
+bun run lint               # oxlint: the repo on the 2.x config, then apps/playground and apps/expression on the v3 app preset (0 findings; loads basalt-ui/lint from dist, so build first)
 bun run fmt                # oxfmt (write)
 bun run fmt:check          # oxfmt (check only)
-bun run typecheck          # tsc across package + playground, astro check on marketing (see the dist footgun below)
+bun run typecheck          # tsc across package + playground + expression, astro check on marketing (see the dist footgun below)
 bun run pre                # fmt:check && lint && typecheck && budgets && literals, then `make test`: the unit suite in a host test slot
 make check                 # build + pre + the layout suite + pack-test — the full local gate
 make check-fast            # `check` with only the layout files and unit tests the branch's changes reach — the lead's check; CI runs the rest
