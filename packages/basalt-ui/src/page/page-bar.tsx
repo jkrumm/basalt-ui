@@ -155,7 +155,7 @@ function RecordNav({
       {close !== undefined && (
         <AppLink
           href={close}
-          aria-label={t('page.backToList')}
+          aria-label={t('page.closeRecord')}
           data-slot="page-records-close"
           className={buttonVariants({ variant: 'ghost', size: 'sm', shape: 'icon' })}
         >
