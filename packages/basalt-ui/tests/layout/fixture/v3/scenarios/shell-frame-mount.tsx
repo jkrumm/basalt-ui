@@ -27,6 +27,8 @@ import { col } from '../../../../../src/table/core/kinds'
 import { DataTable } from '../../../../../src/table/parts/data-table'
 import { useDataTable } from '../../../../../src/table/use-data-table'
 import { AppShell } from '../../../../../src/shell/app-shell'
+import { Button } from '../../../../../src/ui/button'
+import { Input } from '../../../../../src/ui/input'
 import { Sheet, SheetContent } from '../../../../../src/ui/sheet'
 import { Card } from '../../../../../src/ui/card'
 import type { AppShellProps } from '../../../../../src/shell/contract'
@@ -208,6 +210,41 @@ function DockHarness({ mode }: { mode: true | 'toggle' }): ReactElement {
   )
 }
 
+/** An open `Sheet`; with `form` it holds a field, a body longer than the sheet and a footer button. */
+function SheetHarness({
+  options,
+}: {
+  options: { form?: boolean; snapPoints?: readonly ('half' | 'full')[] }
+}): ReactElement {
+  const { form = false, snapPoints } = options
+  return (
+    <Sheet defaultOpen {...(snapPoints !== undefined && { snapPoints })}>
+      <SheetContent
+        title="Edit run"
+        tag="#12"
+        {...(form && {
+          footer: (
+            <Button variant="primary" data-testid="sheet-save">
+              Save
+            </Button>
+          ),
+        })}
+      >
+        <p data-testid="sheet-body">Form</p>
+        {form && (
+          <>
+            <Input aria-label="Run name" data-testid="field-sheet" placeholder="Run name" />
+            {Array.from({ length: 24 }, (_, i) => (
+              <p key={i}>Note {i}</p>
+            ))}
+            <Input aria-label="Owner" data-testid="field-sheet-end" placeholder="Owner" />
+          </>
+        )}
+      </SheetContent>
+    </Sheet>
+  )
+}
+
 function Body({ options }: { options: NonNullable<ShellFrameSpec['shellFrame']> }): ReactElement {
   const { rows = 12, aside = false, bar = true, detailTable = false } = options
   const { state, record, ...asideProps } = typeof aside === 'object' ? aside : {}
@@ -271,12 +308,11 @@ function Body({ options }: { options: NonNullable<ShellFrameSpec['shellFrame']> 
         </Peek>
       )}
       {options.dock !== undefined && options.dock !== false && <DockHarness mode={options.dock} />}
-      {options.sheet === true && (
-        <Sheet defaultOpen>
-          <SheetContent title="Edit run" tag="#12">
-            <p data-testid="sheet-body">Form</p>
-          </SheetContent>
-        </Sheet>
+      {options.pageField === true && (
+        <Input aria-label="Search runs" data-testid="field-page" placeholder="Search runs" />
+      )}
+      {options.sheet !== undefined && options.sheet !== false && (
+        <SheetHarness options={options.sheet === true ? {} : options.sheet} />
       )}
       {aside !== false && (
         <PageAside

@@ -44,6 +44,7 @@ import {
 import type { CSSProperties, ReactElement, ReactNode, RefObject } from 'react'
 import { useMediaQuery } from '../../common/use-media-query'
 import { cn } from '../../core/cn'
+import { useKeyboardInset } from '../../core/keyboard'
 import { persisted } from '../../core/persisted'
 import type { RecordSequence } from '../../core/ports'
 import { DOCK_WIDTH, asideDockQuery, resolveAsideDocking } from '../../page/core/docking'
@@ -273,6 +274,8 @@ export function ShellGrid({
   children,
 }: ShellGridProps): ReactElement {
   const shifting = useDockShift(dockWidth)
+  const own = useRef<HTMLDivElement | null>(null)
+  useKeyboardInset(own)
   const style: RootStyle = {
     '--shell-rail-open-w': `${railOpenWidth}px`,
     '--shell-aside-w': `${asideWidth}px`,
@@ -280,7 +283,10 @@ export function ShellGrid({
   }
   return (
     <div
-      ref={rootRef}
+      ref={(el) => {
+        own.current = el
+        rootRef(el)
+      }}
       data-slot="shell"
       data-dock-shift={shifting ? '' : undefined}
       data-rail={rail}
@@ -291,6 +297,9 @@ export function ShellGrid({
       style={style}
       className={cn(
         'group/shell grid h-dvh w-full grid-cols-[var(--shell-rail-w)_minmax(0,1fr)] grid-rows-[var(--shell-top-h)_minmax(0,1fr)_auto] bg-background font-sans text-foreground',
+        // The device's safe areas (`viewport-fit=cover`): the frame pads top, left and right. The bottom is the
+        // tab bar's on a phone and the root's from `md`, plus what the keyboard covers (`useKeyboardInset`).
+        'pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pb-[calc(var(--shell-safe-b)+var(--basalt-keyboard-inset,0px))] pl-[env(safe-area-inset-left)] [--shell-safe-b:0px] md:[--shell-safe-b:env(safe-area-inset-bottom)]',
         titlebar
           ? '[grid-template-areas:"header_header"_"rail_surface"_"footer_footer"] [--shell-top-h:var(--shell-header-h)]'
           : '[grid-template-areas:"brand_surface"_"rail_surface"_"footer_footer"] [--shell-top-h:0px] md:[--shell-top-h:calc(var(--shell-header-h)_+_var(--shell-inset))]',

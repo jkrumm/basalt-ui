@@ -47,7 +47,7 @@ describe('sheet module', () => {
       </Sheet>,
     )
     expect(document.querySelector('[data-slot="sheet-content"]')?.className).toContain(
-      'max-h-[min(72dvh,560px)]',
+      'max-h-[90dvh]',
     )
     const original = window.matchMedia
     const classesAt = (matches: boolean): string => {
@@ -67,7 +67,7 @@ describe('sheet module', () => {
     }
     try {
       const narrow = classesAt(false)
-      expect(narrow).toContain('max-h-[min(72dvh,560px)]')
+      expect(narrow).toContain('max-h-[90dvh]')
       const wide = classesAt(true)
       expect(wide).toContain('w-90')
       expect(narrow + wide).not.toContain('md:')

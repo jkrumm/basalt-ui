@@ -26,7 +26,7 @@ describe('sheet guard', () => {
     )
     expect(new Set(tables).size).toBe(2)
     expect(tables[2]).toBe(tables[0])
-    expect(sheetContentVariants({ placement: 'bottom' })).toContain('min(72dvh,560px)')
+    expect(sheetContentVariants({ placement: 'bottom' })).toContain('max-h-[90dvh]')
     expect(requiresSheet({ placement: 'auto' })).toEqual({ placement: 'auto' })
     expect(requiresContent({ title: 'T' })).toEqual({ title: 'T' })
   })

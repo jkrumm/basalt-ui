@@ -137,6 +137,7 @@ export function overlayAncestry(
     'alert-dialog-content': alert,
     'sheet-trigger': drawer,
     'sheet-content': drawer,
+    'sheet-grabber': drawer,
     'sheet-title': drawer,
     'sheet-close': drawer,
     'toast-viewport': toastProvider,

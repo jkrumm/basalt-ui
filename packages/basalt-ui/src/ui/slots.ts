@@ -86,7 +86,7 @@ export const SLOTS = {
     'native-select',
   ],
   separator: ['separator'],
-  sheet: ['sheet-trigger', 'sheet-content', 'sheet-title', 'sheet-close'],
+  sheet: ['sheet-trigger', 'sheet-content', 'sheet-grabber', 'sheet-title', 'sheet-close'],
   skeleton: ['skeleton', 'spinner'],
   slider: ['slider'],
   'sortable-list': ['sortable-list'],
