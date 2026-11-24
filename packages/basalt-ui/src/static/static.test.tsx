@@ -91,6 +91,33 @@ const PARTS: Record<string, ReactElement> = {
       actions={<ThemeSwitch {...switchProps} />}
     />
   ),
+  'SiteHeader with menus': (
+    <SiteHeader
+      brand={<a href="/">{S('brand')}</a>}
+      links={[
+        { href: '/docs', label: S('link') },
+        {
+          label: S('menu-item'),
+          menu: [
+            {
+              title: S('section'),
+              entries: [
+                {
+                  href: '/tile',
+                  label: S('tile'),
+                  description: S('line'),
+                  image: { src: '/tile.png', alt: S('picture') },
+                },
+                { href: '/row', label: S('row'), description: S('row-line') },
+              ],
+            },
+          ],
+        },
+      ]}
+      navLabel={S('nav')}
+      menuLabel={S('menu')}
+    />
+  ),
   SiteFooter: (
     <SiteFooter
       brand={<p>{S('brand')}</p>}
@@ -293,6 +320,57 @@ describe('basalt-ui/static: (b) no baked string', () => {
       expect(left).toEqual([])
     })
   }
+})
+
+describe('basalt-ui/static: site header menus', () => {
+  const html = markup(PARTS['SiteHeader with menus'] as ReactElement)
+  const host = document.createElement('div')
+  host.innerHTML = html
+
+  test('a menu is a popover opened by a button, hover included, with no script', () => {
+    const trigger = host.querySelector('button[data-basalt-top]')
+    const id = trigger?.getAttribute('popovertarget')
+    expect(id).toBeTruthy()
+    expect(trigger?.getAttribute('interestfor')).toBe(id)
+    const panel = host.querySelector(`[id="${id}"]`)
+    expect(panel?.getAttribute('popover')).toBe('auto')
+    expect(panel?.getAttribute('role')).toBe('group')
+    expect(panel?.getAttribute('aria-label')).toBe('«menu-item»')
+    expect(html).not.toContain('<script')
+  })
+
+  test('every id on the page is unique', () => {
+    const ids = [...host.querySelectorAll('[id]')].map((el) => el.id)
+    expect(new Set(ids).size).toBe(ids.length)
+  })
+
+  test('an entry with an image is a tile with its picture; one without is a row', () => {
+    const panel = host.querySelector('[data-slot="site-menu-panel"]')
+    const imgs = panel?.querySelectorAll('img') ?? []
+    expect(imgs).toHaveLength(1)
+    expect(imgs[0]?.getAttribute('alt')).toBe('«picture»')
+    expect(panel?.querySelectorAll('a')).toHaveLength(2)
+  })
+
+  test('the phone sheet repeats the menu as a labelled section of rows', () => {
+    const sheet = host.querySelector('[data-slot="site-menu"]')
+    const headings = [...(sheet?.querySelectorAll('p[id]') ?? [])].map((p) => p.textContent)
+    expect(headings).toEqual(['«menu-item»', '«section»'])
+    const list = sheet?.querySelector('ul[aria-labelledby]')
+    expect(
+      sheet?.querySelector(`[id="${list?.getAttribute('aria-labelledby')}"]`)?.textContent,
+    ).toBe('«section»')
+    expect(list?.querySelectorAll('a')).toHaveLength(2)
+    expect(sheet?.querySelectorAll('[popover]')).toHaveLength(0)
+  })
+
+  test('the sheet is full height only where a menu needs it', () => {
+    const links = markup(
+      <SiteHeader links={[{ href: '/a', label: S('a') }]} navLabel="n" menuLabel="m" />,
+    )
+    expect(links).toContain('max-h-[calc(100dvh-3.5rem)]')
+    expect(html).toContain('h-[calc(100dvh-3.5rem)]')
+  })
 })
 
 describe('basalt-ui/static: (d) prose styles raw Markdown by element', () => {

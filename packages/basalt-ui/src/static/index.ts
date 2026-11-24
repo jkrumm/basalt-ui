@@ -1,7 +1,7 @@
 /**
  * `basalt-ui/static` — parts for content pages that render to static HTML with no client JavaScript:
  * no provider, no context, no hook, no router. Every visible string and accessible name is a prop.
- * The interactive ones (the menu, the theme switch, the copy button) are platform markup;
+ * The interactive ones (the menus, the theme switch, the copy button) are platform markup;
  * one inline script, placed by the `basalt-ui/astro` integration, serves them all. Peers: react only.
  */
 export { Prose } from '../page/prose'
@@ -34,4 +34,14 @@ export type { SiteComparisonColumn, SiteComparisonRow } from './comparison'
 export { SiteQuestionList } from './question-list'
 export type { SiteQuestion } from './question-list'
 export { SiteCallToAction } from './call-to-action'
-export type { SiteAction, SiteLink, SiteLinkGroup, TocEntry } from './types'
+export type {
+  SiteAction,
+  SiteLink,
+  SiteLinkGroup,
+  SiteMenuEntry,
+  SiteMenuImage,
+  SiteMenuSection,
+  SiteNavItem,
+  SiteNavMenu,
+  TocEntry,
+} from './types'
