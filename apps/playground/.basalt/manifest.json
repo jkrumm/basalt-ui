@@ -8,7 +8,7 @@
   "ejected": {},
   "managed": {
     ".claude/agents/basalt-design-reviewer.md": "79c027fbd3abf41be294714b4707cac28aacfa1c5e3b794be094ee1a584320f4",
-    "repo:.claude/rules/basalt-v3-playground-charts.md": "373af03132299d1b92116e922458fbcd8f41aea0fba148b5768004fb94ad09f8",
+    "repo:.claude/rules/basalt-v3-playground-charts.md": "9eb2c497b1a0e2f40eabf982834258ae68bf481ffe3d1569b174a8d3930fde46",
     "repo:.claude/rules/basalt-v3-playground-page.md": "a3bb5fc6d9cdfcbffd69de8a94a77d1cef7542670079e1c845321089dc5f7694",
     "repo:.claude/rules/basalt-v3-playground-state.md": "c3ca5ab5bb14895570a4819701694c3250be7d9586177f19ee45583044b724da",
     "repo:.claude/rules/basalt-v3-playground-tokens.md": "89668e3372b0a60e52ee80b83fb804725fc4ae5a6f23877cb664ea9a00acf610",
@@ -40,7 +40,7 @@
     "repo:.claude/skills/basalt-v3-playground-design/references/parts.md": "d9427572e70b5d71916c283ba9473115955e2d9f391cc1f19d18f794981e1e9c",
     "repo:.claude/skills/basalt-v3-playground-design/references/state.md": "cbf7df1e1bf461cfde34dfa6317f0410ccb4fa94270c706277d79bd8cbf8e58c",
     "repo:.claude/skills/basalt-v3-playground-design/references/states.md": "2a8f01cef2be08b6d979acb9fec3d958e80f0febe6ed341ebcfdaf2c46b8669a",
-    "repo:.claude/skills/basalt-v3-playground-design/references/table.md": "9c8d2ee6e998b161d122e01956f686bfe3f3a25977da2e94cdb4240aa82ad6de",
+    "repo:.claude/skills/basalt-v3-playground-design/references/table.md": "42e1362bab9c2d5fdc7852b3e2448fb61ba41d6eb4d76590347b5a313840d663",
     "repo:.claude/skills/basalt-v3-playground-design/SKILL.md": "01b11f0c83d04b6ae0e4c3be70fa7d0e78a1d19cb46da0ee9de78f8d0c9f19d5"
   },
   "deepRender": [],
