@@ -438,11 +438,12 @@ describe('custom with search', () => {
     expect(spec.value(PLAN)).toBe(0.62)
   })
 
-  test("filter 'text' matches the search text through the column's accessor", () => {
+  test("filter 'text' reads the search text, and the accessor keeps the sort value", () => {
     const spec = specOf(LABEL)
     expect(spec.filter).toBe('contains')
+    expect(spec.filterText?.(PLAN)).toBe('ref Launch')
     const def = engineColumn(spec) as { accessorFn?: (row: Plan, index: number) => unknown }
-    expect(def.accessorFn?.(PLAN, 0)).toBe('ref Launch')
+    expect(def.accessorFn?.(PLAN, 0)).toBe(0.62)
     expect(matchesFilter('contains', 'ref Launch', ['LAUNCH'])).toBe(true)
     expect(
       specOf(

@@ -131,8 +131,8 @@ export type KindSpec<T> = {
    */
   search?: (row: T, format: Format, now: number) => string
   /**
-   * `custom` with `filter: 'text'`: the text the column filter matches (its `search`). The column's
-   * accessor holds it, so the sort reads `value` beside it.
+   * `custom` with `filter: 'text'`: the text the column filter matches (its `search`). The accessor
+   * keeps `value`, the sort value, so an absent one sorts last; only the filter reads this.
    */
   filterText?: (row: T) => string
   /** `null` for `actions`: never hidden by a tier. */

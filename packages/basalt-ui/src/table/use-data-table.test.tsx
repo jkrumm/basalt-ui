@@ -227,6 +227,49 @@ describe('client filter and paging', () => {
     expect(text).not.toContain('yet')
   })
 
+  // A custom column whose text filter reads `search` keeps its sort on `sortValue`, absent last.
+  const custom = (): Options => {
+    const c = col<Row>()
+    return {
+      columns: [
+        c.text('name', { header: 'Name' }),
+        c.custom('amt', {
+          header: 'Amt',
+          render: (r) => String(r.amount ?? ''),
+          sortValue: (r) => r.amount,
+          search: (r) => `team ${r.state}`,
+          filter: 'text',
+          card: 'meta',
+          priority: 1,
+        }),
+      ],
+    }
+  }
+
+  test('a custom text column sorts on its sort value, an absent one last both ways', () => {
+    const { unmount } = render(
+      <Subject options={{ ...custom(), state: state({ sort: [{ id: 'amt', desc: false }] }) }} />,
+    )
+    expect(names()).toEqual(['Project 1', 'Project 10', 'Project 2'])
+    unmount()
+    render(
+      <Subject options={{ ...custom(), state: state({ sort: [{ id: 'amt', desc: true }] }) }} />,
+    )
+    expect(names()).toEqual(['Project 10', 'Project 1', 'Project 2'])
+  })
+
+  test("a custom column's text filter matches its search text", () => {
+    render(
+      <Subject
+        options={{
+          ...custom(),
+          state: state({ filters: [{ id: 'amt', op: 'contains', values: ['team engineering'] }] }),
+        }}
+      />,
+    )
+    expect(names()).toEqual(['Project 10', 'Project 1'])
+  })
+
   test('pager pages slices the client rows', () => {
     render(<Subject options={{ pager: 'pages', state: state({ pageSize: 2 }) }} />)
     expect(names()).toHaveLength(2)

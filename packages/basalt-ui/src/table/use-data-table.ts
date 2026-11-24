@@ -44,7 +44,7 @@ import type { TreeInfo } from './parts/tree-row-model'
 import type { BodyItem } from './parts/group-row-model'
 import { tableEngine } from './core/features'
 import { constructFilterFn, dayOf, toColumnFilters } from './core/filters'
-import type { RangeDomain } from './core/filters'
+import type { FilterFn, RangeDomain } from './core/filters'
 import { arrangeColumns, moveColumn } from './core/arrange'
 import type { ArrangedColumn } from './core/arrange'
 import { useRowKeyboard } from './core/keyboard'
@@ -345,9 +345,24 @@ function searchFnOf<T>(specs: readonly KindSpec<T>[], format: Format, now: numbe
 }
 
 function filterFnOf(spec: KindSpec<never>, zone: string | undefined) {
-  return spec.filter === null
-    ? {}
-    : { filterFn: constructFilterFn(spec.filter, domainOf(spec, zone)) }
+  if (spec.filter === null) return {}
+  const base = constructFilterFn(spec.filter, domainOf(spec, zone))
+  const text = spec.filterText
+  if (text === undefined) return { filterFn: base }
+  // A `custom` column's text filter matches its `search` text; the accessor keeps the sort value,
+  // so an absent one still sorts last.
+  const filterFn = ((
+    row: { original: never; getValue(id: string): unknown },
+    id: string,
+    value: unknown,
+  ) =>
+    base(
+      { ...row, getValue: () => text(row.original) } as never,
+      id,
+      value as never,
+    )) as unknown as FilterFn
+  filterFn.autoRemove = base.autoRemove
+  return { filterFn }
 }
 
 /**
