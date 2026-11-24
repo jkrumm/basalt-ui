@@ -1,6 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Page, PageBar } from 'basalt-ui/page'
 import { col, DataTable, useDataTable, useTableViews } from 'basalt-ui/table'
+import type { TableLayoutSpec, TableLayoutView } from 'basalt-ui/table'
+import { Button } from 'basalt-ui/ui/button'
+import { CalendarRange } from 'lucide-react'
 import { drag } from 'basalt-ui/ui/sortable-list'
 import { useState } from 'react'
 import type { ReactElement } from 'react'
@@ -48,10 +51,53 @@ const ACCOUNTS: Account[] = Array.from({ length: 24 }, (_, i) => ({
   since: `202${3 + (i % 3)}-${String((i % 12) + 1).padStart(2, '0')}-1${i % 9}`,
 }))
 
+/**
+ * A fifth layout from app code: the accounts in one lane per year they became customers. It draws
+ * the rows the view shows (search, filters and sort hold) and opens one as a table row does.
+ */
+function YearLanes({ view }: { view: TableLayoutView<Account> }): ReactElement {
+  const years = [...new Set(view.rows.map((a) => a.since.slice(0, 4)))].toSorted()
+  return (
+    <div data-slot="year-lanes" className="flex flex-wrap items-start gap-4">
+      {years.map((year) => (
+        <section
+          key={year}
+          aria-label={`Customers since ${year}`}
+          className="flex min-w-40 flex-1 flex-col gap-1"
+        >
+          <span className="text-xs font-medium text-muted-foreground tabular-nums">{year}</span>
+          {view.rows
+            .filter((a) => a.since.startsWith(year))
+            .map((a) => (
+              <Button
+                key={view.rowId(a)}
+                variant="ghost"
+                size="sm"
+                className="justify-start"
+                aria-current={view.activeId === view.rowId(a) ? 'true' : undefined}
+                onClick={() => view.open(a)}
+              >
+                {a.name}
+              </Button>
+            ))}
+        </section>
+      ))}
+    </div>
+  )
+}
+
+const BY_YEAR: TableLayoutSpec<Account> = {
+  id: 'by-year',
+  label: 'By year',
+  hint: 'Accounts in a lane per year they joined',
+  icon: CalendarRange,
+  render: (view) => <YearLanes view={view} />,
+}
+
 /** The account a commit refuses: its move on the board rolls back. */
 const LOCKED = 'acc-3'
 
-/** One record set as a table, a list, a board or a gallery, the layout saved with each view. */
+/** One record set as a table, a list, a board, a gallery or the app's own lanes, the layout saved with each view. */
 function LayoutsRoute(): ReactElement {
   const [accounts, setAccounts] = useState(ACCOUNTS)
   const [archived, setArchived] = useState(0)
@@ -91,7 +137,7 @@ function LayoutsRoute(): ReactElement {
     data: accounts,
     getRowId: (a) => a.id,
     mode: { kind: 'client' },
-    layouts: ['table', 'list', 'board', 'gallery'],
+    layouts: ['table', 'list', 'board', 'gallery', BY_YEAR],
     selection: {
       bulk: [{ id: 'archive', label: 'Archive', onClick: (rows) => setArchived(rows.length) }],
     },

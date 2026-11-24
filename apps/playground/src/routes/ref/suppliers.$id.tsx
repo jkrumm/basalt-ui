@@ -10,6 +10,9 @@ import {
 } from '../../../../../packages/basalt-ui/blocks/record-page/RecordPage'
 import { PARTS, SUPPLIERS, TODAY, supplierOf, supplierRecordsQuery } from '../../demo/ref-inventory'
 
+/** The supplier list's order: the record page steps through it with `k` and `j`. */
+const SUPPLIER_IDS = SUPPLIERS.map((supplier) => supplier.id)
+
 export const Route = createFileRoute('/ref/suppliers/$id')({
   staticData: { title: 'Supplier' },
   validateSearch: recordControls.validateSearch,
@@ -19,6 +22,7 @@ export const Route = createFileRoute('/ref/suppliers/$id')({
 
 function SupplierRoute(): ReactElement {
   const { id } = Route.useParams()
+  const navigate = Route.useNavigate()
   const records = shotState(useQuery(supplierRecordsQuery(id)), {
     empty: { orders: [], parts: [], notes: [] },
   })
@@ -31,6 +35,11 @@ function SupplierRoute(): ReactElement {
       partsHref={navTarget(linkOptions({ to: '/ref/parts' }))}
       recordHref={navTarget(linkOptions({ to: '/ref/suppliers/$id', params: { id } }))}
       partHref={(partId) => navTarget(linkOptions({ to: '/ref/part/$id', params: { id: partId } }))}
+      steps={{
+        ids: SUPPLIER_IDS,
+        id,
+        onStep: (next) => void navigate({ to: '/ref/suppliers/$id', params: { id: next } }),
+      }}
       newOrder={(dialog) => (
         <NewOrderDialog {...dialog} suppliers={SUPPLIERS} parts={PARTS} now={TODAY} />
       )}

@@ -7,7 +7,8 @@
  *
  * Page content renders through `<Outlet />`; each destination is a file route under `routes/`.
  * The app's one `CommandPalette` sits inside the shell: it lists every nav destination and the
- * commands of `demo/commands.ts`, takes `Mod+K`, and the rail's search row opens it.
+ * commands of `demo/commands.ts`, searches the suppliers (`demo/palette-sources.ts`), takes `Mod+K`,
+ * and the rail's search row opens it.
  */
 import { Outlet, createRootRouteWithContext, useNavigate } from '@tanstack/react-router'
 import type { QueryClient } from '@tanstack/react-query'
@@ -19,6 +20,7 @@ import type { ComponentProps } from 'react'
 import { COMMANDS } from '../demo/commands'
 import { globals } from '../demo/globals'
 import { NAV } from '../demo/nav-model'
+import { PALETTE_SOURCES } from '../demo/palette-sources'
 import { PeekLayer } from '../demo/peek-layer'
 import { ACCENTS } from '../lib/accents'
 import { onPaletteRequest } from '../lib/palette-open'
@@ -110,7 +112,12 @@ function RootLayout() {
     >
       <Outlet />
       <PeekLayer />
-      <CommandPalette commands={COMMANDS} open={paletteOpen} onOpenChange={setPaletteOpen} />
+      <CommandPalette
+        commands={COMMANDS}
+        sources={PALETTE_SOURCES}
+        open={paletteOpen}
+        onOpenChange={setPaletteOpen}
+      />
     </AppShell>
   )
 }
