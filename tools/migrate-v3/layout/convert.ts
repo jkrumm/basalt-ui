@@ -146,7 +146,7 @@ function mapLiteral(prop: string, v: string | number | true, ctx: Ctx): Mapped {
     }
     case 'c':
     case 'bg':
-      return { human: `colour ${JSON.stringify(v)} needs the v3 token-name map` }
+      return { human: `color ${JSON.stringify(v)} needs the v3 token-name map` }
     case 'ta':
       return oneOf(
         v,

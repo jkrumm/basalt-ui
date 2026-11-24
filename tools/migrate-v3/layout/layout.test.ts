@@ -126,7 +126,7 @@ describe('traps', () => {
     expect(r.worklist.some((w) => w.tag === 'Button' && w.prop === 'size')).toBe(false)
   })
 
-  test('colours, arbitrary sizes and spreads stay Mantine and are listed with the written prop name', () => {
+  test('colors, arbitrary sizes and spreads stay Mantine and are listed with the written prop name', () => {
     const r = run('worklist-composites')
     expect(r.worklist.find((w) => w.prop === 'c')?.reason).toContain('token-name map')
     expect(r.worklist.find((w) => w.prop === 'fz' || w.prop === 'size')?.reason).toContain(

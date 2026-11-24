@@ -14,7 +14,7 @@ const KIND_OF = (token: string): Shift['kind'] | null =>
 const pxValues = (text: string): number[] =>
   [...text.matchAll(/(-?\d+(?:\.\d+)?)px/g)].map((m) => Number.parseFloat(m[1]!))
 
-/** The `from>to` pairs the rows allow, per kind. Colour and size rows name no line-height or radius and are skipped. */
+/** The `from>to` pairs the rows allow, per kind. Color and size rows name no line-height or radius and are skipped. */
 export function allowedPairs(rows: ValueShiftRow[]): Record<Shift['kind'], Set<string>> {
   const out: Record<Shift['kind'], Set<string>> = { 'line-height': new Set(), radius: new Set() }
   for (const row of rows) {
