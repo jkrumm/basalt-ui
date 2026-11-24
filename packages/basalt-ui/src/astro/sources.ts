@@ -1,24 +1,32 @@
 /**
  * `<root>/.basalt/sources.css` for an Astro site: `basalt-ui/static.css`, the token sheets the manifest
- * records, and an `@source` line per basalt directory the site's own files import, so an island's
- * chart, card or table classes are generated without a hand-written sheet. The paths are resolved from
- * the installed package, so a hoisted workspace install works the same. Written each run, only when
- * the bytes change; `basaltAstro()` injects it on every page.
+ * records, and the `@source` lines of everything the site's own imports reach in the installed
+ * package: the subpath directories, and the `ui` directory less each primitive nothing reaches. The
+ * reach is the closure `basalt()` computes for a Vite app (`closureOf` over the package graph), so a
+ * dialog island brings the button it draws. Paths resolve from the installed package, so a hoisted
+ * workspace install works the same. Written each run, only when the bytes change; `basaltAstro()`
+ * injects it on every page.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { dirname, join, relative, sep } from 'node:path'
 
-/** What an import of an MDX island tag reaches besides the tag's own directory. */
-const TAG_REACHES: Readonly<Record<string, readonly string[]>> = {
-  'astro/mdx/DataTable.astro': ['astro/mdx', 'table'],
-  'astro/mdx/Chart.astro': ['astro/mdx', 'charts'],
+import { closureOf, packageDir, packageGraph, shippedPrimitives, subpathOf } from '../vite/graph'
+
+/** What an import of an MDX island tag reaches: the subpath its island imports. */
+const TAG_REACHES: Readonly<Record<string, string>> = {
+  'astro/mdx/DataTable.astro': 'table',
+  'astro/mdx/Chart.astro': 'charts',
 }
+/** The directory of the MDX tags and their islands. */
+const TAG_DIR = 'astro/mdx'
 
 /** Subpaths whose classes `static.css` already carries, or that draw nothing. */
 const COVERED = new Set(['static', 'astro', 'theme-script', 'tokens', 'lint', 'stylelint', 'vite'])
+/** Primitives `static.css` sources itself: never excluded, whatever the closure says. */
+const STATIC_PRIMITIVES = new Set(['alert', 'table'])
 
 const SOURCE = /\.(?:astro|mdx|md|[cm]?[jt]sx?)$/
-const IMPORT = /(?:\bfrom\s*|\bimport\s*\(?\s*)(['"])basalt-ui\/([\w./-]+)\1/g
+const IMPORT = /(?:\bfrom\s*|\bimport\s*\(?\s*)(['"])(basalt-ui(?:\/[\w./-]+)?)\1/g
 const FENCE = /^(```|~~~)[\s\S]*?^\1/gm
 
 function sourceFiles(dir: string): string[] {
@@ -32,26 +40,27 @@ function sourceFiles(dir: string): string[] {
     })
 }
 
-/** The package directories (`charts`, `ui/button`, `astro/mdx`) the files under `srcDir` import. */
-export function importedDirs(srcDir: string): string[] {
-  const dirs = new Set<string>()
+/** What the files under `srcDir` import: the closure keys (`charts`, `ui/button`) and whether an MDX tag is used. */
+export function siteImports(srcDir: string): { keys: string[]; tags: boolean } {
+  const keys = new Set<string>()
+  let tags = false
   for (const file of sourceFiles(srcDir)) {
     let text = readFileSync(file, 'utf8')
-    if (!text.includes('basalt-ui/')) continue
+    if (!text.includes('basalt-ui')) continue
     if (/\.mdx?$/.test(file)) text = text.replace(FENCE, '')
     for (const [, , spec = ''] of text.matchAll(IMPORT)) {
-      if (spec.endsWith('.css')) continue
-      const reached = TAG_REACHES[spec]
-      if (reached !== undefined) {
-        for (const dir of reached) dirs.add(dir)
+      const rest = spec.slice('basalt-ui/'.length)
+      const tag = TAG_REACHES[rest]
+      if (tag !== undefined) {
+        tags = true
+        keys.add(tag)
         continue
       }
-      const ui = /^ui\/([a-z0-9-]+)$/.exec(spec)
-      if (ui !== null) dirs.add(`ui/${ui[1]}`)
-      else if (!COVERED.has(spec.split('/')[0] ?? '')) dirs.add(spec.split('/')[0] ?? spec)
+      const key = subpathOf(spec)
+      if (key !== null && !COVERED.has(key)) keys.add(key)
     }
   }
-  return [...dirs].toSorted()
+  return { keys: [...keys].toSorted(), tags }
 }
 
 const posix = (path: string): string => {
@@ -63,23 +72,29 @@ const posix = (path: string): string => {
 export function renderSiteSources(input: {
   outFile: string
   pkgRoot: string
-  dirs: readonly string[]
+  keys: readonly string[]
+  tags: boolean
   tokenSheets: readonly string[]
 }): string {
   const from = dirname(input.outFile)
-  const dist = join(input.pkgRoot, 'dist')
-  const lines = input.dirs.flatMap((dir) => {
-    const ui = /^ui\/([a-z0-9-]+)$/.exec(dir)
-    if (ui !== null) return [`@source "${posix(relative(from, join(dist, 'ui')))}/${ui[1]}.*";`]
-    return existsSync(join(dist, dir))
-      ? [`@source "${posix(relative(from, join(dist, dir)))}";`]
-      : []
-  })
+  const at = (dir: string): string => posix(relative(from, packageDir(input.pkgRoot, dir)))
+  const closure = closureOf(input.keys, packageGraph(input.pkgRoot))
+  const reached = new Set(closure.primitives)
+  const dirs = [
+    ...closure.subpaths.map((key) => (key === '.' ? 'core' : key)),
+    ...(input.tags ? [TAG_DIR] : []),
+  ]
+    .filter((dir) => !COVERED.has(dir) && existsSync(packageDir(input.pkgRoot, dir)))
+    .toSorted()
+  const excluded = dirs.includes('ui')
+    ? shippedPrimitives(input.pkgRoot).filter((n) => !reached.has(n) && !STATIC_PRIMITIVES.has(n))
+    : []
   return [
     '/* @generated by basaltAstro() from basalt-ui/astro on every build and dev start; do not edit, do not commit. */',
     '@import "basalt-ui/static.css";',
     ...input.tokenSheets.map((sheet) => `@import "${posix(relative(from, sheet))}";`),
-    ...lines,
+    ...dirs.map((dir) => `@source "${at(dir)}";`),
+    ...excluded.map((name) => `@source not "${at('ui')}/${name}.*";`),
     '',
   ].join('\n')
 }

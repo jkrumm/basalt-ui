@@ -20,7 +20,7 @@ import { siteScript } from '../static/site-script'
 import { installedPackage } from '../vite/graph'
 import { SOURCES_PATH } from '../vite/sources'
 import { deadIslandMessage, deadIslands } from './islands'
-import { importedDirs, renderSiteSources } from './sources'
+import { renderSiteSources, siteImports } from './sources'
 
 export { ASTRO_PARTS } from './parts'
 export type { AstroPart } from './parts'
@@ -86,7 +86,7 @@ function writeSiteSources(root: string): string {
   const css = renderSiteSources({
     outFile,
     pkgRoot: installedPackage(root),
-    dirs: importedDirs(join(root, 'src')),
+    ...siteImports(join(root, 'src')),
     tokenSheets: tokenSheets(root),
   })
   if (!existsSync(outFile) || readFileSync(outFile, 'utf8') !== css) {
