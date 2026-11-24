@@ -22,7 +22,7 @@ echo "==> publint"
 bunx publint --strict "$TGZ"
 
 echo "==> attw (are-the-types-wrong)"
-bunx attw "$TGZ" --profile esm-only --ignore-rules cjs-resolves-to-esm named-exports --exclude-entrypoints ./styles.css ./tokens.css ./typography.css ./prose.css ./fonts.css ./tailwind.css ./archify.css ./table.css ./static.css ./starlight.css ./astro/BasaltFonts.astro ./astro/mdx/Chart.astro ./astro/mdx/DataTable.astro
+bunx attw "$TGZ" --profile esm-only --ignore-rules cjs-resolves-to-esm named-exports --exclude-entrypoints ./styles.css ./tokens.css ./typography.css ./prose.css ./fonts.css ./tailwind.css ./archify.css ./table.css ./static.css ./starlight.css ./astro/BasaltFonts.astro ./astro/SiteHead.astro ./astro/mdx/Chart.astro ./astro/mdx/DataTable.astro
 
 echo "==> assert tarball contents"
 # Assert against a FILE, never `echo "$LIST" | grep -q`. Under this script's `set -o pipefail`,
@@ -48,7 +48,7 @@ for f in \
   dist/router/index.js dist/data/index.js dist/page/index.js dist/cards/index.js dist/ai/index.js dist/motion/index.js \
   dist/lint/index.js dist/lint/stylelint/index.js dist/testing/index.js dist/css/theme-script.js \
   dist/css/tokens.css dist/css/typography.css dist/css/prose.css dist/css/fonts.css dist/css/tailwind.css dist/css/archify.css dist/table/table.css \
-  dist/static/index.js dist/static/index.d.ts dist/astro/index.js dist/astro/index.d.ts dist/astro/BasaltFonts.astro dist/astro/mdx/Chart.astro dist/astro/mdx/DataTable.astro dist/astro/mdx/chart-island.js dist/astro/mdx/table-island.js \
+  dist/static/index.js dist/static/index.d.ts dist/astro/index.js dist/astro/index.d.ts dist/astro/BasaltFonts.astro dist/astro/SiteHead.astro dist/astro/head.js dist/astro/mdx/Chart.astro dist/astro/mdx/DataTable.astro dist/astro/mdx/chart-island.js dist/astro/mdx/table-island.js \
   dist/css/static.css dist/css/starlight.css \
   dist/controls/index.js dist/controls/index.d.ts \
   dist/form/index.js dist/form/index.d.ts \
@@ -202,6 +202,7 @@ const subpaths = [
   'basalt-ui/static',
   'basalt-ui/astro',
   'basalt-ui/astro/BasaltFonts.astro',
+  'basalt-ui/astro/SiteHead.astro',
   'basalt-ui/astro/mdx/Chart.astro',
   'basalt-ui/astro/mdx/DataTable.astro',
   'basalt-ui/static.css',
