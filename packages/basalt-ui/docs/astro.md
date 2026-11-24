@@ -148,7 +148,7 @@ object prop: Astro hands that over as an Astro template and the build fails. Lab
 | inline JavaScript on any page, Astro's island loader included, gzip | 3,750 B |
 | the React runtime the first island brings, gzip | 72,000 B |
 | a further island's cost (the chart island on `/charts`), gzip | 129,250 B |
-| the two MDX islands together (`/guides/islands-in-mdx`), gzip | 334,250 B |
+| the two MDX islands together (`/guides/islands-in-mdx`), gzip | 339,750 B |
 | CSS per page, gzip | 40,750 B |
 | LCP, landing, article and docs page, 390 px, local | 1,000 ms |
 | CLS, the same three pages | 0.05 |
