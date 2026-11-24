@@ -114,6 +114,14 @@ function routeServesRoot(ctx: Ctx, appRel: string): boolean {
   return routePatterns(files.map((f) => `${routes}/${f}`)).some((p) => p.length === 0)
 }
 
+/** The `_app` layout, its index page and the nav it imports: none is seeded beside a kept root route or a route that already serves `/`. */
+const LAYOUT_SEEDS: ReadonlySet<string> = new Set(['nav', 'app', 'appIndex'])
+
+/** Why the `_app` layout family is not seeded, or null: the app keeps its own root route, or a route already serves `/`. */
+function layoutSkip(ctx: Ctx, appRel: string, keptRoot: boolean): string | null {
+  if (keptRoot) return 'the app keeps its own root route'
+  return routeServesRoot(ctx, appRel) ? 'a route file already serves /' : null
+}
 /** The stylesheet the Start root route links, as an import path from `src/routes`: the app's entry in `src` or at its root, else `src/index.css` (`wireApp` writes it). */
 function cssEntry(ctx: Ctx, appRel: string): string {
   const inSrc = CSS_ENTRIES.find((f) => readIfExists(resolve(ctx.root, appRel, 'src', f)) !== null)
@@ -159,18 +167,26 @@ export function placeRouterSeeds(ctx: Ctx): void {
   if (skip !== null) return say(`skipped the router seeds: ${SKIP_NOTES[skip]}`)
 
   const name = appName(ctx.root).replace(/[\\']/g, '\\$&')
-  for (const [seed, dest, tpl] of seedPlan(app.rel, start)) {
+  const seeds = seedPlan(app.rel, start).flatMap(([seed, dest, tpl]) => {
     const template = readIfExists(resolve(ctx.pkgRoot, 'agent/templates', tpl))
     if (template === null) {
       ctx.problems.push(`${ctx.pkgRoot} ships no ${tpl}`)
-      continue
+      return []
     }
     const text = template
       .replaceAll('{{APP_NAME}}', () => name)
       .replaceAll('{{CSS_ENTRY}}', () => cssEntry(ctx, app.rel))
+    return [{ seed, dest, text }]
+  })
+  const rootText = seeds.find((s) => s.seed === 'root')?.text
+  const ownRoot = readIfExists(resolve(ctx.root, routerSeedDest(app.rel, 'root')))
+  const layout = layoutSkip(ctx, app.rel, ownRoot !== null && ownRoot !== rootText)
+  let skipped: string | null = null
+  for (const { seed, dest, text } of seeds) {
     const existing = readIfExists(resolve(ctx.root, dest))
-    if (seed === 'appIndex' && existing === null && routeServesRoot(ctx, app.rel)) {
-      say(`skipped ${dest}: a route file already serves /`)
+    if (layout !== null && LAYOUT_SEEDS.has(seed) && existing === null) {
+      say(`skipped ${dest}: ${layout}`)
+      skipped = layout
     } else if (existing === null) {
       writeText(ctx.root, dest, text)
       say(`wrote ${dest}`)
@@ -186,5 +202,10 @@ export function placeRouterSeeds(ctx: Ctx): void {
     } else {
       say(`kept ${dest}: it exists`)
     }
+  }
+  if (skipped !== null) {
+    ctx.todo.push(
+      `no _app layout or nav was seeded (${skipped}): add them by hand if the app wants the basalt shell`,
+    )
   }
 }
