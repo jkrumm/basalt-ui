@@ -91,7 +91,7 @@ Every part sets `data-slot` to the kebab-case of its export (`DialogContent` is 
 
 | Size                  | Fine pointer, at root 16 px                  | Coarse pointer               | Takes over (Mantine 9.7 px, F `Button.css`, `ActionIcon.css`) |
 | --------------------- | -------------------------------------------- | ---------------------------- | ------------------------------------------------------------- |
-| `md`                  | `h-ctl`: 28 dense, 32 normal, 40 comfortable | `min-h-11`, 44 visible       | `Button` `xs` 30, `sm` 36, `md` 42                            |
+| `md`                  | `h-ctl`: 28 dense, 32 normal, 40 comfortable | `h-ctl`, 44 (token), visible | `Button` `xs` 30, `sm` 36, `md` 42                            |
 | `sm`                  | 24 (`h-6`), every density                    | 24 visible, `::after` hit 44 | `compact-xs` 22, `compact-sm` 26, shutterflow's `mih={24}`    |
 | `md` + `shape="icon"` | `size-ctl`                                   | 44 visible                   | `ActionIcon` `md` 28, `lg` 34, `size={28}`, `size={40}`       |
 | `sm` + `shape="icon"` | 24                                           | 24 visible, `::after` hit 44 | `ActionIcon` `xs` 18, `sm` 22, `size={24}`                    |
