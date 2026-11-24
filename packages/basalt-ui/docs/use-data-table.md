@@ -48,7 +48,7 @@ useDataTable<T, const F extends readonly unknown[] = readonly any[]>(options: Us
   nested?: { parentOf: (row: T) => string | null | undefined; }  // Nested rows (client mode only, never with `group`): each row is drawn under the row `parentOf` names, one level deeper, with the indent and the expander the table draws in its first column; a row whose parent is absent, itself or below it is a root
   selection?: { bulk: BulkAction<T>[]; selectAll?: boolean; }
   views?: { store?: ViewStore; }
-  layouts?: readonly TableLayout[]  // The layouts a reader may pick in the view row, in toggle order; the view saves the pick; default ['table']
+  layouts?: readonly (BuiltinLayout | TableLayoutSpec<T>)[]  // The layouts a reader may pick in the view row, in toggle order; the view saves the pick's id; default ['table']
   detailTitle?: (row: T) => string  [with detail]  // The title of a row's detail entry (the aside or sheet header); the table label when absent
   detailTitleById?: (id: string) => string  [with detail]  // The title of a record opened by id (see `detailById`): a page that titles a record by its id passes the same function as `detailTitle` reads, so one record has one title however it opened
   detailState?: ControlHandle<string>  [with detail]  // A string field of row ids that holds the open row: activating a row writes its id, closing the sheet calls `clear()` (on a `history: 'push'` field the close is an entry of its own, so Back after it returns to the open record; a name that matches no row is cleared as a replace), and a value that names a loaded row opens its detail on load, on a share link and on Back
@@ -62,7 +62,7 @@ useDataTable<T, const F extends readonly unknown[] = readonly any[]>(options: Us
 
 `ControlHandle` import from `basalt-ui/router`: `import type { ControlHandle } from 'basalt-ui/router'`.
 
-`BulkAction`, `DataTableInstance`, `KindColumn`, `Mode`, `PageFilters`, `RowHeight`, `StateHandle`, `TableLayout`, `TableState`, `UseDataTable`, `ViewStore` import from `basalt-ui/table`: `import type { BulkAction, DataTableInstance, KindColumn, Mode, PageFilters, RowHeight, StateHandle, TableLayout, TableState, UseDataTable, ViewStore } from 'basalt-ui/table'`.
+`BuiltinLayout`, `BulkAction`, `DataTableInstance`, `KindColumn`, `Mode`, `PageFilters`, `RowHeight`, `StateHandle`, `TableLayoutSpec`, `TableState`, `UseDataTable`, `ViewStore` import from `basalt-ui/table`: `import type { BuiltinLayout, BulkAction, DataTableInstance, KindColumn, Mode, PageFilters, RowHeight, StateHandle, TableLayoutSpec, TableState, UseDataTable, ViewStore } from 'basalt-ui/table'`.
 
 `Box` import from `basalt-ui`: `import type { Box } from 'basalt-ui'`.
 

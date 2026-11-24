@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from 'bun:
 import { useEffect } from 'react'
 import type { ReactElement } from 'react'
 import type { DragData, DragEdge, DragLike } from '../../core/ports'
-import type { BulkAction, TableLayout, TableState, View } from '../contract'
+import type { BuiltinLayout, BulkAction, TableLayoutSpec, TableState, View } from '../contract'
 import { col } from '../core/kinds'
 import { DataTable } from '../parts/data-table'
 import { isViewDirty, storedState, viewDisplay } from '../parts/views-model'
@@ -77,8 +77,8 @@ function Subject({
   data = DEALS,
 }: {
   /** `null` passes no `layouts`: the default. */
-  layouts?: readonly TableLayout[] | null
-  layout?: TableLayout
+  layouts?: readonly (BuiltinLayout | TableLayoutSpec<Deal>)[] | null
+  layout?: string
   commit?: (row: Deal, value: string) => unknown
   bulk?: BulkAction<Deal>[]
   drag?: DragLike
@@ -107,7 +107,11 @@ function Subject({
   const built = modelOf(t)
   useEffect(() => {
     seen.model = built
-    if (layout !== undefined && built.layout !== layout && built.layouts.includes(layout))
+    if (
+      layout !== undefined &&
+      built.layout !== layout &&
+      built.layouts.some((entry) => entry.id === layout)
+    )
       built.setLayout(layout)
   })
   return <DataTable table={t} {...(drag !== undefined && { drag })} />
@@ -141,7 +145,7 @@ describe('a view carries its layout', () => {
 describe('the layouts a table offers', () => {
   test('one layout by default, so no toggle and the table draws', () => {
     render(<Subject layouts={null} />)
-    expect(seen.model?.layouts).toEqual(['table'])
+    expect(seen.model?.layouts.map((entry) => entry.id)).toEqual(['table'])
     expect(screen.getByRole('table')).toBeTruthy()
   })
 
@@ -166,7 +170,7 @@ describe('the layouts a table offers', () => {
     const warn = spyOn(console, 'warn').mockImplementation(() => undefined)
     render(<NoAxis />)
     warn.mockRestore()
-    expect(seen.model?.layouts).toEqual(['table'])
+    expect(seen.model?.layouts.map((entry) => entry.id)).toEqual(['table'])
   })
 })
 
@@ -295,5 +299,112 @@ describe('the board', () => {
     expect(within(won()).queryByText('Acme')).not.toBeNull()
     rerender(<Subject layout="board" drag={drag.engine} data={DEALS.map((d) => ({ ...d }))} />)
     expect(within(won()).queryByText('Acme')).toBeNull()
+  })
+})
+
+/** An app's fifth layout: the rows as a plain ordered list, each a button that opens its row. */
+const lanes: TableLayoutSpec<Deal> = {
+  id: 'lanes',
+  label: 'Lanes',
+  hint: 'One line per deal',
+  icon: () => null,
+  render: (view) => (
+    <ol data-testid="lanes">
+      {view.rows.map((deal) => (
+        <li key={view.rowId(deal)}>
+          <button type="button" onClick={() => view.open(deal)}>
+            {deal.name}
+          </button>
+        </li>
+      ))}
+    </ol>
+  ),
+}
+
+describe("an app's layout", () => {
+  test('is offered beside the built-ins and draws the shown rows through its render', async () => {
+    const opened: string[] = []
+    function WithLanes(): ReactElement {
+      const c = col<Deal>()
+      const t = useDataTable<Deal>({
+        id: 'lanes-table',
+        label: 'Deals',
+        columns: [c.entity('name'), c.money('amount', { currency: 'EUR' })],
+        data: DEALS,
+        getRowId: (d) => d.id,
+        mode: { kind: 'client' },
+        layouts: ['table', lanes],
+        onRowActivate: (deal) => opened.push(deal.id),
+      })
+      const built = modelOf(t)
+      useEffect(() => {
+        seen.model = built as unknown as TableModel<Deal>
+        if (built.layout !== 'lanes') built.setLayout('lanes')
+      })
+      return <DataTable table={t} />
+    }
+    render(<WithLanes />)
+    expect(seen.model?.layouts.map((entry) => entry.id)).toEqual(['table', 'lanes'])
+    const list = await screen.findByTestId('lanes')
+    expect(
+      within(list)
+        .getAllByRole('button')
+        .map((b) => b.textContent),
+    ).toEqual(['Acme', 'Bolt', 'Cove'])
+    expect(screen.queryByRole('table')).toBeNull()
+    fireEvent.click(within(list).getByRole('button', { name: 'Bolt' }))
+    expect(opened).toEqual(['b'])
+  })
+
+  test('a view saves its id like a built-in', () => {
+    expect(storedState(state({ visibility: {}, layout: 'lanes' })).display.layout).toBe('lanes')
+  })
+
+  test('a saved id the table does not offer draws the table and warns in dev', () => {
+    const warn = spyOn(console, 'warn').mockImplementation(() => undefined)
+    function Stale(): ReactElement {
+      const c = col<Deal>()
+      const t = useDataTable<Deal>({
+        id: 'stale-layout',
+        label: 'Deals',
+        columns: [c.entity('name')],
+        data: DEALS,
+        getRowId: (d) => d.id,
+        mode: { kind: 'client' },
+        layouts: ['table', 'list'],
+      })
+      const built = modelOf(t)
+      // A view saved while the app still offered a timeline writes the id this table no longer has.
+      useEffect(() => {
+        seen.model = built as unknown as TableModel<Deal>
+        if (built.state.display.layout !== 'timeline') built.setLayout('timeline')
+      })
+      return <DataTable table={t} />
+    }
+    render(<Stale />)
+    const warned = warn.mock.calls.map((call) => String(call[0]))
+    warn.mockRestore()
+    expect(seen.model?.layout).toBe('table')
+    expect(screen.getByRole('table')).toBeTruthy()
+    expect(warned.some((line) => line.includes('"timeline"'))).toBe(true)
+  })
+
+  test("an id taken twice, or a built-in's, throws in dev", () => {
+    function Clash(): ReactElement {
+      const c = col<Deal>()
+      const t = useDataTable<Deal>({
+        id: 'clash',
+        label: 'Deals',
+        columns: [c.entity('name')],
+        data: DEALS,
+        getRowId: (d) => d.id,
+        mode: { kind: 'client' },
+        layouts: ['table', { ...lanes, id: 'list' }],
+      })
+      return <DataTable table={t} />
+    }
+    const error = spyOn(console, 'error').mockImplementation(() => undefined)
+    expect(() => render(<Clash />)).toThrow(/"list" twice/)
+    error.mockRestore()
   })
 })

@@ -16,6 +16,8 @@ import { table } from '../core/messages/table'
 import { resolvePhase } from '../core/phase'
 import type { Empty, ResolvedPhase } from '../core/phase'
 import type { Box, DetailHost, RecordSequence } from '../core/ports'
+import { resolveLayouts } from './layouts/specs'
+import type { LayoutEntry } from './layouts/specs'
 import { clearTogether } from '../core/write-batch'
 import { isActive } from '../controls/filter-set-census'
 import type { AnySpec } from '../controls/filter-set-census'
@@ -28,7 +30,8 @@ import type {
   RowHeight,
   TableDisplay,
   TableEscape,
-  TableLayout,
+  BuiltinLayout,
+  TableLayoutSpec,
   TableRequest,
   Totals,
   UseDataTable,
@@ -129,11 +132,11 @@ export type TableModel<T> = {
   /** Writes the view's reduce for a column: `'none'` drops it, `undefined` returns to the declared one. */
   setAggregate(id: string, fn: Aggregate | 'none' | undefined): void
   /** The layouts a reader may pick, in toggle order: `layouts` without the ones this table cannot draw. */
-  layouts: readonly TableLayout[]
-  /** The view's layout: its pick while the table offers it, else `table`. */
-  layout: TableLayout
-  /** Writes the view's layout; `table` drops the key. */
-  setLayout(layout: TableLayout): void
+  layouts: readonly LayoutEntry<T>[]
+  /** The id of the view's layout: its pick while the table offers it, else `table`. */
+  layout: string
+  /** Writes the view's layout id; `table` drops the key. */
+  setLayout(layout: string): void
   /** The `select` columns a board may stand on (client mode), in drawn order. */
   boardAxes: readonly string[]
   /** Activates a row as a click or Enter on it does: its `onRowActivate`, `detail` or derived sheet. */
@@ -280,12 +283,12 @@ let layoutWarned = false
  * (a server table never groups; a board's drop is a `select` column's `commit`). A dev warning
  * names a dropped board once per page.
  */
-function offeredLayouts(
+function offeredLayouts<T>(
   id: string,
-  asked: readonly TableLayout[] | undefined,
+  asked: readonly (BuiltinLayout | TableLayoutSpec<T>)[] | undefined,
   server: boolean,
   hasAxis: boolean,
-): readonly TableLayout[] {
+): readonly (BuiltinLayout | TableLayoutSpec<T>)[] {
   const wanted = asked === undefined || asked.length === 0 ? DEFAULT_LAYOUTS : asked
   if (!wanted.includes('board') || (!server && hasAxis)) return wanted
   if (process.env.NODE_ENV !== 'production' && !layoutWarned) {
@@ -298,7 +301,29 @@ function offeredLayouts(
   return wanted.filter((layout) => layout !== 'board')
 }
 
-const DEFAULT_LAYOUTS: readonly TableLayout[] = ['table']
+const DEFAULT_LAYOUTS: readonly BuiltinLayout[] = ['table']
+
+const unknownWarned = new Set<string>()
+
+/**
+ * The id the view draws: its saved pick while the table offers it, else `table`. A pick the table
+ * does not offer (a saved view naming a layout the app since dropped) is named once per table in dev.
+ */
+function shownLayout<T>(
+  table: string,
+  saved: string | undefined,
+  layouts: readonly LayoutEntry<T>[],
+): string {
+  if (saved === undefined || layouts.some((layout) => layout.id === saved)) return saved ?? 'table'
+  if (process.env.NODE_ENV !== 'production' && !unknownWarned.has(`${table}:${saved}`)) {
+    unknownWarned.add(`${table}:${saved}`)
+    // oxlint-disable-next-line no-console -- a development warning for a saved layout the table does not offer
+    console.warn(
+      `basalt-ui/table: "${table}" has a view saved in the layout "${saved}", which it does not offer; the view draws as a table.`,
+    )
+  }
+  return 'table'
+}
 
 /** What a column's `range` compares: calendar days in the table's zone on a date kind, else numbers. */
 function domainOf(spec: Pick<KindSpec<never>, 'kind'>, zone: string | undefined): RangeDomain {
@@ -816,7 +841,11 @@ export function useDataTable<
     : arranged.specs.flatMap((spec) =>
         spec.kind === 'select' && spec.edit !== undefined ? [spec.id] : [],
       )
-  const layouts = offeredLayouts(options.id, options.layouts, server, boardAxes.length > 0)
+  const layouts = resolveLayouts(
+    options.id,
+    offeredLayouts(options.id, options.layouts, server, boardAxes.length > 0),
+    t,
+  )
 
   const model: TableModel<T> = {
     id: options.id,
@@ -866,8 +895,7 @@ export function useDataTable<
       state.setDisplay({ widths: {} })
     },
     layouts,
-    layout:
-      display.layout !== undefined && layouts.includes(display.layout) ? display.layout : 'table',
+    layout: shownLayout(options.id, display.layout, layouts),
     setLayout(next) {
       state.updateDisplay(({ layout: _previous, ...rest }) =>
         next === 'table' ? rest : { ...rest, layout: next },

@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { useEffect } from 'react'
 import type { ReactElement } from 'react'
 import type { Phase } from '../../core/ports'
-import type { TableLayout } from '../contract'
+import type { BuiltinLayout } from '../contract'
 import { col } from '../core/kinds'
 import { DataTable } from '../parts/data-table'
 import { modelOf, useDataTable } from '../use-data-table'
@@ -22,7 +22,7 @@ function Subject({
   phase,
   data = [],
 }: {
-  layout: TableLayout
+  layout: BuiltinLayout
   phase?: Phase
   data?: readonly Deal[]
 }): ReactElement {

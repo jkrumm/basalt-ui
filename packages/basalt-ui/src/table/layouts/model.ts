@@ -13,7 +13,7 @@
 import { aggregate } from '../parts/footer-model'
 import type { KindSpec } from '../core/kinds-spec'
 import type { ModelRow, TableModel } from '../use-data-table'
-import type { CardSlot, TableLayout } from '../contract'
+import type { CardSlot } from '../contract'
 
 /** One value on a card: the column it comes from, its header and the text its cell shows. */
 export type FaceValue<T> = { spec: KindSpec<T>; label: string; text: string }
@@ -174,6 +174,3 @@ export function laneTotal<T>(
   if (typeof drawn !== 'string' && typeof drawn !== 'number') return undefined
   return spec.unit === undefined ? String(drawn) : `${drawn} ${spec.unit}`
 }
-
-/** The order the toggle and the layout menu list the layouts in. */
-export const LAYOUT_ORDER: readonly TableLayout[] = ['table', 'list', 'board', 'gallery']

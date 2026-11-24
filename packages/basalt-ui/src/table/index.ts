@@ -55,5 +55,7 @@ export type {
   CardSlot,
   Priority,
   RowHeight,
-  TableLayout,
+  BuiltinLayout,
+  TableLayoutSpec,
+  TableLayoutView,
 } from './contract'
