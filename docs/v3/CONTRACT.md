@@ -25,10 +25,13 @@ never a waiver.
 | 5   | tooling    | `src/vite`, `src/lint`, `src/testing`, `src/cli`, `src/astro` | L0 and build-time dependencies                                            |
 
 Composites: page, shell, cards, controls, table, charts, content, ai
-Declared L4 edges: shell -> page, router; table -> controls; ai -> content
+Declared L4 edges: shell -> page, router; table -> controls, cards, page; ai -> content
 
-A subpath is one `src/` top-level directory, one peer class and one Tailwind `@source` unit. Any L4 edge not on the
-line above fails the build. `charts` and `tokens` import no UI library; `src/charts/host.tsx` is the only importer of
+A subpath is one `src/` top-level directory, one peer class and one Tailwind `@source` unit. A composite importing
+another composite that is not on the line above fails `gen-contract.test.ts`, which scans the imports of every
+composite directory. **Declared L1 exception:** `src/core/list` (the option model behind `Select`, `Combobox` and the command palette) imports
+`@base-ui/react`, cva and `ui/avatar`, because an ejected `select` or `combobox` seed may import only `../core/<path>`,
+`../tokens` and `./<sibling>`. No other `src/core` module imports a peer but react. `charts` and `tokens` import no UI library; `src/charts/host.tsx` is the only importer of
 `@tanstack/charts/react`. Ports (`src/core/ports.ts`) replace sideways imports between composites.
 
 ## 2. Subpaths and peers
@@ -202,7 +205,7 @@ Free to change in a minor:
 | Fact                                               | Held by                                                                     |
 | -------------------------------------------------- | --------------------------------------------------------------------------- |
 | Generated sections, size, no reader of the history | `scripts/gen-contract.test.ts`                                              |
-| Layers, composites, declared edges                 | the same test, against `src/vite/allotment.ts` and `src/`                   |
+| Layers, composites, declared edges                 | the same test, against `src/vite/allotment.ts` and a scan of composite imports |
 | Subpath peers                                      | `src/vite/allotment.test.ts`, `scripts/surface-gates.ts` and `pack-test.sh` |
 | Rule ids and their fixtures                        | `src/lint/rule-table.test.ts`, `scripts/check-rule-tags.ts`                 |
 | One path per symbol, public names                  | `scripts/check-budgets.ts`, `scripts/export-surface/`                       |
