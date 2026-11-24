@@ -378,14 +378,14 @@ function HeaderContent<T>({
         {active !== undefined && <FilterMark />}
       </ColumnActionsMenu>
       {spec.help !== undefined && (
-        // The mark follows the label in both alignments. Over a figure's slots it sits in the inset; a right-aligned
-        // label otherwise keeps its edge on the figures' edge, so the mark hangs past it (its box takes no width).
+        // The mark follows the label counted from the aligned edge: after it on the left, on the outer (left) side of a
+        // right-aligned label, whose edge stays on the figures' edge. Over a figure's slots it sits in the inset.
         // Its ring is inset: the head's row has no room for an offset ring at the scroller's top edge.
         <InfoHint
           label={spec.header}
           className={cn(
             '-my-1 focus-visible:-outline-offset-2',
-            numeric && spec.trail === undefined && '-me-6',
+            numeric && spec.trail === undefined && '-order-1',
           )}
         >
           {spec.help}

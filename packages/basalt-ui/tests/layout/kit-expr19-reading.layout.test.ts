@@ -76,13 +76,13 @@ layout('a reading table in a padded container', () => {
         figure: textRight(cell),
         icon: !!label.querySelector('svg'),
         hint: hint ? hint.getBoundingClientRect().left : null,
-        labelBox: label.getBoundingClientRect().right,
+        labelLeft: label.getBoundingClientRect().left,
       }
     })
     expect(m.icon, 'the reading look draws no header icon').toBe(false)
     expect(Math.abs(m.label - m.figure)).toBeLessThanOrEqual(1)
-    expect(m.hint, 'the help mark follows the label').not.toBeNull()
-    expect(m.hint!).toBeGreaterThanOrEqual(m.labelBox - 1)
+    expect(m.hint, 'the help mark is on the outer side of the label').not.toBeNull()
+    expect(m.hint!).toBeLessThanOrEqual(m.labelLeft)
   })
 })
 
