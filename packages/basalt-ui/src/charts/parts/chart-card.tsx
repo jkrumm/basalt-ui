@@ -33,7 +33,7 @@ export const BOX = {
   fill: 'min-h-40 flex-1',
 } as const
 
-/** The card's `--card-edge` from the narrow class up: 1rem at the default root size. */
+/** The card's `--card-edge` from the regular class up: 1rem at the default root size. */
 const CARD_EDGE_PX = 16
 const halfWidth = (floor: number): number => Math.min(420, Math.max(floor, INITIAL_WIDTH / 2))
 
