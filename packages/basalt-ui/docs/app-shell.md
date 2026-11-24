@@ -28,10 +28,10 @@ shows its nav label, and a path no route matches shows `Not found`, in the crumb
 ## Signature
 
 ```ts
-AppShell<Id extends string = string>({ nav, brand, badges, blocks, globalControls, globalActions, settings, account, search, workspace, favourites, storageKey, compactHeader, chrome, frame, children, }: AppShellProps<Id>): ReactElement
-  nav: ShellNav
+AppShell<N extends DefinedNav>({ nav, brand, badges, blocks, globalControls, globalActions, settings, account, search, workspace, favourites, storageKey, compactHeader, chrome, frame, children, }: AppShellProps<N>): ReactElement
+  nav: N
   brand: ShellBrand
-  badges?: Partial<Record<Id, NavBadge>>
+  badges?: NoInfer<Partial<Record<Extract<keyof NavIndex<N>, string>, NavBadge>>>
   blocks?: readonly SidebarBlock[]
   globalControls?: { readonly kind: "controls-slot"; readonly count: number; readonly compact?: boolean; render(): ReactNode; }
   globalActions?: readonly GlobalAction[]

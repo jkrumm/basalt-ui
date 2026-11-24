@@ -2,6 +2,10 @@
   // The nav type-guard registers a router (`declare module … Register`), which is program-global, so
   // it cannot share a program with the rest of the package. `bun run typecheck` runs both.
   "extends": "./tsconfig.json",
-  "include": ["src/router/nav/nav.type-guard*.test.ts", "src/router/nav/nav.type-guard*.test.tsx"],
+  "include": [
+    "src/router/nav/nav.type-guard*.test.ts",
+    "src/router/nav/nav.type-guard*.test.tsx",
+    "src/shell/app-shell.type-guard.test.tsx"
+  ],
   "exclude": ["node_modules", "dist"]
 }

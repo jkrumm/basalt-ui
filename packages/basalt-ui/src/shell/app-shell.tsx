@@ -9,7 +9,7 @@ import { PanelSteps } from '../page/record-panel'
 import { useSizeClass } from '../page/use-size-class'
 import { registerNav } from '../router/nav/registry'
 import { flattenNavEntries, resolveActive } from '../router/nav/resolve-active'
-import type { AnyNavConfig } from '../router/nav/types'
+import type { AnyNavConfig, DefinedNav } from '../router/nav/types'
 import { Button } from '../ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet'
 import { FavouritesContext } from '../page/favourites'
@@ -18,7 +18,6 @@ import { useFavouritesApi } from './favourites-host'
 import { ChromeHost, useChromeRoot } from './chrome'
 import type { AppShellProps } from './contract'
 import { createNavRuntime } from './core/nav-runtime'
-import type { CoreNavConfig } from './core/types'
 import {
   RouteAnnouncer,
   SkipLink,
@@ -132,7 +131,7 @@ function AsideSheet({ claim }: { claim: AsideClaim }): ReactElement {
  *   <Outlet />
  * </AppShell>
  */
-export function AppShell<Id extends string = string>({
+export function AppShell<N extends DefinedNav>({
   nav,
   brand,
   badges,
@@ -149,11 +148,10 @@ export function AppShell<Id extends string = string>({
   chrome = 'web',
   frame = 'panel',
   children,
-}: AppShellProps<Id>): ReactElement {
+}: AppShellProps<N>): ReactElement {
   const router = useRouter()
-  const declared = nav as unknown as AnyNavConfig
   // Registration is idempotent and runs in render so the server render has it too.
-  registerNav(router, declared)
+  registerNav(router, nav)
 
   // The page on screen: the resolved location, so a slow loader keeps the rail, the breadcrumb and
   // the title on the page the reader still sees until the next one arrives. `location` leads
@@ -169,8 +167,8 @@ export function AppShell<Id extends string = string>({
   const runtime = useMemo(
     () =>
       createNavRuntime({
-        nav: nav as unknown as CoreNavConfig,
-        resolve: (path) => resolveActive(declared, path),
+        nav,
+        resolve: (path) => resolveActive(nav, path),
         pathname,
       }),
     // The runtime is built once per declaration; later pathnames reach it through `setPathname`.
@@ -191,8 +189,8 @@ export function AppShell<Id extends string = string>({
   const asideNode = useClaim(shellHost.regions.aside)
 
   const activeLabel = useMemo(
-    () => flattenNavEntries(declared).find((e) => e.item.id === active.activeId)?.item.label,
-    [declared, active.activeId],
+    () => flattenNavEntries(nav).find((e) => e.item.id === active.activeId)?.item.label,
+    [nav, active.activeId],
   )
   // A path no route matched (or a loader's `notFound()`) renders no page, so no page names it: it
   // is "Not found", not the nearest nav item.
@@ -236,7 +234,7 @@ export function AppShell<Id extends string = string>({
   usePrintScheme()
 
   const titlebar = chrome === 'native-overlay'
-  const section = missing ? undefined : sectionLabelOf(declared, active.activeId)
+  const section = missing ? undefined : sectionLabelOf(nav, active.activeId)
   const leaf: ReactNode =
     breadcrumb ??
     (fallbackLabel === undefined ? null : (
@@ -256,7 +254,7 @@ export function AppShell<Id extends string = string>({
 
   const phoneProps = {
     runtime,
-    badges: badges as AppShellProps['badges'],
+    badges,
     blocks,
     globalActions,
     settings,
@@ -306,7 +304,7 @@ export function AppShell<Id extends string = string>({
                   <RailMount
                     runtime={runtime}
                     brand={brand}
-                    badges={badges as AppShellProps['badges']}
+                    badges={badges}
                     blocks={blocks}
                     settings={settings}
                     account={account}

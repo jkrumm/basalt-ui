@@ -52,6 +52,15 @@ export type NavSectionMeta = {
   mobile?: false | NavSectionMobile
 }
 
+/** Phone tuning of the whole nav. `tabs` is typed by the item and section ids in `defineNav`. */
+export type NavMobileConfig<T extends ReadonlyArray<unknown> = ReadonlyArray<unknown>> = {
+  /** Explicit bar order by item/section id. Omit to let each item's `mobile` field decide. */
+  tabs?: T
+  /** @default 5 */ maxTabs?: number
+  /** @default 12 */ menuMax?: number
+  /** @default 'More' */ moreLabel?: string
+}
+
 /** Widened read shapes. The framework reads through these; a consumer never writes them. */
 export type AnyNavLink = { to: string; search?: unknown; params?: unknown }
 export type AnyNavItem = NavItemMeta & { link: AnyNavLink; children?: ReadonlyArray<AnyNavItem> }
@@ -59,7 +68,18 @@ export type AnyNavSection = NavSectionMeta & { items: ReadonlyArray<AnyNavItem> 
 export type AnyNavConfig = {
   sections: ReadonlyArray<AnyNavSection>
   pinned?: ReadonlyArray<AnyNavItem>
+  mobile?: NavMobileConfig
 }
+
+/**
+ * The brand only `defineNav` sets. Type-only (`declare`, never a runtime key): a hand-written
+ * object of the same shape lacks it, so `AppShell nav` refuses it with
+ * "Property '[builtByDefineNav]' is missing", which names the fix.
+ */
+declare const builtByDefineNav: unique symbol
+
+/** Any `defineNav` result: what `AppShell nav` accepts. A hand-written nav object is not one. */
+export type DefinedNav = AnyNavConfig & { readonly [builtByDefineNav]: true }
 
 // ── badges ───────────────────────────────────────────────────────────────────────────────────────
 
@@ -147,8 +167,9 @@ export type NavSectionId<N> = N extends { sections: ReadonlyArray<{ id: infer I 
 export type NavTabId<N> = NavItemId<N> | NavSectionId<N>
 
 /**
- * The resolved definition `defineNav` returns. Call `defineNav` at module scope: anchor identity
- * keys on the item objects, so a definition built inside a component remounts the links per render.
+ * The resolved definition `defineNav` returns, branded as a `DefinedNav`. Call `defineNav` at module
+ * scope: anchor identity keys on the item objects, so a definition built inside a component remounts
+ * the links per render.
  */
 export type NavConfig<
   S extends ReadonlyArray<AnyNavSection>,
@@ -156,14 +177,10 @@ export type NavConfig<
   T extends ReadonlyArray<unknown>,
 > = {
   sections: S
-  mobile?: {
-    /** Explicit bar order by item/section id. Omit to let each item's `mobile` field decide. */
-    tabs?: T
-    /** @default 5 */ maxTabs?: number
-    /** @default 12 */ menuMax?: number
-    /** @default 'More' */ moreLabel?: string
+  mobile?: NavMobileConfig<T>
+} & ([P] extends [readonly []] ? unknown : { pinned: P }) & {
+    readonly [builtByDefineNav]: true
   }
-} & ([P] extends [readonly []] ? unknown : { pinned: P })
 
 /** What `defineNav` accepts: the same shape with `Exact` applied at every section and item. */
 export type NavConfigInput<

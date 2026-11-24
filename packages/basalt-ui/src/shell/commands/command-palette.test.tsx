@@ -21,14 +21,14 @@ import type { ListItems } from '../../ui/combobox'
 import { Dialog, DialogContent } from '../../ui/dialog'
 import { Select } from '../../ui/select'
 import { AppShell } from '../app-shell'
-import type { AppShellProps } from '../contract'
 import { isApplePlatform } from './chord'
 import { CommandPalette } from './command-palette'
 import type { CommandPaletteProps } from './command-palette'
 import { defineCommands } from './define-commands'
 import type { CommandSet } from './define-commands'
+import { defineNav } from '../../../tests/support/router-nav'
 
-const NAV = {
+const NAV = defineNav({
   sections: [
     {
       id: 'main',
@@ -40,7 +40,7 @@ const NAV = {
       ],
     },
   ],
-} satisfies AppShellProps['nav']
+})
 
 afterEach(cleanup)
 

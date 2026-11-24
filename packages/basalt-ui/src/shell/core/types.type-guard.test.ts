@@ -4,7 +4,7 @@
  * its props to the projector unchanged.
  */
 import { expect, test } from 'bun:test'
-import type { GlobalAction, ShellBadges, ShellNav, SidebarBlock } from '../contract'
+import type { AppShellProps, GlobalAction, SidebarBlock } from '../contract'
 import type { CoreBlock } from './block-model'
 import type { HeaderTierItem } from './header-tiers'
 import type { BadgeMap, CoreNavConfig } from './types'
@@ -12,9 +12,9 @@ import type { BadgeMap, CoreNavConfig } from './types'
 type Assert<T extends true> = T
 type Fits<A, B> = [A] extends [B] ? true : false
 
-export type ContractNavFits = Assert<Fits<ShellNav, CoreNavConfig>>
+export type ContractNavFits = Assert<Fits<AppShellProps['nav'], CoreNavConfig>>
 export type ContractBlockFits = Assert<Fits<SidebarBlock, CoreBlock>>
-export type ContractBadgesFit = Assert<Fits<ShellBadges<'a' | 'b'>, BadgeMap>>
+export type ContractBadgesFit = Assert<Fits<NonNullable<AppShellProps['badges']>, BadgeMap>>
 export type GlobalActionIsTierItem = Assert<Fits<GlobalAction, HeaderTierItem>>
 
 // @ts-expect-error a section without an id has no fold key

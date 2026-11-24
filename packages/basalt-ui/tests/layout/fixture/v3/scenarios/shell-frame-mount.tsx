@@ -34,6 +34,7 @@ import { Card } from '../../../../../src/ui/card'
 import type { AppShellProps } from '../../../../../src/shell/contract'
 import type { FixtureSpec } from '../../spec'
 import type { ShellFrameSpec } from './shell-frame'
+import { defineNav } from '../../../../../tests/support/router-nav'
 
 const RESET = document.createElement('style')
 RESET.textContent =
@@ -54,7 +55,7 @@ function linkStylesheet(): Promise<void> {
   })
 }
 
-const NAV = {
+const NAV = defineNav({
   sections: [
     {
       id: 'main',
@@ -65,7 +66,7 @@ const NAV = {
       ],
     },
   ],
-} satisfies AppShellProps['nav']
+})
 
 const controls: ControlsSlot = {
   kind: 'controls-slot',

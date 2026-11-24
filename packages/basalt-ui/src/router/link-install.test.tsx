@@ -32,7 +32,7 @@ import { pushField } from '../page/parts/inner-nav.test-support'
 import { col } from '../table/core/kinds'
 import { EntityCell } from '../table/core/kinds-cells'
 import { routerDefaults } from './defaults'
-import { navTarget } from './nav-target'
+import { navTarget } from '../../tests/support/router-nav'
 
 afterEach(cleanup)
 

@@ -16,13 +16,14 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import type { ReactElement } from 'react'
 import { AppShell } from './app-shell'
 import { useWindowChrome } from './chrome'
-import type { AppShellProps, ShellChrome } from './contract'
+import type { ShellChrome } from './contract'
+import { defineNav } from '../../tests/support/router-nav'
 
-const NAV = {
+const NAV = defineNav({
   sections: [
     { id: 'main', label: 'Main', items: [{ id: 'home', label: 'Overview', link: { to: '/' } }] },
   ],
-} satisfies AppShellProps['nav']
+})
 
 afterEach(cleanup)
 

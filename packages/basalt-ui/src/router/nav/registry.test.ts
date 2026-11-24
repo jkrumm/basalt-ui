@@ -28,7 +28,7 @@ const B = defineNav({
 describe('defineNav is pure', () => {
   test('returns the very object it was given and writes no module global', () => {
     const config = { sections: [] }
-    expect(defineNav(config)).toBe(config)
+    expect(defineNav(config) as object).toBe(config)
   })
 
   test('two configs give independent resolvers', () => {

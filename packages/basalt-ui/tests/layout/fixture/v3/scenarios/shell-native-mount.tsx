@@ -26,6 +26,7 @@ import type { AppShellProps } from '../../../../../src/shell/contract'
 import { Dialog, DialogContent } from '../../../../../src/ui/dialog'
 import type { FixtureSpec } from '../../spec'
 import type { ShellNativeSpec } from './shell-native'
+import { defineNav } from '../../../../../tests/support/router-nav'
 
 const RESET = document.createElement('style')
 RESET.textContent = '*,::before,::after{box-sizing:border-box}body{margin:0}'
@@ -45,7 +46,7 @@ function linkStylesheet(): Promise<void> {
   })
 }
 
-const NAV = {
+const NAV = defineNav({
   sections: [
     {
       id: 'main',
@@ -57,7 +58,7 @@ const NAV = {
       ],
     },
   ],
-} satisfies AppShellProps['nav']
+})
 
 const Glyph = ({ className }: { className?: string }): ReactElement => (
   <svg viewBox="0 0 16 16" className={className} fill="none" aria-hidden="true">

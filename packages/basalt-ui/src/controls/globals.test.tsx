@@ -15,12 +15,12 @@ import { Page } from '../page/page'
 import { defineControls, resetControlsOwnersForTests } from '../router/controls/define'
 import { field } from '../router/controls/field'
 import { AppShell } from '../shell/app-shell'
-import type { AppShellProps } from '../shell/contract'
 import type { ControlsSlot } from '../core/ports'
 import { globalControls } from './globals'
 import { filterSlot } from './filter-slot'
 import { spec } from './spec'
 import { mountApp } from './view-tabs.test-support'
+import { defineNav } from '../../tests/support/router-nav'
 
 afterEach(() => {
   cleanup()
@@ -28,7 +28,7 @@ afterEach(() => {
 })
 beforeEach(resetControlsOwnersForTests)
 
-const NAV = {
+const NAV = defineNav({
   sections: [
     {
       id: 'main',
@@ -36,7 +36,7 @@ const NAV = {
       items: [{ id: 'home', label: 'Overview', link: { to: '/p' }, mobile: 'tab' }],
     },
   ],
-} satisfies AppShellProps['nav']
+})
 
 const stores = () => {
   const globals = defineControls({

@@ -21,6 +21,16 @@
       "manual": true,
       "note": "`basalt-ui/router` keeps re-exporting the same provider beside `routerDefaults`; the eject path `basalt-ui/core/provider` no longer resolves; `NavConfig`, `NavBadges` and `NavBadge` are new types on the router subpath",
       "verify": "tsc"
+    },
+    {
+      "id": "router-navtarget-register",
+      "kind": "manual",
+      "from": "basalt-ui/router#navTarget without the Register augmentation",
+      "to": "declare module '@tanstack/react-router' { interface Register { router: typeof router } }",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "like `defineNav`, `navTarget` refuses its options until the router is registered, since an unregistered tree accepts any `to`; the field handle gains `useHref()`",
+      "verify": "tsc"
     }
   ],
   "tokens": {

@@ -18,9 +18,9 @@ import { PageBar } from '../page/page-bar'
 import { Page } from '../page/page'
 import { navFor } from '../router/nav/registry'
 import { AppShell } from './app-shell'
-import type { AppShellProps } from './contract'
+import { defineNav } from '../../tests/support/router-nav'
 
-const NAV = {
+const NAV = defineNav({
   sections: [
     {
       id: 'main',
@@ -31,7 +31,7 @@ const NAV = {
       ],
     },
   ],
-} satisfies AppShellProps['nav']
+})
 
 function makeRouter(entry = '/') {
   const root = createRootRoute({

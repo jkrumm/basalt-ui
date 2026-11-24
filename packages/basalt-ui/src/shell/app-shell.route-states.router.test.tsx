@@ -21,9 +21,9 @@ import { routerDefaults } from '../router/defaults'
 import { Page } from '../page/page'
 import { PageBar } from '../page/page-bar'
 import { AppShell } from './app-shell'
-import type { AppShellProps } from './contract'
+import { defineNav } from '../../tests/support/router-nav'
 
-const NAV = {
+const NAV = defineNav({
   sections: [
     {
       id: 'fleet',
@@ -34,7 +34,7 @@ const NAV = {
       ],
     },
   ],
-} satisfies AppShellProps['nav']
+})
 
 function mount(entry: string) {
   let release: () => void = () => {}

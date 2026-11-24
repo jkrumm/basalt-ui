@@ -17,9 +17,9 @@ import {
 import { BasaltProvider } from '../../../../src/core/provider'
 import { routerDefaults } from '../../../../src/router/defaults'
 import { AppShell } from '../../../../src/shell/app-shell'
-import type { AppShellProps } from '../../../../src/shell/contract'
+import { defineNav } from '../../../../tests/support/router-nav'
 
-const NAV = {
+const NAV = defineNav({
   sections: [
     {
       id: 'main',
@@ -27,7 +27,7 @@ const NAV = {
       items: [{ id: 'home', label: 'Home', link: { to: '/' }, mobile: 'tab' }],
     },
   ],
-} satisfies AppShellProps['nav']
+})
 
 const defaults = routerDefaults()
 

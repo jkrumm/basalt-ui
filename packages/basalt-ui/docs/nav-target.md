@@ -16,7 +16,7 @@ target itself carries nothing a caller can read or build by hand.
 ## Signature
 
 ```ts
-navTarget<const TOptions>(options: ValidateLinkOptions<RegisteredRouter, TOptions>): NavTarget
+navTarget<const TOptions>(options: NavTargetOptions<TOptions>): NavTarget
 ```
 
 `NavTarget` import from `basalt-ui`: `import type { NavTarget } from 'basalt-ui'`.

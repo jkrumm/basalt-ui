@@ -6,7 +6,8 @@
  */
 import type { ReactNode } from 'react'
 import type { ControlsSlot, IconComponent, NavTarget } from '../core/ports'
-import type { FavouritesStore, NavBadge } from '../page/contract'
+import type { FavouritesStore } from '../page/contract'
+import type { DefinedNav, NavBadges } from '../router/nav/types'
 import type { SizeClass } from '../page/use-size-class'
 
 // ---- Opaque targets and size ---------------------------------------------------------------
@@ -19,41 +20,9 @@ export type ShellBox = { height: number; sizeClass: SizeClass }
 
 // ---- Nav (3.1) ----------------------------------------------------------------------------
 
-// minimal; concept elides it (the `linkOptions` result)
-export type NavLinkOptions = {
-  to: string
-  params?: Record<string, string>
-  search?: Record<string, unknown> | ((prev: Record<string, unknown>) => Record<string, unknown>)
-  hash?: string
-}
-
-export type NavChild = { id: string; label: string; link: NavLinkOptions }
-
-export type NavItem = {
-  id: string
-  label: string
-  /** Shorter label for the tab bar. */
-  short?: string
-  icon?: IconComponent
-  link: NavLinkOptions
-  /** `'/'` is always exact. */
-  exact?: boolean
-  activeWhen?: (location: { pathname: string }) => boolean
-  mobile?: 'tab' | 'more' | 'hidden'
-  children?: readonly NavChild[]
-}
-
-export type NavSection = { id: string; label: string; items: readonly NavItem[] }
-
-/** The nav the shell draws; `basalt-ui/router`'s `NavConfig` is what `defineNav` returns. */
-export type ShellNav = {
-  sections: readonly NavSection[]
-  /** Rail bottom. */
-  pinned?: readonly NavItem[]
-}
-
-/** Keys are typed from the declared nav; a typo is a compile error. */
-export type ShellBadges<Id extends string = string> = Partial<Record<Id, NavBadge>>
+// The nav and its badges are `basalt-ui/router`'s: `AppShell nav` takes a `defineNav` result
+// (`DefinedNav`) and `badges` is `NavBadges` of that same declaration, so a badge key that names no
+// item and a hand-written nav object do not compile.
 
 // ---- Header actions, sidebar blocks, settings, account (3.1) ------------------------------
 
@@ -134,10 +103,11 @@ export type WorkspaceSwitcher = {
   manage?: { label: string; href: string | NavTarget }
 }
 
-export type AppShellProps<Id extends string = string> = {
-  nav: ShellNav
+/** `N` is the `defineNav` result passed as `nav`; `badges` is keyed by its item ids. */
+export type AppShellProps<N extends DefinedNav = DefinedNav> = {
+  nav: N
   brand: ShellBrand
-  badges?: ShellBadges<Id>
+  badges?: NoInfer<NavBadges<N>>
   blocks?: readonly SidebarBlock[]
   globalControls?: ControlsSlot
   globalActions?: readonly GlobalAction[]

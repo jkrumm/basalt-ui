@@ -56,5 +56,6 @@ export function defineNav<
   const P extends ReadonlyArray<AnyNavItem> = [],
   const T extends ReadonlyArray<NavTabId<{ sections: S; pinned: P }>> = [],
 >(config: RegisteredOr<NavConfigInput<S, P, T>>): NavConfig<S, P, T> {
+  // The one cast: it adds the type-only brand that marks a checked declaration.
   return config as unknown as NavConfig<S, P, T>
 }
