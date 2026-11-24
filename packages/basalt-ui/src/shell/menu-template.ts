@@ -87,7 +87,9 @@ export function toMenuTemplate<T extends CommandMap>(
         (entry) =>
           entry.steps.length === 1 &&
           entry.id !== 'shell.palette' &&
-          entry.id !== 'shell.shortcuts',
+          entry.id !== 'shell.shortcuts' &&
+          // The record steps live only while a record page is on screen: a native menu item would be dead.
+          !entry.id.startsWith('record.'),
       )
       .map((entry) => entry.id)
   const items: MenuTemplateItem[] = []
