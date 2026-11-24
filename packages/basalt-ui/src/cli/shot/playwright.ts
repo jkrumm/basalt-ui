@@ -37,6 +37,7 @@ export type PwLocator = {
   waitFor(options: { state: 'visible'; timeout: number }): Promise<void>
   screenshot(options: ShotOptions): Promise<unknown>
   evaluate<R>(fn: (el: Element) => R): Promise<R>
+  evaluate<R, A>(fn: (el: Element, arg: A) => R, arg: A): Promise<R>
 }
 
 export type PwPage = {
