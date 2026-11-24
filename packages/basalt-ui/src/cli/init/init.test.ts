@@ -892,6 +892,9 @@ describe('init: the router scaffold', () => {
     }
     expect(log).toContain('skipped src/routes/_app.tsx: the app keeps its own root route')
     expect(log).toContain('no _app layout or nav was seeded')
+    const imports = [...read(dir, 'src/main.tsx').matchAll(/from '\.\/(components\/route-\w+)'/g)]
+    expect(imports).toHaveLength(3)
+    for (const [, part] of imports) expect(existsSync(join(dir, 'src', `${part}.tsx`))).toBe(true)
     const before = snapshot(dir)
     await runInit(['--profile', 'app', '--root', 'src'], dir)
     expect(snapshot(dir)).toEqual(before)

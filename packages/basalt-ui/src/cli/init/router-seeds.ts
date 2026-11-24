@@ -115,14 +115,7 @@ function routeServesRoot(ctx: Ctx, appRel: string): boolean {
 }
 
 /** The `_app` layout, its parts and the nav it imports: none is seeded beside a kept root route or a route that already serves `/`. */
-const LAYOUT_SEEDS: ReadonlySet<string> = new Set([
-  'nav',
-  'app',
-  'appError',
-  'appMissing',
-  'appPending',
-  'appIndex',
-])
+const LAYOUT_SEEDS: ReadonlySet<string> = new Set(['nav', 'app', 'appIndex'])
 
 /** Why the `_app` layout family is not seeded, or null: the app keeps its own root route, or a route already serves `/`. */
 function layoutSkip(ctx: Ctx, appRel: string, keptRoot: boolean): string | null {
