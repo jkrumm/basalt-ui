@@ -1,6 +1,7 @@
 /**
  * The `overview` fixture (docs/v3/issues/g1/v3-playground-overview.json): the playground overview
- * route's own component, mounted in a memory router whose root route does not mount the global store
+ * route's own component, mounted in a memory router whose root route does not mount the global store,
+ * under the query client its fixtures read through
  * (the bound card shows the global's fallback). The URL
  * overrides the `errors` card's range, so the page shows one bound and one overridden card. The
  * harness is told to "mount" it by a no-op `window.basaltMountFixture`.
@@ -13,7 +14,9 @@ import {
   createRoute,
   createRouter,
 } from '@tanstack/react-router'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { createRoot } from 'react-dom/client'
+import { createQueryClient } from '../../src/data/query-client'
 import { Route as OverviewFileRoute } from '../../../../apps/playground/src/routes/overview'
 
 const Overview = OverviewFileRoute.options.component
@@ -41,4 +44,8 @@ const container = document.getElementById('root')
 if (!container) throw new Error('fixture host is missing #root')
 window.basaltMountFixture = async () => {}
 document.body.classList.add('bg-background')
-createRoot(container).render(<RouterProvider router={router} />)
+createRoot(container).render(
+  <QueryClientProvider client={createQueryClient()}>
+    <RouterProvider router={router} />
+  </QueryClientProvider>,
+)
