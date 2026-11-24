@@ -257,6 +257,7 @@ regen: ## After a rebase: rewrite every generated file (sync-self, the marketing
 	@$(MAKE) --no-print-directory sync-self
 	@bun apps/playground-astro/scripts/matrix.ts --render
 	@bun packages/basalt-ui/scripts/gen-oxlint.ts
+	@bun packages/basalt-ui/scripts/gen-parts.ts
 	@bun packages/basalt-ui/bin/basalt-ui.mjs tokens:css --accents violet,rose,orange,green,teal --out apps/playground/src/accents.css > /dev/null
 	@git status --short
 
@@ -267,3 +268,4 @@ merge-guard: ## Refuse unless PR CI is green for HEAD, generated files are in sy
 gen-check: ## Generated docs in sync: gen-docs --check (JSDoc gate), then gen-recipes --check
 	@bun packages/basalt-ui/scripts/gen-docs.ts --check
 	@bun packages/basalt-ui/scripts/gen-recipes.ts --check
+	@bun packages/basalt-ui/scripts/gen-parts.ts --check
