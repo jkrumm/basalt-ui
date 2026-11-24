@@ -67,4 +67,13 @@ describe('toMenuTemplate', () => {
     )
     expect(accelerators).toEqual(['CmdOrCtrl+PageUp', 'F5', 'CmdOrCtrl+Backspace'])
   })
+
+  test('leaves out the shell record steps, never an app command under the record prefix', () => {
+    const ids = toMenuTemplate(
+      defineCommands({ 'record.archive': { label: 'Archive', chord: 'Mod+Shift+A', run } }),
+    ).flatMap((item) => (item.type === 'item' ? [item.id] : []))
+    expect(ids).toContain('record.archive')
+    expect(ids).not.toContain('record.previous')
+    expect(ids).not.toContain('record.next')
+  })
 })
