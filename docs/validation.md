@@ -18,8 +18,12 @@ it to `src/` for the running app, so a new/widened export is invisible to `bun r
 same family — build before trusting a typecheck or a lint run that spans both packages.
 
 **Pack-test (the dist gate, runs in CI):** `bun pm pack` + scratch-install of the tarball. The
-playground only exercises `src/`, never `dist/` — the pack-test is what proves the published
-artifact resolves.
+playground runs its scripts from `src/` (its styles and `basalt()`'s graph come from `dist/`) — the
+pack-test is what proves the published artifact resolves. Its last step, `scripts/pack-consumers.sh`,
+is the install path from an empty directory: a create-vite app through `init --profile app`, a build
+with no further install, a server render of the start page and an eject round trip ending in
+`doctor`, then an Astro project through `init --profile site` and `astro build` (no module script on
+a static page, one island on the island page).
 
 `make check` is the local equivalent of CI (`.github/workflows/ci.yml`): it runs the generation sync
 checks, builds first, then `pre` (fmt:check + lint + typecheck + check-budgets + unit
