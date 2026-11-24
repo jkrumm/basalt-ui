@@ -741,6 +741,8 @@ const STACK_PACKAGES: ReadonlySet<string> = new Set([
   'react',
   'react-dom',
   'ai',
+  'astro',
+  'oxlint',
   'motion',
   'd3-scale',
   'class-variance-authority',
