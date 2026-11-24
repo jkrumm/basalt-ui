@@ -29,17 +29,23 @@ export function packageManager(dir: string): PackageManager {
   return lockDir(dir)?.pm ?? 'npm'
 }
 
-/** `add` (`--dev` for tools) with exact resolution, as argv, for the package manager `dir` installs with. */
-export function addCommand(dir: string, specs: readonly string[], dev = true): string[] {
+/** `add` (`--dev` for tools), saving the resolved version exactly unless `exact` is false, as argv, for the package manager `dir` installs with. */
+export function addCommand(
+  dir: string,
+  specs: readonly string[],
+  dev = true,
+  exact = true,
+): string[] {
   const found = lockDir(dir)
   const pm = found?.pm ?? 'npm'
-  if (pm === 'bun') return ['bun', 'add', ...(dev ? ['--dev'] : []), '--exact', ...specs]
+  const [x, sx] = exact ? [['--exact'], ['--save-exact']] : [[], []]
+  if (pm === 'bun') return ['bun', 'add', ...(dev ? ['--dev'] : []), ...x, ...specs]
   if (pm === 'pnpm') {
     const workspace = existsSync(resolve(found?.at ?? dir, 'pnpm-workspace.yaml')) ? ['-w'] : []
-    return ['pnpm', 'add', ...(dev ? ['--save-dev'] : []), '--save-exact', ...workspace, ...specs]
+    return ['pnpm', 'add', ...(dev ? ['--save-dev'] : []), ...sx, ...workspace, ...specs]
   }
-  if (pm === 'yarn') return ['yarn', 'add', ...(dev ? ['--dev'] : []), '--exact', ...specs]
-  return ['npm', 'install', ...(dev ? ['--save-dev'] : ['--save']), '--save-exact', ...specs]
+  if (pm === 'yarn') return ['yarn', 'add', ...(dev ? ['--dev'] : []), ...x, ...specs]
+  return ['npm', 'install', ...(dev ? ['--save-dev'] : ['--save']), ...sx, ...specs]
 }
 
 /** The line that installs what the lockfile already names: `npm install`, `bun install`, ... */

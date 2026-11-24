@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'bun:test'
 
-import { readdirSync, readFileSync } from 'node:fs'
+import { mkdtempSync, readdirSync, readFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
 import { closureOf, packageGraph, requiredPeers, subpathOf } from '../vite/graph'
-import { BUILD_PEERS, peerSpec, RUNTIME_PEERS, satisfiesRange } from './peers'
+import { BUILD_PEERS, peerAddLine, peerSpec, RUNTIME_PEERS, satisfiesRange } from './peers'
 
 const PKG_ROOT = resolve(import.meta.dir, '../..')
 const TEMPLATES = join(PKG_ROOT, 'agent/templates')
@@ -70,5 +71,29 @@ describe('peerSpec', () => {
       "'@tanstack/react-virtual@>=3.14.0 <4'",
     )
     expect(peerSpec('react-day-picker', undefined)).toBe('react-day-picker')
+  })
+})
+
+describe('peerAddLine', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'basalt-peer-line-'))
+  it('saves a pin exactly and a range as the range, never --exact beside a caret', () => {
+    expect(peerAddLine(dir, [['@tanstack/charts', '0.4.2']], false)).toBe(
+      'npm install --save --save-exact @tanstack/charts@0.4.2',
+    )
+    expect(peerAddLine(dir, [['@atlaskit/pragmatic-drag-and-drop', '^4.0.0']], false)).toBe(
+      'npm install --save @atlaskit/pragmatic-drag-and-drop@^4.0.0',
+    )
+    expect(
+      peerAddLine(
+        dir,
+        [
+          ['@tanstack/router-plugin', '~1.168.40'],
+          ['d3-scale', '4.0.2'],
+        ],
+        true,
+      ),
+    ).toBe(
+      'npm install --save-dev --save-exact d3-scale@4.0.2 && npm install --save-dev @tanstack/router-plugin@~1.168.40',
+    )
   })
 })

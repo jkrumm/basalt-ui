@@ -69,9 +69,7 @@ describe('peer gate', () => {
   it('names every missing peer of the closure in one command', async () => {
     const app = makeApp('parts', ['react', 'class-variance-authority', 'clsx'])
     const message = await failure(build(config(app)))
-    expect(message).toContain(
-      'npm install --save --save-exact @base-ui/react@~1.9.0 react-dom@^19.3.0',
-    )
+    expect(message).toContain('npm install --save @base-ui/react@~1.9.0 react-dom@^19.3.0')
   })
 })
 

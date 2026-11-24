@@ -67,7 +67,7 @@ export const rows: readonly RowDef[] = [
     id: 'cli-lines',
     order: 110,
     label: 'CLI non-test lines (src/cli/**)',
-    ceiling: 13313,
+    ceiling: 13338,
     measure: () =>
       totalLines(
         walkFiles(join(PKG_ROOT, 'src/cli'), /\.tsx?$/).filter((p) => !/\.test\.tsx?$/.test(p)),
@@ -223,9 +223,9 @@ export const raises: Raises = {
     },
     {
       from: 13311,
-      to: 13313,
+      to: 13338,
       consumer:
-        '`init --profile app` installs the two peers `basalt-ui/shell` imports, so a fresh app builds (trial 2, entry 5)',
+        '`init --profile app` installs the two peers `basalt-ui/shell` imports (trial 2, entry 5), and the peer fix line (`basalt()` gate, doctor check 3) saves a declared range as the range, never `--exact` beside a caret (Issue 3164)',
       repo: 'basalt-ui',
     },
   ],
