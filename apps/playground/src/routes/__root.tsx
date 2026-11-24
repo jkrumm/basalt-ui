@@ -47,13 +47,14 @@ const GLOBAL_ACTIONS: NonNullable<ShellProps['globalActions']> = [
     mobile: 'more',
     content: () => <AppearanceSwitcher accents={ACCENTS} className="w-80" />,
   },
-  // The phone nav trial (Issue 3205): on the phone's own header, so a variant is one tap from any page.
+  // The phone nav trial (Issue 3205): in More on a phone, beside /kit/mobile-nav and `?nav=`; the header
+  // has no room for it at 320 px.
   {
     id: 'phone-nav',
     kind: 'popover',
     label: 'Phone navigation',
     icon: Smartphone,
-    mobile: 'bar',
+    mobile: 'more',
     content: () => <PhoneNavSwitch />,
   },
 ]
