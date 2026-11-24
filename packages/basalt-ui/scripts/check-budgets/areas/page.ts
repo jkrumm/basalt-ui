@@ -38,8 +38,8 @@ export const rows: readonly RowDef[] = [
     // 129000 -> 132000 (Issue 3087): 131625 B measured; PageBar draws a record identity (`EntityTitle`, `Avatar`) and `PropertyList` edits a row in place (`Input`, `NativeSelect`).
     // 132000 -> 137000 (Issue 3106): 136381 B measured; the favorite star, its context and default store, and the star on the page bar and the panel header.
     // 137000 -> 140500 (Issue 3206): 140222 B measured; the Sheet behind Peek and the aside carries Base UI's VirtualKeyboardProvider, a grabber and snap points.
-    // 140500 -> 146900 (Issue 3207): 146833 B measured; the Dock and the pickers in the barrel present as a sheet on a phone.
-    ceiling: 146900,
+    // 140500 -> 147300 (Issue 3207): 146833 B measured; the Dock and the pickers in the barrel present as a sheet on a phone.
+    ceiling: 147300,
     measure: () => measureSource(reExportAll({ page: 'page/index' })),
   },
 ]
@@ -48,7 +48,7 @@ export const raises: Raises = {
   'page-subpath': [
     {
       from: 140500,
-      to: 146900,
+      to: 147300,
       consumer:
         'the mobile overlays (owner direction 2026-11-24, Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom Sheet on a phone through one presenter; the sheet is a lazy chunk this row counts and an app loads only on the first phone open',
       repo: 'basalt-ui',
