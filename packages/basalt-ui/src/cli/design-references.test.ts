@@ -23,6 +23,7 @@ const REFERENCES = [
   'forms',
   'motion',
   'parts',
+  'phone',
   'state',
   'states',
   'table',

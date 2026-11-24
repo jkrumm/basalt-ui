@@ -160,7 +160,7 @@ export type NavConfig<
     /** Explicit bar order by item/section id. Omit to let each item's `mobile` field decide. */
     tabs?: T
     /** @default 5 */ maxTabs?: number
-    /** @default 6 */ menuMax?: number
+    /** @default 12 */ menuMax?: number
     /** @default 'More' */ moreLabel?: string
   }
 } & ([P] extends [readonly []] ? unknown : { pinned: P })

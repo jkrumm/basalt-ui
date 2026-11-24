@@ -43,6 +43,7 @@ const AI = ['ai'] as const
 const TABLE = ['table'] as const
 /** Owned by the motion row (Issue 2529, `tests/motion-guide.test.ts`). */
 const MOTION = ['motion'] as const
+const PHONE = ['phone'] as const
 
 const DROPPED = ['catalogue', 'encoding-rules', 'recipes', 'stat-tile'] as const
 
@@ -72,7 +73,16 @@ describe('sk-7 references', () => {
 
   test('no file exists for a dropped reference, and nothing else is in the folder', () => {
     for (const name of DROPPED) expect(existsSync(join(refsDir, `${name}.md`))).toBe(false)
-    const expected = [...CONTENT, ...GENERATED, ...SK6, ...SK7B, ...TABLE, ...AI, ...MOTION]
+    const expected = [
+      ...CONTENT,
+      ...GENERATED,
+      ...SK6,
+      ...SK7B,
+      ...TABLE,
+      ...AI,
+      ...MOTION,
+      ...PHONE,
+    ]
       .map((n) => `${n}.md`)
       .toSorted()
     expect(readdirSync(refsDir).toSorted()).toEqual(expected)

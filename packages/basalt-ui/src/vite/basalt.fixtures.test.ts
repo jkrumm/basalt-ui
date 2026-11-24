@@ -232,6 +232,15 @@ describe('head', () => {
     expect(manifest['icons']).toEqual([{ src: '/favicon.svg', sizes: 'any' }])
   })
 
+  it('injects the viewport meta with viewport-fit=cover and no zoom lock', async () => {
+    const app = makeApp('parts')
+    await build(config(app))
+    const html = read(app.dir, 'dist/index.html')
+    expect(html).toContain('name="viewport"')
+    expect(html).toContain('content="width=device-width, initial-scale=1, viewport-fit=cover"')
+    expect(html).not.toMatch(/maximum-scale|user-scalable/)
+  })
+
   it('themeScript: false leaves the script out', async () => {
     const app = makeApp('parts', PARTS_PEERS)
     await build(config(app, {}, { themeScript: false, themeColor: false }))

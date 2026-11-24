@@ -13,7 +13,7 @@ This file is the order of work and a map. The law is `.claude/rules/basalt-*.md`
 3. **Form.** Read [parts](references/parts.md), then pick each form from the shape of the data with the question-to-form table in the AGENTS block ([encoding](references/encoding.md)). A figure that fits no shipped form is reported to the user, never faked with a hand-built box. Open the doc of every part before you write its props.
 4. **Parts.** Write each part from its reference in the next section. Compose the shipped parts with theme tokens; the rules guard colour, spacing and imports.
 5. **States and copy.** Every part takes its phase from the query and keeps every slot in every phase ([states](references/states.md)). Then cut the words until each fact sits in one slot ([copy](references/copy.md)).
-6. **Look.** Build, run `basalt-ui shot <route>` (it drives Playwright from your project: install `playwright` first), open every frame, fix at the source and shoot again, until the Done list holds.
+6. **Look.** Build, run `basalt-ui shot <route>` (needs `playwright` installed), open every frame, fix at the source and shoot again, until the Done list holds.
 
 ## Read before you write
 
@@ -35,7 +35,7 @@ This file is the order of work and a map. The law is `.claude/rules/basalt-*.md`
 4. The answer is on the mark: label the line, bar or zone that answers; a threshold is a drawn zone or reference line, never only a footer ([chart-labels](references/chart-labels.md)).
 5. One accent with one meaning, and one status hue per fact, spent on the state that needs action ([chart-color](references/chart-color.md)).
 6. A part is sized to what it holds: no empty lower half, no card large for six bars, no table that repeats its chart ([chart-view](references/chart-view.md)).
-7. At 390 the answering column stays in view and no text is cut ([table](references/table.md) § Phone and the 390 px check, [chart-view](references/chart-view.md) § At 390).
+7. At 390 the answering column stays in view and no text is cut; touch: [phone](references/phone.md) ([table](references/table.md) § Phone and the 390 px check, [chart-view](references/chart-view.md) § At 390).
 8. An empty page has one reading: the first part states the cause and the next step, the others hold their height with a dash or a short caption ([states](references/states.md) § One reading for an empty page).
 9. `mono` is for an id or a timestamp, never a sentence. An age or a duration is a meter, and progress against a target is a [Meter](node_modules/basalt-ui/docs/meter.md) with zones ([table](references/table.md) § Measures in a column).
 
