@@ -127,6 +127,12 @@ const ALLOWED: readonly Allow[] = [
     line: /\.mantine-/,
     reason: 'the stylelint selector ban, generated from src/lint/stylelint/rules.ts',
   },
+  {
+    path: 'apps/playground/.stylelintrc.basalt.json',
+    kinds: ['mantine'],
+    line: /\.mantine-/,
+    reason: 'the same selector ban, as `basalt-ui sync` renders it into the playground install',
+  },
   // The detectors' offender fixtures and the tests that plant them.
   ...[
     'packages/basalt-ui/test/fixtures/lint/import-bypass/',
