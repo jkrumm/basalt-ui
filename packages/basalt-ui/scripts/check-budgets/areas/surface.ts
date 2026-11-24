@@ -124,7 +124,7 @@ export const raises: Raises = {
       from: 180,
       to: 181,
       consumer:
-        "`Facts` from `./page`: the dogfood cycle's issue inspector (apps/playground/src/cycle/dogfood-1/FlowOverview.tsx) hand-builds the same `dl` grid in its `PageAside`; every inspector body is a label and value list",
+        "`Facts` from `./page`: the dogfood cycle's issue inspector hand-built the same `dl` grid in its `PageAside`; every inspector body is a label and value list",
       repo: 'basalt-ui',
     },
     {
