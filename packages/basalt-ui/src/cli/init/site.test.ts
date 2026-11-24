@@ -125,7 +125,7 @@ describe('init --profile site', () => {
     if ('error' in project) throw new Error(project.error)
     const found = runTemplateClasses(project, [page]).map((f) => `${f.line} ${f.id}`)
     expect(found).toContain('3 basalt/logical-properties')
-    expect(found).toContain('3 basalt/colour-literal')
+    expect(found).toContain('3 basalt/color-literal')
     expect(found).toContain('3 basalt/viewport-keyed')
     expect(found.some((f) => f.startsWith('5 '))).toBe(false)
   })

@@ -17,7 +17,7 @@ A content page is static HTML from `basalt-ui/static`, and JavaScript is an isla
 ## Islands
 
 - A part that needs JavaScript to open (a dialog, sheet, menu, popover, tooltip, select, combobox or picker) renders only inside an island with a `client:*` directive; `basaltAstro()` fails the build naming the part and the page when one sits outside. [build:island-directive]
-- A part's `interaction` and best directive are data in `ASTRO_PARTS` from `basalt-ui/astro`: `none` takes no directive, `enhance` works static and gains behaviour from one, `required` needs one. [type:AstroPart]
+- A part's `interaction` and best directive are data in `ASTRO_PARTS` from `basalt-ui/astro`: `none` takes no directive, `enhance` works static and gains behavior from one, `required` needs one. [type:AstroPart]
 
 ## Words and layout
 

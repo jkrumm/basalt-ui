@@ -4,7 +4,7 @@
 
 Placed by `basalt-ui init`, refreshed by `basalt-ui sync` (`--check` gates drift in CI); edit `DESIGN.md`, not this block.
 
-**Stack** (profile `site`): a content site on Astro. `basalt-ui/static` parts render to HTML with no client JavaScript, wired by `basaltAstro()` from `basalt-ui/astro`; a part that needs JavaScript runs in an island the site writes. Colour is a `--basalt-*` token, never a literal.
+**Stack** (profile `site`): a content site on Astro. `basalt-ui/static` parts render to HTML with no client JavaScript, wired by `basaltAstro()` from `basalt-ui/astro`; a part that needs JavaScript runs in an island the site writes. Color is a `--basalt-*` token, never a literal.
 
 **Precedence** (highest wins): consumer `DESIGN.md` > the two `basalt-*` rules in `.claude/rules/` > the `basalt-site` skill > global skills (`frontend-design`). Each rule bullet ends in the lint id, type or build check that holds it, or sits under `not guarded:`; the skill is procedure, not law.
 
