@@ -23,6 +23,8 @@ SiteFooter({ brand, groups, children, label, className, }: SiteFooterProps): Rea
   className?: string
 ```
 
+`SiteFooterProps`, `SiteLinkGroup` import from `basalt-ui/static`: `import type { SiteFooterProps, SiteLinkGroup } from 'basalt-ui/static'`.
+
 ## Example
 
 ```tsx

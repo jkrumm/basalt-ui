@@ -26,6 +26,8 @@ WizardDialog<F extends WizardForm>({ form, steps, preview, submitLabel, draft, c
   className?: string  // Layout only
 ```
 
+`WizardDialogProps`, `WizardForm`, `WizardStep` import from `basalt-ui/controls`: `import type { WizardDialogProps, WizardForm, WizardStep } from 'basalt-ui/controls'`.
+
 ## Example
 
 ```tsx

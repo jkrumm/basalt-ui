@@ -32,7 +32,7 @@ Board<C extends string, T extends { id: string; title: string; }>({ label, colum
   virtual?: { list: VirtualLike; cardHeight: number; }  // Window every column: `VirtualList` from `basalt-ui/ui/virtual-list` and the fixed px height of one card
 ```
 
-`Tone` import from `basalt-ui/cards`: `import type { Tone } from 'basalt-ui/cards'`.
+`BoardProps`, `ColumnRef`, `Move`, `Tone` import from `basalt-ui/cards`: `import type { BoardProps, ColumnRef, Move, Tone } from 'basalt-ui/cards'`.
 
 ## Example
 

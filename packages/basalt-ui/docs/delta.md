@@ -23,8 +23,6 @@ type Delta = {
 }
 ```
 
-`Delta` import from `basalt-ui/cards`: `import type { Delta } from 'basalt-ui/cards'`.
-
 ## Example
 
 ```tsx

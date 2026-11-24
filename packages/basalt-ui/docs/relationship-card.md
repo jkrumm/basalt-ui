@@ -29,6 +29,8 @@ RelationshipCard({ title, subtitle, avatar, href, linkLabel, facts, relation, st
   strength?: RelationshipStrength  // How close the link is, instead of a relation
 ```
 
+`RelationshipCardProps` import from `basalt-ui/cards`: `import type { RelationshipCardProps } from 'basalt-ui/cards'`.
+
 ## Example
 
 ```tsx

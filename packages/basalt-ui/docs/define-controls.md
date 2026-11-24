@@ -49,6 +49,8 @@ defineControls<const Id extends string, const Scp extends Scope, const F extends
   widgets?: W & ValidWidgets<W>  // Page stores only: cards bound to a scalar handle, or owning a scalar `field.*` spec
 ```
 
+`Controls` import from `basalt-ui/router`: `import type { Controls } from 'basalt-ui/router'`.
+
 ## Example
 
 ```tsx

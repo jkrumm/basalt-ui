@@ -22,6 +22,8 @@ offline, mutating (`pauseWhileMutating`) or after a 401/403, and a function `eve
 liveQuery<T extends QueryOptionsLike>(options: T, freshness: Freshness): T
 ```
 
+`Freshness` import from `basalt-ui/data`: `import type { Freshness } from 'basalt-ui/data'`.
+
 ## Example
 
 ```tsx

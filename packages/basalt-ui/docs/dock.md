@@ -38,6 +38,8 @@ Dock({ title, tag, fullPage, favourite, onClose, icon, avatar, actions, records,
   children?: ReactNode
 ```
 
+`DockProps`, `FavouriteInput` import from `basalt-ui/page`: `import type { DockProps, FavouriteInput } from 'basalt-ui/page'`.
+
 ## Example
 
 ```tsx

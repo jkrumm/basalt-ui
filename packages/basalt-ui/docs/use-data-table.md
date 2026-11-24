@@ -57,9 +57,11 @@ useDataTable<T, const F extends readonly unknown[] = readonly any[]>(options: Us
   detail?: (row: T, box: Box) => ReactNode
 ```
 
-`Phase`, `QueryStateLike`, `Empty` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike, Empty } from 'basalt-ui/cards'`.
+`Empty`, `Phase`, `QueryStateLike` import from `basalt-ui/cards`: `import type { Empty, Phase, QueryStateLike } from 'basalt-ui/cards'`.
 
 `ControlHandle` import from `basalt-ui/router`: `import type { ControlHandle } from 'basalt-ui/router'`.
+
+`BulkAction`, `DataTableInstance`, `KindColumn`, `Mode`, `PageFilters`, `StateHandle`, `TableState`, `UseDataTable`, `ViewStore` import from `basalt-ui/table`: `import type { BulkAction, DataTableInstance, KindColumn, Mode, PageFilters, StateHandle, TableState, UseDataTable, ViewStore } from 'basalt-ui/table'`.
 
 ## Example
 

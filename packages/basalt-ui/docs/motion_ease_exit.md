@@ -16,3 +16,5 @@ Accelerate: an element leaving (`--basalt-ease-exit`, Tailwind `ease-exit`).
 ```ts
 MOTION_EASE_EXIT: MotionBezier
 ```
+
+`MotionBezier` import from `basalt-ui/tokens`: `import type { MotionBezier } from 'basalt-ui/tokens'`.

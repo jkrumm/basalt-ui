@@ -26,6 +26,8 @@ SiteCallout({ tone, title, toneLabel, children, className, }: SiteCalloutProps):
 
 `Tone` import from `basalt-ui/cards`: `import type { Tone } from 'basalt-ui/cards'`.
 
+`SiteCalloutProps` import from `basalt-ui/static`: `import type { SiteCalloutProps } from 'basalt-ui/static'`.
+
 ## Example
 
 ```tsx

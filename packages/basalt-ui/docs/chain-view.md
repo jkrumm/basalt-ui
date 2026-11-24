@@ -36,6 +36,8 @@ ChainView<T>({ label, nodes, getId, waitsOn, face, onActivate, focus, }: ChainVi
   focus?: ListFocus<T>  // A focus shared with a table or a chart over the same records (`useChartFocus(rows, …)`): a node maps to its item by `getId`, so the order of `focus.items` is free
 ```
 
+`ChainFace`, `ChainViewProps` import from `basalt-ui/cards`: `import type { ChainFace, ChainViewProps } from 'basalt-ui/cards'`.
+
 ## Example
 
 ```tsx

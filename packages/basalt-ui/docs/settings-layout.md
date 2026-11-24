@@ -26,6 +26,8 @@ SettingsLayout({ title, description, row, className, children, }: SettingsLayout
   children: ReactNode  // The pane's `FormSection`s
 ```
 
+`SettingsLayoutProps` import from `basalt-ui/page`: `import type { SettingsLayoutProps } from 'basalt-ui/page'`.
+
 ## Example
 
 ```tsx

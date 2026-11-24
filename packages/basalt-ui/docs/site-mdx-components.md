@@ -25,6 +25,8 @@ siteMdxComponents(labels: SiteMdxLabels): Readonly<Record<string, ComponentType<
   copiedLabel: string  // Announced after a copy ("Copied")
 ```
 
+`SiteMdxLabels` import from `basalt-ui/static`: `import type { SiteMdxLabels } from 'basalt-ui/static'`.
+
 ## Example
 
 ```tsx

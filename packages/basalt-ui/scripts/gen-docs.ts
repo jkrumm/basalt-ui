@@ -183,16 +183,41 @@ function jsdocOf(checker: ts.TypeChecker, symbol: ts.Symbol): ExportJsdoc | null
   return jsdoc.summary === '' && jsdoc.useWhen === '' && jsdoc.neverWhen === '' ? null : jsdoc
 }
 
-/** The `@example` tags of a symbol: the text between its fence when it has one, else verbatim. */
-function jsdocExamples(checker: ts.TypeChecker, symbol: ts.Symbol): string[] {
-  return symbol
-    .getJsDocTags(checker)
-    .filter((t) => t.name === 'example' && t.text !== undefined)
-    .map((t) =>
-      ts
-        .displayPartsToString(t.text)
-        .replace(/^\s*```\w*\n/, '')
-        .replace(/\n```\s*$/, '')
+/**
+ * The `@example` bodies of a symbol, fences stripped. Read from the comment's own text: TypeScript
+ * ends an example at an `@` after a space, so a `// @check` line would cut the body short.
+ */
+function jsdocExamples(symbol: ts.Symbol): string[] {
+  const node = symbol.valueDeclaration ?? symbol.declarations?.[0]
+  if (node === undefined) return []
+  const file = node.getSourceFile()
+  return ts
+    .getJSDocCommentsAndTags(node)
+    .filter(ts.isJSDoc)
+    .flatMap((doc) => exampleBodies(file.text.slice(doc.getStart(file), doc.end)))
+}
+
+/** The `@example` bodies in one raw JSDoc comment: each runs to the next tag or the comment's end. */
+function exampleBodies(comment: string): string[] {
+  const bodies: string[][] = []
+  let open: string[] | undefined
+  for (const raw of comment.split('\n')) {
+    const line = raw.replace(/^\s*(?:\/\*\*|\*\/|\*)? ?/, '').replace(/\s*\*\/\s*$/, '')
+    const tag = /^@(\w+)/.exec(line)
+    if (tag !== null) {
+      open = tag[1] === 'example' ? [line.slice(tag[0].length)] : undefined
+      if (open !== undefined) bodies.push(open)
+      continue
+    }
+    open?.push(line)
+  }
+  return bodies
+    .map((lines) =>
+      lines
+        .join('\n')
+        .trim()
+        .replace(/^```\w*\n/, '')
+        .replace(/\n```$/, '')
         .trim(),
     )
     .filter((text) => text !== '')
@@ -264,12 +289,16 @@ function extractOne(
       jsdoc: jsdocOf(checker, symbol),
     },
     signature: signatureOf(checker, name, symbol, decl),
-    examples: jsdocExamples(checker, symbol),
+    examples: jsdocExamples(symbol),
   })
 }
 
 /** Every public value export, once, under the first subpath that has it, except that a subpath beats the root. */
-function extractExports(roots: GenRoots): { exports: Extracted[]; problems: string[] } {
+function extractExports(roots: GenRoots): {
+  exports: Extracted[]
+  problems: string[]
+  index: ExportIndex
+} {
   const entries = publishedEntries(roots.pkgRoot)
   const program = ts.createProgram(
     entries.map((e) => e.file),
@@ -329,7 +358,7 @@ function extractExports(roots: GenRoots): { exports: Extracted[]; problems: stri
     extractCardTypes(checker, roots, { source: cards.source, subpath: `${pkgName}/cards` }, acc)
   }
   const exports = acc.out.toSorted((x, y) => x.info.name.localeCompare(y.info.name))
-  return { exports, problems: acc.problems }
+  return { exports, problems: acc.problems, index: exportIndex(checker, read, pkgName) }
 }
 
 /** The `./cards` entry owns the card value types; its package export key. */
@@ -376,7 +405,7 @@ function extractCardTypes(
         jsdoc: jsdocOf(checker, symbol),
       },
       signature: decl.getText().replace(/^export /, ''),
-      examples: jsdocExamples(checker, symbol),
+      examples: jsdocExamples(symbol),
     })
   }
 }
@@ -643,50 +672,161 @@ function scanExamples(roots: GenRoots): Example[] {
 
 // ── Rendering ────────────────────────────────────────────────────────────────────────────────────
 
-/** The subpath that owns the frame's value types (`MAINTAINING.md` § Frame value types). */
-const FRAME_TYPES_SUBPATH = 'basalt-ui/cards'
-const FRAME_TYPES = [
-  'Phase',
-  'QueryStateLike',
-  'Empty',
-  'FrameState',
-  'FrameHead',
-  'CardAction',
-  'CardMenu',
-  'MenuEntry',
-  'Delta',
-  'Verdict',
-  'Tone',
-  'Fact',
-  'FootFacts',
-] as const
+// ── Import lines ─────────────────────────────────────────────────────────────────────────────────
 
-/** The subpath that owns the bound-handle types, beside `defineControls` and `field`. */
-const HANDLE_TYPES_SUBPATH = 'basalt-ui/router'
-const HANDLE_TYPES = ['ControlHandle', 'PushField'] as const
+/** Where a published name imports from: one entry per subpath that exports it. */
+type NameHome = { subpath: string; value: boolean }
 
-/** One line per subpath naming the import of every shared type the signature uses; empty when it uses none. */
-function frameTypesImportLine(signature: string): string {
-  return [
-    importLine(FRAME_TYPES, FRAME_TYPES_SUBPATH, signature),
-    importLine(HANDLE_TYPES, HANDLE_TYPES_SUBPATH, signature),
-  ].join('')
+/** Every published name, with each entry that exports it: the root barrel last, so a subpath wins. */
+type ExportIndex = Map<string, NameHome[]>
+
+function exportIndex(
+  checker: ts.TypeChecker,
+  read: ReadonlyArray<{ key: string; source: ts.SourceFile | undefined }>,
+  pkgName: string,
+): ExportIndex {
+  const index: ExportIndex = new Map()
+  const ordered = read.toSorted(
+    (x, y) => Number(x.key === '.') - Number(y.key === '.') || x.key.localeCompare(y.key),
+  )
+  for (const { key, source } of ordered) {
+    const moduleSymbol = source === undefined ? undefined : checker.getSymbolAtLocation(source)
+    if (moduleSymbol === undefined) continue
+    const subpath = key === '.' ? pkgName : `${pkgName}${key.slice(1)}`
+    for (const exported of checker.getExportsOfModule(moduleSymbol)) {
+      if (exported.name === 'default') continue
+      const symbol =
+        exported.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(exported) : exported
+      const value = (symbol.flags & ts.SymbolFlags.Value) !== 0
+      index.set(exported.name, [...(index.get(exported.name) ?? []), { subpath, value }])
+    }
+  }
+  return index
 }
 
-function importLine(names: readonly string[], subpath: string, signature: string): string {
-  const used = names.filter((t) => new RegExp(`\\b${t}\\b`).test(signature))
-  return used.length === 0
-    ? ''
-    : `\n\`${used.join('`, `')}\` import from \`${subpath}\`: \`import type { ${used.join(', ')} } from '${subpath}'\`.\n`
+/** Names a signature uses that the language or React owns: never a published export. */
+const BUILTIN_NAMES: ReadonlySet<string> = new Set([
+  'any',
+  'unknown',
+  'never',
+  'void',
+  'undefined',
+  'null',
+  'true',
+  'false',
+  'object',
+  'string',
+  'number',
+  'boolean',
+  'bigint',
+  'symbol',
+  'readonly',
+  'extends',
+  'keyof',
+  'typeof',
+  'infer',
+  'const',
+  'new',
+  'in',
+  'as',
+  'is',
+  'returns',
+  'Array',
+  'ReadonlyArray',
+  'Record',
+  'Partial',
+  'Required',
+  'Readonly',
+  'Pick',
+  'Omit',
+  'Exclude',
+  'Extract',
+  'NonNullable',
+  'Parameters',
+  'ReturnType',
+  'Awaited',
+  'Promise',
+  'PromiseLike',
+  'Map',
+  'Set',
+  'Date',
+  'Error',
+  'Function',
+  'Object',
+  'String',
+  'Number',
+  'Boolean',
+  'Symbol',
+  'PropertyKey',
+  'Iterable',
+  'Element',
+  'HTMLElement',
+  'Event',
+  'MouseEvent',
+  'KeyboardEvent',
+  'ChangeEvent',
+  'FocusEvent',
+  'ReactElement',
+  'ReactNode',
+  'ReactPortal',
+  'ComponentProps',
+  'ComponentType',
+  'CSSProperties',
+  'RefObject',
+  'MutableRefObject',
+  'JSX',
+])
+
+/** The identifiers a signature names as code: comments, strings, notes, property keys and members left out. */
+function namesIn(signature: string): string[] {
+  const code = signature
+    .replace(/\/\/[^\n]*/g, '')
+    .replace(/\[with [^\]]*\]/g, '')
+    .replace(/"[^"\n]*"|'[^'\n]*'|`[^`\n]*`/g, '')
+    .replace(/\.[A-Za-z_$][\w$]*/g, '')
+    .replace(/[A-Za-z_$][\w$]*\??(?=\s*:)/g, '')
+  return [...new Set(code.match(/[A-Za-z_$][\w$]*/g) ?? [])]
+}
+
+/** The root barrel sorts last; other subpaths by name. */
+const rootLast = (x: string, y: string): number =>
+  Number(!x.includes('/')) - Number(!y.includes('/')) || x.localeCompare(y)
+
+/**
+ * One import line per subpath the signature's published types and components come from, grouped and
+ * sorted; '' when it names none. A name exported by several entries imports from the doc's own
+ * subpath when that one exports it, else from the first entry in index order. Only a PascalCase name
+ * is a candidate: a lowercase export (`field`, `spec`) is a parameter name in a signature, not a type.
+ */
+function importLines(item: Extracted, index: ExportIndex): string {
+  const picked = new Map<string, Array<{ name: string; value: boolean }>>()
+  for (const name of namesIn(item.signature)) {
+    if (name === item.info.name || BUILTIN_NAMES.has(name) || !/^[A-Z]/.test(name)) continue
+    const homes = index.get(name)
+    const home = homes?.find((h) => h.subpath === item.info.subpath) ?? homes?.[0]
+    if (home === undefined) continue
+    picked.set(home.subpath, [...(picked.get(home.subpath) ?? []), { name, value: home.value }])
+  }
+  return [...picked]
+    .toSorted(([x], [y]) => rootLast(x, y))
+    .map(([subpath, members]) => {
+      const named = members.toSorted((x, y) => x.name.localeCompare(y.name))
+      const names = named.map((m) => m.name)
+      const statement = named.every((m) => !m.value)
+        ? `import type { ${names.join(', ')} } from '${subpath}'`
+        : `import { ${named.map((m) => (m.value ? m.name : `type ${m.name}`)).join(', ')} } from '${subpath}'`
+      return `\n\`${names.join('`, `')}\` import from \`${subpath}\`: \`${statement}\`.\n`
+    })
+    .join('')
 }
 
 /** `docs/<kebab-name>.md`: the docs-format text, the signature, then the example regions. */
-function renderDoc(item: Extracted, examples: readonly Example[]): string {
+function renderDoc(item: Extracted, examples: readonly Example[], index: ExportIndex): string {
   const { name } = item.info
   const mine = examples.filter((e) => e.name === name || e.name === kebab(name))
   const parts = [
     formatExportDoc(item.info).markdown,
-    `\n## Signature\n\n\`\`\`ts\n${item.signature}\n\`\`\`\n${frameTypesImportLine(item.signature)}`,
+    `\n## Signature\n\n\`\`\`ts\n${item.signature}\n\`\`\`\n${importLines(item, index)}`,
     ...item.examples.map((body) => `\n## Example\n\n\`\`\`tsx\n${body}\n\`\`\`\n`),
     ...mine.map(
       (e) =>
@@ -719,7 +859,7 @@ export function readBaseline(roots: GenRoots): string[] {
 }
 
 export function generate(roots: GenRoots): GenResult {
-  const { exports, problems: extraction } = extractExports(roots)
+  const { exports, problems: extraction, index } = extractExports(roots)
   const examples = scanExamples(roots)
   const baseline = new Set(readBaseline(roots))
   const docs = new Map<string, string>()
@@ -729,7 +869,7 @@ export function generate(roots: GenRoots): GenResult {
   for (const item of exports) {
     const gaps = checkExport(item.info)
     if (gaps.length === 0) {
-      docs.set(`${kebab(item.info.name)}.md`, renderDoc(item, examples))
+      docs.set(`${kebab(item.info.name)}.md`, renderDoc(item, examples, index))
       continue
     }
     undocumented.push(baselineKey(item.info))

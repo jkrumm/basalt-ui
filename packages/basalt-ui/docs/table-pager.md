@@ -19,6 +19,8 @@ TablePager<T>({ table: instance, }: { table: DataTableInstance<T>; }): ReactElem
   table: DataTableInstance<T>
 ```
 
+`DataTableInstance` import from `basalt-ui/table`: `import type { DataTableInstance } from 'basalt-ui/table'`.
+
 ## Example
 
 ```tsx

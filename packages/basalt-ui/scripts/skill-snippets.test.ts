@@ -60,11 +60,20 @@ declare module '@tanstack/react-router' {
 }
 `
 
-/** Every `// @check` ```tsx fence in a skill's SKILL.md or `references/*.md`, with where it came from. */
+/** The `// @check` fences of one markdown file, in order. */
+function checkedFences(file: string): string[] {
+  return [...readFileSync(file, 'utf8').matchAll(/^```tsx\n([\s\S]*?)^```/gm)]
+    .map((match) => match[1] ?? '')
+    .filter((code) => code.startsWith(`${MARKER}\n`))
+}
+
+/**
+ * Every `// @check` fence in a skill's SKILL.md or `references/*.md`, and in a file under `docs/`
+ * (a generated doc's example, copied from its JSDoc), with the file it came from.
+ */
 export function extractSnippets(): { name: string; code: string }[] {
   const skillsRoot = join(pkgRoot, 'agent/skills')
-  const out: { name: string; code: string }[] = []
-  for (const skill of readdirSync(skillsRoot)) {
+  const skillSnippets = readdirSync(skillsRoot).flatMap((skill) => {
     const refs = join(skillsRoot, skill, 'references')
     const files = [
       join(skillsRoot, skill, 'SKILL.md'),
@@ -74,16 +83,19 @@ export function extractSnippets(): { name: string; code: string }[] {
             .map((f) => join(refs, f))
         : []),
     ]
-    let index = 0
-    for (const file of files) {
-      for (const match of readFileSync(file, 'utf8').matchAll(/^```tsx\n([\s\S]*?)^```/gm)) {
-        const code = match[1] ?? ''
-        if (!code.startsWith(`${MARKER}\n`)) continue
-        out.push({ name: `${skill}-${index++}`, code })
-      }
-    }
-  }
-  return out
+    return files.flatMap(checkedFences).map((code, index) => ({ name: `${skill}-${index}`, code }))
+  })
+  const docsRoot = join(pkgRoot, 'docs')
+  const docSnippets = readdirSync(docsRoot, { recursive: true, encoding: 'utf8' })
+    .filter((f) => f.endsWith('.md'))
+    .toSorted()
+    .flatMap((f) =>
+      checkedFences(join(docsRoot, f)).map((code, index) => ({
+        name: `doc-${f.replace(/\.md$/, '').replace(/[^\w-]+/g, '-')}-${index}`,
+        code,
+      })),
+    )
+  return [...skillSnippets, ...docSnippets]
 }
 
 describe('skill snippets', () => {

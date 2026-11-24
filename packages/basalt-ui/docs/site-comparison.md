@@ -29,6 +29,8 @@ SiteComparison({ title, description, caption, rowHeader, columns, rows, yesLabel
   className?: string
 ```
 
+`SiteComparisonColumn`, `SiteComparisonRow` import from `basalt-ui/static`: `import type { SiteComparisonColumn, SiteComparisonRow } from 'basalt-ui/static'`.
+
 ## Example
 
 ```tsx

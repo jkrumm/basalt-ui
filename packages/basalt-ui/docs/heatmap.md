@@ -47,4 +47,6 @@ Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>): ReactElement
   label: string
 ```
 
-`Phase`, `QueryStateLike`, `Empty` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike, Empty } from 'basalt-ui/cards'`.
+`Phase`, `QueryStateLike` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike } from 'basalt-ui/cards'`.
+
+`ChartFocus`, `Empty`, `HeatmapProps`, `HeatmapState` import from `basalt-ui/charts`: `import type { ChartFocus, Empty, HeatmapProps, HeatmapState } from 'basalt-ui/charts'`.

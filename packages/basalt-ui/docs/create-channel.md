@@ -33,6 +33,10 @@ createChannel<F = Envelope>(o: ChannelOptions<F>): Channel<F>
   scheduler?: Scheduler
 ```
 
+`Transport` import from `basalt-ui/data`: `import type { Transport } from 'basalt-ui/data'`.
+
+`Channel`, `ChannelOptions`, `Envelope`, `Scheduler` import from `basalt-ui`: `import type { Channel, ChannelOptions, Envelope, Scheduler } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

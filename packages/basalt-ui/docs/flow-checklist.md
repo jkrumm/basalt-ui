@@ -22,6 +22,8 @@ FlowChecklist({ flow, issues }: FlowChecklistProps): ReactElement
   issues: readonly FlowIssue[]  // The same issues the canvas marks
 ```
 
+`FlowChecklistProps` import from `basalt-ui/cards`: `import type { FlowChecklistProps } from 'basalt-ui/cards'`.
+
 ## Example
 
 ```tsx

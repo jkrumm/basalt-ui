@@ -33,6 +33,8 @@ FormSection({ title, description, badge, action, id, locked, layout, disabled, p
 
 `Phase`, `QueryStateLike` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike } from 'basalt-ui/cards'`.
 
+`FormFieldLayout`, `FormSectionProps` import from `basalt-ui/controls`: `import type { FormFieldLayout, FormSectionProps } from 'basalt-ui/controls'`.
+
 ## Example
 
 ```tsx

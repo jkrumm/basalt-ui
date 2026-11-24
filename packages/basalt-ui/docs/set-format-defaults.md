@@ -19,3 +19,5 @@ setFormatDefaults(next?: FormatDefaults): void
   locale?: string  // BCP-47 tag every formatter uses when a call passes none
   timeZone?: string  // IANA time zone every date formatter uses when a call passes none
 ```
+
+`FormatDefaults` import from `basalt-ui`: `import type { FormatDefaults } from 'basalt-ui'`.

@@ -27,6 +27,8 @@ FilterSet(props: FilterSetProps): ReactElement | ReactNode
   match?: { shown: number; total: number; }  // The rows the filters keep, of all: the folded set's "Showing N of M"
 ```
 
+`FilterSpec` import from `basalt-ui/controls`: `import type { FilterSpec } from 'basalt-ui/controls'`.
+
 ## Example
 
 ```tsx

@@ -17,7 +17,7 @@ The verdict a card shows: a tone and a word, the type of `StatCard status`.
 type Verdict = { tone: Tone; label: string }
 ```
 
-`Verdict`, `Tone` import from `basalt-ui/cards`: `import type { Verdict, Tone } from 'basalt-ui/cards'`.
+`Tone` import from `basalt-ui/cards`: `import type { Tone } from 'basalt-ui/cards'`.
 
 ## Example
 

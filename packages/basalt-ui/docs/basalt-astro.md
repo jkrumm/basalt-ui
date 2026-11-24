@@ -20,6 +20,10 @@ basaltAstro(options?: BasaltAstroOptions): BasaltAstroIntegration
   fonts?: boolean  // Register basalt's faces with the Astro Fonts API (Fontsource provider)
 ```
 
+`BasaltAstroIntegration`, `BasaltAstroOptions` import from `basalt-ui/astro`: `import type { BasaltAstroIntegration, BasaltAstroOptions } from 'basalt-ui/astro'`.
+
+`ThemeScriptOptions` import from `basalt-ui/theme-script`: `import type { ThemeScriptOptions } from 'basalt-ui/theme-script'`.
+
 ## Example
 
 ```tsx

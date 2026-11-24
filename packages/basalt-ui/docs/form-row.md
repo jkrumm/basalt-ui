@@ -22,6 +22,8 @@ FormRow({ legend, disabled, className, children }: FormRowProps): ReactElement
   children: ReactNode  // The row's `FormField`s
 ```
 
+`FormRowProps` import from `basalt-ui/controls`: `import type { FormRowProps } from 'basalt-ui/controls'`.
+
 ## Example
 
 ```tsx

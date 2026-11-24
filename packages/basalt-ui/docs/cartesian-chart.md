@@ -37,6 +37,8 @@ CartesianChart<D>(props: CartesianChartProps<D>): ReactElement
 
 `Phase`, `QueryStateLike` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike } from 'basalt-ui/cards'`.
 
+`CartesianChartProps`, `ChartFocus`, `ChartRefLine`, `ChartSelection`, `ChartTooltipConfig`, `ChartZone`, `CustomMarks`, `Series`, `XConfig`, `YConfig` import from `basalt-ui/charts`: `import type { CartesianChartProps, ChartFocus, ChartRefLine, ChartSelection, ChartTooltipConfig, ChartZone, CustomMarks, Series, XConfig, YConfig } from 'basalt-ui/charts'`.
+
 ## Example
 
 ```tsx

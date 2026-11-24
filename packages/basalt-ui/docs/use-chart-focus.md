@@ -17,6 +17,8 @@ The focus handle for `items`, in reading order (the order arrow keys step).
 useChartFocus<D>(settled: readonly D[] | undefined, options: ChartFocusOptions<D>): ChartFocus<D>
 ```
 
+`ChartFocus`, `ChartFocusOptions` import from `basalt-ui/charts`: `import type { ChartFocus, ChartFocusOptions } from 'basalt-ui/charts'`.
+
 ## Example
 
 `apps/playground/src/recipes/seam-examples.tsx`

@@ -29,6 +29,8 @@ ModelPicker(props: ModelPickerProps): ReactElement
   className?: string  // Layout only (`ml-auto`)
 ```
 
+`ModelPickerProps` import from `basalt-ui/ai`: `import type { ModelPickerProps } from 'basalt-ui/ai'`.
+
 ## Example
 
 ```tsx

@@ -22,6 +22,8 @@ useFavourite(input: FavouriteInput): { on: boolean; toggle: () => void; } | null
   icon?: IconComponent  // Drawn on the rail row for this session; a stored favourite keeps no glyph
 ```
 
+`FavouriteInput` import from `basalt-ui/page`: `import type { FavouriteInput } from 'basalt-ui/page'`.
+
 ## Example
 
 ```tsx

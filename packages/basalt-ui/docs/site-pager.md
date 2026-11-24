@@ -22,6 +22,8 @@ SitePager({ prev, next, prevLabel, nextLabel, label, }: SitePagerProps): ReactEl
   label: string  // The landmark's accessible name ("Pages")
 ```
 
+`SiteLink`, `SitePagerProps` import from `basalt-ui/static`: `import type { SiteLink, SitePagerProps } from 'basalt-ui/static'`.
+
 ## Example
 
 ```tsx

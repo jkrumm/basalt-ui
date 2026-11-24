@@ -28,6 +28,8 @@ FormConfirmRow({ label, description, icon, id, tone, confirmText, actionLabel, o
   onConfirm: () => void | Promise<void>  // Runs once the typed text matches and the button is pressed; the field clears when it resolves
 ```
 
+`FormConfirmRowProps`, `SettingsRowTone` import from `basalt-ui/controls`: `import type { FormConfirmRowProps, SettingsRowTone } from 'basalt-ui/controls'`.
+
 ## Example
 
 ```tsx

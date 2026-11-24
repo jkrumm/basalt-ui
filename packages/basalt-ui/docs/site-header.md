@@ -26,6 +26,8 @@ SiteHeader({ brand, links, navLabel, menuLabel, actions, menuId, className, }: S
   className?: string
 ```
 
+`SiteHeaderProps`, `SiteLink` import from `basalt-ui/static`: `import type { SiteHeaderProps, SiteLink } from 'basalt-ui/static'`.
+
 ## Example
 
 ```tsx

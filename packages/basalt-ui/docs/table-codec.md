@@ -22,6 +22,8 @@ tableCodec(schema: TableSchema, options?: TableCodecOptions): TableCodec
   prefix: string
 ```
 
+`CodecKind`, `TableCodec`, `TableCodecOptions`, `TableRequest`, `TableSchema` import from `basalt-ui/table`: `import type { CodecKind, TableCodec, TableCodecOptions, TableRequest, TableSchema } from 'basalt-ui/table'`.
+
 ## Example
 
 ```tsx

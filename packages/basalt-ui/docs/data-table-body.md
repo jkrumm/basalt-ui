@@ -19,6 +19,8 @@ DataTableBody<T>({ table: instance, detail, }: { table: DataTableInstance<T>; de
   detail?: DetailHost  // Where a `detail` activation shows its entry
 ```
 
+`DataTableInstance` import from `basalt-ui/table`: `import type { DataTableInstance } from 'basalt-ui/table'`.
+
 ## Example
 
 ```tsx

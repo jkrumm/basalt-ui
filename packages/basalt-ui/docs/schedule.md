@@ -34,7 +34,7 @@ Schedule<E extends ScheduleEvent>(props: ScheduleProps<E>): ReactElement
   now?: number  // A fixed clock (a screenshot, a story)
 ```
 
-`Phase`, `QueryStateLike` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike } from 'basalt-ui/cards'`.
+`MiniMonthLike`, `Phase`, `QueryStateLike`, `ScheduleEvent`, `ScheduleProps` import from `basalt-ui/cards`: `import type { MiniMonthLike, Phase, QueryStateLike, ScheduleEvent, ScheduleProps } from 'basalt-ui/cards'`.
 
 ## Example
 

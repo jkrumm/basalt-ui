@@ -22,8 +22,6 @@ type Fact = {
 }
 ```
 
-`Fact` import from `basalt-ui/cards`: `import type { Fact } from 'basalt-ui/cards'`.
-
 ## Example
 
 ```tsx

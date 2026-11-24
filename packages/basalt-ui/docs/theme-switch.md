@@ -22,6 +22,8 @@ ThemeSwitch({ label, labels, className }: ThemeSwitchProps): ReactElement
   className?: string
 ```
 
+`ThemeSwitchProps` import from `basalt-ui/static`: `import type { ThemeSwitchProps } from 'basalt-ui/static'`.
+
 ## Example
 
 ```tsx

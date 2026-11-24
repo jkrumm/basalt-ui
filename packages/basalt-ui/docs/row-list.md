@@ -34,7 +34,7 @@ RowList(props: RowListProps): ReactElement
   focus?: ListFocus<unknown>  // A chart's focus (`useChartFocus(items, …)`): row i is `focus.items[i]`, so pass the rows in the same order as the chart's items
 ```
 
-`Phase`, `QueryStateLike`, `Empty` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike, Empty } from 'basalt-ui/cards'`.
+`Empty`, `Phase`, `QueryStateLike`, `RowListProps` import from `basalt-ui/cards`: `import type { Empty, Phase, QueryStateLike, RowListProps } from 'basalt-ui/cards'`.
 
 ## Example
 

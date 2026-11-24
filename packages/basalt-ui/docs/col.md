@@ -316,6 +316,8 @@ col<T>(): Col<T>
 
 `Tone` import from `basalt-ui/cards`: `import type { Tone } from 'basalt-ui/cards'`.
 
+`CodecKind`, `CodecOptions`, `DateRangeLike`, `KindColumn`, `RowAction`, `TableRequest`, `TableSchema` import from `basalt-ui/table`: `import type { CodecKind, CodecOptions, DateRangeLike, KindColumn, RowAction, TableRequest, TableSchema } from 'basalt-ui/table'`.
+
 ## Example
 
 ```tsx

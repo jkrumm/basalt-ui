@@ -19,3 +19,5 @@ createFormat(o?: FormatOptions): Format
   locale?: string  // BCP 47 tag
   timeZone?: string  // IANA zone
 ```
+
+`Format` import from `basalt-ui`: `import type { Format } from 'basalt-ui'`.

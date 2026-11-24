@@ -18,6 +18,8 @@ so it is the `apply` of an `optimistic` target (`basalt-ui/data`), whose restore
 applyMove<C extends string, T extends { id: string; }>(items: Readonly<Record<C, readonly T[]>>, move: Move<C>): Record<C, T[]>
 ```
 
+`Move` import from `basalt-ui/cards`: `import type { Move } from 'basalt-ui/cards'`.
+
 ## Example
 
 ```tsx
