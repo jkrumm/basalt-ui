@@ -200,9 +200,10 @@ layout('KanbanCard and Board', () => {
             els.map((el) => el.textContent),
           )
           expect(items).toEqual(['Move up', 'Move down', 'Move to Doing'])
-          // Base UI moves focus into the menu a frame after it mounts; under load that frame lags.
-          await page.raw.waitForFunction(
-            () => document.activeElement?.getAttribute('role') === 'menuitem',
+          // Base UI moves focus into the menu a frame after it mounts; under load that frame lags. On a
+          // phone the menu is an action sheet and focus rests on the menu itself, one arrow from the rows.
+          await page.raw.waitForFunction(() =>
+            ['menuitem', 'menu'].includes(document.activeElement?.getAttribute('role') ?? ''),
           )
           await page.raw.keyboard.press('Escape')
           await page.raw.waitForSelector('[role="menu"]', { state: 'detached' })
