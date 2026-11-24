@@ -38,7 +38,7 @@ An incident page said one fact four times: the headline "13 of 19 services are a
 
 ## The fact count
 
-Run `basalt-ui shot detect --facts <page dir>` after the first typecheck and again after every cut. It reads the strings a viewer reads in the page's `.tsx` files and reports each word said in four or more strings, each two-word phrase said in two or more, and each string constant read in two or more places as a `communication-5/repeated-*` finding. A reported word is cut or reworded in every string but one; it is never explained away. Keep every string the page writes in the page's own `.tsx` files, so none hides in a helper the count skips.
+Run `basalt-ui shot detect --facts <page dir>` after the first typecheck and again after every cut; it needs no shot round, and with `--out <dir>` its findings join that round's. It reads the strings a viewer reads in the page's `.tsx` files and reports each word said in four or more strings, each two-word phrase said in two or more, and each string constant read in two or more places as a `communication-5/repeated-*` finding. A reported word is cut or reworded in every string but one; it is never explained away. Keep every string the page writes in the page's own `.tsx` files, so none hides in a helper the count skips.
 
 The count reads literal strings, so read the 1800 rest shot aloud as well, top to bottom, and group the rendered strings by what they say, not by their letters. Four shapes it cannot see:
 
