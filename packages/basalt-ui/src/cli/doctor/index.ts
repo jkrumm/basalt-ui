@@ -69,16 +69,11 @@ const MARK = { pass: '✓', fail: '✖', skipped: '⚠ SKIPPED' } as const
 
 export async function doctor(
   cwd: string,
-  flags: readonly string[] = [],
+  _flags: readonly string[] = [],
   options: DoctorOptions = {},
 ): Promise<number> {
   const project = resolveProjectDir(cwd)
   noteRelocation('doctor', project)
-  if (flags.includes('--from')) {
-    console.log(
-      '`doctor --from` no longer prints the upgrade notes: read the version rows in MIGRATING.md, then run `basalt-ui migrate --check`.',
-    )
-  }
   const ctx = buildContext(project.dir, options)
   const results = await runChecks(ctx)
 

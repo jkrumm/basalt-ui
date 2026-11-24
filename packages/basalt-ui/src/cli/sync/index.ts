@@ -10,12 +10,13 @@ import { relative } from 'node:path'
 import { agentFiles, sessionNote } from '../agent-note'
 import { noteRelocation, packageRoot, readFrameworkVersion, resolveProjectDir } from '../index'
 import { findManifestAbove } from '../install-root'
-import { MANIFEST_PATH, readManifest, writeManifest } from '../manifest'
+import { BUDGET_FORMAT, BUDGET_PATH, migrateBudget, readBudget } from '../budget'
+import { MANIFEST_FORMAT, MANIFEST_PATH, readManifest, writeManifest } from '../manifest'
 import type { Manifest } from '../manifest'
 import { applySync, differences, planSync } from './engine'
 import { presetFilesFor } from '../presets'
 import { coveredByRoots, undeclaredInstall } from '../resolver'
-import { renderBlock, renderManaged } from './render'
+import { renderBlock, renderInstallUnits, renderManaged } from './render'
 import type { PresetFiles } from './render'
 import { siblingOf } from './sibling'
 import { planBlocks } from './blocks'
@@ -35,7 +36,9 @@ export type SyncOptions = {
 const MAKE_ONE = 'run `basalt-ui init --profile <tokens|site|bridge|parts|app>`'
 
 /** The install this run belongs to: a manifest here, or one above that declares this directory. */
-function locate(dir: string): { root: string; manifest: Manifest } | { error: string } {
+function locate(
+  dir: string,
+): { root: string; manifest: Manifest; format: number } | { error: string } {
   const above = readManifest(dir) === null ? findManifestAbove(dir) : dir
   if (above === null) {
     return {
@@ -54,7 +57,21 @@ function locate(dir: string): { root: string; manifest: Manifest } | { error: st
   }
   if (above !== dir)
     console.log(`basalt-ui sync: ${dir} belongs to the install at ${above}; syncing there.`)
-  return { root: above, manifest: read.manifest }
+  return { root: above, manifest: read.manifest, format: read.format }
+}
+
+/** The ledger files written in an older format: `sync` rewrites each in the current one. */
+function olderFormats(root: string, manifestFormat: number): string[] {
+  const budget = readBudget(root)
+  const budgetFormat = 'budget' in budget ? (budget.format ?? BUDGET_FORMAT) : BUDGET_FORMAT
+  return [
+    ...(manifestFormat < MANIFEST_FORMAT
+      ? [`${MANIFEST_PATH}: format ${manifestFormat}, sync writes format ${MANIFEST_FORMAT}`]
+      : []),
+    ...(budgetFormat < BUDGET_FORMAT
+      ? [`${BUDGET_PATH}: format ${budgetFormat}, sync writes format ${BUDGET_FORMAT}`]
+      : []),
+  ]
 }
 
 export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd()): number {
@@ -65,6 +82,7 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   const found = locate(project.dir)
   if ('error' in found) return fail(found.error)
   const { root, manifest } = found
+  const formats = olderFormats(root, found.format)
   const pkgRoot = opts.pkgRoot ?? packageRoot()
   const version = readFrameworkVersion(pkgRoot)
   const refused = undeclaredInstall(root, manifest)
@@ -74,10 +92,12 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   const block = renderBlock(pkgRoot, manifest, version, sibling)
   if (block === null) return fail(`${pkgRoot} ships no agent/templates/AGENTS-block.md.tpl.`)
 
+  const install = renderInstallUnits({ root, pkgRoot, manifest, sibling, version })
   let plan
   try {
     const units = [
       ...renderManaged(pkgRoot, manifest, sibling),
+      ...install.units,
       ...(opts.presetFiles ?? presetFilesFor(pkgRoot))(manifest).map((u) => ({
         ...u,
         generated: true,
@@ -93,10 +113,13 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
 
   if (opts.check === true) {
     const diff = differences(plan)
-    if (diff.length === 0 && ejects.work + ejects.errors.length === 0)
+    diff.push(...formats)
+    if (diff.length === 0 && ejects.work + ejects.errors.length + install.problems.length === 0)
       return (console.log('✓ basalt-ui sync --check: all managed files current.'), 0)
-    console.error(`✖ basalt-ui sync --check: ${diff.length + ejects.work} difference(s):`)
-    for (const line of [...diff, ...ejects.lines]) console.error(`  ${line}`)
+    console.error(
+      `✖ basalt-ui sync --check: ${diff.length + ejects.work + install.problems.length} difference(s):`,
+    )
+    for (const line of [...diff, ...ejects.lines, ...install.problems]) console.error(`  ${line}`)
     console.error('Run `basalt-ui sync` to apply (`--force` overwrites locally edited files).')
     return 1
   }
@@ -105,6 +128,7 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   const before = agentFiles(bases)
   const applied = applySync(root, manifest, plan, opts.force === true, repo)
   applyEjected(root, ejects)
+  migrateBudget(root)
   writeManifest(root, { ...applied.manifest, ejected: ejects.ejected, version })
   for (const line of ejects.lines) console.log(line)
   console.log(
@@ -114,7 +138,8 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
     console.log('Locally edited files were left as they are (run with --force to overwrite):')
     for (const path of applied.left) console.log(`  ${path}`)
   }
+  for (const problem of install.problems) console.error(`✖ basalt-ui sync: ${problem}`)
   const note = opts.note === false ? null : sessionNote(before, bases)
   if (note !== null) console.log(`\n${note}`)
-  return ejects.conflicts.length + ejects.errors.length === 0 ? 0 : 1
+  return ejects.conflicts.length + ejects.errors.length + install.problems.length === 0 ? 0 : 1
 }

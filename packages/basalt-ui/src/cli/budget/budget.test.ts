@@ -12,7 +12,9 @@ import { join } from 'node:path'
 import {
   BUDGET_PATH,
   countBreaches,
+  followWaivers,
   landBudget,
+  migrateBudget,
   raiseCeiling,
   parseBudget,
   readBudget,
@@ -71,12 +73,13 @@ describe('seedBudget', () => {
     })
     const dir = tmp()
     writeBudget(dir, seed)
-    expect(readBudget(dir)).toEqual({ budget: seed })
+    expect(readBudget(dir)).toEqual({ budget: seed, format: 1 })
   })
 
   it('round-trips through the canonical bytes', () => {
     const seed = seedBudget('tokens')
-    expect(parseBudget(serializeBudget(seed))).toEqual({ budget: seed })
+    expect(parseBudget(serializeBudget(seed))).toEqual({ budget: seed, format: 1 })
+    expect(serializeBudget(seed).startsWith('{\n  "format": 1,')).toBe(true)
     expect(serializeBudget(seed).endsWith('}\n')).toBe(true)
   })
 })
@@ -124,10 +127,8 @@ describe('readBudget', () => {
 describe('countBreaches', () => {
   const budget = budgetWith({ ejects: 3, waivers: 3, escapes: 3 })
 
-  it('names waivers when the count is 4 against a ceiling of 3', () => {
-    expect(countBreaches(budget, { waivers: 4 })).toEqual([
-      { name: 'waivers', count: 4, ceiling: 3 },
-    ])
+  it('never names waivers: the record follows the count', () => {
+    expect(countBreaches(budget, { waivers: 40 })).toEqual([])
   })
 
   it('lists every breach and passes a count at its ceiling', () => {
@@ -149,7 +150,10 @@ describe('landBudget', () => {
     const dir = repo({ base: null, work: seedBudget('app') })
     const landed = landBudget({ counts, baseRef: BASE_REF, dir })
     expect(landed).toHaveProperty('budget.waivers', 7)
-    expect(readBudget(dir)).toEqual({ budget: { ...seedBudget('app'), waivers: 7, escapes: 7 } })
+    expect(readBudget(dir)).toEqual({
+      budget: { ...seedBudget('app'), waivers: 7, escapes: 7 },
+      format: 1,
+    })
   })
 
   it('refuses an unresolvable base ref instead of reading it as no copy', () => {
@@ -161,17 +165,23 @@ describe('landBudget', () => {
     expect(onDisk(dir)).toBe(before)
   })
 
-  it('refuses a value above a base copy of 3, names lint --raise and writes nothing', () => {
+  it('refuses escapes above a base copy of 3, names lint --raise and writes nothing', () => {
     const dir = repo({
-      base: budgetWith({ waivers: 3, escapes: 9 }),
+      base: budgetWith({ waivers: 3, escapes: 3 }),
       work: budgetWith({ waivers: 2, escapes: 2 }),
     })
     const before = onDisk(dir)
     const landed = landBudget({ counts, baseRef: BASE_REF, dir })
-    expect(landed).toEqual({ error: expect.stringContaining('lint --raise waivers --consumer') })
-    expect(landed).toEqual({ error: expect.stringContaining('waivers 7 > 3') })
-    expect(landed).toEqual({ error: expect.not.stringContaining('escapes 7') })
+    expect(landed).toEqual({ error: expect.stringContaining('lint --raise escapes --consumer') })
+    expect(landed).toEqual({ error: expect.stringContaining('escapes 7 > 3') })
+    expect(landed).toEqual({ error: expect.not.stringContaining('waivers 7') })
     expect(onDisk(dir)).toBe(before)
+  })
+
+  it('lands waivers above the base copy: the record follows the count', () => {
+    const dir = repo({ base: budgetWith({ waivers: 3 }), work: budgetWith({ waivers: 3 }) })
+    const landed = landBudget({ counts: { waivers: 7, escapes: 0 }, baseRef: BASE_REF, dir })
+    expect(landed).toHaveProperty('budget.waivers', 7)
   })
 
   it('writes 7 against a base copy of 9, and a value equal to the base', () => {
@@ -191,7 +201,7 @@ describe('landBudget', () => {
     })
     const dir = repo({ base: null, work })
     landBudget({ counts, baseRef: BASE_REF, dir })
-    expect(readBudget(dir)).toEqual({ budget: { ...work, waivers: 7, escapes: 7 } })
+    expect(readBudget(dir)).toEqual({ budget: { ...work, waivers: 7, escapes: 7 }, format: 1 })
   })
 
   it('reads the base copy relative to a consumer root below the repo root', () => {
@@ -243,17 +253,45 @@ describe('raiseCeiling', () => {
   it('writes nothing for a blank consumer or a count within the ceiling', () => {
     const dir = repo({ base: budgetWith({}), work: budgetWith({}) })
     const before = onDisk(dir)
-    expect(raiseCeiling({ field: 'waivers', count: 1, consumer: '', dir })).toHaveProperty('error')
-    expect(raiseCeiling({ field: 'waivers', count: 1, consumer: 'a\nb', dir })).toHaveProperty(
+    expect(raiseCeiling({ field: 'escapes', count: 5, consumer: '', dir })).toHaveProperty('error')
+    expect(raiseCeiling({ field: 'escapes', count: 5, consumer: 'a\nb', dir })).toHaveProperty(
       'error',
     )
-    expect(raiseCeiling({ field: 'waivers', count: 0, consumer: 'x', dir })).toHaveProperty('error')
+    expect(raiseCeiling({ field: 'escapes', count: 3, consumer: 'x', dir })).toHaveProperty('error')
     expect(onDisk(dir)).toBe(before)
   })
 
   it('a hand edit above the base ref is still refused by landBudget, naming the raise command', () => {
-    const dir = repo({ base: budgetWith({}), work: budgetWith({ waivers: 4 }) })
-    const out = landBudget({ counts: { waivers: 4, escapes: 0 }, baseRef: BASE_REF, dir })
-    expect('error' in out && out.error).toContain('lint --raise waivers --consumer')
+    const dir = repo({ base: budgetWith({}), work: budgetWith({ escapes: 4 }) })
+    const out = landBudget({ counts: { waivers: 0, escapes: 4 }, baseRef: BASE_REF, dir })
+    expect('error' in out && out.error).toContain('lint --raise escapes --consumer')
+  })
+})
+
+describe('the budget format', () => {
+  it('reads a file without format as format 0, keeps unknown keys and writes format 1', () => {
+    const dir = tmp()
+    mkdirSync(join(dir, '.basalt'))
+    const old = { ...seedBudget('app'), futureKey: { a: 1 } }
+    writeFileSync(join(dir, BUDGET_PATH), JSON.stringify(old))
+    const read = readBudget(dir)
+    expect(read).toMatchObject({ format: 0, budget: { rest: { futureKey: { a: 1 } } } })
+    expect(migrateBudget(dir)).toBe(true)
+    expect(JSON.parse(onDisk(dir))).toEqual({ format: 1, ...old })
+    expect(migrateBudget(dir)).toBe(false)
+  })
+
+  it('refuses a format newer than this version reads', () => {
+    expect(readText(JSON.stringify({ ...seedBudget('app'), format: 2 }))).toEqual({
+      error: expect.stringContaining('upgrade basalt-ui'),
+    })
+  })
+
+  it('followWaivers writes the counted waivers and reports the step, once', () => {
+    const dir = tmp()
+    writeBudget(dir, seedBudget('app'))
+    expect(followWaivers(dir, 2)).toEqual({ from: 0, to: 2 })
+    expect(followWaivers(dir, 2)).toBeNull()
+    expect(readBudget(dir)).toMatchObject({ budget: { waivers: 2 } })
   })
 })

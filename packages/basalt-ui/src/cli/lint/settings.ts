@@ -18,7 +18,7 @@ const EVENTS = [
 /** A missing or failing shim exits 2 and says so: the bare `node` form fails open. */
 export const hookCommand = (arg: string): string =>
   `node "$CLAUDE_PROJECT_DIR/${SHIM}" ${arg}; s=$?; case $s in 0|2) exit $s;; esac; ` +
-  "echo 'basalt hook: the shim did not run (exit '$s'). Run bun install, then basalt-ui doctor.' >&2; exit 2"
+  "echo 'basalt hook: the shim did not run (exit '$s'). Install the dependencies, then run basalt-ui doctor.' >&2; exit 2"
 
 type Entry = { matcher?: string; hooks: { type: 'command'; command: string }[] }
 

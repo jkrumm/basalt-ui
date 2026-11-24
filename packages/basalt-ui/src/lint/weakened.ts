@@ -511,7 +511,14 @@ function budgetRatchet(
         'failed',
         `${above.map((k) => `${k} ${current.budget[k]} > ${base.budget[k]} at ${baseRef}`).join(', ')}; a ceiling only goes up with ${above.map(raiseCommand).join(' and ')}`,
       )
-    : result('passed', `${CEILINGS.join(', ')} are within ${baseRef}`)
+    : result(
+        'passed',
+        `${CEILINGS.join(', ')} are within ${baseRef}${
+          current.budget.waivers > base.budget.waivers
+            ? `; waivers grew ${base.budget.waivers} -> ${current.budget.waivers} since ${baseRef} (a record that follows the count)`
+            : ''
+        }`,
+      )
 }
 
 /** The first `node_modules/<rel>` found from `dir` upward, the way the install resolves it. */

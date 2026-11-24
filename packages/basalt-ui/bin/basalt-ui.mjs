@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 /**
  * basalt-ui CLI entry. Dispatches subcommands to the built CLI (../dist/cli/index.js) via `run()`,
  * which returns a number or Promise<number> — this entry is the ONLY place that calls process.exit,

@@ -12,7 +12,7 @@ import { readManifest } from '../manifest'
 import { buildBoard } from './board'
 import { capture } from './capture'
 import { detect } from './detect'
-import { INSTALL_LINE, ShotError, resolvePlaywright, withBrowser } from './playwright'
+import { installLine, ShotError, resolvePlaywright, withBrowser } from './playwright'
 import type { Playwright, PlaywrightResolver } from './playwright'
 import { apiProxy, parseApi, parseHeaders, parseStorage } from './real-data'
 import type { ApiRoute, Pair, Source } from './real-data'
@@ -209,18 +209,18 @@ export async function shot(
   const log = deps.log ?? ((line: string) => console.log(line))
   const stops: (() => unknown)[] = []
   const uninstall = exitOnSignal(stops)
-  let server: ReturnType<typeof serveDist> | null = null
+  let server: Awaited<ReturnType<typeof serveDist>> | null = null
   try {
     const args = parseShotArgs(flags, { env: process.env, cwd })
     const outDir = planOut(cwd, args.out)
     const pw: Playwright | null = (deps.resolve ?? resolvePlaywright)(cwd)
-    if (!pw) throw new ShotError(INSTALL_LINE)
+    if (!pw) throw new ShotError(installLine(cwd))
     const now = (deps.now ?? (() => new Date()))()
     const proxy =
       args.api.length > 0
         ? apiProxy(args.api, args.headers, { log, allowWrites: args.allowWrites })
         : null
-    server = args.dist ? serveDist(resolve(cwd, args.dist), proxy?.handle) : null
+    server = args.dist ? await serveDist(resolve(cwd, args.dist), proxy?.handle) : null
     if (server) stops.push(server.stop)
     const base = server?.origin ?? args.base ?? ''
     // The browser is up BEFORE the out dir exists: a failed launch leaves nothing behind.
@@ -243,7 +243,7 @@ export async function shot(
           log,
         })
       },
-      { stops },
+      { stops, install: installLine(cwd) },
     ).catch((error: unknown) => {
       rmSync(outDir, { recursive: true, force: true })
       throw error

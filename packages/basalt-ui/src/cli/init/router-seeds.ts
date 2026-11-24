@@ -85,7 +85,7 @@ const SKIP_NOTES: Record<NonNullable<RouterSeedSkip>, string> = {
 }
 
 /** The seeds to write: [id, dest, template]. A Start host swaps the root route and adds `router.tsx`; it has no `main`. */
-function seedPlan(appRel: string, start: boolean): [string, string, string][] {
+export function seedPlan(appRel: string, start: boolean): [string, string, string][] {
   const seeds = Object.entries(ROUTER_SEED_TEMPLATES).flatMap(
     ([seed, tpl]): [string, string, string][] => {
       const id = seed as keyof typeof ROUTER_SEED_TEMPLATES

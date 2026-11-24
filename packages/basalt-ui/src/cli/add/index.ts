@@ -12,6 +12,7 @@ import { noteRelocation, packageRoot, readFrameworkVersion, resolveProjectDir } 
 import { DEFAULT_ROOT } from '../config'
 import { locateInstall, pickDeclaredRoot } from '../install-root'
 import { writeManifest } from '../manifest'
+import { addCommand } from '../package-manager'
 import type { Manifest } from '../manifest'
 import { blockBasePath, blockKey } from '../eject/ledger'
 import type { BlockRow } from '../eject/ledger'
@@ -142,7 +143,7 @@ function plan(ctx: Ctx, args: Args, version: string) {
       const peers = missingPeers(ctx.projectDir, block)
       if (peers.length > 0)
         report.push(
-          `  peers ${peers.join(' ')}: not in package.json; install them (bun add ${peers.join(' ')}).`,
+          `  peers ${peers.join(' ')}: not in package.json; install them (${addCommand(ctx.projectDir, peers, false).join(' ')}).`,
         )
     }
   }

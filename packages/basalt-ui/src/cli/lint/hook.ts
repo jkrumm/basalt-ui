@@ -13,6 +13,7 @@ import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:pat
 import { isManagedRuleId } from '../../lint/preset'
 import { weakeningDenial } from '../../lint/weakening-edit'
 import { BUDGET_PATH, LINT_RAISABLE, raiseCommand } from '../budget'
+import { CLI_OWNED_KEYS, MANIFEST_PATH, parseManifest } from '../manifest'
 import { OXLINT_PRESET_FILE, STYLELINT_PRESET_FILE } from '../presets'
 import { parseJsonc } from '../source-text'
 import { changedFiles, isScanned, scan } from './engine'
@@ -146,6 +147,29 @@ function managedIds(text: string): Set<string> {
 }
 
 const count = (text: string, needle: string): number => text.split(needle).length - 1
+
+const parseRecord = (text: string): Record<string, unknown> =>
+  JSON.parse(text) as Record<string, unknown>
+
+/**
+ * A manifest edit passes when it changes only consumer keys and leaves a manifest that parses; one
+ * that changes a CLI-owned key (`CLI_OWNED_KEYS`), or whose result cannot be told, is refused.
+ */
+function manifestDenial(current: string | null, next: string | null): string | null {
+  if (current === null) return `${MANIFEST_PATH} is created by \`basalt-ui init\`; run it instead.`
+  if (next === null) {
+    return `the result of this edit to ${MANIFEST_PATH} cannot be told; edit with an exact old string, or write the whole file.`
+  }
+  const read = parseManifest(next)
+  if ('error' in read) return `this edit leaves ${read.error}`
+  const before = parseRecord(current)
+  const after = parseRecord(next)
+  const changed = CLI_OWNED_KEYS.filter(
+    (key) => JSON.stringify(before[key]) !== JSON.stringify(after[key]),
+  )
+  if (changed.length === 0) return null
+  return `${MANIFEST_PATH} keys ${changed.join(', ')} are written by basalt-ui (\`init\`, \`sync\`, \`eject <name> --reason\`); edit only the consumer keys (profile, roots, bespoke, deepRender, authoredContent, viewports, classPrefixes, tokens, extra), then run \`basalt-ui sync\`.`
+}
 const MANAGED_CLAUDE = /^\.claude\/(?:rules|skills|agents)\/basalt-/
 
 /** The reason an edit of `rel` is denied, or null: the paths and entries the guard cannot do without. */
@@ -159,8 +183,9 @@ function denial(
     // The route for a ceiling, as the budget breach names it (lint-4.19).
     return `${BUDGET_PATH} is basalt-ui's ledger; raise a ceiling with ${raiseCommand('<field>')} (${LINT_RAISABLE.join(', ')}) or ${raiseCommand('ejects')}, never by hand.`
   }
+  if (rel === MANIFEST_PATH) return manifestDenial(current, next)
   if (rel === '.basalt' || rel.startsWith('.basalt/')) {
-    return ".basalt/** is basalt-ui's ledger and shim; `basalt-ui init`, `sync` and `eject <name> --reason` write it, never edit it by hand."
+    return ".basalt/** is basalt-ui's ledger and shim; `basalt-ui init`, `sync` and `eject <name> --reason` write it, never edit it by hand. The consumer keys of .basalt/manifest.json are the one exception."
   }
   if (MANAGED_CLAUDE.test(rel) || Object.hasOwn(project.manifest?.managed ?? {}, rel)) {
     return `${rel} is managed by basalt-ui; \`basalt-ui sync\` rewrites it. Eject the part (\`basalt-ui eject <name> --reason\`) to change it.`
@@ -174,7 +199,7 @@ function denial(
     next !== null &&
     count(next, SHIM) < count(current, SHIM)
   ) {
-    return `this edit removes a basalt hook entry from ${SETTINGS_PATH}; keep it, or re-run \`basalt-ui init\` to restore it.`
+    return `this edit removes a basalt hook entry from ${SETTINGS_PATH}; keep it, or run \`basalt-ui sync\` to restore it.`
   }
   if (/^\.oxlintrc\.jsonc?$/.test(rel) && next !== null) {
     const before = current === null ? new Set<string>() : managedIds(current)

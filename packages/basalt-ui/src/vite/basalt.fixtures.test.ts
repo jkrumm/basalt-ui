@@ -59,17 +59,19 @@ function basaltConfig(resolved: ResolvedConfig): {
 }
 
 describe('peer gate', () => {
-  it('a fixture importing basalt-ui/ui/date-picker without react-day-picker fails naming bun add', async () => {
+  it('a fixture importing basalt-ui/ui/date-picker without react-day-picker fails naming the add command', async () => {
     const app = makeApp('date-picker')
     const message = await failure(build(config(app)))
     expect(message).toContain('basalt-ui/ui/date-picker needs react-day-picker')
-    expect(message).toContain('bun add react-day-picker@10.0.2')
+    expect(message).toContain('npm install --save --save-exact react-day-picker@10.0.2')
   })
 
   it('names every missing peer of the closure in one command', async () => {
     const app = makeApp('parts', ['react', 'class-variance-authority', 'clsx'])
     const message = await failure(build(config(app)))
-    expect(message).toContain('bun add @base-ui/react@~1.9.0 react-dom@^19.3.0')
+    expect(message).toContain(
+      'npm install --save --save-exact @base-ui/react@~1.9.0 react-dom@^19.3.0',
+    )
   })
 })
 

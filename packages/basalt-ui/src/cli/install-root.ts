@@ -2,8 +2,7 @@
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-import { MANIFEST_PATH } from './index'
-import { readManifest } from './manifest'
+import { MANIFEST_PATH, readManifest } from './manifest'
 import type { Manifest } from './manifest'
 
 /** The nearest ANCESTOR of `dir` (exclusive) carrying a basalt manifest, or null. */

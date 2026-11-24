@@ -23,7 +23,6 @@ import type { Profile } from '../manifest'
 import {
   declareManifest,
   generateTokens,
-  installHook,
   installPeers,
   installRoot,
   defaultExtra,
@@ -180,7 +179,6 @@ export async function init(
   for (const step of [
     installPeers,
     placeManaged,
-    ...(sibling ? [] : [installHook]),
     seedBudgetFile,
     wireFormatterAndLint,
     seedDesign,

@@ -234,9 +234,12 @@ belongs here is the properties that are easy to break:
    only managed sets whose membership moves between versions), with the same three-way discipline as
    every other managed unit: untouched is deleted, locally edited is left and reported, `--force`
    finishes it, `--check` is red until it is applied.
-4. **Every invocation the CLI EMITS goes through `basaltBinCommand()`** — the resolved local bin,
-   falling back to `bunx` only when nothing resolves. `bunx` does not re-resolve a cached package,
-   which is how a consumer filed a P0 against a 1.20.0 cache while pinned to 1.22.0.
+4. **Every invocation the CLI EMITS runs the resolved local bin**, never `bunx`. `bunx` does not
+   re-resolve a cached package, which is how a consumer filed a P0 against a 1.20.0 cache while
+   pinned to 1.22.0. The bin runs under Node 22 or newer and under Bun (`engines.node`): `node:`
+   built-ins only, no `Bun` global on any CLI path, because `init` installs with npm, pnpm or yarn
+   and the edit hook runs the bin on every edit. A fix-it line renders its install command from the
+   lockfile (`src/cli/package-manager.ts`).
 5. **A block is copied once and merged after.** `add` installs `blocks/<name>/` into the app and
    records an `origin: 'block'` row beside the eject rows; `sync` merges each file three ways
    (`src/cli/sync/blocks.ts`). `add` never overwrites a file: the shadcn registry's
@@ -244,6 +247,16 @@ belongs here is the properties that are easy to break:
    only published specifiers, so the installed bytes are the shipped bytes; `src/cli/add/blocks.test.ts`
    holds that. **Promotion rule:** a block that two consumers run unchanged is promoted to a
    composite on an npm subpath, and the block is retired.
+6. **What `init` writes, `sync` refreshes and `doctor` checks.** Beside the agent files, `sync`
+   renders the hook shim, the basalt entries of `.claude/settings.json` (spliced in, every other
+   byte kept) and each token sheet the manifest records (`renderInstallUnits`), so a fix to any of
+   them reaches every install on its next `sync`. `manifest.json` and `budget.json` carry
+   `format`; a change to a key's shape bumps it and adds a step to `MIGRATIONS` in `manifest.ts`
+   (or the budget's reader), and `sync` rewrites the older file. The pre-edit guard refuses a hand
+   edit of the CLI-owned manifest keys (`CLI_OWNED_KEYS`) and passes the consumer's.
+7. **Eject is experimental in 3.x.** Its on-disk format (the header line, the `ejected` row, the
+   seed digest the build checks) may change in a minor; its help, `docs/eject.md` and the usage
+   line say so.
 
 ## Guards — shipping a stricter one
 

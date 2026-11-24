@@ -1,12 +1,14 @@
 /**
  * Tarball parity — the authoritative half of the check in src/cli/tarball-parity.test.ts.
- * Reads a `tar -tzf` listing of the packed artifact (path passed as argv[2]) and asserts every
- * source path the CLI reads via readSource — for the full peer-flag surface — is present in the
- * tarball, plus every bin entry. Run by scripts/pack-test.sh after `bun pm pack`.
+ * Reads a `tar -tzf` listing of the packed artifact (path passed as argv[2]) and asserts that every
+ * shipped file `sync` renders from (`shippedSources`: each profile's agent files, the AGENTS block and
+ * hook templates, the lint presets) is present in the tarball, plus every bin entry and asset export.
+ * Run by scripts/pack-test.sh after `bun pm pack`.
  */
 import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 
-const { managedFiles } = await import(new URL('../dist/cli/index.js', import.meta.url))
+const { shippedSources } = await import(new URL('../dist/cli/index.js', import.meta.url))
 
 const listPath = process.argv[2]
 if (!listPath) {
@@ -21,7 +23,7 @@ const entries = new Set(
 )
 
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
-const sources = [...new Set(managedFiles().map((f) => f.source))]
+const sources = shippedSources(fileURLToPath(new URL('..', import.meta.url)))
 const binPaths = Object.values(pkg.bin ?? {}).map((p) => p.replace(/^\.\//, ''))
 
 /**

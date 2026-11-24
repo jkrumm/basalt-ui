@@ -3,6 +3,6 @@
   "version": "3.0.0",
   "roots": { "src": "app" },
   "managed": {},
-  "tokens": [{ "out": "src/tokens.css", "format": "css", "flags": ["--extra", "src/basalt.tokens.ts"] }],
+  "tokens": [{ "out": "src/tokens.css", "format": "css", "flags": ["--accent", "#0f8a7e"] }],
   "extra": "src/basalt.tokens.ts"
 }

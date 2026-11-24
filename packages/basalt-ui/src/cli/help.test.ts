@@ -8,8 +8,9 @@ import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSy
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 
-import { unknownFlag } from './help'
-import { MANIFEST_PATH, run } from './index'
+import { unknownFlag, USAGE } from './help'
+import { run } from './index'
+import { MANIFEST_PATH } from './manifest'
 
 let dir: string
 
@@ -132,7 +133,7 @@ describe('run() --version and the unknown-flag gate', () => {
     const { code, log } = capture(() => run(['doctor', '--json'], dir))
     expect(code).toBe(1)
     expect(log).toContain("unrecognized flag '--json'")
-    expect(log).toContain('Accepted: --from')
+    expect(log).toContain('Accepted: (none)')
   })
 
   it('a near-miss flag does not slip through as a silent no-op', () => {
@@ -177,13 +178,31 @@ describe('shot detect help', () => {
     expect(log).toContain('zsh does not word-split')
   })
 
-  it('doctor takes only --from', () => {
-    expect(unknownFlag('doctor', ['--from', '2.20.0'])).toBeNull()
+  it('doctor takes no flag: --from is gone, migrate --from is the upgrade worklist', () => {
+    expect(unknownFlag('doctor', ['--from', '2.20.0'])).toBe('--from')
+    expect(unknownFlag('migrate', ['--from', '2.20.0', '--profile', 'app'])).toBeNull()
     expect(unknownFlag('doctor', ['--nope'])).toBe('--nope')
   })
 
   it('accepts --lint on shot and still rejects an unknown flag', () => {
     expect(unknownFlag('shot', ['detect', '--lint', 'oxlint.json'])).toBeNull()
     expect(unknownFlag('shot', ['detect', '--nope'])).toBe('--nope')
+  })
+})
+
+describe('basalt-ui --help', () => {
+  it('names every verb the dispatcher accepts', () => {
+    const dispatcher = readFileSync(resolve(import.meta.dir, 'index.ts'), 'utf8')
+    const verbs = [...dispatcher.matchAll(/^ {4}case '([^']+)':/gm)].map((m) => m[1] ?? '')
+    expect(verbs).toContain('migrate')
+    expect(verbs.length).toBeGreaterThan(8)
+    const synopsis = USAGE.slice(0, USAGE.indexOf('\n\n'))
+    for (const verb of verbs)
+      expect({ verb, listed: synopsis.includes(verb) }).toEqual({ verb, listed: true })
+  })
+
+  it('marks eject experimental and no longer offers doctor --from', () => {
+    expect(USAGE).toMatch(/eject .*\(experimental\)/)
+    expect(USAGE).not.toContain('doctor [--from')
   })
 })

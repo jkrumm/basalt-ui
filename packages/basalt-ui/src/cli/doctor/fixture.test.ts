@@ -31,7 +31,7 @@ export const cleanupTrees = (): void => {
 /** The command `settings.json` registers: a missing or failing shim exits 2 and says so. */
 export const wrappedHook = (event: string): string =>
   `node "$CLAUDE_PROJECT_DIR/.basalt/hook.mjs" ${event}; s=$?; case $s in 0|2) exit $s;; esac; ` +
-  "echo 'basalt hook: the shim did not run (exit '$s'). Run bun install, then basalt-ui doctor.' >&2; exit 2"
+  "echo 'basalt hook: the shim did not run (exit '$s'). Install the dependencies, then run basalt-ui doctor.' >&2; exit 2"
 
 export const settingsJson = (wrap: (event: string) => string = wrappedHook): string =>
   `${JSON.stringify(

@@ -13,7 +13,7 @@ Run the local bin, `./node_modules/.bin/basalt-ui` or a package script; in a wor
 | Verb                      | Use                                                                                                                                                                                    |
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `init`                    | Place the manifest, the managed rules and skills, the AGENTS block and the `DESIGN.md` seed at the git or workspace root. `--no-install` writes files and prints the install commands. |
-| `doctor`                  | Check this project; read to the last line. `SKIPPED` exits non-zero. `--from <x.y.z>` prints the `MIGRATING.md` changes since that version.                                            |
+| `doctor`                  | Check this project; read to the last line. `SKIPPED` exits non-zero. Every failure names the command that fixes it.                                                                    |
 | `sync`                    | Refresh every managed file; `--check` writes nothing and exits 1 on a difference (the CI gate); `--force` overwrites a file you edited.                                                |
 | `tokens:css`, `fonts:css` | Emit the `--basalt-*` sheet and the font stacks as plain CSS; `--check` is the CI gate.                                                                                                |
 | `migrate`                 | Select the migration rows an app needs from a version; see [migrate](references/migrate.md).                                                                                           |
@@ -73,7 +73,7 @@ The profile is declared in `.basalt/manifest.json` and never inferred. Choose th
 
 ## Upgrade within 3.x
 
-A 3.x release never removes a public shape without a migration row and never changes a value silently: a change to a number is a `valueShifts` row. After the bump, run `sync`, then `doctor --from <old version>` and read what it prints, then `migrate` when a row names a symbol you import ([migrate](references/migrate.md)). A removed symbol that is still imported fails `migrate --check`.
+A 3.x release never removes a public shape without a migration row and never changes a value silently: a change to a number is a `valueShifts` row. After the bump, run `sync`, then `migrate --from <old version> --profile <profile>` and read what it prints beside the version rows of `MIGRATING.md` ([migrate](references/migrate.md)). A removed symbol that is still imported fails `migrate --check`.
 
 ## Migrate from 2.x
 

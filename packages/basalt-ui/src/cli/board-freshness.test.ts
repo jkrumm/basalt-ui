@@ -117,7 +117,7 @@ describe('designLoopLines', () => {
     const lines = designLoopLines(dir, ['src'], { notice: () => BOARD_NOTICE, playwright: absent })
     expect(lines).toHaveLength(2)
     expect(lines[0]).toContain('UI changed since the last board')
-    expect(lines[1]).toContain('bun add -d playwright')
+    expect(lines[1]).toContain('playwright install chromium')
   })
   it('says "version unknown" instead of printing the placeholder', () => {
     const [line] = designLoopLines(dir, ['src'], { notice: absent, playwright: () => 'unknown' })

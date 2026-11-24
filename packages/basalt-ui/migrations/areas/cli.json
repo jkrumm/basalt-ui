@@ -23,6 +23,18 @@
       "kind": "removed",
       "from": "basalt-ui guard-hook",
       "note": "the 2.x PreToolUse theme-guard adapter is deleted in 3.0; instead: the editor hook `.basalt/hook.mjs` (`basalt-ui lint --hook`), placed by `basalt-ui init` and `sync`; remove the old `guard-hook` entry from `.claude/settings.json`"
+    },
+    {
+      "id": "cli-doctor-from",
+      "kind": "removed",
+      "from": "basalt-ui doctor --from <x.y.z>",
+      "note": "the flag printed nothing in 3.0 and is gone, so `doctor --from` now exits 1 naming it; instead: `basalt-ui migrate --from <x.y.z> --profile <profile>`, beside the version rows of MIGRATING.md"
+    },
+    {
+      "id": "cli-lint-raise-waivers",
+      "kind": "removed",
+      "from": "basalt-ui lint --raise waivers",
+      "note": "waivers have no ceiling in 3.0: a full `basalt-ui lint` records the count in `.basalt/budget.json`, so a new waiver shows in the diff; `lint --raise escapes --consumer` stays for the escapes ceiling"
     }
   ],
   "tokens": {

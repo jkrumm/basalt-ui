@@ -201,96 +201,80 @@ function invocationOf(flags: string[]): string {
   return shown.length === 0 ? 'basalt-ui tokens:css' : `basalt-ui tokens:css ${shown.join(' ')}`
 }
 
-/** `--extra`: the app sheet to `--out` and its `.d.ts` beside it, both gated by `--check`. */
-function extraOutput(flags: string[], cwd: string, version: string): number {
+/** What one `tokens:css` run emits: files to `--out` (paths as given), or the stylesheet for stdout. */
+export type TokenEmit = { files: { out: string; content: string }[] } | { stdout: string }
+
+/** `--extra`: the app sheet to `--out` and its `.d.ts` beside it. */
+function extraOutput(flags: string[], cwd: string, version: string): TokenEmit | { error: string } {
   const file = flagValue(flags, '--extra') as string
   const out = flagValue(flags, '--out')
   if (out === undefined) {
-    console.error(
-      'tokens:css --extra needs --out <path>: the sheet and its .d.ts are two files, so there is no stdout form.',
-    )
-    return 1
+    return {
+      error:
+        'tokens:css --extra needs --out <path>: the sheet and its .d.ts are two files, so there is no stdout form.',
+    }
   }
   const clash = ['--accent', '--neutral', '--vibrancy', '--selector', '--accents', '--format'].find(
     (f) => flags.includes(f),
   )
   if (clash !== undefined) {
-    console.error(
-      `tokens:css --extra emits the app-owned sheet only; ${clash} belongs to the basalt-ui sheet — run it without --extra.`,
-    )
-    return 1
+    return {
+      error: `tokens:css --extra emits the app-owned sheet only; ${clash} belongs to the basalt-ui sheet — run it without --extra.`,
+    }
   }
   const abs = isAbsolute(file) ? file : resolve(cwd, file)
   const loaded = loadExtra(abs)
-  if (!loaded.ok) {
-    console.error(`tokens:css --extra: ${loaded.error}`)
-    return 1
-  }
+  if (!loaded.ok) return { error: `tokens:css --extra: ${loaded.error}` }
   const header = generatedHeader(version, 'tokens:css', flags)
   const result = emitExtra(loaded.data, file, header)
-  if (!result.ok) {
-    console.error(`✖ tokens:css --extra: ${result.error}`)
-    return 1
+  if (!result.ok) return { error: `✖ tokens:css --extra: ${result.error}` }
+  // Both files are always emitted: a drifted .d.ts must not hide behind a clean sheet.
+  return {
+    files: [
+      { out, content: result.css },
+      { out: `${out}.d.ts`, content: result.dts },
+    ],
   }
-  const check = flags.includes('--check') ? ['--check'] : []
-  const css = emitGeneratedCss(result.css, flags, cwd, 'tokens:css')
-  // Both files are always reported: a drifted .d.ts must not hide behind a clean sheet.
-  const dts = emitGeneratedCss(result.dts, ['--out', `${out}.d.ts`, ...check], cwd, 'tokens:css')
-  return css === 0 && dts === 0 ? 0 : 1
 }
 
-/**
- * tokens:css — emit the `--basalt-*` stylesheet (or, with `--format json`, the resolved hex per opaque
- * role) for an app that installs nothing: `bunx basalt-ui tokens:css --accent #0f8a7e --out
- * src/tokens.css`. The values come from the v3 emitters (`emitTokensCss`, `emitJsonText`), so the
- * CLI and the API cannot disagree; the CLI adds file framing only: the provenance header already
- * written by the emitter, and `rgba()` spacing a formatter would otherwise rewrite.
- *
- * - `--accent --neutral --vibrancy` retune the identity; a config that fails a gate exits 1 with
- *   the gate, the scheme and the ratio.
- * - `--selector ":root[<attr>]"` emits a tenant sheet: only the roles that differ from the default.
- * - `--extra <file>` emits the app-owned tokens instead (see `./tokens-css-extra`).
- * - `--check` writes nothing and exits 1 on any byte of drift in what `--out` names.
- */
-export function tokensCss(argv: string[], cwd: string = process.cwd()): number {
-  // `--vibrancy=-2`: the `=` form is the only way a negative number gets past `parseArgs`.
-  const flags = argv.flatMap((a) =>
+/** `--vibrancy=-2`: the `=` form is the only way a negative number gets past `parseArgs`. */
+const splitFlags = (argv: readonly string[]): string[] =>
+  argv.flatMap((a) =>
     /^--[a-z-]+=/.test(a) ? [a.slice(0, a.indexOf('=')), a.slice(a.indexOf('=') + 1)] : [a],
   )
+
+/**
+ * What `tokens:css <argv>` emits, in memory: the one renderer `tokensCss` writes from and `sync`
+ * compares the committed sheets against. `version` is the header's basalt-ui version.
+ */
+export function renderTokens(
+  argv: readonly string[],
+  cwd: string,
+  version: string,
+): TokenEmit | { error: string } {
+  const flags = splitFlags(argv)
   const bad = flagError(flags)
-  if (bad !== null) {
-    console.error(`tokens:css: ${bad}`)
-    return 1
-  }
-  const version = readFrameworkVersion(packageRoot())
+  if (bad !== null) return { error: `tokens:css: ${bad}` }
   if (flags.includes('--extra')) return extraOutput(flags, cwd, version)
 
   const format = flagValue(flags, '--format') ?? 'css'
   if (format !== 'css' && format !== 'json') {
-    console.error(`tokens:css: --format must be css or json (got '${format}')`)
-    return 1
+    return { error: `tokens:css: --format must be css or json (got '${format}')` }
   }
   const read = readConfig(flags)
-  if ('error' in read) {
-    console.error(`tokens:css: ${read.error}`)
-    return 1
-  }
+  if ('error' in read) return { error: `tokens:css: ${read.error}` }
   const selector = flagValue(flags, '--selector')
   if (selector !== undefined && format === 'json') {
-    console.error('tokens:css: --selector scopes a stylesheet; the JSON has no selectors.')
-    return 1
+    return { error: 'tokens:css: --selector scopes a stylesheet; the JSON has no selectors.' }
   }
   const accents = readAccents(flags)
   if (accents !== null) {
-    if ('error' in accents) {
-      console.error(`tokens:css: ${accents.error}`)
-      return 1
-    }
+    if ('error' in accents) return { error: `tokens:css: ${accents.error}` }
     if (selector !== undefined || format === 'json') {
-      console.error(
-        'tokens:css: --accents emits its own :root[data-accent] sheet; drop --selector and --format.',
-      )
-      return 1
+      return {
+        error:
+          'tokens:css: --accents emits its own :root[data-accent] sheet; drop --selector and --format.',
+      }
     }
   }
 
@@ -311,10 +295,38 @@ export function tokensCss(argv: string[], cwd: string = process.cwd()): number {
               : emitAccentsCss({ ...options, accents: accents.names }),
           )
   } catch (err) {
-    console.error(`✖ tokens:css: ${err instanceof Error ? err.message : String(err)}`)
+    return { error: `✖ tokens:css: ${err instanceof Error ? err.message : String(err)}` }
+  }
+  const out = flagValue(flags, '--out')
+  return out === undefined ? { stdout: content } : { files: [{ out, content }] }
+}
+
+/**
+ * tokens:css — emit the `--basalt-*` stylesheet (or, with `--format json`, the resolved hex per opaque
+ * role) for an app that installs nothing: `bunx basalt-ui tokens:css --accent #0f8a7e --out
+ * src/tokens.css`. The values come from the v3 emitters (`emitTokensCss`, `emitJsonText`), so the
+ * CLI and the API cannot disagree; the CLI adds file framing only: the provenance header already
+ * written by the emitter, and `rgba()` spacing a formatter would otherwise rewrite.
+ *
+ * - `--accent --neutral --vibrancy` retune the identity; a config that fails a gate exits 1 with
+ *   the gate, the scheme and the ratio.
+ * - `--selector ":root[<attr>]"` emits a tenant sheet: only the roles that differ from the default.
+ * - `--extra <file>` emits the app-owned tokens instead (see `./tokens-css-extra`).
+ * - `--check` writes nothing and exits 1 on any byte of drift in what `--out` names.
+ */
+export function tokensCss(argv: string[], cwd: string = process.cwd()): number {
+  const flags = splitFlags(argv)
+  const emitted = renderTokens(flags, cwd, readFrameworkVersion(packageRoot()))
+  if ('error' in emitted) {
+    console.error(emitted.error)
     return 1
   }
-  return emitGeneratedCss(content, flags, cwd, 'tokens:css')
+  if ('stdout' in emitted) return emitGeneratedCss(emitted.stdout, flags, cwd, 'tokens:css')
+  const check = flags.includes('--check') ? ['--check'] : []
+  const codes = emitted.files.map(({ out, content }) =>
+    emitGeneratedCss(content, ['--out', out, ...check], cwd, 'tokens:css'),
+  )
+  return codes.every((code) => code === 0) ? 0 : 1
 }
 
 /** Every `--basalt-font-*` declaration in the shipped stylesheet, in source order. */
