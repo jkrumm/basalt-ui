@@ -1,6 +1,6 @@
 /**
  * check-playground-lint: the two scanners of `basalt-ui lint` that the playground's oxlint step
- * does not run, over `apps/playground/src` as an `app` root: the `--basalt-*` token check
+ * does not run, over `apps/playground/src` and `apps/expression/src` as `app` roots: the `--basalt-*` token check
  * (`basalt/unknown-token`) and the stylelint preset. oxlint stays with `lint:playground` and
  * `check-recipes-lint`. A recipe or a demo that names a token the package does not ship paints
  * nothing, and no other gate sees it.
@@ -9,7 +9,7 @@
  * project, so the verdict is the one a consumer's `basalt-ui lint` gives. The token outputs its
  * `.basalt/manifest.json` declares are generated sheets, never linted.
  *
- * Usage: bun packages/basalt-ui/scripts/check-playground-lint.ts [<project dir>]   (default: apps/playground)
+ * Usage: bun packages/basalt-ui/scripts/check-playground-lint.ts [<project dir>]   (default: apps/playground and apps/expression)
  * Exit 0 clean; 1 with one `<file>:<line> <id>: <message>` line per finding.
  */
 import { spawnSync } from 'node:child_process'
@@ -22,7 +22,9 @@ import type { Finding, Project } from '../src/cli/lint/engine'
 import { renderStylelintConfig } from '../src/lint/stylelint/render'
 
 const PACKAGE = resolve(import.meta.dirname, '..')
-const PLAYGROUND = resolve(PACKAGE, '..', '..', 'apps', 'playground')
+const APPS = resolve(PACKAGE, '..', '..', 'apps')
+/** The repo's two `init --profile app` installs: the playground and the expression app. */
+const DEFAULT_ROOTS = [join(APPS, 'playground'), join(APPS, 'expression')]
 /** The `tokens:css` outputs of the install: `init` and `sync` write them, `doctor` check 10 pins them. */
 const generatedSheets = (root: string): Set<string> => {
   const path = join(root, '.basalt/manifest.json')
@@ -86,7 +88,7 @@ function runStylelint(project: Project, files: readonly string[]): Finding[] {
   }
 }
 
-export function checkPlaygroundLint(root: string = PLAYGROUND): Finding[] {
+export function checkPlaygroundLint(root: string): Finding[] {
   const project: Project = { root, manifest: null, roots: [['src', 'app']] }
   const generated = generatedSheets(root)
   const files = rootFiles(project).filter((f) => !generated.has(f))
@@ -100,9 +102,13 @@ export function checkPlaygroundLint(root: string = PLAYGROUND): Finding[] {
 }
 
 if (import.meta.main) {
-  const root = process.argv[2] === undefined ? PLAYGROUND : resolve(process.argv[2])
-  const findings = checkPlaygroundLint(root)
-  for (const f of findings)
-    console.log(`${join(relative(process.cwd(), root), f.file)}:${f.line} ${f.id}: ${f.message}`)
-  process.exit(findings.length === 0 ? 0 : 1)
+  const roots = process.argv[2] === undefined ? DEFAULT_ROOTS : [resolve(process.argv[2])]
+  let failed = false
+  for (const root of roots) {
+    for (const f of checkPlaygroundLint(root)) {
+      failed = true
+      console.log(`${join(relative(process.cwd(), root), f.file)}:${f.line} ${f.id}: ${f.message}`)
+    }
+  }
+  process.exit(failed ? 1 : 0)
 }

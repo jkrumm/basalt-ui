@@ -1,7 +1,10 @@
 import { existsSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { PLAYGROUND } from './routes'
+import { EXPRESSION, PLAYGROUND } from './routes'
+
+/** The cycle folders of the two apps: the playground's builds (`apps/playground/src/cycle`) and the expression app's. */
+const CYCLE_DIRS: readonly string[] = [join(PLAYGROUND, 'src/cycle'), join(EXPRESSION, 'src/cycle')]
 
 /**
  * Findings the matrix already reports on code this Issue does not own (shell, cards, charts, the
@@ -21,7 +24,7 @@ export interface KnownFinding {
 }
 
 /**
- * A cycle's waivers live in its own folder, `apps/playground/src/cycle/<cycle>/known.ts`, so a cycle PR
+ * A cycle's waivers live in its own folder, `apps/<app>/src/cycle/<cycle>/known.ts` (the playground's or the expression app's), so a cycle PR
  * never touches this package (docs/v3/CYCLES.md step 2). The file exports `known`, an array of
  * `KnownFinding` shaped objects; the cycle code imports published entry points only, so it declares
  * the shape inline and this loader checks it. The matrix applies the same rules to these entries: one
@@ -29,21 +32,25 @@ export interface KnownFinding {
  */
 type CycleModule = { file: string; mod: { known?: unknown; knownChips?: unknown } }
 
-/** The `known.ts` of every cycle folder under `dir`, in name order. */
-async function cycleModules(dir: string): Promise<CycleModule[]> {
-  if (!existsSync(dir)) return []
+/** The `known.ts` of every cycle folder under `dirs`, in name order within each directory. */
+async function cycleModules(dirs: string | readonly string[]): Promise<CycleModule[]> {
   const found: CycleModule[] = []
-  for (const cycle of readdirSync(dir, { withFileTypes: true }).toSorted((a, b) =>
-    a.name.localeCompare(b.name),
-  )) {
-    const file = join(dir, cycle.name, 'known.ts')
-    if (!cycle.isDirectory() || !existsSync(file)) continue
-    found.push({ file, mod: (await import(file)) as CycleModule['mod'] })
+  for (const dir of typeof dirs === 'string' ? [dirs] : dirs) {
+    if (!existsSync(dir)) continue
+    for (const cycle of readdirSync(dir, { withFileTypes: true }).toSorted((a, b) =>
+      a.name.localeCompare(b.name),
+    )) {
+      const file = join(dir, cycle.name, 'known.ts')
+      if (!cycle.isDirectory() || !existsSync(file)) continue
+      found.push({ file, mod: (await import(file)) as CycleModule['mod'] })
+    }
   }
   return found
 }
 
-export async function loadCycleKnown(dir = join(PLAYGROUND, 'src/cycle')): Promise<KnownFinding[]> {
+export async function loadCycleKnown(
+  dir: string | readonly string[] = CYCLE_DIRS,
+): Promise<KnownFinding[]> {
   const entries: KnownFinding[] = []
   for (const { file, mod } of await cycleModules(dir)) {
     // A cycle that only waives chips (`knownChips`) has no findings to list.
@@ -67,11 +74,13 @@ export async function loadCycleKnown(dir = join(PLAYGROUND, 'src/cycle')): Promi
 /**
  * Routes of a cycle's builds where the kit's hover chip still covers a tick label that stays painted (the
  * hover guard, `hover-shift.ts`), waived the way a cycle waives `known`: the optional `knownChips` export
- * of `apps/playground/src/cycle/<cycle>/known.ts`, an array of route paths. A route listed here is still
+ * of `apps/<app>/src/cycle/<cycle>/known.ts`, an array of route paths. A route listed here is still
  * swept and its chip findings go unchecked; in the full run a listed route that no longer draws a chip over
  * a tick fails, so the fix row removes its line. A page not listed fails on a chip.
  */
-export async function loadCycleChips(dir = join(PLAYGROUND, 'src/cycle')): Promise<string[]> {
+export async function loadCycleChips(
+  dir: string | readonly string[] = CYCLE_DIRS,
+): Promise<string[]> {
   const routes: string[] = []
   for (const { file, mod } of await cycleModules(dir)) {
     if (mod.knownChips === undefined) continue
@@ -87,6 +96,13 @@ export const KNOWN_CHIPS: readonly string[] = await loadCycleChips()
 
 export const KNOWN: readonly KnownFinding[] = [
   ...(await loadCycleKnown()),
+  {
+    route: '*',
+    assertion: 'ringWalk',
+    item: /nav\[shell-rail\]>div\[shell-rail-resize\] "[^"]*": no focus outline/,
+    owner:
+      "shell: the rail's width handle shows focus as a colour on a 1px bar, never an outline. The 80-stop walk reached it only after the expression scenarios left the playground's nav (105 links down to 3); the fix row gives it a ring and removes this line",
+  },
   {
     route: '/overview',
     assertion: 'ringWalk',

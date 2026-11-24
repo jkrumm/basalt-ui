@@ -1,36 +1,66 @@
 /**
- * The matrix route list, read from the playground's routes directory at run time: a route added
- * there joins the matrix with no edit here (quality-contract section 4).
+ * The matrix route list, read from each app's source at run time: a route added to the playground's routes
+ * directory, or a scenario added to either app's registry, joins the matrix with no edit here
+ * (quality-contract section 4). Two apps are served: the playground and the expression app
+ * (apps/expression, the trial scenarios); `appOf` says which one serves a route.
  */
 import { readdirSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
 export const REPO = resolve(import.meta.dirname, '../../../../..')
 export const PLAYGROUND = join(REPO, 'apps/playground')
-const ROUTES_DIR = join(PLAYGROUND, 'src/routes')
+export const EXPRESSION = join(REPO, 'apps/expression')
 
-/** The first registered scenario id: the dynamic route (`scenarios.$name`) needs a concrete name. */
-function firstScenario(): string {
-  const source = readFileSync(join(PLAYGROUND, 'src/scenarios/scenario-info.ts'), 'utf8')
-  const id = /\bid:\s*'([\w-]+)'/.exec(source)?.[1]
-  if (id === undefined) throw new Error('matrix: no scenario id in scenarios/scenario-info.ts')
-  return id
+export type MatrixApp = 'playground' | 'expression'
+export const APP_DIRS: Readonly<Record<MatrixApp, string>> = {
+  playground: PLAYGROUND,
+  expression: EXPRESSION,
 }
 
-/** Every registered scenario as a route: `/scenarios/<id>`, one per `id` in `scenarios/scenario-info.ts`. */
+const ROUTES_DIR = join(PLAYGROUND, 'src/routes')
+
+/** The expression app's one non-scenario page: its index. The scenario pages are hover-guard pages (`scenarioPaths`). */
+export const EXPRESSION_INDEX = '/scenarios'
+
+/** The `id`s of an app's `scenarios/scenario-info.ts`, in order. */
+function scenarioIds(app: MatrixApp): string[] {
+  const source = readFileSync(join(APP_DIRS[app], 'src/scenarios/scenario-info.ts'), 'utf8')
+  const ids = [...source.matchAll(/\bid:\s*'([\w-]+)'/g)].map((m) => m[1] as string)
+  if (ids.length === 0)
+    throw new Error(`matrix: no scenario id in apps/${app}/src/scenarios/scenario-info.ts`)
+  return ids
+}
+
+/** The first registered playground scenario id: the dynamic route (`scenarios.$name`) needs a concrete name. */
+function firstScenario(): string {
+  return scenarioIds('playground')[0] as string
+}
+
+/** Every registered scenario of both apps as a route: `/scenarios/<id>`, one per `id` in an app's `scenarios/scenario-info.ts`. */
 export function scenarioPaths(): string[] {
-  const source = readFileSync(join(PLAYGROUND, 'src/scenarios/scenario-info.ts'), 'utf8')
-  return [...source.matchAll(/\bid:\s*'([\w-]+)'/g)].map((m) => `/scenarios/${m[1]}`)
+  return [...scenarioIds('playground'), ...scenarioIds('expression')].map(
+    (id) => `/scenarios/${id}`,
+  )
+}
+
+/** The expression app's routes: its index and every scenario. The playground serves every other route. */
+export function expressionPaths(): string[] {
+  return [EXPRESSION_INDEX, ...scenarioIds('expression').map((id) => `/scenarios/${id}`)]
+}
+
+/** The app that serves `route`. */
+export function appOf(route: string): MatrixApp {
+  return expressionPaths().includes(route) ? 'expression' : 'playground'
 }
 
 /**
  * `BASALT_MATRIX_ROUTES=/scenarios/expr-n87,/table` keeps only those routes' cells (`make quality-matrix-fast`, through
- * scripts/matrix-select.ts, when a branch touched only scenarios). Unset or empty: every route (null). A path that is no
+ * scripts/matrix-select.ts, when a branch touched only scenarios), whichever app serves them. Unset or empty: every route (null). A path that is no
  * route or scenario throws: a typo must not run an empty matrix and pass.
  */
 export function parseRoutes(value: string | undefined): ReadonlySet<string> | null {
   if (value === undefined || value.trim() === '') return null
-  const known = new Set([...routePaths(), ...scenarioPaths()])
+  const known = new Set([...routePaths(), EXPRESSION_INDEX, ...scenarioPaths()])
   const wanted = value.split(',').map((route) => route.trim())
   const unknown = wanted.filter((route) => !known.has(route))
   if (unknown.length > 0)

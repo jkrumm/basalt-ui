@@ -8,7 +8,8 @@
  *   overview) and without one (the title-only expression scenarios c12, n02, n27), so the distance
  *   is the same token on every page.
  *
- * It serves `apps/playground/dist`, which `make check` and CI build before the layout suite.
+ * It serves `apps/playground/dist` (the banded pages) and `apps/expression/dist` (the title-only scenarios), which
+ * `make check` and CI build before the layout suite.
  */
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { existsSync } from 'node:fs'
@@ -20,49 +21,63 @@ const ready = await initLayoutSuite()
 const layout = ready ? describe : describe.skip
 afterAll(closeLayoutSuite, CLOSE_BUDGET_MS)
 
-const DIST = resolve(import.meta.dir, '../../../../apps/playground/dist')
+type App = 'playground' | 'expression'
+const APPS: readonly App[] = ['playground', 'expression']
+const dist = (app: App): string => resolve(import.meta.dir, '../../../../apps', app, 'dist')
 const DESKTOP_1800: Viewport = { name: 'wide desktop', width: 1800, height: 1200 }
 
 const BANDED = ['/cycle/state-2', '/cycle/shell-5'] as const
 const BANDLESS = ['/scenarios/expr-c12', '/scenarios/expr-n02', '/scenarios/expr-n27'] as const
 
-let server: ReturnType<typeof Bun.serve> | null = null
+const servers = new Map<App, ReturnType<typeof Bun.serve>>()
 
-/** A playground build takes about 20 s on a runner; the hook declares its own budget (Bun's default is 5 s). */
-const BUILD_BUDGET_MS = 180_000
+/** An app build takes about 20 s on a runner; the hook declares its own budget (Bun's default is 5 s). */
+const BUILD_BUDGET_MS = 360_000
 
 beforeAll(() => {
-  // `make check` builds the playground before the layout suite; a CI layout shard builds only the package.
-  if (!existsSync(join(DIST, 'index.html'))) {
-    const build = Bun.spawnSync(['bun', '--filter', '@basalt-ui/playground', 'build'], {
-      cwd: resolve(DIST, '../../..'),
-      stdout: 'pipe',
-      stderr: 'pipe',
-    })
-    if (build.exitCode !== 0 || !existsSync(join(DIST, 'index.html'))) {
-      throw new Error(`page-top: the playground did not build:\n${build.stderr.toString()}`)
-    }
-  }
-  server = Bun.serve({
-    port: 0,
-    async fetch(request) {
-      const path = decodeURIComponent(new URL(request.url).pathname)
-      const target = resolve(DIST, `.${path}`)
-      if (target !== DIST && !target.startsWith(DIST + sep))
-        return new Response('', { status: 404 })
-      const asset = Bun.file(target)
-      if (path !== '/' && (await asset.exists())) return new Response(asset)
-      if (/\.[a-z0-9]+$/i.test(path)) return new Response('', { status: 404 })
-      return new Response(Bun.file(join(DIST, 'index.html')), {
-        headers: { 'content-type': 'text/html' },
+  for (const app of APPS) {
+    const root = dist(app)
+    // `make check` builds both apps before the layout suite; a CI layout shard builds only the package.
+    if (!existsSync(join(root, 'index.html'))) {
+      const build = Bun.spawnSync(['bun', '--filter', `@basalt-ui/${app}`, 'build'], {
+        cwd: resolve(root, '../../..'),
+        stdout: 'pipe',
+        stderr: 'pipe',
       })
-    },
-  })
+      if (build.exitCode !== 0 || !existsSync(join(root, 'index.html'))) {
+        throw new Error(`page-top: the ${app} app did not build:\n${build.stderr.toString()}`)
+      }
+    }
+    servers.set(
+      app,
+      Bun.serve({
+        port: 0,
+        async fetch(request) {
+          const path = decodeURIComponent(new URL(request.url).pathname)
+          const target = resolve(root, `.${path}`)
+          if (target !== root && !target.startsWith(root + sep))
+            return new Response('', { status: 404 })
+          const asset = Bun.file(target)
+          if (path !== '/' && (await asset.exists())) return new Response(asset)
+          if (/\.[a-z0-9]+$/i.test(path)) return new Response('', { status: 404 })
+          return new Response(Bun.file(join(root, 'index.html')), {
+            headers: { 'content-type': 'text/html' },
+          })
+        },
+      }),
+    )
+  }
 }, BUILD_BUDGET_MS)
 
 afterAll(() => {
-  server?.stop(true)
+  for (const server of servers.values()) server.stop(true)
 })
+
+/** The expression scenarios are served by the expression app, every other page by the playground. */
+const serverOf = (route: string): URL => {
+  const app: App = route.startsWith('/scenarios/expr-') ? 'expression' : 'playground'
+  return servers.get(app)!.url
+}
 
 type Top = {
   /** The bottom edge of the chrome's last rule: the band's when there is one, else the header's. */
@@ -82,7 +97,7 @@ type Top = {
 
 async function measure(viewport: Viewport, route: string, asideWidth?: number): Promise<Top> {
   const page: LayoutPage = await openDocument('<!doctype html><html><body></body></html>', viewport)
-  await page.raw.goto(new URL(route, server!.url).href)
+  await page.raw.goto(new URL(route, serverOf(route)).href)
   await page.raw.waitForSelector('[data-slot="page-main"] > :not([data-slot="page-bar"]):not(h1)')
   if (asideWidth !== undefined) {
     // The aside column's width is the grid's variable: widening it stands in for a docked aside.
@@ -129,7 +144,7 @@ async function measure(viewport: Viewport, route: string, asideWidth?: number): 
   })
 }
 
-layout('the page top on the playground', () => {
+layout('the page top on the playground and the expression app', () => {
   for (const viewport of [DESKTOP_1800, PHONE]) {
     describe(`${viewport.name} ${viewport.width}`, () => {
       for (const route of BANDED) {
