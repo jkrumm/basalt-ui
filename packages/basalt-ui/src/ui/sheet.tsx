@@ -23,10 +23,22 @@ import { buttonVariants } from './button'
 type Placement = 'bottom' | 'right' | 'auto'
 type Swipe = 'down' | 'right'
 
+/**
+ * A height a bottom sheet rests at besides its content height: `half` is 50 % of the viewport,
+ * `full` is 90 % (the sheet never covers the status bar).
+ */
+export type SheetSnap = 'half' | 'full'
+
+/** The viewport fractions Base UI's `snapPoints` takes (a number below 1 is a fraction of the height). */
+const SNAP_FRACTION: Record<SheetSnap, number> = { half: 0.5, full: 0.9 }
+
 /** The `auto` flip: bottom below this width, right from it (the `md` breakpoint, 840 px; pinned to `SIZE_CLASSES.medium` by sheet.test.tsx). */
 const WIDE = '(min-width: 840px)'
 
-const PlacementContext = createContext<Placement>('auto')
+/** What the content part reads from `Sheet`: the resolved edge and whether it rests at snap points. */
+type SheetFrame = { placement: Placement; snapped: boolean }
+
+const FrameContext = createContext<SheetFrame>({ placement: 'auto', snapped: false })
 
 /** The narrowest a right sheet goes: a form's label and field side by side. */
 const SHEET_MIN = 320
@@ -48,13 +60,19 @@ const sheetWidth = (): ReturnType<typeof persisted<number | null>> =>
     },
   })
 
-const BOTTOM =
-  'mt-auto max-h-[min(72dvh,560px)] w-full rounded-t-card translate-y-[var(--drawer-swipe-movement-y,0px)] data-starting-style:translate-y-full data-ending-style:translate-y-full'
+/** The device's safe areas stay clear of the panel: the home indicator under a bottom sheet, the notch beside it. */
+const BOTTOM_INSET =
+  'pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)]'
+const RIGHT_INSET =
+  'pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)]'
+
+/** A bottom sheet hugs its content up to 90 % of the viewport; with `snapPoints` it is that tall and rests lower. */
+const BOTTOM = `mt-auto max-h-[90dvh] w-full rounded-t-card ${BOTTOM_INSET} translate-y-[var(--drawer-swipe-movement-y,0px)] data-starting-style:translate-y-full data-ending-style:translate-y-full`
 
 /**
  * The `SheetContent` cva table: a panel that slides in from an edge, its header, body and footer
- * drawn inside it (no padding of its own). `bottom` caps its height at
- * `min(72dvh,560px)`, `right` is a full-height column 360 px wide (a `w-80`, `w-90`, `w-120` or
+ * drawn inside it (no padding of its own). `bottom` hugs its content
+ * up to 90dvh, `right` is a full-height column 360 px wide (a `w-80`, `w-90`, `w-120` or
  * `w-160` class in `className` picks 320, 360, 480 or 640), and `auto` is the `bottom` table: `Sheet`
  * resolves `auto` to `bottom` below the `md` breakpoint and `right` from it, and hands `SheetContent`
  * the result. The axis is set on `Sheet`, not on the content.
@@ -68,8 +86,7 @@ export const sheetContentVariants = cva(
     variants: {
       placement: {
         bottom: BOTTOM,
-        right:
-          'ml-auto h-full w-90 max-w-full translate-x-[var(--drawer-swipe-movement-x,0px)] data-starting-style:translate-x-full data-ending-style:translate-x-full',
+        right: `ml-auto h-full w-90 max-w-full ${RIGHT_INSET} translate-x-[var(--drawer-swipe-movement-x,0px)] data-starting-style:translate-x-full data-ending-style:translate-x-full`,
         auto: BOTTOM,
       },
     },
@@ -78,16 +95,31 @@ export const sheetContentVariants = cva(
 )
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
-export const sheetParts = ['sheet-trigger', 'sheet-content', 'sheet-title', 'sheet-close'] as const
+export const sheetParts = [
+  'sheet-trigger',
+  'sheet-content',
+  'sheet-grabber',
+  'sheet-title',
+  'sheet-close',
+] as const
 
 type Layout<P> = Omit<P, 'className'> & {
   /** Layout only (`w-120`, `mt-2`). Display and height belong to the part. */
   className?: string
 }
 
-type SheetBase = Omit<BaseDrawer.Root.Props, 'swipeDirection'> & {
+type SheetBase = Omit<
+  BaseDrawer.Root.Props,
+  'swipeDirection' | 'snapPoints' | 'snapPoint' | 'defaultSnapPoint' | 'onSnapPointChange'
+> & {
   /** The edge it opens from. `auto` is the bottom on a phone and the right edge from 840 px. */
   placement?: Placement
+  /**
+   * Where a bottom sheet rests besides its content height, smallest first: `['half', 'full']` opens
+   * at half the viewport and drags to 90 %; a drag down from the lowest point dismisses. Unset, the
+   * sheet has one rest, at its content height capped at 90dvh. A right sheet ignores it.
+   */
+  snapPoints?: readonly SheetSnap[]
 }
 
 /** A boolean handle is open while `true`; a string handle (a URL field naming a record) while non-empty. */
@@ -178,14 +210,23 @@ function BoundSheet({
   )
 }
 
-function PlainSheet({ placement = 'auto', ...props }: SheetBase): ReactElement {
+function PlainSheet({ placement = 'auto', snapPoints, ...props }: SheetBase): ReactElement {
   const wide = useSyncExternalStore(subscribeWide, readWide, serverWide)
   const resolved: Placement = placement === 'auto' ? (wide ? 'right' : 'bottom') : placement
   const swipe: Swipe = resolved === 'right' ? 'right' : 'down'
+  const snapped = resolved !== 'right' && snapPoints !== undefined && snapPoints.length > 0
+  const frame: SheetFrame = { placement: resolved, snapped }
   return (
-    <PlacementContext value={resolved}>
-      <BaseDrawer.Root {...props} swipeDirection={swipe} />
-    </PlacementContext>
+    <FrameContext value={frame}>
+      <BaseDrawer.Root
+        {...props}
+        swipeDirection={swipe}
+        {...(snapped && {
+          snapPoints: snapPoints.map((snap) => SNAP_FRACTION[snap]),
+          defaultSnapPoint: SNAP_FRACTION[snapPoints[0]!],
+        })}
+      />
+    </FrameContext>
   )
 }
 
@@ -227,7 +268,7 @@ export function SheetContent({
   children,
   ...props
 }: SheetContentProps): ReactElement {
-  const placement = useContext(PlacementContext)
+  const { placement, snapped } = useContext(FrameContext)
   const t = useMessages(dialogs)
   const popup = useRef<HTMLDivElement | null>(null)
   const width = usePanelWidth({ store: sheetWidth(), name: 'sheet', min: SHEET_MIN })
@@ -237,61 +278,100 @@ export function SheetContent({
     : undefined
   return (
     <ControlScopeProvider value={null}>
-      <BaseDrawer.Portal>
-        <BaseDrawer.Backdrop
-          forceRender
-          className="fixed inset-0 z-50 bg-scrim transition-opacity duration-slow data-starting-style:opacity-0 data-ending-style:opacity-0 motion-reduce:transition-none"
-        />
-        <BaseDrawer.Viewport className="fixed inset-0 z-50 flex overflow-hidden data-ending-style:pointer-events-none">
-          <BaseDrawer.Popup
-            {...props}
-            ref={(el: HTMLDivElement | null) => {
-              popup.current = el
-              if (typeof ref === 'function') ref(el)
-              else if (ref) ref.current = el
-            }}
-            data-slot="sheet-content"
-            style={typeof style === 'function' ? style : { ...style, ...sized }}
-            className={cn(sheetContentVariants({ placement }), className)}
-          >
-            {right && (
-              <PanelHandle
-                panel={popup}
-                min={SHEET_MIN}
-                label={t('sheet.resize')}
-                onResize={width.resize}
-                onCommit={width.commit}
-              />
-            )}
-            <BaseDrawer.Content className="flex min-h-0 flex-1 flex-col">
-              <header data-panel="header" className={PANEL_HEADER}>
-                {tag !== undefined && <span className={PANEL_TAG}>{tag}</span>}
-                <SheetTitle className={PANEL_TITLE}>{title}</SheetTitle>
-                <div className="flex shrink-0 items-center gap-1">
-                  {actions}
-                  {actions !== undefined && actions !== null && (
-                    <span aria-hidden="true" className={PANEL_DIVIDER} />
-                  )}
-                  <SheetClose data-panel="close" />
-                </div>
-              </header>
-              {/* A native scroll, so the sheet renders only its own slots. */}
-              <div
-                data-panel="body"
-                className={cn(PANEL_BODY, 'flex flex-col gap-4 overflow-y-auto')}
-              >
-                {children}
-              </div>
-              {footer !== undefined && footer !== null && footer !== false && (
-                <div data-panel="footer" className={PANEL_FOOTER}>
-                  {footer}
-                </div>
+      <KeyboardAware enabled={!right}>
+        <BaseDrawer.Portal>
+          <BaseDrawer.Backdrop
+            forceRender
+            className="fixed inset-0 z-50 bg-scrim transition-opacity duration-slow data-starting-style:opacity-0 data-ending-style:opacity-0 motion-reduce:transition-none"
+          />
+          <BaseDrawer.Viewport className="fixed inset-0 z-50 flex overflow-hidden data-ending-style:pointer-events-none">
+            <BaseDrawer.Popup
+              {...props}
+              ref={(el: HTMLDivElement | null) => {
+                popup.current = el
+                if (typeof ref === 'function') ref(el)
+                else if (ref) ref.current = el
+              }}
+              data-slot="sheet-content"
+              style={typeof style === 'function' ? style : { ...style, ...sized }}
+              className={cn(
+                sheetContentVariants({ placement }),
+                snapped &&
+                  'h-[90dvh] max-h-none pb-[calc(env(safe-area-inset-bottom)+var(--drawer-snap-point-offset,0px))] translate-y-[calc(var(--drawer-snap-point-offset,0px)+var(--drawer-swipe-movement-y,0px))]',
+                className,
               )}
-            </BaseDrawer.Content>
-          </BaseDrawer.Popup>
-        </BaseDrawer.Viewport>
-      </BaseDrawer.Portal>
+            >
+              {!right && <SheetGrabber />}
+              {right && (
+                <PanelHandle
+                  panel={popup}
+                  min={SHEET_MIN}
+                  label={t('sheet.resize')}
+                  onResize={width.resize}
+                  onCommit={width.commit}
+                />
+              )}
+              <BaseDrawer.Content className="flex min-h-0 flex-1 flex-col">
+                <header data-panel="header" className={PANEL_HEADER}>
+                  {tag !== undefined && <span className={PANEL_TAG}>{tag}</span>}
+                  <SheetTitle className={PANEL_TITLE}>{title}</SheetTitle>
+                  <div className="flex shrink-0 items-center gap-1">
+                    {actions}
+                    {actions !== undefined && actions !== null && (
+                      <span aria-hidden="true" className={PANEL_DIVIDER} />
+                    )}
+                    <SheetClose data-panel="close" />
+                  </div>
+                </header>
+                {/* A native scroll, so the sheet renders only its own slots. */}
+                <div
+                  data-panel="body"
+                  className={cn(PANEL_BODY, 'flex flex-col gap-4 overflow-y-auto')}
+                >
+                  {children}
+                </div>
+                {footer !== undefined && footer !== null && footer !== false && (
+                  <div data-panel="footer" className={PANEL_FOOTER}>
+                    {footer}
+                  </div>
+                )}
+              </BaseDrawer.Content>
+            </BaseDrawer.Popup>
+          </BaseDrawer.Viewport>
+        </BaseDrawer.Portal>
+      </KeyboardAware>
     </ControlScopeProvider>
+  )
+}
+
+/**
+ * A bottom sheet's form fields lift above the software keyboard: Base UI scrolls the body to the
+ * focused field and keeps the footer clear of the keyboard. A right sheet needs none.
+ */
+function KeyboardAware({
+  enabled,
+  children,
+}: {
+  enabled: boolean
+  children: ReactNode
+}): ReactElement {
+  return enabled ? (
+    <BaseDrawer.VirtualKeyboardProvider>{children}</BaseDrawer.VirtualKeyboardProvider>
+  ) : (
+    <>{children}</>
+  )
+}
+
+/** The pill on a bottom sheet's top edge: it says the panel drags, and it is a drag handle in itself. */
+function SheetGrabber(): ReactElement {
+  return (
+    <div
+      data-slot="sheet-grabber"
+      aria-hidden="true"
+      className="flex h-6 shrink-0 touch-none items-end justify-center pb-1"
+    >
+      <span className="h-1 w-9 rounded-full bg-line" />
+    </div>
   )
 }
 

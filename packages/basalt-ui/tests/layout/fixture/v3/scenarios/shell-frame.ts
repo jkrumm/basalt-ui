@@ -31,7 +31,16 @@ export type ShellFrameSpec = FixtureSpec & {
     /** The presentation the peek's kind starts in, as the device would remember it (default `peek`). */
     present?: 'peek' | 'window' | 'page'
     /** Mounts an open `Sheet` (`placement="auto"`: the right edge from 840 px). */
-    sheet?: boolean
+    sheet?:
+      | boolean
+      | {
+          /** A text field (`field-sheet`), a long body and a footer button in the sheet. */
+          form?: boolean
+          /** The sheet's `snapPoints`. */
+          snapPoints?: readonly ('half' | 'full')[]
+        }
+    /** A text field (`field-page`) in the page body, under the table. */
+    pageField?: boolean
     /**
      * Mounts a `Dock` (a long body). `true` starts it open; `'toggle'` starts it closed and draws a
      * `[data-testid="dock-toggle"]` button in the page that opens and closes it, for the reflow's motion.

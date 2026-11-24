@@ -49,7 +49,10 @@ const BODY =
   'min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-color:var(--basalt-line)_transparent] [scrollbar-gutter:stable_both-edges] [scrollbar-width:thin]'
 
 /** A `menu` surface sits above the bar: the bar's own height (48 + its 1 px seam) plus the inset. */
-const LIFT = 'mb-[calc(--spacing(12)+1px+env(safe-area-inset-bottom))] rounded-card'
+const LIFT = 'mb-[calc(--spacing(12)+1px+env(safe-area-inset-bottom))] rounded-card pb-0'
+
+/** A surface of the bar stays shorter than a general `Sheet` (90dvh): the page stays in view behind it. */
+const CAP = 'max-h-[min(72dvh,560px)]'
 
 /** What a custom block's `render` receives: a phone, in a sheet that never exceeds 560 px. */
 const BLOCK_BOX = { height: 560, sizeClass: 'compact' } as const
@@ -63,23 +66,20 @@ type PanelProps = {
 }
 
 /**
- * One panel. `ui/sheet` pads its popup, so the slot element pulls out to the popup's edge (`-mx-4
- * -mb-4`) and owns the inset itself: the sheet is then flush to the viewport floor and the
- * safe-area inset is the one gap under the last row.
+ * One panel. `ui/sheet` pads its body, so the slot element pulls out to the popup's edge (`-mx-4
+ * -mb-4`); the popup keeps the safe-area inset below it as the one gap under the last row (a
+ * `menu` floats above the bar, which owns the inset, so it drops the popup's).
  */
 function Panel({ open, onOpenChange, title, variant, children }: PanelProps): ReactElement {
   return (
     <Sheet open={open} onOpenChange={onOpenChange} placement="bottom">
-      <SheetContent title={title} className={variant === 'menu' ? LIFT : ''}>
+      <SheetContent title={title} className={cn(CAP, variant === 'menu' && LIFT)}>
         {variant === 'menu' ? (
           <div data-slot="shell-menu" className={cn(BODY, '-mx-4 -mb-4')}>
             {children}
           </div>
         ) : (
-          <div
-            data-slot="shell-sheet"
-            className="-mx-4 -mb-4 flex min-h-0 flex-1 flex-col pb-[env(safe-area-inset-bottom)]"
-          >
+          <div data-slot="shell-sheet" className="-mx-4 -mb-4 flex min-h-0 flex-1 flex-col">
             <div data-slot="shell-sheet-body" className={BODY}>
               {children}
             </div>

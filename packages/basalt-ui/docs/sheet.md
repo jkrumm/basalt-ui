@@ -4,7 +4,7 @@ use when: 'a record is edited or inspected beside the page and the page behind s
 never when: 'the question is a yes or no (use `Dialog`, or `AlertDialog` for a destructive confirm)'
 subpath: basalt-ui/ui/sheet
 peers: ['@base-ui/react']
-slots: [sheet-trigger, sheet-content, sheet-title, sheet-close]
+slots: [sheet-trigger, sheet-content, sheet-grabber, sheet-title, sheet-close]
 ---
 
 # Sheet
@@ -33,6 +33,7 @@ field (a `SheetTrigger` cannot name a record), a boolean-bound one also by its t
 Sheet(props: SheetProps): ReactElement
   // either state or neither
   placement?: Placement  // The edge it opens from
+  snapPoints?: readonly SheetSnap[]  // Where a bottom sheet rests besides its content height, smallest first: `['half', 'full']` opens at half the viewport and drags to 90 %; a drag down from the lowest point dismisses
   state?: SheetState  // Open while the handle is `true` (boolean) or non-empty (string); closing calls `clear()`
   open?: never
   defaultOpen?: never
@@ -95,5 +96,6 @@ Part `sheet-content`.
 
 - `sheet-trigger`
 - `sheet-content`
+- `sheet-grabber`
 - `sheet-title`
 - `sheet-close`
