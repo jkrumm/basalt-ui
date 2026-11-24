@@ -80,7 +80,7 @@ props extend and `src/surfaces.ts` stays the SSOT for real subpaths.
 ## Layering: UI vs headless
 
 - `src/charts/**` and `src/tokens/**` import no UI framework. The chart engine is
-  `@tanstack/charts` `1.5.0` (+ `d3-scale` `4.0.2`, exact optional peers, subpath-required for
+  `@tanstack/charts` `~1.5.0` (+ `d3-scale` `^4.0.2`, optional peers, subpath-required for
   `./charts`); `@visx/*` is banned everywhere. `src/charts/**` imports only `@tanstack/charts/*`,
   `d3-scale`, `react`, `../tokens`, `../format/{shared,number}` and `../common`. `@visx/*` is banned
   in basalt's own source and `@tanstack/charts/react` stays inside `src/charts/host.tsx`, the single
