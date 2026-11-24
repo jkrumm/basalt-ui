@@ -33,7 +33,7 @@ export default {
       need: { light: '#4a4a4a', dark: '#c4c4c4' },
       limit: { light: '#6b6b6b', dark: '#a8a8a8' },
     },
-    /** Model router (the `/kit/bar-list-series` page; the expression app's n41 keeps its own copy): one ink step per model in the chart and the list; the accent is not a model colour. */
+    /** Model router (the `/kit/bar-list-series` page; the expression app's n41 keeps its own copy): one ink step per model in the chart and the list; the accent is not a model color. */
     served: {
       atlasLarge: { light: '#262626', dark: '#ececec' },
       atlasFast: { light: '#5c5c5c', dark: '#c4c4c4' },

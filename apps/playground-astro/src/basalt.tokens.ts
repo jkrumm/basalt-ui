@@ -1,5 +1,5 @@
-// The Astro playground's series colours, authored once; the pairs match the Vite playground's `demo` group
-// (apps/playground/src/basalt.tokens.ts). This is the one file that writes raw colour: a pair is `{ light, dark }`.
+// The Astro playground's series colors, authored once; the pairs match the Vite playground's `demo` group
+// (apps/playground/src/basalt.tokens.ts). This is the one file that writes raw color: a pair is `{ light, dark }`.
 // oxlint-disable-next-line import/no-default-export -- `tokens:css --extra` reads the file's default export
 export default {
   series: {

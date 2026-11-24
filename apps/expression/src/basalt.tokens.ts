@@ -235,7 +235,7 @@ export default {
       dew: { light: '#a3a3a3', dark: '#757575' },
       limit: { light: '#4a4a4a', dark: '#c4c4c4' },
     },
-    /** Model router (scenario expr-n41): one ink step per model in the chart and the list; the accent is not a model colour. */
+    /** Model router (scenario expr-n41): one ink step per model in the chart and the list; the accent is not a model color. */
     served: {
       atlasLarge: { light: '#262626', dark: '#ececec' },
       atlasFast: { light: '#5c5c5c', dark: '#c4c4c4' },
