@@ -52,3 +52,7 @@ apps/playground/src/tokens.css
 apps/playground/src/basalt.tokens.css.d.ts
 apps/expression/src/tokens.css
 apps/expression/src/basalt.tokens.css.d.ts
+
+# CONTRACT.md holds blocks written by packages/basalt-ui/scripts/gen-contract.ts; gen-contract.test.ts
+# pins them byte for byte, so oxfmt must not re-pad their tables.
+docs/v3/CONTRACT.md

@@ -1,5 +1,7 @@
 # Basalt UI v3: architecture contract
 
+> **History, 2026-11-24.** This is the record of how the 3.0 design was decided, not a description of the tree: it says tsdown and `isolatedDeclarations` where the build is tsup and tsc, and its tables went stale as the freeze wave landed. `docs/v3/CONTRACT.md` is the binding contract, checked against the tree by `packages/basalt-ui/scripts/gen-contract.test.ts`. Nothing reads this file.
+
 Date 2026-11-09. Binding for every domain concept; changed only by a row titled "Contract amendment". Inputs: `BRIEF.md`, `DISCOVERY-DIGEST.md`, `panel/arch-{slim,consumer,agent-proof}.md`, three judge verdicts (section 13). Tags: **F** run or read (cited), **J** judgement, **U** unverified. Slugs as in the digest; gates G0-G5 as gap-migration 3.1. **DPO** = DEFAULT-PENDING-OWNER, numbered as digest section 5, register in section 12. This document authorises no release. Until the doctrine commits land (gap-repo P0-4), the "no majors" doctrine in `AGENTS.md` and `MAINTAINING.md` stands; DPO 2 names the deliberate change. At the v3 cut this contract replaces `docs/V2-SPEC.md` in the precedence chain. Integrated 2026-11-09: every change to the text below is a row in section 14; `DIRECTION.md` is the owner's summary.
 
 ## 0. Position

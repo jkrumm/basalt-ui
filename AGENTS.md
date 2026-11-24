@@ -15,7 +15,7 @@ CSS theme into the framework above. The old `./css` and `./starlight` Tailwind e
 ## Precedence (this repo)
 
 Shipped rules in `/.claude/rules/` (when dogfooded) > `packages/basalt-ui/MAINTAINING.md` > this file >
-`docs/v3/ARCHITECTURE.md` and its concepts > `docs/DESIGN-CORE.md`. When two disagree, fix the lower one
+`docs/v3/CONTRACT.md` and the concepts it names > `docs/DESIGN-CORE.md`. When two disagree, fix the lower one
 to match, or update both deliberately.
 The consumer-side chain is a different stack, stated in its own terms by
 `packages/basalt-ui/agent/templates/AGENTS-block.md.tpl` (`consumer DESIGN.md > the five shipped
@@ -50,14 +50,14 @@ Before changing anything under `packages/basalt-ui/`, Read `packages/basalt-ui/A
 - **Exports**: named only, **no default exports**
 - **Files**: `kebab-case.ts`; components `PascalCase.tsx`
 - **basalt-ui is ALWAYS a separate commit** (NPM published — lefthook `isolated-basalt-ui` guard)
-- **Published subpaths**: `./query`, `./connectivity` and `./data` were dropped or folded in 1.29.0; symbol-level mapping in `packages/basalt-ui/MIGRATING.md` § 2.x to 3.0, history in `docs/repo-reference.md`.
+- **Published subpaths**: `./query` and `./connectivity` were dropped in 1.29.0 and `./data` was rebuilt in v3 (a live export); the list is `docs/v3/CONTRACT.md` § 2; symbol-level mapping in `packages/basalt-ui/MIGRATING.md` § 2.x to 3.0, history in `docs/repo-reference.md`.
 - **Content pages**: a page that is content (docs, marketing, guide, README-like) is Astro with MDX on the `basalt-ui/static` parts and the `--basalt-*` tokens, so one token set serves app and site. A Spec that proposes another stack names why `basalt-ui/static` does not fit.
 
 ## Charts
 
 Every cartesian chart composes **`CartesianChart`** (the kinds are `CartesianChart` with fixed marks).
 Engine `@tanstack/charts` behind one host; `no-restricted-imports` overrides (`gen-oxlint.ts`) ban `@visx/*` and
-the engine's react entry outside `src/charts/host.tsx`. Ground truth: `docs/v3/ARCHITECTURE.md`.
+the engine's react entry outside `src/charts/host.tsx`. Ground truth: `docs/v3/CONTRACT.md`.
 
 ## Layer Boundary
 
@@ -75,7 +75,7 @@ bun install                # install all workspaces
 bun run dev                # = dev:playground
 bun run dev:playground     # start the playground consumer
 bun run dev:expression     # start the expression scenarios app
-bun run lint               # oxlint: the repo on the 2.x config, then apps/playground and apps/expression on the v3 app preset (0 findings; loads basalt-ui/lint from dist, so build first)
+bun run lint               # oxlint: the repo's own config, then apps/playground, apps/expression and the shipped blocks on the v3 app preset (0 findings; loads basalt-ui/lint from dist, so build first)
 bun run fmt                # oxfmt (write)
 bun run fmt:check          # oxfmt (check only)
 bun run typecheck          # tsc across package + playground + expression, astro check on marketing (see the dist footgun below)
