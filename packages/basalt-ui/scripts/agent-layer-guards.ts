@@ -53,7 +53,7 @@ export const NON_EXPORT_NAMES: ReadonlyMap<string, string> = new Map<string, str
   ]),
   ...['Stack', 'Group', 'Flex', 'Center', 'Text', 'SimpleGrid'].map((name): [string, string] => [
     name,
-    'Mantine (the 2.x layout names the codemod rewrites)',
+    'a 2.x layout name the migrate codemod rewrites',
   ]),
 ])
 
