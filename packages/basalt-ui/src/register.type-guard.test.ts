@@ -1,8 +1,8 @@
 /**
  * Compile-time regression guards for `register.ts` — absorbed from two of the playground's five
  * non-router type-guard fixtures (audit E §7): `asyncstate-fourth-variant.type-guard.ts` (J.4) and
- * `register-augments-nothing.type-guard.ts` (J.1). `register-augments-all.type-guard.ts` (J.2)
- * stays in the app — it needs a REAL `declare module 'basalt-ui' { interface BasaltRegister }`
+ * `register-augments-nothing.type-guard.ts` (J.1). `register-augments-all.type-guard.ts` (J.2, the
+ * `notifications` slot) stays in the app — it needs a REAL `declare module 'basalt-ui' { interface BasaltRegister }`
  * augmentation resolving through the package's own name, which nothing else in this package's own
  * test suite does (every internal test imports relatively, never as `from 'basalt-ui'`).
  */

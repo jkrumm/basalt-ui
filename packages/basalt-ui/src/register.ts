@@ -12,7 +12,7 @@
  * The one augmentable seam — TanStack Router/Query's `interface Register {}` applied to the whole
  * app shape. Declaration-merge your truth ONCE per concern, in that concern's own file. Every slot
  * is optional and defaults to a never-keyed empty type; an app that augments nothing pays zero cost.
- * The slots are `commands`, `overlays` and `notifications`. There is no series slot: a chart
+ * The slot read today is `notifications`. There is no series slot: a chart
  * series `key` is the data's own name, and its colour is the pair from the app's series file.
  *
  * @example
@@ -34,8 +34,7 @@ export interface BasaltRegister {}
  *
  * `infer S extends Constraint` is a BOUND-CHECK, not a cast — an ill-typed augment falls through
  * to `{}` rather than poisoning the union. This ONE generic is the frozen mechanism every battery
- * slot instantiates against. The `commands`, `overlays`, and `notifications` slots ship and have
- * concrete instantiations (define-commands.ts, define-overlays.ts, core/notify.ts).
+ * slot instantiates against. The slot basalt reads today is `notifications` (core/notify.ts).
  *
  * **Indexed-access form, not a mapped-type structural match (C5 consolidation)** — this used to
  * read `BasaltRegister extends { [P in K]: infer S extends Constraint } ? S : {}`, which forces
