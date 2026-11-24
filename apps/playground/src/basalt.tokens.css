@@ -1,2 +1,75 @@
 /* @generated basalt-ui — do not edit; regenerate with the command on the next line */
 /* basalt-ui 2.29.0 — `basalt-ui tokens:css --extra src/basalt.tokens.ts --out src/basalt.tokens.css` */
+:root,
+:root[data-theme='light'] {
+  --basalt-demo-sessions: #2871c7;
+  --basalt-demo-signups: #10781c;
+  --basalt-demo-revenue: #c07e3c;
+  --basalt-demo-churn: #af293e;
+  --basalt-calendar-meeting: #2871c7;
+  --basalt-calendar-focus: #4a4a4a;
+  --basalt-calendar-personal: #9a9a9a;
+  --basalt-calendar-declined: #9a9a9a;
+  --basalt-bar-tide: #262626;
+  --basalt-bar-swell: #7a7a7a;
+  --basalt-bar-need: #4a4a4a;
+  --basalt-bar-limit: #6b6b6b;
+  --basalt-served-atlasLarge: #262626;
+  --basalt-served-atlasFast: #5c5c5c;
+  --basalt-served-novaCode: #858585;
+  --basalt-served-lumenEmbed: #adadad;
+  --basalt-served-lumenLite: #d6d6d6;
+  --basalt-fleet6-succeeded: #6b6b6b;
+  --basalt-fleet6-rolledBack: #c07e3c;
+  --basalt-fleet6-failed: #af293e;
+}
+@media not print {
+  :root[data-theme='dark'] {
+    --basalt-demo-sessions: #5190f7;
+    --basalt-demo-signups: #65d289;
+    --basalt-demo-revenue: #f9a13d;
+    --basalt-demo-churn: #e46360;
+    --basalt-calendar-meeting: #5190f7;
+    --basalt-calendar-focus: #c4c4c4;
+    --basalt-calendar-personal: #7d7d7d;
+    --basalt-calendar-declined: #7d7d7d;
+    --basalt-bar-tide: #e6e6e6;
+    --basalt-bar-swell: #9c9c9c;
+    --basalt-bar-need: #c4c4c4;
+    --basalt-bar-limit: #a8a8a8;
+    --basalt-served-atlasLarge: #ececec;
+    --basalt-served-atlasFast: #c4c4c4;
+    --basalt-served-novaCode: #9a9a9a;
+    --basalt-served-lumenEmbed: #737373;
+    --basalt-served-lumenLite: #4a4a4a;
+    --basalt-fleet6-succeeded: #a8a8a8;
+    --basalt-fleet6-rolledBack: #f9a13d;
+    --basalt-fleet6-failed: #e46360;
+  }
+}
+@media not print {
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) {
+      --basalt-demo-sessions: #5190f7;
+      --basalt-demo-signups: #65d289;
+      --basalt-demo-revenue: #f9a13d;
+      --basalt-demo-churn: #e46360;
+      --basalt-calendar-meeting: #5190f7;
+      --basalt-calendar-focus: #c4c4c4;
+      --basalt-calendar-personal: #7d7d7d;
+      --basalt-calendar-declined: #7d7d7d;
+      --basalt-bar-tide: #e6e6e6;
+      --basalt-bar-swell: #9c9c9c;
+      --basalt-bar-need: #c4c4c4;
+      --basalt-bar-limit: #a8a8a8;
+      --basalt-served-atlasLarge: #ececec;
+      --basalt-served-atlasFast: #c4c4c4;
+      --basalt-served-novaCode: #9a9a9a;
+      --basalt-served-lumenEmbed: #737373;
+      --basalt-served-lumenLite: #4a4a4a;
+      --basalt-fleet6-succeeded: #a8a8a8;
+      --basalt-fleet6-rolledBack: #f9a13d;
+      --basalt-fleet6-failed: #e46360;
+    }
+  }
+}
