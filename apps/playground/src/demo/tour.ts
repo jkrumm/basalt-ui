@@ -6,7 +6,7 @@ export type TourStop = { line: string; parts: string }
 
 export const TOUR: Readonly<Record<string, TourStop>> = {
   shell: {
-    line: 'One nav declaration drives the rail, the tab bar, the breadcrumb and the title.',
+    line: 'One nav declaration drives the rail, the phone section bar, the breadcrumb and the title.',
     parts: 'AppShell, defineNav, CommandPalette, PageAside',
   },
   'ref-parts': {
@@ -50,7 +50,7 @@ export const TOUR: Readonly<Record<string, TourStop>> = {
     parts: 'shotState, EmptyState, ConnectionIndicator, RefreshButton, OverlayHost, StepRail',
   },
   phone: {
-    line: 'Every stop at 390 wide: four tabs and More. This page switches the phone nav variants.',
-    parts: 'the tab bar, More, the phone nav variants',
+    line: 'Every stop at 390 wide: one slot per nav section, a short drawer per tap, More for the sidebar.',
+    parts: 'the section bar, its drawer, More, the keyboard inset',
   },
 }
