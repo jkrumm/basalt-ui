@@ -1,0 +1,25 @@
+---
+// The post list recipe: the collection in its series order, one `SitePostList`.
+import { getCollection } from 'astro:content'
+import { SitePostList } from 'basalt-ui/static'
+import Layout from '../../layouts/Layout.astro'
+import { LABELS, readingMinutes } from '../../lib/site'
+
+const guides = (await getCollection('guides')).toSorted((a, b) => a.data.order - b.data.order)
+---
+
+<Layout title="Guides | Basalt UI" description="How to build content sites with basalt-ui: static parts, MDX and islands.">
+  <div class="mx-auto max-w-3xl px-4 py-10 @regular:px-6 @wide:py-14">
+    <h1 class="mb-8 font-head text-display font-semibold text-balance">{LABELS.guides}</h1>
+    <SitePostList
+      label={LABELS.guides}
+      posts={guides.map((g) => ({
+        href: `/guides/${g.id}`,
+        title: g.data.title,
+        description: g.data.description,
+        date: g.data.date,
+        meta: `${readingMinutes(g.body)} min read`,
+      }))}
+    />
+  </div>
+</Layout>

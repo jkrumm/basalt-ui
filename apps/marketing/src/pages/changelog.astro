@@ -1,0 +1,13 @@
+---
+// The changelog recipe: releases as rows, one `SiteChangelog`; here they are read from the package's CHANGELOG.md.
+import { SiteChangelog } from 'basalt-ui/static'
+import Layout from '../layouts/Layout.astro'
+import { releases } from '../lib/changelog'
+---
+
+<Layout title="Changelog | Basalt UI" description="What changed in each basalt-ui release.">
+  <div class="mx-auto max-w-4xl px-4 py-10 @regular:px-6 @wide:py-14">
+    <h1 class="mb-8 font-head text-display font-semibold text-balance">Changelog</h1>
+    <SiteChangelog releases={releases(3)} />
+  </div>
+</Layout>

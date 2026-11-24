@@ -9,7 +9,7 @@
   "managed": {
     "repo:.claude/rules/basalt-v3-site.md": "0063434b28689ded709db1fa2e26b8e1668eb0b52996e600a64c7422d3c11b6d",
     "repo:.claude/rules/basalt-v3-tokens.md": "cb1b71b9f23fd9b1d973bb4748c1f68ccdbc0e2a80eefc0e5cfd401d02203a9f",
-    "repo:.claude/skills/basalt-v3-site/SKILL.md": "59cac0bb855fb823e3260389fbcc229818339d0398ab0fd6472c9a841034eac3"
+    "repo:.claude/skills/basalt-v3-site/SKILL.md": "bf79988fd9d52ecffa64301189849c017508586841d097cbdce8a269da866093"
   },
   "deepRender": [],
   "authoredContent": [],

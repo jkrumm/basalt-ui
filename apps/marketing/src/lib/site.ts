@@ -51,6 +51,7 @@ export const NAV: readonly SiteNavItem[] = [
     ],
   },
   { href: "/charts", label: "Charts" },
+  { href: "/changelog", label: "Changelog" },
 ];
 
 export const FOOTER: readonly SiteLinkGroup[] = [
@@ -73,6 +74,8 @@ export const FOOTER: readonly SiteLinkGroup[] = [
   {
     title: "Project",
     links: [
+      { href: "/guides", label: "Guides" },
+      { href: "/changelog", label: "Changelog" },
       { href: "https://github.com/jkrumm/basalt-ui", label: "GitHub" },
       { href: "https://www.npmjs.com/package/basalt-ui", label: "npm" },
     ],
@@ -88,12 +91,22 @@ export const LABELS = {
   copy: "Copy code",
   copied: "Copied",
   toc: "On this page",
+  guides: "Guides",
   pages: "Pages",
   previous: "Previous",
   next: "Next",
   yes: "Yes",
   no: "No",
 } as const;
+
+/** Whole minutes to read `body` at 200 words a minute, at least one. */
+export function readingMinutes(body: string | undefined): number {
+  return Math.max(1, Math.round((body ?? "").split(/\s+/).filter(Boolean).length / 200));
+}
+
+/** A day as a reader writes it: UTC, so the build host's zone never moves it. */
+export const day = (date: Date): string =>
+  new Intl.DateTimeFormat("en", { dateStyle: "medium", timeZone: "UTC" }).format(date);
 
 /** Marks the link or menu entry of the page being rendered. */
 export function current(items: readonly SiteNavItem[], path: string): SiteNavItem[] {

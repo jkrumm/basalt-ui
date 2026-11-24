@@ -86,7 +86,11 @@ function measurePage(file: string): PageNumbers & { modules: Set<string>; island
   for (const entry of [...srcs.map(fileOf), ...rendererChunks]) closure(entry, runtime);
   const modules = new Set<string>(runtime);
   for (const entry of islandChunks) closure(entry, modules);
-  const inline = [...html.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>/g)]
+  const inline = [
+    ...html.matchAll(
+      /<script(?![^>]*(?:src=|type="application\/ld\+json"))[^>]*>([\s\S]*?)<\/script>/g,
+    ),
+  ]
     .map((m) => m[1] ?? "")
     .join(";");
   const css = [...html.matchAll(/<link[^>]*rel="stylesheet"[^>]*href="([^"]+)"/g)].map((m) =>
