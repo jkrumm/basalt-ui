@@ -87,9 +87,25 @@ type TableDisplay = {
   rowHeight?: 'compact' | 'default' | 'comfortable' // the body's density row
   groupBy?: string | null // a reader's grouping, null for none; absent: the declared group
   aggregates?: Readonly<Record<string, Aggregate | 'none'>> // a reader's footer summary per column
-  layout?: TableLayout // how the view draws its rows; absent or not offered: 'table'
+  layout?: string // the id of the layout the view draws; absent or not offered: 'table' (a dev warning names it)
 }
-type TableLayout = 'table' | 'list' | 'board' | 'gallery'
+type BuiltinLayout = 'table' | 'list' | 'board' | 'gallery'
+// An app's own layout: the toggle, + View and a saved view name it by id; the table keeps the bulk
+// bar, pager, detail host and phase frames around what render draws.
+type TableLayoutSpec<T> = {
+  id: string
+  label: string
+  hint?: string
+  icon: IconComponent
+  render(view: TableLayoutView<T>): ReactNode
+}
+type TableLayoutView<T> = {
+  rows: readonly T[]
+  rowId(row: T): string
+  open(row: T): void
+  activeId: string | undefined
+  table: DataTableInstance<T>
+}
 type TableState = { v: 1; request: TableRequest; display: TableDisplay }
 
 type Mode =
@@ -140,7 +156,7 @@ type UseDataTable<T> = {
   resetOn?: readonly unknown[]
   look?: 'reading' | 'grid'
   rowHeight?: 'compact' | 'default' | 'comfortable' // the declared step; absent: the app's density
-  layouts?: readonly TableLayout[] // what a reader may pick; default ['table'], board needs client mode and a c.select
+  layouts?: readonly (BuiltinLayout | TableLayoutSpec<T>)[] // what a reader may pick; default ['table'], board needs client mode and a c.select
   rowNumbers?: boolean // a row-number column after the tick
   phone?: 'cards' | 'fields' | 'scroll' | 'columns'
   cardsBelow?: 'regular' | 'wide' | 'always'
