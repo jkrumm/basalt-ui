@@ -45,6 +45,10 @@ StatCard(props: StatCardProps): ReactElement
 
 `CardMenu`, `Delta`, `Empty`, `FootFacts`, `Phase`, `QueryStateLike`, `StatCardProps`, `Verdict` import from `basalt-ui/cards`: `import type { CardMenu, Delta, Empty, FootFacts, Phase, QueryStateLike, StatCardProps, Verdict } from 'basalt-ui/cards'`.
 
+`ControlsSlot` import from `basalt-ui/controls`: `import type { ControlsSlot } from 'basalt-ui/controls'`.
+
+`BoxSlot`, `IconComponent`, `NavTarget` import from `basalt-ui`: `import type { BoxSlot, IconComponent, NavTarget } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

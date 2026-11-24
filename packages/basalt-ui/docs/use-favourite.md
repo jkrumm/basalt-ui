@@ -24,6 +24,8 @@ useFavourite(input: FavouriteInput): { on: boolean; toggle: () => void; } | null
 
 `FavouriteInput` import from `basalt-ui/page`: `import type { FavouriteInput } from 'basalt-ui/page'`.
 
+`IconComponent`, `NavTarget` import from `basalt-ui`: `import type { IconComponent, NavTarget } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

@@ -36,6 +36,8 @@ Schedule<E extends ScheduleEvent>(props: ScheduleProps<E>): ReactElement
 
 `MiniMonthLike`, `Phase`, `QueryStateLike`, `ScheduleEvent`, `ScheduleProps` import from `basalt-ui/cards`: `import type { MiniMonthLike, Phase, QueryStateLike, ScheduleEvent, ScheduleProps } from 'basalt-ui/cards'`.
 
+`NavTarget` import from `basalt-ui`: `import type { NavTarget } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

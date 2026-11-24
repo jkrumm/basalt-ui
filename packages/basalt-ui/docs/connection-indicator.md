@@ -24,6 +24,8 @@ ConnectionIndicator({ connection, className, }: ConnectionIndicatorProps): React
   className?: string  // Layout only (`ml-auto`, `shrink-0`)
 ```
 
+`ConnectionView` import from `basalt-ui/data`: `import type { ConnectionView } from 'basalt-ui/data'`.
+
 `ConnectionIndicatorProps` import from `basalt-ui/page`: `import type { ConnectionIndicatorProps } from 'basalt-ui/page'`.
 
 ## Example

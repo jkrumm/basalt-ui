@@ -61,7 +61,9 @@ useDataTable<T, const F extends readonly unknown[] = readonly any[]>(options: Us
 
 `ControlHandle` import from `basalt-ui/router`: `import type { ControlHandle } from 'basalt-ui/router'`.
 
-`BulkAction`, `DataTableInstance`, `KindColumn`, `Mode`, `PageFilters`, `StateHandle`, `TableState`, `UseDataTable`, `ViewStore` import from `basalt-ui/table`: `import type { BulkAction, DataTableInstance, KindColumn, Mode, PageFilters, StateHandle, TableState, UseDataTable, ViewStore } from 'basalt-ui/table'`.
+`BulkAction`, `DataTableInstance`, `KindColumn`, `Mode`, `PageFilters`, `RowHeight`, `StateHandle`, `TableLayout`, `TableState`, `UseDataTable`, `ViewStore` import from `basalt-ui/table`: `import type { BulkAction, DataTableInstance, KindColumn, Mode, PageFilters, RowHeight, StateHandle, TableLayout, TableState, UseDataTable, ViewStore } from 'basalt-ui/table'`.
+
+`Box` import from `basalt-ui`: `import type { Box } from 'basalt-ui'`.
 
 ## Example
 

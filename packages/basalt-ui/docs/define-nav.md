@@ -17,6 +17,8 @@ Declares the whole navigation (sections, pinned items, mobile tuning) as one typ
 defineNav<const S extends ReadonlyArray<AnyNavSection>, const P extends ReadonlyArray<AnyNavItem> = [], const T extends ReadonlyArray<NavTabId<{ sections: S; pinned: P; }>> = []>(config: RegisteredOr<NavConfigInput<S, P, T>>): NavConfig<S, P, T>
 ```
 
+`NavConfig` import from `basalt-ui/router`: `import type { NavConfig } from 'basalt-ui/router'`.
+
 ## Example
 
 ```tsx

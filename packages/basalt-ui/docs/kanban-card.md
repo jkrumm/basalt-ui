@@ -31,6 +31,8 @@ KanbanCard<C extends string>(props: KanbanCardProps<C>): ReactElement
 
 `CardChip`, `ColumnRef`, `KanbanCardProps`, `MenuEntry`, `Move`, `Verdict` import from `basalt-ui/cards`: `import type { CardChip, ColumnRef, KanbanCardProps, MenuEntry, Move, Verdict } from 'basalt-ui/cards'`.
 
+`IconComponent`, `NavTarget` import from `basalt-ui`: `import type { IconComponent, NavTarget } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

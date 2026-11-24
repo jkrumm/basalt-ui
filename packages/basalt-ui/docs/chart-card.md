@@ -44,6 +44,10 @@ ChartCard(props: ChartCardProps): ReactElement
 
 `ChartCardProps`, `ChartFigure`, `ChartPane`, `Empty`, `FootFacts`, `LegendEntry` import from `basalt-ui/charts`: `import type { ChartCardProps, ChartFigure, ChartPane, Empty, FootFacts, LegendEntry } from 'basalt-ui/charts'`.
 
+`ControlsSlot` import from `basalt-ui/controls`: `import type { ControlsSlot } from 'basalt-ui/controls'`.
+
+`BoxSlot`, `IconComponent` import from `basalt-ui`: `import type { BoxSlot, IconComponent } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

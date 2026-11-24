@@ -26,6 +26,8 @@ CodeBlock({ lang, code, settled }: CodeBlockProps): ReactElement
   settled?: boolean
 ```
 
+`CodeBlockProps` import from `basalt-ui/content`: `import type { CodeBlockProps } from 'basalt-ui/content'`.
+
 ## Example
 
 ```tsx

@@ -28,6 +28,8 @@ DataTable<T, I = unknown>({ table, detail, height, virtual, focus, focusSeries, 
 
 `DataTableInstance`, `DataTableProps`, `Scrollport` import from `basalt-ui/table`: `import type { DataTableInstance, DataTableProps, Scrollport } from 'basalt-ui/table'`.
 
+`DetailHost`, `DragLike` import from `basalt-ui`: `import type { DetailHost, DragLike } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

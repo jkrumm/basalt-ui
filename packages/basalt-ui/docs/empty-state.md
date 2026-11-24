@@ -29,6 +29,8 @@ EmptyState(props: EmptyStateProps): ReactElement
 
 `CardAction` import from `basalt-ui/cards`: `import type { CardAction } from 'basalt-ui/cards'`.
 
+`IconComponent` import from `basalt-ui`: `import type { IconComponent } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

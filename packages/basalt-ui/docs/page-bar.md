@@ -34,7 +34,11 @@ PageBar<K extends string = string, L extends string = string>({ title, identity,
   actions?: readonly [PageAction?, PageAction?, PageAction?, PageAction?, PageAction?]  // At most 5, at most one `primary`, none required
 ```
 
-`FavouriteInput` import from `basalt-ui/page`: `import type { FavouriteInput } from 'basalt-ui/page'`.
+`ConnectionView` import from `basalt-ui/data`: `import type { ConnectionView } from 'basalt-ui/data'`.
+
+`FavouriteInput`, `PageAction`, `PageBarProps`, `PageIdentity`, `PageLayout`, `PageSearch`, `PageSettings`, `PageTabs` import from `basalt-ui/page`: `import type { FavouriteInput, PageAction, PageBarProps, PageIdentity, PageLayout, PageSearch, PageSettings, PageTabs } from 'basalt-ui/page'`.
+
+`NavTarget` import from `basalt-ui`: `import type { NavTarget } from 'basalt-ui'`.
 
 ## Example
 

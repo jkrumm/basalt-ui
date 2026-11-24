@@ -18,6 +18,8 @@ api.runs.put(v).then(unwrap)`.
 toSubmitErrors<V>(save: (value: V) => Promise<unknown>): ToSubmitErrors<V>
 ```
 
+`ToSubmitErrors` import from `basalt-ui/controls`: `import type { ToSubmitErrors } from 'basalt-ui/controls'`.
+
 ## Example
 
 ```tsx

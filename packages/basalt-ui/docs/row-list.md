@@ -36,6 +36,8 @@ RowList(props: RowListProps): ReactElement
 
 `Empty`, `Phase`, `QueryStateLike`, `RowListProps` import from `basalt-ui/cards`: `import type { Empty, Phase, QueryStateLike, RowListProps } from 'basalt-ui/cards'`.
 
+`IconComponent` import from `basalt-ui`: `import type { IconComponent } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

@@ -20,6 +20,8 @@ third-party (`external`) poll. Needs a client from `createQueryClient`.
 useConnection(): ConnectionView
 ```
 
+`ConnectionView` import from `basalt-ui/data`: `import type { ConnectionView } from 'basalt-ui/data'`.
+
 ## Example
 
 ```tsx

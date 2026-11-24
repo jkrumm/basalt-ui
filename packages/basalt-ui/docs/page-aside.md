@@ -26,6 +26,8 @@ PageAside(props: PageAsideProps): ReactElement | null
   children?: ReactNode
 ```
 
+`PageAsideProps` import from `basalt-ui/page`: `import type { PageAsideProps } from 'basalt-ui/page'`.
+
 `ControlHandle` import from `basalt-ui/router`: `import type { ControlHandle } from 'basalt-ui/router'`.
 
 ## Example

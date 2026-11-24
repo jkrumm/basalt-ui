@@ -28,7 +28,7 @@ spec<T>(handle: WidgetHandle<T>, label: string, options?: SpecOptions<T>): Filte
   scope: "widget"
 ```
 
-`FilterSpec` import from `basalt-ui/controls`: `import type { FilterSpec } from 'basalt-ui/controls'`.
+`FilterSpec`, `SpecOptions` import from `basalt-ui/controls`: `import type { FilterSpec, SpecOptions } from 'basalt-ui/controls'`.
 
 ## Example
 

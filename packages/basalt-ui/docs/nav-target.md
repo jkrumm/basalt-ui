@@ -19,6 +19,8 @@ target itself carries nothing a caller can read or build by hand.
 navTarget<const TOptions>(options: ValidateLinkOptions<RegisteredRouter, TOptions>): NavTarget
 ```
 
+`NavTarget` import from `basalt-ui`: `import type { NavTarget } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

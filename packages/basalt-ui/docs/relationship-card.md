@@ -31,6 +31,8 @@ RelationshipCard({ title, subtitle, avatar, href, linkLabel, facts, relation, st
 
 `RelationshipCardProps` import from `basalt-ui/cards`: `import type { RelationshipCardProps } from 'basalt-ui/cards'`.
 
+`NavTarget` import from `basalt-ui`: `import type { NavTarget } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

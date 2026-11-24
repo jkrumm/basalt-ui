@@ -22,7 +22,7 @@ several specs adds `Reset all`. No specs, nothing drawn. The slot keeps its spec
 filterSlot<Scope extends FilterScope>(specs: readonly FilterSpec<any, Scope>[], options?: FilterSlotOptions): ControlsSlot<Scope> & { readonly handles: readonly { readonly key: string; }[]; }
 ```
 
-`FilterSpec` import from `basalt-ui/controls`: `import type { FilterSpec } from 'basalt-ui/controls'`.
+`ControlsSlot`, `FilterScope`, `FilterSpec` import from `basalt-ui/controls`: `import type { ControlsSlot, FilterScope, FilterSpec } from 'basalt-ui/controls'`.
 
 ## Example
 

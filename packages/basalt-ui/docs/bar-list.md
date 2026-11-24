@@ -41,6 +41,8 @@ BarList<I = unknown>(props: BarListProps<I>): ReactElement
 
 `BarListProps`, `Empty`, `LegendEntry`, `Phase`, `QueryStateLike` import from `basalt-ui/cards`: `import type { BarListProps, Empty, LegendEntry, Phase, QueryStateLike } from 'basalt-ui/cards'`.
 
+`IconComponent` import from `basalt-ui`: `import type { IconComponent } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

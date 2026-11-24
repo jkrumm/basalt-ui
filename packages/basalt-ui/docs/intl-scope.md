@@ -23,6 +23,8 @@ IntlScope({ locale, timeZone, messages, children, }: BasaltIntlProps & { childre
   children?: ReactNode
 ```
 
+`BasaltIntlProps`, `BasaltMessages` import from `basalt-ui`: `import type { BasaltIntlProps, BasaltMessages } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

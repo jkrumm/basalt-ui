@@ -31,6 +31,10 @@ defineBlock<S extends StandardSchemaV1>(b: DefineBlockOptions<S>): Block<S>
   reserve?: number  // Escape rung: a layout block composing several composites; single composites own their phase heights
 ```
 
+`Block`, `DefineBlockOptions`, `Infer` import from `basalt-ui/ai`: `import type { Block, DefineBlockOptions, Infer } from 'basalt-ui/ai'`.
+
+`Box` import from `basalt-ui`: `import type { Box } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

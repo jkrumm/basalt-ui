@@ -30,6 +30,8 @@ FormConfirmRow({ label, description, icon, id, tone, confirmText, actionLabel, o
 
 `FormConfirmRowProps`, `SettingsRowTone` import from `basalt-ui/controls`: `import type { FormConfirmRowProps, SettingsRowTone } from 'basalt-ui/controls'`.
 
+`IconComponent` import from `basalt-ui`: `import type { IconComponent } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

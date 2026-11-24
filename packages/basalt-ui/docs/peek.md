@@ -39,6 +39,8 @@ Peek(props: PeekProps): ReactElement | null
 
 `FavouriteInput`, `PeekProps` import from `basalt-ui/page`: `import type { FavouriteInput, PeekProps } from 'basalt-ui/page'`.
 
+`IconComponent`, `NavTarget`, `RecordSequence` import from `basalt-ui`: `import type { IconComponent, NavTarget, RecordSequence } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx
