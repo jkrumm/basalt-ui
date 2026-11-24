@@ -270,14 +270,17 @@ export function installPeers(ctx: Ctx): void {
   const plan = peerPlan(ctx.pkgRoot, ctx.args.profile, !formatsWithPrettier(ctx.root))
   const own = readPackage(ctx.root)
   const have = { ...own?.dependencies, ...own?.devDependencies }
-  // Installed only where nothing meets the range: an exact declaration must sit in it, a ranged
-  // one is kept (doctor check 3 holds the installed version).
+  // Installed only where nothing meets the range: a declared version (or a range's floor) must sit
+  // in it. A scaffold dependency (the icon set) and a declaration that names no version (a tag, a
+  // workspace link) are the app's own and kept.
+  const scaffold = SCAFFOLD_DEPS[ctx.args.profile] ?? {}
   const met = (name: string, spec: string): boolean => {
     const declared = have[name]
     if (declared === undefined) return false
-    if (!/^\d+\.\d+\.\d+$/.test(spec) && plan.ranges[name] === spec) return true
+    if (name in scaffold) return true
     const version = /^[~^]?(\d+\.\d+\.\d+)$/.exec(declared)?.[1]
-    return version !== undefined && satisfiesRange(version, plan.ranges[name] ?? spec)
+    if (version === undefined) return !/^\d+\.\d+\.\d+$/.test(spec)
+    return satisfiesRange(version, plan.ranges[name] ?? spec)
   }
   const missing = (group: Record<string, string>): string[] =>
     Object.entries(group)
