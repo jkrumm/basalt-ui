@@ -339,6 +339,14 @@ export type FixtureSpec = {
   colorScheme?: 'light' | 'dark'
   /** Filler height in px above the `[data-testid="content-end"]` sentinel. */
   bodyHeight?: number
+  /** A trial phone nav (Issue 3205): `data-phone-nav` on `<html>`. Omitted: the shipped tab bar. */
+  phoneNav?: 'tray' | 'drawer'
+  /** `--shell-safe-bottom` on `<html>` in px: the home indicator a headless browser never has. */
+  safeBottom?: number
+  /** A text field (`data-testid="field"`) after the filler, for the keyboard checks. */
+  field?: true
+  /** Hands the shell a `search`, so a variant draws its search entry. */
+  search?: true
   /** Renders a `BasaltDataTable` above the filler. Omitted ⇒ no table in the tree. */
   table?: TableSpec
   /** Renders every Button size x variant with no / a left / a right section (`button-section`). */
