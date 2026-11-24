@@ -414,7 +414,7 @@ export const SURFACES = {
     layer: 'build-tooling',
     description:
       'basaltAstro() Astro integration — Tailwind 4, static.css on every page, the three faces through the Astro Fonts API and the head scripts; the site profile',
-    optionalPeers: ['@tailwindcss/vite', 'tailwindcss'],
+    optionalPeers: ['@astrojs/react', '@tailwindcss/vite', 'astro', 'tailwindcss'],
     forbiddenImports: [],
   },
 
