@@ -46,6 +46,15 @@ describe('selectLayout', () => {
     expect(selectLayout({ changed, tests }).files).toEqual([])
   })
 
+  test("a change under an app (the playground's or the expression app's scenarios) selects nothing", () => {
+    const changed = [
+      'apps/expression/src/scenarios/expr/n04/fixture.ts',
+      'apps/expression/src/routes/__root.tsx',
+      'apps/playground/src/routes/table.tsx',
+    ]
+    expect(selectLayout({ changed, tests }).files).toEqual([])
+  })
+
   test('a changed layout test runs itself and nothing else', () => {
     const file = `${L}/event-list.layout.test.ts`
     expect(selectLayout({ changed: [file], tests }).files).toEqual([file])

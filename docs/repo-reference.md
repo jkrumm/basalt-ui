@@ -41,6 +41,7 @@ Stack, structure, consolidation doctrine and principles. Read it when a change t
 basalt-ui/
 ├── packages/basalt-ui/    # the ONLY published package (npm: basalt-ui)
 ├── apps/playground/        # @basalt-ui/playground — workspace:* consumer, everyday iteration surface
+├── apps/expression/        # @basalt-ui/expression — the expression trial scenarios, a second consumer install
 ├── apps/marketing/         # basalt-ui.com — CONTENT-FROZEN until rebuilt on v3 post-migration
 └── AGENTS.md               # you are here — the only agent file (no CLAUDE.md anywhere: it would suppress this one)
 ```
@@ -48,6 +49,7 @@ basalt-ui/
 - `packages/basalt-ui` — the published framework. Maintainer invariants: `packages/basalt-ui/MAINTAINING.md` (repo only, not shipped).
 - `apps/playground` — the everyday iteration surface; grows as the package gains surface. Instant
   HMR, exact types, zero linking via `workspace:*`.
+- `apps/expression` — the expression cycles' trial scenarios (`docs/v3/EXPRESSION.md`) with their own shell and a searchable index; an `init --profile app` install like the playground, sharing no module with it.
 - `apps/marketing` — basalt-ui.com. Content-frozen until rebuilt on v3 post-migration; will
   vendor its own legacy CSS and stop depending on the package. Don't iterate on it for now.
 

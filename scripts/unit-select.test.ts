@@ -12,6 +12,7 @@ const tests = [
   S + '/charts/dim-floor.test.ts',
   S + '/ui/button.test.tsx',
   'apps/playground/src/budget.test.ts',
+  'apps/expression/src/scenarios/scenarios.test.ts',
 ]
 const texts = new Map<string, string>([
   [S + '/charts/dim-floor.test.ts', "readFileSync(join(dir, 'heatmap.tsx'))"],
@@ -41,6 +42,7 @@ describe('selectUnit', () => {
     const { mode, always } = pick([S + '/ui/button.tsx'])
     expect(mode).toBe('changed')
     expect(always).toEqual([
+      'apps/expression/src/scenarios/scenarios.test.ts',
       'apps/playground/src/budget.test.ts',
       'packages/basalt-ui/scripts/check-coverage.test.ts',
       S + '/styles.floor.test.ts',
@@ -76,6 +78,16 @@ describe('selectUnit', () => {
     expect(pick(['packages/basalt-ui/agent/rules/x.md']).always).toContain(apps)
     expect(pick(['docs/v3/x.md']).always).not.toContain(apps)
     expect(pick([S + '/ui/button.test.tsx']).always).not.toContain(apps)
+  })
+
+  test("the expression app's tests follow the same rule as the playground's", () => {
+    const expression = 'apps/expression/src/scenarios/scenarios.test.ts'
+    expect(isAlwaysOn(expression)).toBe(false)
+    expect(pick([S + '/ui/button.tsx']).always).toContain(expression)
+    // a change under apps/expression alone is bun's own --changed graph: no always-on file is added for it
+    expect(pick(['apps/expression/src/scenarios/expr/n04/fixture.ts']).always).not.toContain(
+      expression,
+    )
   })
 
   test('a short or index file name names nothing', () => {

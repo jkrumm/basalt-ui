@@ -1,0 +1,225 @@
+/**
+ * The scenario registry: `$name` → fixture. The route stays thin; a new scenario is one entry here.
+ * `mdx` is the compiled MDX page. A Map, so `/scenarios/constructor` is
+ * unknown rather than an inherited `Object` member.
+ */
+import type { ReactElement } from 'react'
+import { ExprC10Scenario } from './expr/c10/ExprC10'
+import { ExprC11Scenario } from './expr/c11/ExprC11'
+import { ExprC12Scenario } from './expr/c12/ExprC12'
+import { ExprC13Scenario } from './expr/c13/ExprC13'
+import { ExprC14Scenario } from './expr/c14/ExprC14'
+import { ExprC15Scenario } from './expr/c15/ExprC15'
+import { ExprN02Scenario } from './expr/n02/ExprN02'
+import { ExprN04Scenario } from './expr/n04/ExprN04'
+import { ExprN09Scenario } from './expr/n09/ExprN09'
+import { ExprN12Scenario } from './expr/n12/ExprN12'
+import { ExprN13Scenario } from './expr/n13/ExprN13'
+import { ExprN16Scenario } from './expr/n16/ExprN16'
+import { ExprN03Scenario } from './expr/n03/ExprN03'
+import { ExprN07Scenario } from './expr/n07/ExprN07'
+import { ExprN10Scenario } from './expr/n10/ExprN10'
+import { ExprN14Scenario } from './expr/n14/ExprN14'
+import { ExprN17Scenario } from './expr/n17/ExprN17'
+import { ExprN18Scenario } from './expr/n18/ExprN18'
+import { ExprC16Scenario } from './expr/c16/ExprC16'
+import { ExprN08Scenario } from './expr/n08/ExprN08'
+import { ExprN15Scenario } from './expr/n15/ExprN15'
+import { ExprN19Scenario } from './expr/n19/ExprN19'
+import { ExprN20Scenario } from './expr/n20/ExprN20'
+import { ExprN21Scenario } from './expr/n21/ExprN21'
+import { ExprN11Scenario } from './expr/n11/ExprN11'
+import { ExprN22Scenario } from './expr/n22/ExprN22'
+import { ExprN23Scenario } from './expr/n23/ExprN23'
+import { ExprN24Scenario } from './expr/n24/ExprN24'
+import { ExprN25Scenario } from './expr/n25/ExprN25'
+import { ExprN26Scenario } from './expr/n26/ExprN26'
+import { ExprN27Scenario } from './expr/n27/ExprN27'
+import { ExprN28Scenario } from './expr/n28/ExprN28'
+import { ExprN29Scenario } from './expr/n29/ExprN29'
+import { ExprN30Scenario } from './expr/n30/ExprN30'
+import { ExprN31Scenario } from './expr/n31/ExprN31'
+import { ExprN32Scenario } from './expr/n32/ExprN32'
+import { ExprN33Scenario } from './expr/n33/ExprN33'
+import { ExprN34Scenario } from './expr/n34/ExprN34'
+import { ExprN35Scenario } from './expr/n35/ExprN35'
+import { ExprN36Scenario } from './expr/n36/ExprN36'
+import { ExprN37Scenario } from './expr/n37/ExprN37'
+import { ExprN38Scenario } from './expr/n38/ExprN38'
+import { ExprN39Scenario } from './expr/n39/ExprN39'
+import { ExprN40Scenario } from './expr/n40/ExprN40'
+import { ExprN41Scenario } from './expr/n41/ExprN41'
+import { ExprN42Scenario } from './expr/n42/ExprN42'
+import { ExprN43Scenario } from './expr/n43/ExprN43'
+import { ExprN44Scenario } from './expr/n44/ExprN44'
+import { ExprN45Scenario } from './expr/n45/ExprN45'
+import { ExprN46Scenario } from './expr/n46/ExprN46'
+import { ExprN47Scenario } from './expr/n47/ExprN47'
+import { ExprN48Scenario } from './expr/n48/ExprN48'
+import { ExprN49Scenario } from './expr/n49/ExprN49'
+import { ExprN50Scenario } from './expr/n50/ExprN50'
+import { ExprN51Scenario } from './expr/n51/ExprN51'
+import { ExprN52Scenario } from './expr/n52/ExprN52'
+import { ExprN53Scenario } from './expr/n53/ExprN53'
+import { ExprN54Scenario } from './expr/n54/ExprN54'
+import { ExprN55Scenario } from './expr/n55/ExprN55'
+import { ExprN56Scenario } from './expr/n56/ExprN56'
+import { ExprN57Scenario } from './expr/n57/ExprN57'
+import { ExprN58Scenario } from './expr/n58/ExprN58'
+import { ExprN59Scenario } from './expr/n59/ExprN59'
+import { ExprN60Scenario } from './expr/n60/ExprN60'
+import { ExprN61Scenario } from './expr/n61/ExprN61'
+import { ExprN62Scenario } from './expr/n62/ExprN62'
+import { ExprN63Scenario } from './expr/n63/ExprN63'
+import { ExprN64Scenario } from './expr/n64/ExprN64'
+import { ExprN65Scenario } from './expr/n65/ExprN65'
+import { ExprN66Scenario } from './expr/n66/ExprN66'
+import { ExprN67Scenario } from './expr/n67/ExprN67'
+import { ExprN68Scenario } from './expr/n68/ExprN68'
+import { ExprN69Scenario } from './expr/n69/ExprN69'
+import { ExprN70Scenario } from './expr/n70/ExprN70'
+import { ExprN71Scenario } from './expr/n71/ExprN71'
+import { ExprN72Scenario } from './expr/n72/ExprN72'
+import { ExprN73Scenario } from './expr/n73/ExprN73'
+import { ExprN74Scenario } from './expr/n74/ExprN74'
+import { ExprN75Scenario } from './expr/n75/ExprN75'
+import { ExprN76Scenario } from './expr/n76/ExprN76'
+import { ExprN77Scenario } from './expr/n77/ExprN77'
+import { ExprN78Scenario } from './expr/n78/ExprN78'
+import { ExprN79Scenario } from './expr/n79/ExprN79'
+import { ExprN80Scenario } from './expr/n80/ExprN80'
+import { ExprN81Scenario } from './expr/n81/ExprN81'
+import { ExprN82Scenario } from './expr/n82/ExprN82'
+import { ExprN83Scenario } from './expr/n83/ExprN83'
+import { ExprN84Scenario } from './expr/n84/ExprN84'
+import { ExprN85Scenario } from './expr/n85/ExprN85'
+import { ExprN86Scenario } from './expr/n86/ExprN86'
+import { ExprN87Scenario } from './expr/n87/ExprN87'
+import { ExprN88Scenario } from './expr/n88/ExprN88'
+import { ExprN89Scenario } from './expr/n89/ExprN89'
+import { ExprN90Scenario } from './expr/n90/ExprN90'
+import { ExprN91Scenario } from './expr/n91/ExprN91'
+import { ExprN92Scenario } from './expr/n92/ExprN92'
+import { ExprN93Scenario } from './expr/n93/ExprN93'
+import { ExprN94Scenario } from './expr/n94/ExprN94'
+import { ExprN95Scenario } from './expr/n95/ExprN95'
+import { ExprN96Scenario } from './expr/n96/ExprN96'
+import { ExprN97Scenario } from './expr/n97/ExprN97'
+import { ExprN98Scenario } from './expr/n98/ExprN98'
+import type { ScenarioProps } from './shot-state'
+
+const RENDERERS = {
+  'expr-c10': (p) => <ExprC10Scenario {...p} />,
+  'expr-c11': (p) => <ExprC11Scenario {...p} />,
+  'expr-c12': (p) => <ExprC12Scenario {...p} />,
+  'expr-c13': (p) => <ExprC13Scenario {...p} />,
+  'expr-n02': (p) => <ExprN02Scenario {...p} />,
+  'expr-n12': (p) => <ExprN12Scenario {...p} />,
+  'expr-c14': (p) => <ExprC14Scenario {...p} />,
+  'expr-c15': (p) => <ExprC15Scenario {...p} />,
+  'expr-n04': (p) => <ExprN04Scenario {...p} />,
+  'expr-n09': (p) => <ExprN09Scenario {...p} />,
+  'expr-n13': (p) => <ExprN13Scenario {...p} />,
+  'expr-n16': (p) => <ExprN16Scenario {...p} />,
+  'expr-n03': (p) => <ExprN03Scenario {...p} />,
+  'expr-n07': (p) => <ExprN07Scenario {...p} />,
+  'expr-n10': (p) => <ExprN10Scenario {...p} />,
+  'expr-n14': (p) => <ExprN14Scenario {...p} />,
+  'expr-n17': (p) => <ExprN17Scenario {...p} />,
+  'expr-n18': (p) => <ExprN18Scenario {...p} />,
+  'expr-c16': (p) => <ExprC16Scenario {...p} />,
+  'expr-n08': (p) => <ExprN08Scenario {...p} />,
+  'expr-n15': (p) => <ExprN15Scenario {...p} />,
+  'expr-n19': (p) => <ExprN19Scenario {...p} />,
+  'expr-n20': (p) => <ExprN20Scenario {...p} />,
+  'expr-n21': (p) => <ExprN21Scenario {...p} />,
+  'expr-n11': (p) => <ExprN11Scenario {...p} />,
+  'expr-n22': (p) => <ExprN22Scenario {...p} />,
+  'expr-n23': (p) => <ExprN23Scenario {...p} />,
+  'expr-n24': (p) => <ExprN24Scenario {...p} />,
+  'expr-n25': (p) => <ExprN25Scenario {...p} />,
+  'expr-n26': (p) => <ExprN26Scenario {...p} />,
+  'expr-n27': (p) => <ExprN27Scenario {...p} />,
+  'expr-n28': (p) => <ExprN28Scenario {...p} />,
+  'expr-n29': (p) => <ExprN29Scenario {...p} />,
+  'expr-n30': (p) => <ExprN30Scenario {...p} />,
+  'expr-n31': (p) => <ExprN31Scenario {...p} />,
+  'expr-n32': (p) => <ExprN32Scenario {...p} />,
+  'expr-n33': (p) => <ExprN33Scenario {...p} />,
+  'expr-n34': (p) => <ExprN34Scenario {...p} />,
+  'expr-n35': (p) => <ExprN35Scenario {...p} />,
+  'expr-n36': (p) => <ExprN36Scenario {...p} />,
+  'expr-n37': (p) => <ExprN37Scenario {...p} />,
+  'expr-n38': (p) => <ExprN38Scenario {...p} />,
+  'expr-n39': (p) => <ExprN39Scenario {...p} />,
+  'expr-n40': (p) => <ExprN40Scenario {...p} />,
+  'expr-n41': (p) => <ExprN41Scenario {...p} />,
+  'expr-n42': (p) => <ExprN42Scenario {...p} />,
+  'expr-n43': (p) => <ExprN43Scenario {...p} />,
+  'expr-n44': (p) => <ExprN44Scenario {...p} />,
+  'expr-n45': (p) => <ExprN45Scenario {...p} />,
+  'expr-n46': (p) => <ExprN46Scenario {...p} />,
+  'expr-n47': (p) => <ExprN47Scenario {...p} />,
+  'expr-n48': (p) => <ExprN48Scenario {...p} />,
+  'expr-n49': (p) => <ExprN49Scenario {...p} />,
+  'expr-n50': (p) => <ExprN50Scenario {...p} />,
+  'expr-n51': (p) => <ExprN51Scenario {...p} />,
+  'expr-n52': (p) => <ExprN52Scenario {...p} />,
+  'expr-n53': (p) => <ExprN53Scenario {...p} />,
+  'expr-n54': (p) => <ExprN54Scenario {...p} />,
+  'expr-n55': (p) => <ExprN55Scenario {...p} />,
+  'expr-n56': (p) => <ExprN56Scenario {...p} />,
+  'expr-n57': (p) => <ExprN57Scenario {...p} />,
+  'expr-n58': (p) => <ExprN58Scenario {...p} />,
+  'expr-n59': (p) => <ExprN59Scenario {...p} />,
+  'expr-n60': (p) => <ExprN60Scenario {...p} />,
+  'expr-n61': (p) => <ExprN61Scenario {...p} />,
+  'expr-n62': (p) => <ExprN62Scenario {...p} />,
+  'expr-n63': (p) => <ExprN63Scenario {...p} />,
+  'expr-n64': (p) => <ExprN64Scenario {...p} />,
+  'expr-n65': (p) => <ExprN65Scenario {...p} />,
+  'expr-n66': (p) => <ExprN66Scenario {...p} />,
+  'expr-n67': (p) => <ExprN67Scenario {...p} />,
+  'expr-n68': (p) => <ExprN68Scenario {...p} />,
+  'expr-n69': (p) => <ExprN69Scenario {...p} />,
+  'expr-n70': (p) => <ExprN70Scenario {...p} />,
+  'expr-n71': (p) => <ExprN71Scenario {...p} />,
+  'expr-n72': (p) => <ExprN72Scenario {...p} />,
+  'expr-n73': (p) => <ExprN73Scenario {...p} />,
+  'expr-n74': (p) => <ExprN74Scenario {...p} />,
+  'expr-n75': (p) => <ExprN75Scenario {...p} />,
+  'expr-n76': (p) => <ExprN76Scenario {...p} />,
+  'expr-n77': (p) => <ExprN77Scenario {...p} />,
+  'expr-n78': (p) => <ExprN78Scenario {...p} />,
+  'expr-n79': (p) => <ExprN79Scenario {...p} />,
+  'expr-n80': (p) => <ExprN80Scenario {...p} />,
+  'expr-n81': (p) => <ExprN81Scenario {...p} />,
+  'expr-n82': (p) => <ExprN82Scenario {...p} />,
+  'expr-n83': (p) => <ExprN83Scenario {...p} />,
+  'expr-n84': (p) => <ExprN84Scenario {...p} />,
+  'expr-n85': (p) => <ExprN85Scenario {...p} />,
+  'expr-n86': (p) => <ExprN86Scenario {...p} />,
+  'expr-n87': (p) => <ExprN87Scenario {...p} />,
+  'expr-n88': (p) => <ExprN88Scenario {...p} />,
+  'expr-n89': (p) => <ExprN89Scenario {...p} />,
+  'expr-n90': (p) => <ExprN90Scenario {...p} />,
+  'expr-n91': (p) => <ExprN91Scenario {...p} />,
+  'expr-n92': (p) => <ExprN92Scenario {...p} />,
+  'expr-n93': (p) => <ExprN93Scenario {...p} />,
+  'expr-n94': (p) => <ExprN94Scenario {...p} />,
+  'expr-n95': (p) => <ExprN95Scenario {...p} />,
+  'expr-n96': (p) => <ExprN96Scenario {...p} />,
+  'expr-n97': (p) => <ExprN97Scenario {...p} />,
+  'expr-n98': (p) => <ExprN98Scenario {...p} />,
+} satisfies Record<string, (props: ScenarioProps) => ReactElement>
+
+/** Every registered id; `scenario-info.ts` types its entries against this. */
+export type ScenarioKey = keyof typeof RENDERERS
+
+const SCENARIOS = new Map<string, (props: ScenarioProps) => ReactElement>(Object.entries(RENDERERS))
+
+export const SCENARIO_NAMES: readonly string[] = [...SCENARIOS.keys()]
+
+/** The render function for `name`, or undefined when no scenario is registered under it. */
+export const findScenario = (name: string): ((props: ScenarioProps) => ReactElement) | undefined =>
+  SCENARIOS.get(name)

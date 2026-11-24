@@ -1,0 +1,74 @@
+{
+  "format": 1,
+  "profile": "app",
+  "version": "2.29.0",
+  "roots": {
+    ".": "app"
+  },
+  "ejected": {},
+  "managed": {
+    ".claude/agents/basalt-design-reviewer.md": "79c027fbd3abf41be294714b4707cac28aacfa1c5e3b794be094ee1a584320f4",
+    "repo:.claude/rules/basalt-v3-expression-charts.md": "2c79dc65b74eefad8e4ef37f9cc6d279d007fe9a57baded7c163fc5a021bde8b",
+    "repo:.claude/rules/basalt-v3-expression-page.md": "bc5b3ede207213feb048617368eda657e889ddc9851ed38cfa6692507e1207f1",
+    "repo:.claude/rules/basalt-v3-expression-state.md": "b9f5e9933fb361b927c84837f0d8b9459ad544bfdae84030b99e67fc36d62147",
+    "repo:.claude/rules/basalt-v3-expression-tokens.md": "bceabf038901e850db5dbeabd2e068a8191c48f4375f86917f04f1e3248734ea",
+    "repo:.claude/rules/basalt-v3-expression-ui.md": "b66acade231909317aefa2e186d5d7ec02964f40c0d7953503de91fc7c45c825",
+    "repo:.claude/skills/basalt-v3-expression-app/references/live.md": "aee5d159dcd4893c97bcdbea3b27418260e6c6bb3d1ecfa183cfb3ea5187bc8e",
+    "repo:.claude/skills/basalt-v3-expression-app/references/migrate.md": "e070bfc279a5eae7ce7e5a96a3b176e869dc74ff1490683c3d72ae4e9f7007ba",
+    "repo:.claude/skills/basalt-v3-expression-app/references/performance.md": "e6930ff6a2b7c389d152b80a417012fa7b7703db64ffa07356b57b15a83aeade",
+    "repo:.claude/skills/basalt-v3-expression-app/references/recipes.md": "53ba8db735b229c6a34b81ac528c90a35f8b95a213fc99ad449b6df64b91979b",
+    "repo:.claude/skills/basalt-v3-expression-app/references/testing.md": "925ac4088d6b8ba8d853059d27aba543aade7f807d55d3d923ca230d1158a8e4",
+    "repo:.claude/skills/basalt-v3-expression-app/SKILL.md": "367e49051dfc5614c09207396363832af9208e55b94a2943c64229439174cda3",
+    "repo:.claude/skills/basalt-v3-expression-charts/references/custom-marks.md": "fafffb087b550d328b43eea4435156e36a8a32684e82e652ab24018e48c4ed14",
+    "repo:.claude/skills/basalt-v3-expression-charts/references/linked-parts.md": "fd9e072c3372380b6494457716ef5d6a60d0c7206e8db9af609ae4d75c4a0aa6",
+    "repo:.claude/skills/basalt-v3-expression-charts/SKILL.md": "57486371aa83ff8cc9e423671d097c9227c50d90240170de8fa1e4717b5bbf79",
+    "repo:.claude/skills/basalt-v3-expression-design/references/ai.md": "b721eeb4bd573b0300812fb43ea635720b7c932164fa3566756a865ad39ce798",
+    "repo:.claude/skills/basalt-v3-expression-design/references/anti-defaults.md": "9b521de3fd0882714c347b44ad3a63d2a8ecb5b6f06f76598bb184708c7b91c0",
+    "repo:.claude/skills/basalt-v3-expression-design/references/cards.md": "255e7d3c20519bca75dea89a08b9ecec8d17ac1a5979cc0144aab4ddbf76ea35",
+    "repo:.claude/skills/basalt-v3-expression-design/references/chart-color.md": "59b55624ad2ea3fafd645c844c16b735e5adc6b7dc7f87bf5024e748821642be",
+    "repo:.claude/skills/basalt-v3-expression-design/references/chart-form.md": "e7e89b183a0c301a3f6df3de477a21a6153de76054e83a31efc07c75e4b01a13",
+    "repo:.claude/skills/basalt-v3-expression-design/references/chart-honest.md": "b587190288a202788ea0cbc3803a336db776e4330a70cb3766b93c427d552b8e",
+    "repo:.claude/skills/basalt-v3-expression-design/references/chart-labels.md": "306c0354a74f83af4ffad2d0c051605bd4b0f66e1c4abd144f083a4e9ada8ec8",
+    "repo:.claude/skills/basalt-v3-expression-design/references/chart-view.md": "c8292b53d3181dd3ea95cd1117db9178cc1a1479485ef9cba2728e24e8b66601",
+    "repo:.claude/skills/basalt-v3-expression-design/references/charts.md": "7c95cfabc3e0d0fbfa68e4d652af5aae5e1333e7be10dfcd1128c03057d73ccd",
+    "repo:.claude/skills/basalt-v3-expression-design/references/concept.md": "06c049a5faefdc6b4cd47d11344f6fefce588885e39dce7302db5198c1f12b85",
+    "repo:.claude/skills/basalt-v3-expression-design/references/controls.md": "1e0fe34eb645fe2ac93da163f21af8a59b91612e4975fe91c9a5b7e5c071a366",
+    "repo:.claude/skills/basalt-v3-expression-design/references/copy.md": "d691bc70d1dac5db410c176c0ae0eadeb155b4d0825fd36a300ecd7e345827aa",
+    "repo:.claude/skills/basalt-v3-expression-design/references/encoding.md": "1f9c5d1864bceb14f872e3e08efd70b51190e62564ea8221834027e1a13d93b8",
+    "repo:.claude/skills/basalt-v3-expression-design/references/forms.md": "e07da08b57eaa94fb69e1838788a486ba8638422de79949a59993576e454215f",
+    "repo:.claude/skills/basalt-v3-expression-design/references/motion.md": "519022fe01efc554c65e9ec81cdfbd29aaf8563496cce8deca995f064c482a62",
+    "repo:.claude/skills/basalt-v3-expression-design/references/parts.md": "7cbd161c4d9ff6e32ec4b76e706af6147fef3e4d6c4579c872185b3ffec21d91",
+    "repo:.claude/skills/basalt-v3-expression-design/references/state.md": "cbf7df1e1bf461cfde34dfa6317f0410ccb4fa94270c706277d79bd8cbf8e58c",
+    "repo:.claude/skills/basalt-v3-expression-design/references/states.md": "2a8f01cef2be08b6d979acb9fec3d958e80f0febe6ed341ebcfdaf2c46b8669a",
+    "repo:.claude/skills/basalt-v3-expression-design/references/table.md": "42e1362bab9c2d5fdc7852b3e2448fb61ba41d6eb4d76590347b5a313840d663",
+    "repo:.claude/skills/basalt-v3-expression-design/SKILL.md": "9161b2b657059bf712a92f57d33b693889670282ea54ccb1159cac728cd29968"
+  },
+  "deepRender": [],
+  "authoredContent": [],
+  "viewports": [],
+  "tokens": [
+    {
+      "out": "src/tokens.css",
+      "format": "css",
+      "flags": []
+    },
+    {
+      "out": "src/basalt.tokens.css",
+      "format": "css",
+      "flags": [
+        "--extra",
+        "src/basalt.tokens.ts"
+      ]
+    },
+    {
+      "out": "src/accents.css",
+      "format": "css",
+      "flags": [
+        "--accents",
+        "violet,rose,orange,green,teal"
+      ]
+    }
+  ],
+  "extra": "src/basalt.tokens.ts",
+  "sibling": "basalt-v3-expression-"
+}

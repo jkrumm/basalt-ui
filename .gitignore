@@ -101,8 +101,8 @@ __pycache__/
 .claude/settings.local.json
 .claude/plans/
 .claude/e2e-shots/
-# apps/marketing (profile site) and apps/playground (profile app) are sibling installs: their sync places the
-# shipped rules and skills here under a `basalt-v3-` and a `basalt-v3-playground-` name. The root's own `basalt-*` copies already carry that law, so the
+# apps/marketing (profile site), apps/playground and apps/expression (profile app) are sibling installs: their sync places the
+# shipped rules and skills here under a `basalt-v3-`, a `basalt-v3-playground-` and a `basalt-v3-expression-` name. The root's own `basalt-*` copies already carry that law, so the
 # placed copies stay local; CI runs `basalt-ui sync` before `basalt-ui doctor` on the app.
 .claude/rules/basalt-v3-*.md
 .claude/skills/basalt-v3-*/

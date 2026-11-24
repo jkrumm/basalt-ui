@@ -1,0 +1,253 @@
+/* @generated basalt-ui — do not edit; regenerate with the command on the next line */
+/* basalt-ui 2.29.0 — `basalt-ui tokens:css --accents violet,rose,orange,green,teal --out src/accents.css` */
+:root[data-accent='violet']:not([data-theme]),
+:root[data-accent='violet'][data-theme='light'] {
+  --basalt-brand: #8452cf;
+  --basalt-brand-fill: #8856d2;
+  --basalt-info: #7343bd;
+  --basalt-chart-1: #8856d2;
+  --basalt-chart-4: #1c5b1f;
+  --basalt-chart-5: #660212;
+  --basalt-seq-1: #eedbff;
+  --basalt-seq-2: #d3b4f6;
+  --basalt-seq-3: #b78ee8;
+  --basalt-seq-4: #986bd5;
+  --basalt-seq-5: #7848c2;
+}
+@media not print {
+  :root[data-accent='violet'][data-theme='dark'] {
+    --basalt-brand: #ceb8e6;
+    --basalt-brand-fill: #8856d2;
+    --basalt-info: #ceb8e6;
+    --basalt-chart-1: #8856d2;
+    --basalt-chart-4: #619e5c;
+    --basalt-chart-5: #ff9891;
+    --basalt-seq-1: #4b3c5c;
+    --basalt-seq-2: #674e88;
+    --basalt-seq-3: #8b65bb;
+    --basalt-seq-4: #b485f2;
+    --basalt-seq-5: #d6b1ff;
+  }
+}
+@media not print {
+  @media (prefers-color-scheme: dark) {
+    :root[data-accent='violet']:not([data-theme]) {
+      --basalt-brand: #ceb8e6;
+      --basalt-brand-fill: #8856d2;
+      --basalt-info: #ceb8e6;
+      --basalt-chart-1: #8856d2;
+      --basalt-chart-4: #619e5c;
+      --basalt-chart-5: #ff9891;
+      --basalt-seq-1: #4b3c5c;
+      --basalt-seq-2: #674e88;
+      --basalt-seq-3: #8b65bb;
+      --basalt-seq-4: #b485f2;
+      --basalt-seq-5: #d6b1ff;
+    }
+  }
+}
+:root[data-accent='rose']:not([data-theme]),
+:root[data-accent='rose'][data-theme='light'] {
+  --basalt-brand: #c0414e;
+  --basalt-brand-fill: #c34551;
+  --basalt-info: #ad2f40;
+  --basalt-chart-1: #c34551;
+  --basalt-chart-2: #784916;
+  --basalt-chart-3: #55968d;
+  --basalt-chart-4: #9e579c;
+  --basalt-chart-5: #003e02;
+  --basalt-seq-1: #ffd9d8;
+  --basalt-seq-2: #f5afaf;
+  --basalt-seq-3: #e48688;
+  --basalt-seq-4: #cc5f65;
+  --basalt-seq-5: #b33544;
+}
+@media not print {
+  :root[data-accent='rose'][data-theme='dark'] {
+    --basalt-brand: #f2b0b0;
+    --basalt-brand-fill: #c34551;
+    --basalt-info: #f2b0b0;
+    --basalt-chart-1: #c34551;
+    --basalt-chart-2: #bc844f;
+    --basalt-chart-3: #55968d;
+    --basalt-chart-4: #9e579c;
+    --basalt-chart-5: #80bf7a;
+    --basalt-seq-1: #5b3939;
+    --basalt-seq-2: #84484a;
+    --basalt-seq-3: #b55d60;
+    --basalt-seq-4: #ea7a7e;
+    --basalt-seq-5: #ffaaaa;
+  }
+}
+@media not print {
+  @media (prefers-color-scheme: dark) {
+    :root[data-accent='rose']:not([data-theme]) {
+      --basalt-brand: #f2b0b0;
+      --basalt-brand-fill: #c34551;
+      --basalt-info: #f2b0b0;
+      --basalt-chart-1: #c34551;
+      --basalt-chart-2: #bc844f;
+      --basalt-chart-3: #55968d;
+      --basalt-chart-4: #9e579c;
+      --basalt-chart-5: #80bf7a;
+      --basalt-seq-1: #5b3939;
+      --basalt-seq-2: #84484a;
+      --basalt-seq-3: #b55d60;
+      --basalt-seq-4: #ea7a7e;
+      --basalt-seq-5: #ffaaaa;
+    }
+  }
+}
+:root[data-accent='orange']:not([data-theme]),
+:root[data-accent='orange'][data-theme='light'] {
+  --basalt-brand: #b54f1f;
+  --basalt-brand-fill: #b95222;
+  --basalt-info: #a23f0f;
+  --basalt-chart-1: #b95222;
+  --basalt-chart-2: #3a7c74;
+  --basalt-chart-3: #ae66ac;
+  --basalt-chart-4: #0f5116;
+  --basalt-chart-5: #2d6285;
+  --basalt-seq-1: #ffdaca;
+  --basalt-seq-2: #f2b397;
+  --basalt-seq-3: #de8c68;
+  --basalt-seq-4: #c4683e;
+  --basalt-seq-5: #a84414;
+}
+@media not print {
+  :root[data-accent='orange'][data-theme='dark'] {
+    --basalt-brand: #ecb59d;
+    --basalt-brand-fill: #b95222;
+    --basalt-info: #ecb59d;
+    --basalt-chart-1: #b95222;
+    --basalt-chart-2: #3a7c74;
+    --basalt-chart-3: #ae66ac;
+    --basalt-chart-4: #619e5c;
+    --basalt-chart-5: #74a5cb;
+    --basalt-seq-1: #593b2d;
+    --basalt-seq-2: #804c35;
+    --basalt-seq-3: #ae6341;
+    --basalt-seq-4: #e28257;
+    --basalt-seq-5: #ffad87;
+  }
+}
+@media not print {
+  @media (prefers-color-scheme: dark) {
+    :root[data-accent='orange']:not([data-theme]) {
+      --basalt-brand: #ecb59d;
+      --basalt-brand-fill: #b95222;
+      --basalt-info: #ecb59d;
+      --basalt-chart-1: #b95222;
+      --basalt-chart-2: #3a7c74;
+      --basalt-chart-3: #ae66ac;
+      --basalt-chart-4: #619e5c;
+      --basalt-chart-5: #74a5cb;
+      --basalt-seq-1: #593b2d;
+      --basalt-seq-2: #804c35;
+      --basalt-seq-3: #ae6341;
+      --basalt-seq-4: #e28257;
+      --basalt-seq-5: #ffad87;
+    }
+  }
+}
+:root[data-accent='green']:not([data-theme]),
+:root[data-accent='green'][data-theme='light'] {
+  --basalt-brand: #2a7d40;
+  --basalt-brand-fill: #2d8043;
+  --basalt-info: #146d31;
+  --basalt-chart-1: #2d8043;
+  --basalt-chart-2: #784916;
+  --basalt-chart-3: #4a8b83;
+  --basalt-chart-4: #8e488d;
+  --basalt-chart-5: #71111a;
+  --basalt-seq-1: #d1e9d3;
+  --basalt-seq-2: #a4cba8;
+  --basalt-seq-3: #77ad7f;
+  --basalt-seq-4: #4d8f59;
+  --basalt-seq-5: #1b7236;
+}
+@media not print {
+  :root[data-accent='green'][data-theme='dark'] {
+    --basalt-brand: #a1cba6;
+    --basalt-brand-fill: #2d8043;
+    --basalt-info: #a1cba6;
+    --basalt-chart-1: #2d8043;
+    --basalt-chart-2: #c28954;
+    --basalt-chart-3: #4a8b83;
+    --basalt-chart-4: #bf76bd;
+    --basalt-chart-5: #ff908a;
+    --basalt-seq-1: #334736;
+    --basalt-seq-2: #3e6144;
+    --basalt-seq-3: #4e8357;
+    --basalt-seq-4: #67aa72;
+    --basalt-seq-5: #81d38f;
+  }
+}
+@media not print {
+  @media (prefers-color-scheme: dark) {
+    :root[data-accent='green']:not([data-theme]) {
+      --basalt-brand: #a1cba6;
+      --basalt-brand-fill: #2d8043;
+      --basalt-info: #a1cba6;
+      --basalt-chart-1: #2d8043;
+      --basalt-chart-2: #c28954;
+      --basalt-chart-3: #4a8b83;
+      --basalt-chart-4: #bf76bd;
+      --basalt-chart-5: #ff908a;
+      --basalt-seq-1: #334736;
+      --basalt-seq-2: #3e6144;
+      --basalt-seq-3: #4e8357;
+      --basalt-seq-4: #67aa72;
+      --basalt-seq-5: #81d38f;
+    }
+  }
+}
+:root[data-accent='teal']:not([data-theme]),
+:root[data-accent='teal'][data-theme='light'] {
+  --basalt-brand: #1d7b71;
+  --basalt-brand-fill: #217e74;
+  --basalt-info: #006b61;
+  --basalt-chart-1: #217e74;
+  --basalt-chart-3: #ae66ac;
+  --basalt-chart-4: #1c5b1f;
+  --basalt-chart-5: #660212;
+  --basalt-seq-1: #d0e7e3;
+  --basalt-seq-2: #a1c9c3;
+  --basalt-seq-3: #73aba3;
+  --basalt-seq-4: #478d84;
+  --basalt-seq-5: #077066;
+}
+@media not print {
+  :root[data-accent='teal'][data-theme='dark'] {
+    --basalt-brand: #83cfc4;
+    --basalt-brand-fill: #217e74;
+    --basalt-info: #83cfc4;
+    --basalt-chart-1: #217e74;
+    --basalt-chart-3: #ae66ac;
+    --basalt-chart-4: #619e5c;
+    --basalt-chart-5: #ff9891;
+    --basalt-seq-1: #324643;
+    --basalt-seq-2: #3c605b;
+    --basalt-seq-3: #4a8179;
+    --basalt-seq-4: #61a79e;
+    --basalt-seq-5: #7ad0c4;
+  }
+}
+@media not print {
+  @media (prefers-color-scheme: dark) {
+    :root[data-accent='teal']:not([data-theme]) {
+      --basalt-brand: #83cfc4;
+      --basalt-brand-fill: #217e74;
+      --basalt-info: #83cfc4;
+      --basalt-chart-1: #217e74;
+      --basalt-chart-3: #ae66ac;
+      --basalt-chart-4: #619e5c;
+      --basalt-chart-5: #ff9891;
+      --basalt-seq-1: #324643;
+      --basalt-seq-2: #3c605b;
+      --basalt-seq-3: #4a8179;
+      --basalt-seq-4: #61a79e;
+      --basalt-seq-5: #7ad0c4;
+    }
+  }
+}

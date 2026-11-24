@@ -1,5 +1,5 @@
 /**
- * A table of windows beside an hourly chart (`v3-expr-9-contract` (a)): each window row holds the
+ * A table of windows beside an hourly chart (contract (a) of expression cycle 9): each window row holds the
  * run of hours it spans through `DataTable focusItems`, so pointing at a row or stepping onto it
  * holds the run, the chart draws it as one x band and the live region says the window.
  */

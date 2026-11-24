@@ -50,3 +50,5 @@ docs/v3/verdicts/astro-matrix.md
 # The playground's `basalt-ui init` token outputs: doctor check 10 holds them byte for byte to `tokens:css`.
 apps/playground/src/tokens.css
 apps/playground/src/basalt.tokens.css.d.ts
+apps/expression/src/tokens.css
+apps/expression/src/basalt.tokens.css.d.ts

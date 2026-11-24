@@ -1,0 +1,4 @@
+/* Cascade order for the expression app, LOW to HIGH. Imported before every other stylesheet so it is the
+ * first `@layer` statement the browser sees and the order is fixed whatever order the bundler emits
+ * the rest in; it repeats the order `basalt-ui/tailwind.css` declares. */
+@layer theme, base, basalt, components, utilities;

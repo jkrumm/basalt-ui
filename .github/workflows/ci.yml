@@ -67,9 +67,12 @@ jobs:
       - name: Build playground (the review shots and the layout harness serve this build)
         run: bun --filter @basalt-ui/playground build
 
-      # The app profile's own proof on the repo's app: the playground is an `init --profile app` install.
-      - name: basalt-ui doctor on apps/playground
-        run: make playground-doctor
+      - name: Build the expression app (the layout harness and the matrix serve this build)
+        run: bun --filter @basalt-ui/expression build
+
+      # The app profile's own proof on the repo's apps: the playground and the expression app are `init --profile app` installs.
+      - name: basalt-ui doctor on apps/playground and apps/expression
+        run: make playground-doctor expression-doctor
 
       - name: Coverage check (SURFACES projection gate)
         run: bun packages/basalt-ui/scripts/check-coverage.ts --check
@@ -286,6 +289,9 @@ jobs:
 
       - name: Build playground (the matrix serves this build)
         run: bun --filter @basalt-ui/playground build
+
+      - name: Build the expression app (the matrix serves this build)
+        run: bun --filter @basalt-ui/expression build
 
       - name: Cache Playwright browsers
         uses: actions/cache@v6

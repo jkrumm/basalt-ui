@@ -1,0 +1,13 @@
+{
+  "extends": ["./.oxlintrc.basalt.json"],
+  "rules": {
+    "react/globals": "error",
+    "react/immutability": "error",
+    "react/incompatible-library": "error",
+    "react/preserve-manual-memoization": "error",
+    "react/refs": "error",
+    "react/set-state-in-effect": "error",
+    "no-constant-binary-expression": "error"
+  },
+  "ignorePatterns": ["src/routeTree.gen.ts"]
+}

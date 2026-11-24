@@ -38,6 +38,7 @@ bunx basalt-ui tokens:css --out src/tokens.css
 basalt-ui/
 ├── packages/basalt-ui/    # the published npm package (basalt-ui)
 ├── apps/playground/       # @basalt-ui/playground — workspace:* consumer, everyday iteration surface
+├── apps/expression/       # @basalt-ui/expression — the expression trial scenarios
 └── apps/marketing/        # basalt-ui.com — content-frozen until rebuilt on v3
 ```
 
