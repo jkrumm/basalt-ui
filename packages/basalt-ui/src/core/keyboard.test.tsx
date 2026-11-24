@@ -1,6 +1,5 @@
 import { act, cleanup, render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
-import { useRef } from 'react'
 import { isTextField, useKeyboardInset } from './keyboard'
 
 afterEach(cleanup)
@@ -18,10 +17,9 @@ function pointer(coarse: boolean): void {
 }
 
 function Host() {
-  const ref = useRef<HTMLDivElement | null>(null)
-  useKeyboardInset(ref)
+  useKeyboardInset()
   return (
-    <div ref={ref} data-testid="host">
+    <div data-testid="host">
       <input aria-label="Name" />
       <input type="checkbox" aria-label="Agree" />
       <input readOnly aria-label="Fixed" />
@@ -29,7 +27,7 @@ function Host() {
   )
 }
 
-const host = (): HTMLElement => document.querySelector<HTMLElement>('[data-testid="host"]')!
+const host = (): HTMLElement => document.documentElement
 const focus = async (label: string): Promise<void> => {
   await act(async () => {
     document.querySelector<HTMLElement>(`[aria-label="${label}"]`)!.focus()

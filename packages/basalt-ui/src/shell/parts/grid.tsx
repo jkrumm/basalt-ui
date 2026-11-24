@@ -274,8 +274,7 @@ export function ShellGrid({
   children,
 }: ShellGridProps): ReactElement {
   const shifting = useDockShift(dockWidth)
-  const own = useRef<HTMLDivElement | null>(null)
-  useKeyboardInset(own)
+  useKeyboardInset()
   const style: RootStyle = {
     '--shell-rail-open-w': `${railOpenWidth}px`,
     '--shell-aside-w': `${asideWidth}px`,
@@ -283,10 +282,7 @@ export function ShellGrid({
   }
   return (
     <div
-      ref={(el) => {
-        own.current = el
-        rootRef(el)
-      }}
+      ref={rootRef}
       data-slot="shell"
       data-dock-shift={shifting ? '' : undefined}
       data-rail={rail}

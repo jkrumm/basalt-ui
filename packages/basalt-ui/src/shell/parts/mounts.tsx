@@ -21,7 +21,7 @@ export function RailMount(props: RailProps): ReactElement {
 
 export function TabBarMount(props: PhoneNavProps): ReactElement {
   return (
-    <div className={cn('[grid-area:footer] group-data-keyboard/shell:hidden md:hidden', PRINT_OFF)}>
-      <PhoneNav {...props} />    </div>
-  )
+    <div className={cn('[grid-area:footer] in-data-keyboard:hidden md:hidden', PRINT_OFF)}>
+      <PhoneNav {...props} />
+    </div>  )
 }

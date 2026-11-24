@@ -144,6 +144,7 @@ async function scaffold(dir: string): Promise<void> {
   // The theme the bought rules read: the package's sheet and token file, minus the font import.
   mkdirSync(join(dir, 'src'), { recursive: true })
   copyFileSync(join(PKG, 'src/css/tokens.css'), join(dir, 'src/tokens.css'))
+  copyFileSync(join(PKG, 'src/css/touch.css'), join(dir, 'src/touch.css'))
   const sheet = readFileSync(join(PKG, 'src/css/tailwind.css'), 'utf8').replace(
     /^@import '\.\/fonts\.css';\n/m,
     '',
