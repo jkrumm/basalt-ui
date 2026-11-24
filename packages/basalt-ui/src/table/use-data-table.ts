@@ -989,7 +989,14 @@ export function useDataTable<
           column.visible &&
           (column.priority === 3 ||
             column.place === 'detail' ||
-            (options.phone === 'columns' && !column.phoneKeep)),
+            (options.phone === 'columns' && !column.phoneKeep) ||
+            // The phone list row draws the title, two values and the answer; any other column is behind the tap.
+            ((options.phone ?? (look === 'grid' ? 'scroll' : 'cards')) === 'cards' &&
+              !column.identity &&
+              column.place !== 'title' &&
+              column.place !== 'kebab' &&
+              !column.phoneValue &&
+              column.phoneMeta === null)),
       ),
     detailListed: activation.kind !== 'detail',
     format,

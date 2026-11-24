@@ -119,6 +119,20 @@ layout('phone: cards is a list row at 390', () => {
   })
 })
 
+layout('phone: cards with onRowActivate keeps every column reachable at 390', () => {
+  test('the Details door shows on the row and opens the sheet with the column the row leaves out', async () => {
+    const page = await open()
+    const door = '[data-testid="pl-activate"] tbody tr [data-slot="table-expand"] button'
+    await page.raw.waitForSelector(door, { state: 'visible' })
+    await page.raw.click(door)
+    await page.raw.waitForSelector('[role="dialog"]')
+    const text = await page.raw.evaluate(
+      () => document.querySelector('[role="dialog"]')?.textContent ?? '',
+    )
+    expect(text).toContain('Gamma')
+  })
+})
+
 layout('phone: fields keeps the label-and-value grid at 390', () => {
   test('every value is printed with its column header', async () => {
     const page = await open()

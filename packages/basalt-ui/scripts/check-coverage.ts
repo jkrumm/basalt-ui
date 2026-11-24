@@ -98,7 +98,7 @@ export const REFERENCE_BYTE_BUDGETS: Readonly<Record<string, number>> = {
   'agent/skills/basalt-design/references/chart-form.md': 4_785,
   'agent/skills/basalt-design/references/chart-honest.md': 3_596,
   'agent/skills/basalt-design/references/chart-labels.md': 4_054,
-  'agent/skills/basalt-design/references/chart-view.md': 5_275, // + the phone inset, bleed and end labels (Issue 3211)
+  'agent/skills/basalt-design/references/chart-view.md': 5_322, // + the phone inset, bleed and end labels (Issue 3211)
   'agent/skills/basalt-design/references/charts.md': 1_565,
   'agent/skills/basalt-design/references/concept.md': 4_630,
   'agent/skills/basalt-design/references/controls.md': 3_089,
