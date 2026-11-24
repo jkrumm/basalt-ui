@@ -7,6 +7,44 @@ export type SiteLink = {
   current?: boolean
 }
 
+/** The picture of a menu tile. Decorative (`alt` empty) unless it carries meaning the title does not. */
+export type SiteMenuImage = {
+  src: string
+  /** Default empty: the title already names the tile. */
+  alt?: string
+  width?: number
+  height?: number
+}
+
+/**
+ * One entry of a site menu. With an `image` it is a tile (picture, title, one line); without one a
+ * link row (title and one line).
+ */
+export type SiteMenuEntry = {
+  href: string
+  label: string
+  /** The one line under the title. */
+  description?: string
+  image?: SiteMenuImage
+  current?: boolean
+}
+
+/** A group of entries in a menu panel and in the phone sheet; `title` heads it when the menu has more than one. */
+export type SiteMenuSection = {
+  title?: string
+  entries: readonly SiteMenuEntry[]
+}
+
+/** A top-level item that opens a panel instead of going to a page. */
+export type SiteNavMenu = {
+  /** The item's text and the panel's accessible name. */
+  label: string
+  menu: readonly SiteMenuSection[]
+}
+
+/** A top-level item of the site header: a link, or a menu that opens a panel. */
+export type SiteNavItem = SiteLink | SiteNavMenu
+
 /** A titled group of links (a footer column, a docs sidebar section). */
 export type SiteLinkGroup = {
   title: string

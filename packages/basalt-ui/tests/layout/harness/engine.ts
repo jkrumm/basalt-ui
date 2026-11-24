@@ -470,12 +470,20 @@ export async function openFixture(
  * `remount` throws. This is what lets the engine measure a document with no composite on it, which
  * is how the harness tests its own helpers.
  */
-export function openDocument(html: string, viewport: Viewport = PHONE): Promise<LayoutPage> {
+export function openDocument(
+  html: string,
+  viewport: Viewport = PHONE,
+  options: {
+    readonly reducedMotion?: 'reduce' | 'no-preference'
+    /** `fine` is a mouse: hover works and touch emulation is off. */
+    readonly pointer?: 'coarse' | 'fine'
+  } = {},
+): Promise<LayoutPage> {
   return openPage({
     documentPath: serveDocument(html),
     viewport,
-    reducedMotion: 'reduce',
-    pointer: 'coarse',
+    reducedMotion: options.reducedMotion ?? 'reduce',
+    pointer: options.pointer ?? 'coarse',
     mounted: false,
   })
 }

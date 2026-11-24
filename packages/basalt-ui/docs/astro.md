@@ -56,7 +56,7 @@ Your own files are found by Tailwind's automatic source detection; the parts' so
 | `SitePager` | previous and next links | nothing |
 | `SiteCallout` | a tinted note with a tone | nothing |
 | `SiteCodeBlock` | wraps your toolchain's `<pre>` with a copy button | the integration's head script |
-| `SiteHeader` | brand, links, actions; a menu below the `wide` size | the `popover` attribute |
+| `SiteHeader` | brand, links and menus (panels of link rows and tiles), actions; a full-height sheet below the `wide` size | the `popover` attribute and `interestfor`; the head script adds hover where `interestfor` is missing and the arrow keys |
 | `SiteFooter` | brand, link columns, fine print | nothing |
 | `ThemeSwitch` | light, dark, system | the integration's head script |
 | `SiteTabs`, `SiteTab` | tabs as platform markup; panels named by `label` | the integration's head script |

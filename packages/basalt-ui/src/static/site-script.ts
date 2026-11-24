@@ -4,7 +4,8 @@
  * added later. Two duties: a `[data-basalt-scheme]` button applies and stores the scheme (the
  * `setScheme` contract: `data-theme` on `<html>`, the `basalt:scheme` key) and every switch's
  * `aria-pressed` follows, honouring the same `key`, `attribute` and `cookie` options as `themeScript()`; a `[data-basalt-copy]` button copies the text of its block's `pre` and
- * announces its `data-copied-label`; a `[role=tab]` button inside `[data-basalt-tabs]` shows its panel
+ * announces its `data-copied-label`; the header's menus get the arrow keys (Left, Right, Home, End between
+ * the items, Down into a panel) and, where the browser has no interest invokers, hover with a short delay; a `[role=tab]` button inside `[data-basalt-tabs]` shows its panel
  * (click, arrow keys, Home, End) and the head marks the document `data-basalt-js`, so the tabs hide
  * their panels only where a script can show them. Logic is its own copy of `setScheme`; parity is tested.
  */
@@ -20,7 +21,7 @@ const COOKIE_MAX_AGE = 31536000
 /**
  * The inline script the static parts share: `ThemeSwitch` applies and stores the scheme, `SiteCodeBlock`
  * copies its block. `basaltAstro()` inlines it after `themeScript()` with the same scheme options.
- * About 1.1 kB gzip; a unit test holds it and `themeScript()` under 2 kB together.
+ * About 1.4 kB gzip; a unit test holds it and `themeScript()` under 2 kB together.
  *
  * Internal to the site profile until a host outside Astro needs it exported.
  */
@@ -51,6 +52,17 @@ export function siteScript(options: SiteScriptOptions = {}): string {
     `if(!p||!navigator.clipboard)return;navigator.clipboard.writeText(p.innerText).then(function(){`,
     `var o=f.querySelector("[data-basalt-copy-status]");c.setAttribute("data-copied","");if(o)o.textContent=c.getAttribute("data-copied-label")||"";`,
     `setTimeout(function(){c.removeAttribute("data-copied");if(o)o.textContent=""},1500)},function(){})});`,
+    `function pp(b){return d.getElementById(b.getAttribute("popovertarget"))}`,
+    `d.addEventListener("keydown",function(e){var t=e.target instanceof Element?e.target.closest("[data-basalt-top]"):null;if(!t)return;`,
+    `var l=[].slice.call(t.closest("[data-basalt-nav]").querySelectorAll("[data-basalt-top]")),i=l.indexOf(t),k=e.key,p=t.hasAttribute("popovertarget")?pp(t):null;`,
+    `if(k==="ArrowDown"&&p&&p.showPopover){e.preventDefault();p.showPopover();var a=p.querySelector("a");if(a)a.focus();return}`,
+    `var n=k==="ArrowRight"?i+1:k==="ArrowLeft"?i-1:k==="Home"?0:k==="End"?l.length-1:-9;if(n===-9)return;e.preventDefault();`,
+    `var o=l[(n+l.length)%l.length],q=o.hasAttribute("popovertarget")?pp(o):null;o.focus();if(p&&q&&p.showPopover&&p.matches(":popover-open"))q.showPopover()});`,
+    `if(!("interestForElement" in HTMLButtonElement.prototype)){var tm=0;`,
+    `d.addEventListener("mouseover",function(e){var t=e.target instanceof Element?e.target:null;if(!t)return;clearTimeout(tm);var b=t.closest("[data-basalt-top][popovertarget]");`,
+    `if(b){var p=pp(b);if(p&&p.showPopover&&!p.matches(":popover-open"))tm=setTimeout(function(){p.showPopover()},d.querySelector("[data-slot=site-menu-panel]:popover-open")?0:120);return}`,
+    `if(t.closest("[data-slot=site-menu-panel]"))return;`,
+    `tm=setTimeout(function(){var o=d.querySelector("[data-slot=site-menu-panel]:popover-open");if(o)o.hidePopover()},200)})}`,
     `function init(){sync();link()}if(d.readyState==="loading")d.addEventListener("DOMContentLoaded",init);else init()})()`,
   ].join('')
 }
