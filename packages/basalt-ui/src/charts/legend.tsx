@@ -31,11 +31,12 @@ const ROLE_ORDER = ['series', 'overlay', 'reference'] as const
 const DOTS_GAP = 30
 
 /**
- * The pitch between wrapped rows. `--basalt-hit-gap-block` caps the hit area's height at the entry plus
- * 2px and this gap, so a wrapped legend's rows never overlap: the trade is a block-axis hit target of
- * about 29px (23 + 2 + 4), above the 24px WCAG 2.5.8 floor but under the 44px coarse floor.
+ * The pitch between wrapped rows, as the custom property the stylesheet sets: 4px for a fine pointer, 20px for a
+ * coarse one (`chart-legend.module.css`). `--basalt-hit-gap-block` caps the hit area's height at the entry plus 2px
+ * and this gap, so a wrapped legend's rows never overlap: a coarse row is 24px plus 20px, so every hit target is the
+ * full 44px and two rows touch without crossing; a fine row keeps 4px (a 29px target, above the 24px WCAG 2.5.8 floor).
  */
-const ROW_GAP = 4
+const ROW_GAP = 'var(--bc-legend-row-gap, 4px)'
 
 const byReferenceLast = <T,>(a: ChartSeries<T>, b: ChartSeries<T>): number =>
   Number(a.role === 'reference') - Number(b.role === 'reference')
@@ -58,6 +59,8 @@ const rowBaseStyle: CSSProperties = {
   border: 0,
   margin: 0,
   padding: 0,
+  // A bleeding card puts its edge here so the plot runs to the card's sides and the legend keeps the page's edge.
+  paddingInline: 'var(--chart-legend-inset, 0px)',
   minWidth: 0,
   flexWrap: 'wrap',
   alignItems: 'center',
@@ -77,7 +80,7 @@ const autoRowStyle: LegendVars = {
   ...autoBaseStyle,
   '--bc-legend-gap': `${BASALT.legendGap}px`,
   '--bc-dots-gap': `${DOTS_GAP}px`,
-  '--basalt-hit-gap-block': `${ROW_GAP}px`,
+  '--basalt-hit-gap-block': ROW_GAP,
 }
 /** The row's layout; a concealed legend keeps it (and so its height) but is not visible. */
 function rowLayout(mode: LegendMode, concealed: boolean): CSSProperties {
@@ -92,7 +95,7 @@ function rowLayout(mode: LegendMode, concealed: boolean): CSSProperties {
     // Caps each entry's `[data-basalt-hit]` overlay at the real gaps: columns between entries, rows across a wrap.
     ...({
       '--basalt-hit-gap': `${gap}px`,
-      '--basalt-hit-gap-block': `${ROW_GAP}px`,
+      '--basalt-hit-gap-block': ROW_GAP,
     } as CSSProperties),
     ...hide,
   }
@@ -310,6 +313,8 @@ export type ChartLegendProps<T> = {
   concealed?: boolean
   /** `auto` mode only: gone from the wide class up, where end labels name the lines (CSS). */
   hideAtWide?: boolean
+  /** The narrow class names the lines at their ends (`Lines`' `auto`, where they fit), so this legend goes there too. */
+  hideAtNarrow?: boolean
 }
 
 /**
@@ -359,6 +364,7 @@ export function ChartLegend<T>(props: ChartLegendProps<T>): ReactElement | null 
       {...(props.concealed && { 'aria-hidden': true })}
       {...(auto && { className: classes.auto })}
       {...(auto && props.hideAtWide && { 'data-hide-wide': '' })}
+      {...(auto && props.hideAtNarrow && { 'data-hide-narrow': '' })}
       style={rowLayout(props.mode, props.concealed === true)}
     >
       {groups.map((group, gi) => [

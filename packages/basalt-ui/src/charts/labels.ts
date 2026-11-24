@@ -17,6 +17,43 @@ import type { ChartMarks, ChartSeries, ChartX, PlotContext, PlotRow } from './ty
 import type { ContainerClass } from '../tokens/size-classes'
 
 const MAX_END_LABELS = 3
+
+/** The narrowest plot of the narrow class, px: the room check of {@link phoneNamesFit} is made against it. */
+const NARROW_PLOT_FLOOR = 240
+/** The plot height the narrow class is checked against, px: the least a card's box leaves under its axis. */
+const NARROW_PLOT_HEIGHT = 150
+
+/**
+ * Whether `auto` draws end labels in this class: from the wide class, and on the narrow one (a phone) only where
+ * {@link phoneNamesFit} held, which the chart decides from its data so the legend gives way in the server HTML.
+ */
+export const autoNames = (cls: ContainerClass, phoneNames: boolean | undefined): boolean =>
+  cls === 'wide' || (cls === 'narrow' && phoneNames === true)
+
+/**
+ * Whether a phone's lines can be named at their ends without a collision: at most {@link MAX_END_LABELS} lines, the
+ * widest label's gutter within the share of the narrowest narrow plot, and the last values of the lines each a
+ * label line apart on a plot of the least height. A chart that fails it keeps the legend. `last` is each line's
+ * label and last value, `extent` the lowest and highest value the chart's lines reach.
+ */
+export function phoneNamesFit(opts: {
+  last: readonly { label: string; value: number }[]
+  extent: readonly [number, number]
+}): boolean {
+  const { last, extent } = opts
+  if (last.length === 0 || last.length > MAX_END_LABELS) return false
+  const widest = Math.max(
+    ...last.map((l) => END_LABEL_DX + measure(l.label, BASALT.text.micro, 400) + GUTTER_AIR),
+  )
+  if (widest > NARROW_PLOT_FLOOR * MAX_GUTTER_SHARE) return false
+  const span = (extent[1] - extent[0]) * 1.2
+  if (!(span > 0)) return last.length === 1
+  const ys = last.map((l) => l.value).toSorted((a, b) => a - b)
+  return ys.every(
+    (y, i) =>
+      i === 0 || ((y - (ys[i - 1] as number)) / span) * NARROW_PLOT_HEIGHT >= END_LABEL_MIN_GAP,
+  )
+}
 /** Two end labels closer than this (px, vertically) are pushed apart to it: one label line (11px at 1.35) plus two pixels of air. */
 const END_LABEL_MIN_GAP = 17
 const END_LABEL_DX = 6
@@ -68,10 +105,16 @@ export function endLabelGutter(opts: {
   containerClass: ContainerClass
   plotWidth: number
   labels: readonly { label: string; fraction: number }[]
+  /** `auto` names the lines on the narrow class too: {@link phoneNamesFit} held for them. */
+  phoneNames?: boolean | undefined
 }): number {
-  const { naming, containerClass, plotWidth, labels } = opts
+  const { naming, containerClass, plotWidth, labels, phoneNames } = opts
   if (naming === 'legend' || labels.length === 0 || plotWidth <= 0) return 0
-  if (naming === 'auto' && (containerClass !== 'wide' || labels.length > MAX_END_LABELS)) return 0
+  if (
+    naming === 'auto' &&
+    (!autoNames(containerClass, phoneNames) || labels.length > MAX_END_LABELS)
+  )
+    return 0
   const boxes = labels.map(
     (l) => END_LABEL_DX + measure(l.label, BASALT.text.micro, 400) + GUTTER_AIR,
   )
@@ -288,7 +331,10 @@ function planEndLabels<T, X extends ChartX>(
   startAt: ReadonlySet<string>,
 ): EndLabel<T, X>[] {
   if (naming === 'legend' || plot.y2 !== undefined || lines.length === 0) return []
-  if (naming === 'auto' && (plot.containerClass !== 'wide' || lines.length > MAX_END_LABELS))
+  if (
+    naming === 'auto' &&
+    (!autoNames(plot.containerClass, plot.phoneNames) || lines.length > MAX_END_LABELS)
+  )
     return []
   const last = lines.flatMap((series): LastPoint<T, X>[] => {
     const finite = plot.rows(series.key).filter((r) => r.y !== null)

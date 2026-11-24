@@ -287,6 +287,9 @@ function withPeriodHold(
  * (five panes take 816 px at any width), so a page never wraps the card in a floor of its own. One cursor group, one `y.gutter` and `x.ticks: []` on every pane
  * but the bottom stay the page's (the two-pane recipe).
  *
+ * `bleed` runs the plot to the card's edges: the chart box leaves the inset's side padding and the inset
+ * drops its gutter and rounded sides to stay one surface under it; the figure, the legend and the footer keep the card's edge.
+ *
  * A series with `failed: true` keeps its legend entry, which reads `unavailable`, draws nothing in the
  * plot and leaves the phase on `ready`; the word is the message `charts.unavailable`, which an app
  * overrides through the provider's `messages`. The tooltip is the engine's, placed inside the card.
@@ -304,7 +307,7 @@ function withPeriodHold(
  * />
  */
 export function ChartCard(props: ChartCardProps): ReactElement {
-  const { figure, legend, footer, controls, menu, height = 'auto', panes } = props
+  const { figure, legend, footer, controls, menu, height = 'auto', panes, bleed = false } = props
   const chart =
     panes === undefined
       ? props.chart
@@ -362,7 +365,11 @@ export function ChartCard(props: ChartCardProps): ReactElement {
               data-slot="inset"
               data-surface="inset"
               className={cn(
-                'mx-(--card-gutter) flex min-h-0 flex-col rounded-inset bg-inset px-[calc(var(--card-edge)_-_var(--card-gutter))] py-3 first:mt-(--card-gutter) last:mb-(--card-gutter)',
+                'flex min-h-0 flex-col bg-inset py-3 first:mt-(--card-gutter) last:mb-(--card-gutter)',
+                // A bleeding plot runs under the inset's sides, so the inset keeps no gutter and no rounded sides.
+                bleed
+                  ? 'px-(--card-edge)'
+                  : 'mx-(--card-gutter) rounded-inset px-[calc(var(--card-edge)_-_var(--card-gutter))]',
                 height === 'fill' ? 'flex-1' : 'grow',
               )}
             >
@@ -390,7 +397,11 @@ export function ChartCard(props: ChartCardProps): ReactElement {
                   />
                 </div>
               )}
-              <ServerFrameContext value={SERVER_FRAME[height]}>
+              <ServerFrameContext
+                value={
+                  bleed ? { ...SERVER_FRAME[height], width: INITIAL_WIDTH } : SERVER_FRAME[height]
+                }
+              >
                 <PhaseBox
                   title={props.title}
                   resolved={effective}
@@ -399,6 +410,7 @@ export function ChartCard(props: ChartCardProps): ReactElement {
                     (shownFigure !== undefined || (legend !== undefined && legend.length > 0)) &&
                       'mt-2',
                     BOX[height],
+                    bleed && '-mx-(--card-edge) [--chart-legend-inset:var(--card-edge)]',
                   )}
                   minHeight={
                     panes === undefined ? undefined : `${panesFloorPx(panes.length) / 16}rem`

@@ -183,9 +183,26 @@ export type CartesianInput<T, X extends ChartX> = Pick<
   bare?: boolean
   /** `y.gutter` (the seam): a fixed left margin in px, so stacked panes share one plot x. */
   yGutter?: number
+  /**
+   * The narrow class draws the y tick labels inside the plot, above their grid line, and reserves no axis column
+   * (the plot is the frame). Set by a chart that owns its y axis; a pane of stacked charts (they share one gutter),
+   * a fixed `y.gutter` and a right axis keep the labels in the gutter.
+   */
+  yInside?: boolean
+  /** `auto` names the lines with end labels on the narrow class too: the chart's lines passed `phoneNamesFit`. */
+  endLabelsNarrow?: boolean
   /** How the lines are named (`Lines`' `naming`, resolved): with end labels the point scale keeps them a gutter right of the last points. */
   endLabels?: LinesNaming
 }
+
+/** An inside y label's inset from the plot's left edge, px: clear of the keyboard ring, as the y title is. */
+const INSIDE_DX = 4
+/** An inside label's lift above its grid line, px (negative is up). */
+const INSIDE_ABOVE = -4
+/** A label this close to the plot's top edge, px, sits under its line instead, so the plot's edge never clips it. */
+const INSIDE_TOP_PX = 14
+/** An inside label drawn under its line, px. */
+const INSIDE_BELOW = 11
 
 /** The one tick-label size, at every container width: the caption size, so a card never mixes sizes. */
 const TICK_FONT = BASALT.text.micro
@@ -209,6 +226,25 @@ const LEFT_EDGE_SHARE = 0.05
 const TICK_MIN_GAP = 8
 /** The width a y axis takes from the chart's width: what the x tick anchors count against, px. */
 const Y_GUTTER = 44
+
+/** Whether the y tick labels sit inside the plot: the narrow class of a chart that owns a lone left axis. */
+const yInsideOf = (
+  input: {
+    yInside?: boolean | undefined
+    yGutter?: number | undefined
+    bare?: boolean | undefined
+  },
+  cls: ContainerClass,
+  hasRight: boolean,
+): boolean =>
+  input.yInside === true &&
+  cls === 'narrow' &&
+  !hasRight &&
+  input.bare !== true &&
+  input.yGutter === undefined
+
+/** The width the y axis takes from a frame of this class: none while its labels sit inside the plot. */
+const yRoomPx = (inside: boolean): number => (inside ? 0 : Y_GUTTER)
 
 export function defaultNumberFormat(v: number, locale?: string): string {
   return compact(v, { digits: Math.abs(v) >= 1000 ? 1 : 2, locale })
@@ -517,8 +553,10 @@ export function yGuide<T>(opts: {
   readout?: boolean | undefined
   /** The plot's lower-left corner: the lowest tick is blanked while the x chip hangs over it. */
   corner?: Corner | undefined
+  /** The labels sit inside the plot, above their grid line, and reserve no gutter (see `CartesianInput.yInside`). */
+  inside?: boolean | undefined
 }): Omit<ChartPositionScaleOptions<number>, 'scale'> {
-  const { cfg, axis, cls, side, grid, locale, edges = [], readout = false, corner } = opts
+  const { cfg, axis, cls, side, grid, locale, edges = [], readout = false, corner, inside } = opts
   const ladder = LADDER[cls]
   const planned =
     typeof cfg?.ticks === 'object'
@@ -546,19 +584,32 @@ export function yGuide<T>(opts: {
   const gridLine = grid ? { grid: GRID_LINE } : {}
   if (cls === 'micro') return { ...gridLine, axis: false }
   const tickFormat = wholeStepFormat(axis, cfg, ticks, locale)
-  // Labels sit in a gutter OUTSIDE the plot, against its edge: a line never runs through one.
+  // Labels sit in a gutter OUTSIDE the plot, against its edge: a line never runs through one. A narrow chart
+  // takes no gutter: each label stands inside the plot on its grid line (the top one under its line, where the
+  // plot ends), the way the y title does, so the plot takes the whole frame.
   return {
     ...gridLine,
     ...(side === 'right' && { side: 'right' as const }),
     axis: {
       line: false,
-      ticks: { ...ticks, format: tickFormat, line: false },
+      ticks: {
+        ...ticks,
+        format: tickFormat,
+        line: false,
+        ...(inside === true && { size: 0, padding: 0 }),
+      },
       tickLabels: {
         fontSize: TICK_FONT,
         opacity:
           readout || corner !== undefined
             ? yTickOpacity({ fontSize: TICK_FONT, chip: readout, corner })
             : 1,
+        ...(inside === true && {
+          anchor: 'start' as const,
+          dx: INSIDE_DX,
+          dy: ({ position }: { position: number }) =>
+            position < INSIDE_TOP_PX ? INSIDE_BELOW : INSIDE_ABOVE,
+        }),
       },
     },
   }
@@ -599,9 +650,10 @@ function bandEdgeShift<X extends ChartX>(
   value: ChartValue,
   text: string,
   width: number | undefined,
+  yRoom: number,
 ): number | undefined {
   if (width === undefined || !Number.isFinite(width)) return undefined
-  const plotWidth = Math.max(0, width - Y_GUTTER)
+  const plotWidth = Math.max(0, width - yRoom)
   const centre = model.fraction(value as X)
   if (centre === null || plotWidth <= 0) return undefined
   const toEdge = (1 - centre) * plotWidth
@@ -676,6 +728,8 @@ type XTickSetupOpts<X extends ChartX> = {
   locale?: string | undefined
   /** The chart's width in px: a band axis anchors a label wider than its slot to the plot edge. */
   width?: number | undefined
+  /** What the y axis takes of the width, px: {@link Y_GUTTER}, or 0 while its labels sit inside the plot (then no gutter takes a label hung past the left edge either). */
+  yRoom?: number | undefined
 }
 
 function xTickSetup<X extends ChartX>(opts: XTickSetupOpts<X>) {
@@ -694,18 +748,34 @@ function xTickSetup<X extends ChartX>(opts: XTickSetupOpts<X>) {
   // lowest y label: start-anchor it. `+value` is a Date's timestamp, or the number itself.
   // On a band axis a label that hangs over the plot's right edge would make the engine shrink the
   // plot: it is right-aligned to the edge instead (see `dx`).
+  const yRoom = opts.yRoom ?? Y_GUTTER
+  // With no y gutter (the labels sit inside the plot) and no margin, a label centred nearer an edge than half its
+  // width would hang out of the frame: it starts (left edge) or ends (right edge) at its tick instead.
+  const edgeAnchor = (value: ChartValue): 'start' | 'end' | undefined => {
+    if (yRoom > 0 || opts.width === undefined || !Number.isFinite(opts.width)) return undefined
+    const centre = model.fraction(value as X)
+    if (centre === null) return undefined
+    const half = captionWidth(format(value), TICK_FONT) / 2
+    if (centre * opts.width < half) return 'start'
+    return (1 - centre) * opts.width < half ? 'end' : undefined
+  }
   const anchor = ({ value }: { value: ChartValue }) => {
-    if (model.band)
-      return bandEdgeShift(model, value, format(value), opts.width) === undefined
+    const edge = edgeAnchor(value)
+    if (edge !== undefined) return edge
+    if (model.band) {
+      return bandEdgeShift(model, value, format(value), opts.width, yRoom) === undefined
         ? undefined
         : ('end' as const)
+    }
     const share = model.log
       ? (model.fraction(value as X) ?? Number.NaN)
       : (+value - leftEdgeX) / spanX
     return share >= 0 && share <= LEFT_EDGE_SHARE ? ('start' as const) : undefined
   }
   const dx = ({ value }: { value: ChartValue }) =>
-    model.band ? bandEdgeShift(model, value, format(value), opts.width) : undefined
+    model.band && edgeAnchor(value) === undefined
+      ? bandEdgeShift(model, value, format(value), opts.width, yRoom)
+      : undefined
   return { ticks, format, anchor, dx }
 }
 
@@ -1613,6 +1683,7 @@ function buildScales<T, X extends ChartX>(opts: {
         cls,
         locale: input.locale,
         width,
+        yRoom: yRoomPx(yInsideOf(input, cls, right !== null)),
         readout: cls === 'micro' ? undefined : formatX,
         corner: right === null ? corner : undefined,
       }),
@@ -1630,6 +1701,7 @@ function buildScales<T, X extends ChartX>(opts: {
         // The hover pins the y value only without a right axis (see `crosshairGuide`).
         readout: right === null,
         corner,
+        inside: yInsideOf(input, cls, right !== null),
       }),
     },
     ...(right && {
@@ -2198,8 +2270,11 @@ export function compileCartesian<T, X extends ChartX>(
     access.read()
     return endLabelGutter({
       naming,
+      phoneNames: input.endLabelsNarrow,
       containerClass: cls,
-      plotWidth: access.size()?.width ?? Math.max(frameWidth - Y_GUTTER, 0),
+      plotWidth:
+        access.size()?.width ??
+        Math.max(frameWidth - yRoomPx(yInsideOf(input, cls, axesAt(cls).right !== null)), 0),
       labels: lines.flatMap((s) => {
         const last = input.data.findLast((d) => s.getValue(d) !== null)
         const fraction = last === undefined ? null : baseModel.fraction(input.x(last))
@@ -2318,7 +2393,9 @@ export function compileCartesian<T, X extends ChartX>(
       if (gutter > 0)
         model = xScaleFor(input.data.map(input.x), false, input.xDomain, input.xScale === 'log', {
           px: gutter,
-          plotWidth: access.size()?.width ?? Math.max(width - Y_GUTTER, 0),
+          plotWidth:
+            access.size()?.width ??
+            Math.max(width - yRoomPx(yInsideOf(input, cls, axesAt(cls).right !== null)), 0),
         })
       const capped = axesAt(cls)
       const axes = valueRoomAxes(dotRoomAxes(capped, access, height), access, height) // A spread reads the plot's size: dots move apart in pixels, so it recompiles once measured.
@@ -2348,6 +2425,7 @@ export function compileCartesian<T, X extends ChartX>(
           y2Domain: axes.right?.domain,
           ...(axes.left.log === true && { yLog: true }),
           ...(gutter > 0 && { endRoom: true }),
+          ...(input.endLabelsNarrow === true && { phoneNames: true }),
         },
         access,
       )
@@ -2737,13 +2815,14 @@ export function compileCartesian<T, X extends ChartX>(
             cls,
             locale: input.locale,
             width,
+            yRoom: yRoomPx(yInsideOf(input, cls, axes.right !== null)),
           })
           if (chipRepeatsTick(v, text, tickLabels)) return 'repeats'
           return chipCoversTick({
             value: v,
             readoutText: text,
             fontSize: TICK_FONT,
-            plotWidth: Math.max(0, width - Y_GUTTER),
+            plotWidth: Math.max(0, width - yRoomPx(yInsideOf(input, cls, axes.right !== null))),
             share: (value) => model.fraction(value as X),
             ticks: tickLabels,
           })
@@ -2821,7 +2900,9 @@ export function compileCartesian<T, X extends ChartX>(
         theme: CHART_THEME,
         ...(input.bare === true
           ? { guides: false as const, margin: 0 }
-          : input.yGutter !== undefined && { margin: { left: input.yGutter } }),
+          : input.yGutter !== undefined
+            ? { margin: { left: input.yGutter } }
+            : yInsideOf(input, cls, axes.right !== null) && { margin: { left: 0, right: 0 } }),
         ...(gradients.length > 0 && { gradients }),
         clip: true,
       }

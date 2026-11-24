@@ -39,8 +39,10 @@ describe('Legend', () => {
     const row = html(<Legend entries={entries} onToggle={() => {}} />).querySelector<HTMLElement>(
       '[data-basalt-chart-legend]',
     )
-    expect(row?.style.getPropertyValue('--basalt-hit-gap-block')).toBe('4px')
-    expect(row?.style.rowGap).toBe('4px')
+    expect(row?.style.getPropertyValue('--basalt-hit-gap-block')).toBe(
+      'var(--bc-legend-row-gap, 4px)',
+    )
+    expect(row?.style.rowGap).toBe('var(--bc-legend-row-gap, 4px)')
   })
 
   test('a failed entry reads unavailable, a healthy one reads nothing extra', () => {

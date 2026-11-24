@@ -48,6 +48,7 @@ import { CV } from '../core/theme'
 import { FocusWrap, useCursorFocus } from '../focus'
 import type { BarLayout } from './bars-marks'
 import { AUTO_END_LABELS, lastIsPlaceable, lineMarks } from './lines-marks'
+import { phoneNamesFit } from '../labels'
 import type { LinesNaming } from '../labels'
 
 /** The most points a `table` renders: past it the table is a wall, not an alternative. */
@@ -341,8 +342,38 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
   const effective: LinesNaming = namedByLabels ? stable.naming : 'legend'
   const placeable = labelled.every((s) => lastIsPlaceable(spec.data, spec.x, spec.xDomain, s))
   const labelsOnly = effective === 'endLabels'
-  const hideAtWide =
+  const namedAtEnds =
     effective === 'auto' && placeable && labelled.length > 0 && labelled.length <= AUTO_END_LABELS
+  const hideAtWide = namedAtEnds
+  // A phone names its lines at their ends when they fit without a collision, and the legend gives way
+  // (decided from the data, so the server HTML agrees); otherwise the legend names them as before.
+  const hideAtNarrow = useMemo(() => {
+    if (!namedAtEnds) return false
+    const lines = spec.series.filter(
+      (s, i) => stable.series[i]?.mark === 'line' && s.role !== 'reference',
+    )
+    const last = lines.flatMap((s) => {
+      const value = spec.data.findLast((d) => s.getValue(d) !== null)
+      const v = value === undefined ? null : s.getValue(value)
+      return typeof v === 'number' && Number.isFinite(v) ? [{ label: s.label, value: v }] : []
+    })
+    if (last.length !== lines.length) return false
+    const all = lines.flatMap((s) =>
+      spec.data.flatMap((d) => {
+        const v = s.getValue(d)
+        return typeof v === 'number' && Number.isFinite(v) ? [v] : []
+      }),
+    )
+    if (all.length === 0) return false
+    // A loop, not `Math.min(...all)`: a long series overflows the argument limit.
+    let lo = all[0] as number
+    let hi = lo
+    for (const v of all) {
+      if (v < lo) lo = v
+      if (v > hi) hi = v
+    }
+    return phoneNamesFit({ last, extent: [lo, hi] })
+  }, [namedAtEnds, spec, stable.series])
 
   // ── selection: the click and Enter proposal, through the engine's keyed selection ──────────────
   const indexOf = useMemo(() => indexMap(stable.data), [stable.data])
@@ -489,6 +520,10 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
       plot,
       focused,
       ...(effective !== 'legend' && { endLabels: effective }),
+      ...(hideAtNarrow && { endLabelsNarrow: true }),
+      // A pane of stacked charts shares one gutter, so only a chart that owns its y axis moves the labels inside.
+      // A bar fills the plot from its left edge, under any label placed there: the bar kinds keep their axis column.
+      ...(pane === undefined && !hasBars && { yInside: true }),
       // With `focus` the wrapper is the one tab stop and steps `focus.items` itself.
       ...(ownsKeys && { keyboard: false }),
       ...(hasBars && {
@@ -516,11 +551,13 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
     plot,
     focused,
     effective,
+    hideAtNarrow,
     ownsKeys,
     hasBars,
     stable.layout,
     stable.bare,
     controller,
+    pane,
   ])
 
   // ── legend: micro has none, compact shows dots, regular and wide show chips (CSS) ──────────────
@@ -555,6 +592,7 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
       onHighlight={setHighlighted}
       concealed={resolved !== null}
       hideAtWide={hideAtWide}
+      hideAtNarrow={hideAtNarrow}
     />
   ) : null
 

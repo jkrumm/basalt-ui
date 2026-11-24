@@ -22,7 +22,8 @@ const amber = { light: '#9a5b00', dark: '#e0a84a' }
 const rows: Row[] = Array.from({ length: 14 }, (_, i) => ({
   day: day(i),
   a: 4 + (i % 5),
-  b: 2 + (i % 3),
+  // The two lines end together, so a phone keeps the legend this fixture is about (lines that end apart are named at their ends).
+  b: i === 13 ? 6.9 : 2 + (i % 3),
 }))
 
 function FillCard(props: { id: string }) {

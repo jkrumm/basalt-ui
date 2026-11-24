@@ -38,10 +38,27 @@
   }
 }
 
+/* Lines' `naming="auto"` on a phone: where the lines fit end labels, they name the lines and the narrow legend goes. */
+@container (max-width: 479.9px) {
+  .auto[data-hide-narrow] {
+    display: none;
+  }
+}
+
 /* Lines' `naming="auto"`: from the wide class the end labels name the lines, so the legend goes. */
 @container (min-width: 800px) {
   .auto[data-hide-wide] {
     display: none;
+  }
+}
+
+/*
+ * A coarse pointer's wrapped rows sit 20px apart, so a toggle's 44px hit area never meets the next row's
+ * (`legend.tsx` `ROW_GAP`): the legend of a phone never overlaps its toggles.
+ */
+@media (pointer: coarse) {
+  :global([data-basalt-chart-legend]) {
+    --bc-legend-row-gap: 20px;
   }
 }
 

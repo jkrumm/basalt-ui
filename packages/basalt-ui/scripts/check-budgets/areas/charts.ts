@@ -87,7 +87,8 @@ export const rows: readonly RowDef[] = [
     // placed inside its own segment of a stack, fitted like a clamped stack, and the stack-aware `y.domain` extent
     // (expression cycle 19 contract).
     // 140400 -> 140500 (trial 2 kit defects): 140476 B measured, +~80 B gz over master (140242) for the room under the longest negative bar that keeps its value label outside it (compile.ts roomForValues) and height 'fill' on Heatmap.
-    ceiling: 140500,
+    // 140500 -> 141300 (Issue 3211): 141258 B measured, +~780 B gz over master (140476) for the phone's one inset: the y tick labels inside the plot, the edge anchor of an x label, `ChartCard bleed`, the end labels of the narrow class and the legend's coarse row gap.
+    ceiling: 141300,
     measure: () => measureSource(THREE_KIND),
   },
 ]
@@ -110,6 +111,13 @@ export const raises: Raises = {
     },
   ],
   'charts-three-kind': [
+    {
+      from: 140500,
+      to: 141300,
+      consumer:
+        "the owner's phone review of 2026-11-24 (Issue 3211): at 390 a chart lost 48 px to the page gutter, the card inset and the chart padding and about 44 px to the y axis; the plot takes the whole card content, a plot may run to the card edge, and lines that end apart are named at their ends",
+      repo: 'basalt-ui',
+    },
     {
       from: 140400,
       to: 140500,

@@ -358,3 +358,16 @@
   content: ' · ';
   white-space: pre;
 }
+
+/*
+ * A narrow chart draws its y tick labels inside the plot, over the grid and the data (`yGuide` `inside`). A halo of the
+ * surface the plot sits on keeps a label legible where a line runs under it, as the hover's value chips are.
+ */
+@container (max-width: 479.9px) {
+  :global(.ts-chart text[data-ts-key^='y-tick-label']) {
+    paint-order: stroke;
+    stroke: var(--bc-guide-halo, var(--basalt-card));
+    stroke-width: 4px;
+    stroke-linejoin: round;
+  }
+}

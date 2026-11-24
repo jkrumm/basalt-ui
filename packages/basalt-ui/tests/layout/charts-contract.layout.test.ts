@@ -147,9 +147,11 @@ layout('charts contract amendment', () => {
           expect(label.t).toBeGreaterThanOrEqual(plot.t - 0.5)
           expect(label.b).toBeLessThanOrEqual(plot.b + 0.5)
         }
+        // Two labels may touch at a corner within a pixel: the engine places their ink, a text box is a line taller.
+        const shrunk = (r: Rect): Rect => ({ l: r.l + 1, t: r.t + 1, r: r.r - 1, b: r.b - 1 })
         for (let i = 0; i < labels.length; i++)
           for (let j = i + 1; j < labels.length; j++)
-            expect(meets(labels[i]!, labels[j]!)).toBe(false)
+            expect(meets(shrunk(labels[i]!), shrunk(labels[j]!))).toBe(false)
       })
 
       for (const [id, caption] of [
