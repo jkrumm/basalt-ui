@@ -1,6 +1,6 @@
 /**
  * `./table.css` is a published entry that a page with no Tailwind and no framework can import, so
- * the sheet stays plain CSS: no Tailwind directive, no import, everything in `@layer basalt.table`,
+ * the sheet stays plain CSS: no Tailwind directive, no import, everything but the leading layer-order statement in `@layer basalt.table`,
  * and it exists at the path the export map points at.
  */
 import { describe, expect, test } from 'bun:test'
