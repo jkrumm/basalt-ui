@@ -99,8 +99,8 @@ export function seedPlan(appRel: string, start: boolean): [string, string, strin
   return [...seeds, ['router', router, START_SEED_TEMPLATES.router]]
 }
 
-/** True when a page file under the app's `routes/` already serves `/`: a second one would be a duplicate route. */
-function routeServesRoot(ctx: Ctx, appRel: string): boolean {
+/** True when a page file under the app's `routes/` (bar `ignore`, a seed's own dest) already serves `/`: a second one would be a duplicate route. */
+function routeServesRoot(ctx: Ctx, appRel: string, ignore?: string): boolean {
   const routes = dirname(routerSeedDest(appRel, 'root'))
   const files = (() => {
     try {
@@ -111,7 +111,22 @@ function routeServesRoot(ctx: Ctx, appRel: string): boolean {
       return []
     }
   })()
-  return routePatterns(files.map((f) => `${routes}/${f}`)).some((p) => p.length === 0)
+  const paths = files.map((f) => `${routes}/${f}`).filter((p) => p !== ignore)
+  return routePatterns(paths).some((p) => p.length === 0)
+}
+
+/**
+ * Why the `_app` layout and its nav are not seeded, or null. Once `_app.tsx` exists init laid them out
+ * already (a re-run only fills what is missing); before that, a root route the app keeps or a page
+ * that already serves `/` would make the seeded layout's `/` a second one, which the router generator rejects.
+ */
+function layoutSkip(ctx: Ctx, appRel: string, rootSeed: string | undefined): string | null {
+  if (readIfExists(resolve(ctx.root, routerSeedDest(appRel, 'app'))) !== null) return null
+  const ownRoot = readIfExists(resolve(ctx.root, routerSeedDest(appRel, 'root')))
+  if (ownRoot !== null && ownRoot !== rootSeed) return 'the app keeps its own root route'
+  return routeServesRoot(ctx, appRel, routerSeedDest(appRel, 'appIndex'))
+    ? 'a route file already serves /'
+    : null
 }
 
 /** The stylesheet the Start root route links, as an import path from `src/routes`: the app's entry in `src` or at its root, else `src/index.css` (`wireApp` writes it). */
@@ -159,7 +174,20 @@ export function placeRouterSeeds(ctx: Ctx): void {
   if (skip !== null) return say(`skipped the router seeds: ${SKIP_NOTES[skip]}`)
 
   const name = appName(ctx.root).replace(/[\\']/g, '\\$&')
-  for (const [seed, dest, tpl] of seedPlan(app.rel, start)) {
+  const plan = seedPlan(app.rel, start)
+  const rootTpl = plan.find(([seed]) => seed === 'root')?.[2]
+  const rootSeed = rootTpl && readIfExists(resolve(ctx.pkgRoot, 'agent/templates', rootTpl))
+  const layout = layoutSkip(
+    ctx,
+    app.rel,
+    rootSeed
+      ? rootSeed
+          .replaceAll('{{APP_NAME}}', () => name)
+          .replaceAll('{{CSS_ENTRY}}', () => cssEntry(ctx, app.rel))
+      : undefined,
+  )
+  let layoutSkipped = false
+  for (const [seed, dest, tpl] of plan) {
     const template = readIfExists(resolve(ctx.pkgRoot, 'agent/templates', tpl))
     if (template === null) {
       ctx.problems.push(`${ctx.pkgRoot} ships no ${tpl}`)
@@ -169,8 +197,17 @@ export function placeRouterSeeds(ctx: Ctx): void {
       .replaceAll('{{APP_NAME}}', () => name)
       .replaceAll('{{CSS_ENTRY}}', () => cssEntry(ctx, app.rel))
     const existing = readIfExists(resolve(ctx.root, dest))
-    if (seed === 'appIndex' && existing === null && routeServesRoot(ctx, app.rel)) {
-      say(`skipped ${dest}: a route file already serves /`)
+    const reason =
+      existing !== null
+        ? null
+        : seed === 'nav' || seed === 'app'
+          ? layout
+          : seed === 'appIndex'
+            ? (layout ?? (routeServesRoot(ctx, app.rel) ? 'a route file already serves /' : null))
+            : null
+    if (reason !== null) {
+      say(`skipped ${dest}: ${reason}`)
+      layoutSkipped = layoutSkipped || layout !== null
     } else if (existing === null) {
       writeText(ctx.root, dest, text)
       say(`wrote ${dest}`)
@@ -186,5 +223,10 @@ export function placeRouterSeeds(ctx: Ctx): void {
     } else {
       say(`kept ${dest}: it exists`)
     }
+  }
+  if (layoutSkipped) {
+    ctx.todo.push(
+      `no _app layout or nav was seeded (${layout}): add them by hand if the app wants the basalt shell`,
+    )
   }
 }

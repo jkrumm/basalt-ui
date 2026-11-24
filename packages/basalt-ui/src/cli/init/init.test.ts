@@ -880,6 +880,44 @@ describe('init: the router scaffold', () => {
     expect(log).toContain('kept src/routes/_app/index.tsx: it exists')
   })
 
+  it('seeds no _app layout or nav beside a root route the app keeps, and a second run writes none', async () => {
+    const dir = createVite()
+    put(dir, 'src/routes/__root.tsx', 'export const Route = 1\n')
+    put(dir, 'src/routes/index.tsx', 'export const Route = 2\n')
+    const { code, log } = await runInit(['--profile', 'app', '--root', 'src'], dir)
+    expect(code).toBe(0)
+    expect(read(dir, 'src/routes/__root.tsx')).toBe('export const Route = 1\n')
+    for (const path of ['src/routes/_app.tsx', 'src/lib/nav.tsx', 'src/routes/_app/index.tsx']) {
+      expect(existsSync(join(dir, path))).toBe(false)
+    }
+    expect(log).toContain('skipped src/routes/_app.tsx: the app keeps its own root route')
+    expect(log).toContain('no _app layout or nav was seeded')
+    for (const [, part] of read(dir, 'src/main.tsx').matchAll(
+      /from '\.\/(components\/route-\w+)'/g,
+    )) {
+      expect(existsSync(join(dir, 'src', `${part}.tsx`))).toBe(true)
+    }
+    const before = snapshot(dir)
+    await runInit(['--profile', 'app', '--root', 'src'], dir)
+    expect(snapshot(dir)).toEqual(before)
+  })
+
+  it('seeds no _app layout beside a page that already serves /, and a re-run refills a deleted nav', async () => {
+    const dir = createVite()
+    put(dir, 'src/routes/index.tsx', 'export const Route = 2\n')
+    const first = await runInit(['--profile', 'app', '--root', 'src'], dir)
+    expect(first.log).toContain('skipped src/routes/_app.tsx: a route file already serves /')
+    expect(existsSync(join(dir, 'src/routes/_app.tsx'))).toBe(false)
+    expect(existsSync(join(dir, 'src/lib/nav.tsx'))).toBe(false)
+
+    const fresh = createVite()
+    await runInit(['--profile', 'app', '--root', 'src'], fresh)
+    expect(existsSync(join(fresh, 'src/routes/_app/index.tsx'))).toBe(true)
+    rmSync(join(fresh, 'src/lib/nav.tsx'))
+    await runInit(['--profile', 'app', '--root', 'src'], fresh)
+    expect(existsSync(join(fresh, 'src/lib/nav.tsx'))).toBe(true)
+  })
+
   it('writes the start page beside a route group directory, which serves no path itself', async () => {
     const dir = createVite()
     put(dir, 'src/routes/(auth)/login.tsx', 'export const Route = 1\n')
