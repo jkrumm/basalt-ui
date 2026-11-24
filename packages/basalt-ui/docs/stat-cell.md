@@ -43,7 +43,9 @@ StatCell(props: StatCellProps): ReactElement
   rows?: readonly StatRow[]
 ```
 
-`Delta`, `Empty`, `Phase`, `QueryStateLike`, `StatCellProps`, `Verdict` import from `basalt-ui/cards`: `import type { Delta, Empty, Phase, QueryStateLike, StatCellProps, Verdict } from 'basalt-ui/cards'`.
+`Delta`, `Empty`, `Phase`, `QueryStateLike`, `StatCellProps`, `StatRow`, `Verdict` import from `basalt-ui/cards`: `import type { Delta, Empty, Phase, QueryStateLike, StatCellProps, StatRow, Verdict } from 'basalt-ui/cards'`.
+
+`BoxSlot`, `IconComponent`, `NavTarget` import from `basalt-ui`: `import type { BoxSlot, IconComponent, NavTarget } from 'basalt-ui'`.
 
 ## Example
 

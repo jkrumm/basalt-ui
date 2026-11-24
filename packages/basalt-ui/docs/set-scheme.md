@@ -18,3 +18,5 @@ async restore (same-tab localStorage writes fire no storage event).
 ```ts
 setScheme(value?: Scheme, options?: { cookie?: string; key?: string; }): void
 ```
+
+`Scheme` import from `basalt-ui`: `import type { Scheme } from 'basalt-ui'`.

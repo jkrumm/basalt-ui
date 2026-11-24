@@ -317,7 +317,9 @@ col<T>(): Col<T>
 
 `Tone` import from `basalt-ui/cards`: `import type { Tone } from 'basalt-ui/cards'`.
 
-`CodecKind`, `CodecOptions`, `DateRangeLike`, `KindColumn`, `RowAction`, `TableRequest`, `TableSchema` import from `basalt-ui/table`: `import type { CodecKind, CodecOptions, DateRangeLike, KindColumn, RowAction, TableRequest, TableSchema } from 'basalt-ui/table'`.
+`Aggregate`, `CardSlot`, `CodecKind`, `CodecOptions`, `DateRangeLike`, `KindColumn`, `Priority`, `RowAction`, `TableRequest`, `TableSchema` import from `basalt-ui/table`: `import type { Aggregate, CardSlot, CodecKind, CodecOptions, DateRangeLike, KindColumn, Priority, RowAction, TableRequest, TableSchema } from 'basalt-ui/table'`.
+
+`Box`, `IconComponent`, `NavTarget` import from `basalt-ui`: `import type { Box, IconComponent, NavTarget } from 'basalt-ui'`.
 
 ## Example
 

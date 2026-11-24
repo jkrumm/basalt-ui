@@ -26,6 +26,8 @@ Section<K extends string = string>(props: SectionProps<K>): ReactElement
   children?: ReactNode
 ```
 
+`PageTabs`, `SectionProps` import from `basalt-ui/page`: `import type { PageTabs, SectionProps } from 'basalt-ui/page'`.
+
 `ControlHandle` import from `basalt-ui/router`: `import type { ControlHandle } from 'basalt-ui/router'`.
 
 ## Example

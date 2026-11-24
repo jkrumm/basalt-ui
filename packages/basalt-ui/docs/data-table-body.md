@@ -21,6 +21,8 @@ DataTableBody<T>({ table: instance, detail, }: { table: DataTableInstance<T>; de
 
 `DataTableInstance` import from `basalt-ui/table`: `import type { DataTableInstance } from 'basalt-ui/table'`.
 
+`DetailHost` import from `basalt-ui`: `import type { DetailHost } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

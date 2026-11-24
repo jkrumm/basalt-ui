@@ -27,6 +27,8 @@ useFormDraft<V>(form: FormLike<V>, o: UseFormDraftOptions<V>): UseFormDraftResul
   reset: (values: V, o?: { keepDefaultValues?: boolean; }) => void
 ```
 
+`FormLike`, `UseFormDraftOptions`, `UseFormDraftResult` import from `basalt-ui/controls`: `import type { FormLike, UseFormDraftOptions, UseFormDraftResult } from 'basalt-ui/controls'`.
+
 ## Example
 
 ```tsx

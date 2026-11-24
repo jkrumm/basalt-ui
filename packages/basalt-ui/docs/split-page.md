@@ -29,6 +29,8 @@ SplitPage({ selected, onBack, backLabel, list, detail, resize, scroll, }: SplitP
   scroll?: "page" | "panes"  // Who scrolls: 'page' (default) the list in its own ScrollArea and the detail with the page; 'panes' both panes are bounded to the page's height and each brings its own scroller (a virtual list, a ScrollArea), for a fill page such as a mailbox
 ```
 
+`SplitPageProps` import from `basalt-ui/page`: `import type { SplitPageProps } from 'basalt-ui/page'`.
+
 ## Example
 
 ```tsx

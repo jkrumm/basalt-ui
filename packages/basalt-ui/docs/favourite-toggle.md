@@ -28,6 +28,8 @@ FavouriteToggle({ className, ...input }: FavouriteToggleProps): ReactElement | n
 
 `FavouriteToggleProps` import from `basalt-ui/page`: `import type { FavouriteToggleProps } from 'basalt-ui/page'`.
 
+`IconComponent`, `NavTarget` import from `basalt-ui`: `import type { IconComponent, NavTarget } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

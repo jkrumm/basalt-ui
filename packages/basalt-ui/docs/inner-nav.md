@@ -34,6 +34,8 @@ InnerNav<K extends string = string>({ label, state, filter, groups, phase, }: In
 
 `Phase`, `QueryStateLike` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike } from 'basalt-ui/cards'`.
 
+`InnerNavGroup`, `InnerNavProps` import from `basalt-ui/page`: `import type { InnerNavGroup, InnerNavProps } from 'basalt-ui/page'`.
+
 `PushField` import from `basalt-ui/router`: `import type { PushField } from 'basalt-ui/router'`.
 
 ## Example

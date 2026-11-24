@@ -21,3 +21,5 @@ setAppearance(change?: AppearanceChange): void
   frame?: "panel" | "flush" | null
   accent?: "blue" | "violet" | "rose" | "orange" | "green" | "teal" | null
 ```
+
+`AppearanceChange` import from `basalt-ui`: `import type { AppearanceChange } from 'basalt-ui'`.

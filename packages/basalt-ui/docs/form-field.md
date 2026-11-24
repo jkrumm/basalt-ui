@@ -33,6 +33,8 @@ FormField<T>(props: FormFieldProps<T>): ReactElement
 
 `FormFieldLayout`, `FormFieldProps` import from `basalt-ui/controls`: `import type { FormFieldLayout, FormFieldProps } from 'basalt-ui/controls'`.
 
+`FieldLike`, `IconComponent` import from `basalt-ui`: `import type { FieldLike, IconComponent } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

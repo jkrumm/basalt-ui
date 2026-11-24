@@ -21,6 +21,8 @@ client-rendered app reads it on its first render. Chrome only: a page lays out b
 useSizeClass(): SizeClass
 ```
 
+`SizeClass` import from `basalt-ui/page`: `import type { SizeClass } from 'basalt-ui/page'`.
+
 ## Example
 
 ```tsx

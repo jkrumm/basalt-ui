@@ -22,6 +22,8 @@ field then stays in the props the schema sees (the block's own literal).
 defineCatalog(blocks: readonly Block[], options?: { discriminator?: string; }): Catalog
 ```
 
+`Block`, `Catalog` import from `basalt-ui/ai`: `import type { Block, Catalog } from 'basalt-ui/ai'`.
+
 ## Example
 
 ```tsx

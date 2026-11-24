@@ -24,6 +24,8 @@ FormFooter<const A extends readonly FormAction[]>({ form, actions, sticky, float
   className?: string  // Layout only (`mt-4`, `w-full`)
 ```
 
+`FormAction`, `FormLike` import from `basalt-ui/controls`: `import type { FormAction, FormLike } from 'basalt-ui/controls'`.
+
 ## Example
 
 ```tsx

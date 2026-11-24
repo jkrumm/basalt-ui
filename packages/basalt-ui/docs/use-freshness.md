@@ -22,7 +22,7 @@ Needs a client from `createQueryClient`.
 useFreshness(keys?: readonly QueryKey[], options?: FreshnessOptions): FreshnessView
 ```
 
-`FreshnessOptions` import from `basalt-ui/data`: `import type { FreshnessOptions } from 'basalt-ui/data'`.
+`FreshnessOptions`, `FreshnessView` import from `basalt-ui/data`: `import type { FreshnessOptions, FreshnessView } from 'basalt-ui/data'`.
 
 ## Example
 

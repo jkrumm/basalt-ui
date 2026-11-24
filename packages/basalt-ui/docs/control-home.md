@@ -21,6 +21,8 @@ ControlHome({ home, children }: ControlHomeProps): ReactElement | null
   children?: ReactNode
 ```
 
+`ControlHomeProps` import from `basalt-ui/controls`: `import type { ControlHomeProps } from 'basalt-ui/controls'`.
+
 ## Example
 
 ```tsx

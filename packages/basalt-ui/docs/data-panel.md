@@ -52,6 +52,10 @@ DataPanel(props: DataPanelProps): ReactElement
 
 `CardMenu`, `DataPanelProps`, `Empty`, `LegendEntry`, `Phase`, `QueryStateLike` import from `basalt-ui/cards`: `import type { CardMenu, DataPanelProps, Empty, LegendEntry, Phase, QueryStateLike } from 'basalt-ui/cards'`.
 
+`ControlsSlot` import from `basalt-ui/controls`: `import type { ControlsSlot } from 'basalt-ui/controls'`.
+
+`BoxSlot`, `IconComponent` import from `basalt-ui`: `import type { BoxSlot, IconComponent } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

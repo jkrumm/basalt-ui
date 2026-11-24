@@ -24,6 +24,8 @@ ViewTabs<T extends string>(props: ViewTabsProps<T>): ReactNode
   className?: string  // Layout only (`w-full`, `ml-auto`)
 ```
 
+`ViewTabsOption`, `ViewTabsProps` import from `basalt-ui/controls`: `import type { ViewTabsOption, ViewTabsProps } from 'basalt-ui/controls'`.
+
 `ControlHandle` import from `basalt-ui/router`: `import type { ControlHandle } from 'basalt-ui/router'`.
 
 ## Example

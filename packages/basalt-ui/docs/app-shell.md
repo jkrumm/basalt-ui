@@ -49,6 +49,10 @@ AppShell<Id extends string = string>({ nav, brand, badges, blocks, globalControl
 
 `FavouritesStore` import from `basalt-ui/page`: `import type { FavouritesStore } from 'basalt-ui/page'`.
 
+`NavBadge` import from `basalt-ui/router`: `import type { NavBadge } from 'basalt-ui/router'`.
+
+`Account`, `AppShellProps`, `GlobalAction`, `SettingsConfig`, `ShellBrand`, `ShellChrome`, `ShellFrame`, `SidebarBlock`, `WorkspaceSwitcher` import from `basalt-ui/shell`: `import type { Account, AppShellProps, GlobalAction, SettingsConfig, ShellBrand, ShellChrome, ShellFrame, SidebarBlock, WorkspaceSwitcher } from 'basalt-ui/shell'`.
+
 ## Example
 
 ```tsx

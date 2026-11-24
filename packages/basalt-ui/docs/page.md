@@ -24,6 +24,8 @@ Page({ area, fill, landmark, children }: PageProps): ReactElement
   children?: ReactNode
 ```
 
+`PageProps` import from `basalt-ui/page`: `import type { PageProps } from 'basalt-ui/page'`.
+
 ## Example
 
 ```tsx

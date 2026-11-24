@@ -31,6 +31,8 @@ FormGroupRow({ label, description, icon, id, summary, defaultOpen, className, ch
 
 `FormGroupRowProps` import from `basalt-ui/controls`: `import type { FormGroupRowProps } from 'basalt-ui/controls'`.
 
+`IconComponent` import from `basalt-ui`: `import type { IconComponent } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

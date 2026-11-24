@@ -40,6 +40,8 @@ Dock({ title, tag, fullPage, favourite, onClose, icon, avatar, actions, records,
 
 `DockProps`, `FavouriteInput` import from `basalt-ui/page`: `import type { DockProps, FavouriteInput } from 'basalt-ui/page'`.
 
+`IconComponent`, `NavTarget`, `RecordSequence` import from `basalt-ui`: `import type { IconComponent, NavTarget, RecordSequence } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

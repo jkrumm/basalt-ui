@@ -25,6 +25,8 @@ BasaltProvider({ scheme, locale, lang, link, live, children, }: BasaltProviderPr
   children?: ReactNode
 ```
 
+`BasaltProviderProps`, `LinkComponent`, `LiveBinding`, `Scheme` import from `basalt-ui`: `import type { BasaltProviderProps, LinkComponent, LiveBinding, Scheme } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

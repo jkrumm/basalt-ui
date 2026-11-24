@@ -19,6 +19,8 @@ header content out of that strip. Outside an `AppShell` it reads `web`.
 useWindowChrome(): WindowChrome
 ```
 
+`WindowChrome` import from `basalt-ui/shell`: `import type { WindowChrome } from 'basalt-ui/shell'`.
+
 ## Example
 
 ```tsx

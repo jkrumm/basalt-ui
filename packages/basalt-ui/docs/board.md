@@ -34,6 +34,8 @@ Board<C extends string, T extends { id: string; title: string; }>({ label, colum
 
 `BoardProps`, `ColumnRef`, `Move`, `Tone` import from `basalt-ui/cards`: `import type { BoardProps, ColumnRef, Move, Tone } from 'basalt-ui/cards'`.
 
+`DragLike` import from `basalt-ui`: `import type { DragLike } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx
