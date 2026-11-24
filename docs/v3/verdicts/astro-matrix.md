@@ -17,97 +17,97 @@ Columns: `No directive` is the static HTML: `clean`, `differs` from the client:o
 
 | Part | Exports | No directive | Best | JavaScript | Further island | CSS | Why |
 |-|-|-|-|-|-|-|-|
-| button | Button | clean | no directive | 82.8 kB | 11.6 kB | 33.7 kB | The static HTML is the whole part, 0 bytes of JavaScript: a native button; its handler is the page's own. |
-| accordion | Accordion, AccordionItem, AccordionTrigger, AccordionContent | clean | client:visible | 90.4 kB | 19.2 kB | 33.7 kB | Static picture first, the island adds behaviour: the open section is static; JS toggles the others. client:visible, up to 19.2 kB further (client:idle above the fold). |
-| alert | Alert | clean | no directive | 77.5 kB | 6.3 kB | 33.7 kB | The static HTML is the whole part, 0 bytes of JavaScript: a message at rest; its role follows the tone. |
-| badge | Lozenge, CountBadge, DeltaBadge | clean | no directive | 77.9 kB | 6.7 kB | 33.7 kB | The static HTML is the whole part, 0 bytes of JavaScript: chips carry their word and number at rest. |
-| pressable | Pressable | clean | no directive | 82.8 kB | 11.6 kB | 33.7 kB | The static HTML is the whole part, 0 bytes of JavaScript: a native button; its handler is the page's own. |
-| card | Card, CardBand, CardInfo, CardPhase, IconTile, Inset | clean | no directive | 82.8 kB | 11.5 kB | 33.7 kB | The static HTML is the whole part, 0 bytes of JavaScript: a static surface; CardInfo opens a native popover without page JS. |
-| collapsible | Collapsible, CollapsibleTrigger, CollapsibleContent | clean | client:visible | 90.0 kB | 18.8 kB | 33.7 kB | Static picture first, the island adds behaviour: the trigger is static; JS opens the hidden region. client:visible, up to 18.8 kB further (client:idle above the fold). |
-| dialog | Dialog, DialogTrigger, DialogContent, DialogClose | clean | client:visible | 116.1 kB | 44.9 kB | 33.7 kB | Needs the island to work: a modal opens from its trigger; closed in the static picture. client:idle above the fold, client:visible below, up to 44.9 kB further. |
-| alert-dialog | AlertDialog, AlertDialogTrigger, AlertDialogContent | clean | client:visible | 116.1 kB | 44.9 kB | 33.7 kB | Needs the island to work: a confirm opens from its trigger; closed in the static picture. client:idle above the fold, client:visible below, up to 44.9 kB further. |
-| sheet | Sheet, SheetTrigger, SheetContent, SheetClose | clean | client:visible | 130.5 kB | 59.3 kB | 33.7 kB | Needs the island to work: a panel opens from its trigger; closed in the static picture. client:idle above the fold, client:visible below, up to 59.3 kB further. |
-| menu | Menu, MenuTrigger, MenuContent, MenuItem, MenuGroup, MenuSeparator, MenuCheckboxItem, MenuRadioGroup, MenuRadioItem, MenuSub | clean | client:visible | 142.9 kB | 71.7 kB | 33.7 kB | Needs the island to work: the list opens from its trigger and runs items on click; closed in the static picture. client:idle above the fold, client:visible below, up to 71.7 kB further. |
-| popover | Popover, PopoverTrigger, PopoverContent | clean | client:visible | 127.3 kB | 56.1 kB | 33.7 kB | Needs the island to work: the panel opens from its trigger; closed in the static picture. client:idle above the fold, client:visible below, up to 56.1 kB further. |
-| preview-card | PreviewCard, PreviewCardTrigger, PreviewCardContent | clean | client:visible | 130.9 kB | 59.7 kB | 33.7 kB | Static picture first, the island adds behaviour: the link is followed without JS; JS adds the card on hover and focus. client:visible, up to 59.7 kB further (client:idle above the fold). |
-| tooltip | Tooltip | clean | client:visible | 121.1 kB | 49.9 kB | 33.7 kB | Needs the island to work: the label shows only on hover or focus; the icon button keeps its own name. client:idle above the fold, client:visible below, up to 49.9 kB further. |
-| tabs | Tabs, TabsList, TabsTrigger, TabsContent | clean | client:visible | 96.3 kB | 25.1 kB | 33.7 kB | Static picture first, the island adds behaviour: the default panel is static; JS switches tabs. client:visible, up to 25.1 kB further (client:idle above the fold). |
-| toolbar | Toolbar, ToolbarButton, ToolbarGroup, ToolbarSeparator | clean | client:visible | 93.0 kB | 21.8 kB | 33.7 kB | Static picture first, the island adds behaviour: the buttons are static; JS adds roving arrow-key focus. client:visible, up to 21.8 kB further (client:idle above the fold). |
-| kbd | Kbd | clean | no directive | 77.2 kB | 6.0 kB | 33.7 kB | The static HTML is the whole part, 0 bytes of JavaScript: key caps are static text. |
-| meter | Meter | clean | no directive | 83.9 kB | 12.7 kB | 33.7 kB | The static HTML is the whole part, 0 bytes of JavaScript: the zone and its word are drawn at rest. |
-| num | Num | clean | no directive | 79.6 kB | 8.4 kB | 33.7 kB | The static HTML is the whole part, 0 bytes of JavaScript: the figure is formatted at render. |
-| progress | Progress, Ring | clean | no directive | 83.6 kB | 12.4 kB | 33.7 kB | The static HTML is the whole part, 0 bytes of JavaScript: the value is drawn at rest. |
-| separator | Separator | clean | no directive | 78.8 kB | 7.6 kB | 33.7 kB | The static HTML is the whole part, 0 bytes of JavaScript: a hairline needs no behaviour. |
-| skeleton | Skeleton, Spinner | clean | no directive | 80.4 kB | 9.2 kB | 33.7 kB | The static HTML is the whole part, 0 bytes of JavaScript: the loading shape and spinner are static. |
-| status | Status, Swatch | clean | no directive | 84.0 kB | 12.8 kB | 33.7 kB | The static HTML is the whole part, 0 bytes of JavaScript: the verdict word is the state at rest. |
-| info-hint | InfoHint | clean | client:visible | 129.7 kB | 58.5 kB | 33.7 kB | Needs the island to work: the definition sits in a popover that opens on hover, focus or press. client:idle above the fold, client:visible below, up to 58.5 kB further. |
-| scroll-area | ScrollArea | clean | client:visible | 77.6 kB | 6.3 kB | 33.7 kB | Static picture first, the island adds behaviour: native overflow scrolls; JS adds the keyboard tab stop when content overflows. client:visible, up to 6.3 kB further (client:idle above the fold). |
-| resizable | ResizablePanelGroup, ResizablePanel, ResizableHandle | clean | client:visible | 91.7 kB | 20.5 kB | 33.7 kB | Static picture first, the island adds behaviour: sizes render as static flex ratios; JS drags the divider. client:visible, up to 20.5 kB further (client:idle above the fold). |
-| virtual-list | VirtualList | clean | client:visible | 84.9 kB | 13.7 kB | 33.7 kB | Static picture first, the island adds behaviour: the first window renders statically; JS windows the scroll. client:visible, up to 13.7 kB further (client:idle above the fold). |
-| stat-card | StatCard | clean | no directive | 101.0 kB | 29.8 kB | 35.7 kB | The static HTML is the whole part, 0 bytes of JavaScript: figure, delta, verdict and sparkline are all drawn at rest. |
-| stat-group | StatGroup, StatCell | clean | no directive | 106.7 kB | 35.5 kB | 35.7 kB | The static HTML is the whole part, 0 bytes of JavaScript: figures, deltas and sparklines are drawn at rest; the chart sits in its box. |
-| bar-list | BarList | clean | no directive | 94.1 kB | 22.9 kB | 33.7 kB | The static HTML is the whole part, 0 bytes of JavaScript: the ranked bars are the picture; rows are plain text without a link. |
-| chain-view | ChainView | clean | client:visible | 95.0 kB | 23.8 kB | 33.7 kB | Static picture first, the island adds behaviour: pan, zoom and trace focus need JS; the laid-out graph is the static picture. client:visible, up to 23.8 kB further (client:idle above the fold). |
-| data-panel | DataPanel | clean | no directive | 89.7 kB | 18.5 kB | 33.7 kB | The static HTML is the whole part, 0 bytes of JavaScript: the card frame and its body list are drawn at rest. |
-| event-list | EventList | clean | client:visible | 90.8 kB | 19.6 kB | 33.7 kB | Static picture first, the island adds behaviour: "Show more" pages the feed; the first page is the static picture. client:visible, up to 19.6 kB further (client:idle above the fold). |
-| kanban-card | KanbanCard | clean | client:visible | 91.4 kB | 20.2 kB | 33.7 kB | Static picture first, the island adds behaviour: the move menu and drag need JS; the card is drawn at rest. client:visible, up to 20.2 kB further (client:idle above the fold). |
-| row-list | RowList | clean | client:visible | 89.6 kB | 18.4 kB | 33.7 kB | Static picture first, the island adds behaviour: a row shares focus with its chart mark; hover and focus highlight need JS. client:visible, up to 18.4 kB further (client:idle above the fold). |
-| step-rail | StepRail | clean | no directive | 81.2 kB | 10.0 kB | 33.7 kB | The static HTML is the whole part, 0 bytes of JavaScript: bars scaled to the longest step are drawn at rest; it never animates. |
-| lines | Lines | differs | client:visible | 192.8 kB | 121.6 kB | 35.7 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 121.6 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-light). |
-| bars | Bars | differs | client:visible | 192.8 kB | 121.5 kB | 35.7 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 121.5 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-light). |
-| cartesian-chart | CartesianChart | differs | client:visible | 192.7 kB | 121.5 kB | 35.7 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 121.5 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-light). |
-| chart-card | ChartCard | differs | client:visible | 204.7 kB | 133.5 kB | 35.7 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 133.5 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-light). |
-| heatmap | Heatmap | differs | client:visible | 189.5 kB | 118.3 kB | 35.7 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 118.3 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-light). |
-| interval-track | IntervalTrack | differs | client:visible | 190.5 kB | 119.3 kB | 35.7 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 119.3 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-dark). |
-| sparkline | Sparkline | clean | client:visible | 89.6 kB | 18.4 kB | 35.7 kB | Static picture first, the island adds behaviour: the keyboard and pointer readout of a labelled sparkline. client:visible, up to 18.4 kB further (client:idle above the fold). |
-| band-strip | BandStrip | differs | client:visible | 184.8 kB | 113.6 kB | 35.7 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 113.6 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-light). |
-| data-table | DataTable | clean | client:visible | 334.6 kB | 263.4 kB | 33.7 kB | Static picture first, the island adds behaviour: sorting, paging and selection. client:visible, up to 263.4 kB further (client:idle above the fold). |
-| static-table | Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableCaption | clean | no directive | 84.7 kB | 13.5 kB | 33.7 kB | The static HTML is the whole part, 0 bytes of JavaScript: a static table; the picture is the whole part. |
-| table-toolbar | TableToolbar, BulkBar, TablePager | clean | client:visible | 290.8 kB | 219.6 kB | 33.7 kB | Static picture first, the island adds behaviour: search, filters, sorting, paging and bulk selection need JS. client:visible, up to 219.6 kB further (client:idle above the fold). |
-| data-table-body | DataTableBody | clean | client:visible | 324.2 kB | 253.0 kB | 33.7 kB | Static picture first, the island adds behaviour: sorting, selection and row activation need JS over the body. client:visible, up to 253.0 kB further (client:idle above the fold). |
-| markdown | Markdown | clean | client:visible | 215.4 kB | 144.2 kB | 33.7 kB | Static picture first, the island adds behaviour: the code is coloured in the static HTML; mermaid fences need JS. client:visible, up to 144.2 kB further (client:idle above the fold). |
-| code-block | CodeBlock | clean | client:visible | 171.6 kB | 100.3 kB | 33.7 kB | Static picture first, the island adds behaviour: the code is coloured in the static HTML; the copy button needs JS. client:visible, up to 100.3 kB further (client:idle above the fold). |
-| article-layout | ArticleLayout, Prose | clean | client:visible | 133.8 kB | 62.6 kB | 34.2 kB | Static picture first, the island adds behaviour: the scroll-spy TOC and reading progress need JS. client:visible, up to 62.6 kB further (client:idle above the fold). |
-| toc | Toc | clean | client:visible | 82.0 kB | 10.8 kB | 34.2 kB | Static picture first, the island adds behaviour: the scroll-spy marks the current section with JS. client:visible, up to 10.8 kB further (client:idle above the fold). |
-| site-header | SiteHeader | clean | no directive | 78.9 kB | 7.7 kB | 33.6 kB | The static HTML is the whole part, 0 bytes of JavaScript: the panels are native popovers placed by CSS and the bar is the whole static picture; no component script. |
-| callout | Callout | clean | no directive | 80.9 kB | 9.7 kB | 34.2 kB | The static HTML is the whole part, 0 bytes of JavaScript: a static note; no behaviour. |
-| prose | Prose | clean | no directive | 76.7 kB | 5.5 kB | 34.2 kB | The static HTML is the whole part, 0 bytes of JavaScript: typography only. |
-| page | Page, PageBar, PageSummary, Section, CardGrid | clean | client:visible | 196.7 kB | 125.5 kB | 34.2 kB | Static picture first, the island adds behaviour: action buttons need JS; the frame, title, summary and figures are the static picture. client:visible, up to 125.5 kB further (client:idle above the fold). |
-| empty-state | EmptyState | clean | no directive | 86.6 kB | 15.4 kB | 34.2 kB | The static HTML is the whole part, 0 bytes of JavaScript: the cause line and the link action are drawn at rest; the filtered reset needs JS and is not shown. |
-| facts | Facts | clean | no directive | 73.1 kB | 1.9 kB | 34.2 kB | The static HTML is the whole part, 0 bytes of JavaScript: a definition list is drawn at rest. |
-| inner-nav | InnerNav | fails | none works | 164.5 kB | 93.4 kB | 34.2 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
-| page-aside | PageAside | clean | client:visible | 180.7 kB | 109.5 kB | 34.2 kB | Static picture first, the island adds behaviour: the docked panel is the picture; its open, close and sheet states need JS. client:visible, up to 109.5 kB further (client:idle above the fold). |
-| split-page | SplitPage | fails | none works | 175.8 kB | 104.7 kB | 34.2 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
-| dock | Dock | clean | client:visible | 163.9 kB | 92.7 kB | 34.2 kB | Static picture first, the island adds behaviour: the open record panel is the picture; close and focus hand-off need JS. client:visible, up to 92.7 kB further (client:idle above the fold). |
-| peek | Peek | clean | client:visible | 182.4 kB | 111.2 kB | 34.2 kB | Static picture first, the island adds behaviour: the open panel is the picture; Escape, close and the width drag need JS. client:visible, up to 111.2 kB further (client:idle above the fold). |
-| query-state | QueryState | clean | no directive | 89.9 kB | 18.7 kB | 34.2 kB | The static HTML is the whole part, 0 bytes of JavaScript: the ready branch is drawn at rest; loading and error arms are not shown. |
-| refresh-button | RefreshButton | differs | client:visible | 87.1 kB | 15.9 kB | 34.2 kB | Static picture first, the island adds behaviour: the press runs the refresh and needs JS; the age text is absent until hydration. client:visible, up to 15.9 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 1440-dark). |
-| connection-indicator | ConnectionIndicator | fails | none works | 133.0 kB | 61.9 kB | 34.2 kB | fails on the server (No QueryClient set, use QueryClientProvider to set one) and in the browser (No QueryClient set, use QueryClientProvider to set one) |
-| overlay-host | OverlayHost | clean | client:visible | 133.5 kB | 62.3 kB | 34.2 kB | Needs the island to work: overlays open by key from JS; nothing is open at rest, so the host draws nothing. client:idle above the fold, client:visible below, up to 62.3 kB further. |
-| toast-host | ToastHost | clean | client:visible | 108.9 kB | 37.7 kB | 34.2 kB | Static picture first, the island adds behaviour: it drains notify() calls made after mount; the viewport is empty at rest. client:visible, up to 37.7 kB further (client:idle above the fold). |
-| app-shell | AppShell | fails | none works | 239.2 kB | 168.1 kB | 34.2 kB | fails on the server (Invalid value used as weak map key) and in the browser (Invalid value used as weak map key) |
-| command-palette | CommandPalette | clean | client:visible | 181.8 kB | 110.6 kB | 33.7 kB | Needs the island to work: the palette opens on a key or the search row; rendered closed, the trigger is the picture. client:idle above the fold, client:visible below, up to 110.6 kB further. |
-| controls | FilterSet, ViewTabs | fails | none works | 247.5 kB | 176.4 kB | 33.7 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
-| control-home | ControlHome, ControlView | fails | none works | 212.4 kB | 141.3 kB | 33.7 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
-| basalt-provider | BasaltProvider | clean | no directive | 83.4 kB | 12.2 kB | 33.7 kB | The static HTML is the whole part, 0 bytes of JavaScript: the provider only sets locale and scheme; a Button inside it is the whole picture. |
-| input | Input | clean | no directive | 84.4 kB | 13.2 kB | 33.7 kB | The static HTML is the whole part, 0 bytes of JavaScript: native typing; the field needs no script. |
-| textarea | Textarea | clean | no directive | 84.0 kB | 12.8 kB | 33.7 kB | The static HTML is the whole part, 0 bytes of JavaScript: native typing; the field grows with its content in CSS. |
-| checkbox | Checkbox, CheckboxGroup | clean | client:visible | 92.4 kB | 21.2 kB | 33.7 kB | Static picture first, the island adds behaviour: toggling and the indeterminate dash need JS; the checked state is the picture. client:visible, up to 21.2 kB further (client:idle above the fold). |
-| radio-group | RadioGroup, Radio | clean | client:visible | 101.0 kB | 29.8 kB | 33.7 kB | Static picture first, the island adds behaviour: arrow keys move the selection; the static picture shows the chosen value. client:visible, up to 29.8 kB further (client:idle above the fold). |
-| switch | Switch | clean | client:visible | 86.2 kB | 15.0 kB | 33.7 kB | Static picture first, the island adds behaviour: the toggle needs JS; the static on or off state is the picture. client:visible, up to 15.0 kB further (client:idle above the fold). |
-| select | Select, SelectTrigger, SelectValue, SelectContent, SelectGroup, SelectItem | clean | client:visible | 157.0 kB | 85.7 kB | 33.7 kB | Needs the island to work: the popup opens on JS; the closed trigger shows the label. client:idle above the fold, client:visible below, up to 85.7 kB further. |
-| native-select | NativeSelect | clean | no directive | 156.9 kB | 85.7 kB | 33.7 kB | The static HTML is the whole part, 0 bytes of JavaScript: the platform select works without JS. |
-| number-field | NumberField | clean | client:visible | 93.6 kB | 22.4 kB | 33.7 kB | Static picture first, the island adds behaviour: steppers and arrow keys need JS; the formatted value is static. client:visible, up to 22.4 kB further (client:idle above the fold). |
-| slider | Slider | clean | client:visible | 100.3 kB | 29.1 kB | 33.7 kB | Static picture first, the island adds behaviour: dragging and the keyboard need JS; the value is static. client:visible, up to 29.1 kB further (client:idle above the fold). |
-| segmented | Segmented, SegmentedItem | clean | client:visible | 93.6 kB | 22.4 kB | 33.7 kB | Static picture first, the island adds behaviour: switching the option needs JS; the static row shows the selection. client:visible, up to 22.4 kB further (client:idle above the fold). |
-| date-picker | DatePicker | clean | client:visible | 150.1 kB | 78.9 kB | 33.7 kB | Needs the island to work: the calendar popup is JS; the trigger shows the day. client:idle above the fold, client:visible below, up to 78.9 kB further. |
-| date-range-picker | DateRangePicker | clean | client:visible | 150.1 kB | 78.9 kB | 33.7 kB | Needs the island to work: the calendar popup is JS; the trigger shows both ends. client:idle above the fold, client:visible below, up to 78.9 kB further. |
-| combobox | Combobox, ComboboxInput, ComboboxContent, ComboboxItem, ComboboxChips | clean | client:visible | 152.1 kB | 80.9 kB | 33.7 kB | Needs the island to work: search, the popup and chip removal need JS; the closed input is the picture. client:idle above the fold, client:visible below, up to 80.9 kB further. |
-| autocomplete | Autocomplete, AutocompleteInput, AutocompleteContent, AutocompleteItem | clean | client:visible | 152.0 kB | 80.8 kB | 33.7 kB | Needs the island to work: suggestions need JS; the typed text is the static picture. client:idle above the fold, client:visible below, up to 80.8 kB further. |
-| file-upload | FileUpload | clean | client:visible | 85.2 kB | 14.0 kB | 33.7 kB | Needs the island to work: the picker and drop zone need JS. client:idle above the fold, client:visible below, up to 14.0 kB further. |
-| field | Form, Field, FieldLabel, FieldDescription, FieldError, Fieldset, FieldsetLegend | clean | client:visible | 92.7 kB | 21.5 kB | 33.7 kB | Static picture first, the island adds behaviour: Base UI validates on blur and submit with JS; labels are static (FieldLabel, FieldDescription and FieldError render through Field). client:visible, up to 21.5 kB further (client:idle above the fold). |
-| form-layout | FormSection, FormRow, FormField, FormFooter | clean | client:visible | 113.8 kB | 42.6 kB | 33.7 kB | Static picture first, the island adds behaviour: the footer tracks dirty and submitting state with JS; the fields are static. client:visible, up to 42.6 kB further (client:idle above the fold). |
-| stepper | Stepper | clean | no directive | 77.3 kB | 6.1 kB | 33.7 kB | The static HTML is the whole part, 0 bytes of JavaScript: the static step list is the whole part; steps are buttons only with onStepChange. |
+| button | Button | clean | no directive | 82.8 kB | 11.6 kB | 34.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: a native button; its handler is the page's own. |
+| accordion | Accordion, AccordionItem, AccordionTrigger, AccordionContent | clean | client:visible | 90.4 kB | 19.2 kB | 34.8 kB | Static picture first, the island adds behaviour: the open section is static; JS toggles the others. client:visible, up to 19.2 kB further (client:idle above the fold). |
+| alert | Alert | clean | no directive | 77.5 kB | 6.3 kB | 34.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: a message at rest; its role follows the tone. |
+| badge | Lozenge, CountBadge, DeltaBadge | clean | no directive | 77.9 kB | 6.7 kB | 34.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: chips carry their word and number at rest. |
+| pressable | Pressable | clean | no directive | 82.8 kB | 11.6 kB | 34.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: a native button; its handler is the page's own. |
+| card | Card, CardBand, CardInfo, CardPhase, IconTile, Inset | clean | no directive | 82.8 kB | 11.5 kB | 34.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: a static surface; CardInfo opens a native popover without page JS. |
+| collapsible | Collapsible, CollapsibleTrigger, CollapsibleContent | clean | client:visible | 90.0 kB | 18.8 kB | 34.8 kB | Static picture first, the island adds behaviour: the trigger is static; JS opens the hidden region. client:visible, up to 18.8 kB further (client:idle above the fold). |
+| dialog | Dialog, DialogTrigger, DialogContent, DialogClose | clean | client:visible | 116.1 kB | 44.9 kB | 34.8 kB | Needs the island to work: a modal opens from its trigger; closed in the static picture. client:idle above the fold, client:visible below, up to 44.9 kB further. |
+| alert-dialog | AlertDialog, AlertDialogTrigger, AlertDialogContent | clean | client:visible | 116.1 kB | 44.9 kB | 34.8 kB | Needs the island to work: a confirm opens from its trigger; closed in the static picture. client:idle above the fold, client:visible below, up to 44.9 kB further. |
+| sheet | Sheet, SheetTrigger, SheetContent, SheetClose | clean | client:visible | 133.1 kB | 61.9 kB | 34.8 kB | Needs the island to work: a panel opens from its trigger; closed in the static picture. client:idle above the fold, client:visible below, up to 61.9 kB further. |
+| menu | Menu, MenuTrigger, MenuContent, MenuItem, MenuGroup, MenuSeparator, MenuCheckboxItem, MenuRadioGroup, MenuRadioItem, MenuSub | clean | client:visible | 142.9 kB | 71.7 kB | 34.8 kB | Needs the island to work: the list opens from its trigger and runs items on click; closed in the static picture. client:idle above the fold, client:visible below, up to 71.7 kB further. |
+| popover | Popover, PopoverTrigger, PopoverContent | clean | client:visible | 127.3 kB | 56.1 kB | 34.8 kB | Needs the island to work: the panel opens from its trigger; closed in the static picture. client:idle above the fold, client:visible below, up to 56.1 kB further. |
+| preview-card | PreviewCard, PreviewCardTrigger, PreviewCardContent | clean | client:visible | 130.9 kB | 59.7 kB | 34.8 kB | Static picture first, the island adds behaviour: the link is followed without JS; JS adds the card on hover and focus. client:visible, up to 59.7 kB further (client:idle above the fold). |
+| tooltip | Tooltip | clean | client:visible | 121.1 kB | 49.9 kB | 34.8 kB | Needs the island to work: the label shows only on hover or focus; the icon button keeps its own name. client:idle above the fold, client:visible below, up to 49.9 kB further. |
+| tabs | Tabs, TabsList, TabsTrigger, TabsContent | clean | client:visible | 96.3 kB | 25.1 kB | 34.8 kB | Static picture first, the island adds behaviour: the default panel is static; JS switches tabs. client:visible, up to 25.1 kB further (client:idle above the fold). |
+| toolbar | Toolbar, ToolbarButton, ToolbarGroup, ToolbarSeparator | clean | client:visible | 93.0 kB | 21.8 kB | 34.8 kB | Static picture first, the island adds behaviour: the buttons are static; JS adds roving arrow-key focus. client:visible, up to 21.8 kB further (client:idle above the fold). |
+| kbd | Kbd | clean | no directive | 77.2 kB | 6.0 kB | 34.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: key caps are static text. |
+| meter | Meter | clean | no directive | 83.9 kB | 12.7 kB | 34.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: the zone and its word are drawn at rest. |
+| num | Num | clean | no directive | 79.6 kB | 8.4 kB | 34.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: the figure is formatted at render. |
+| progress | Progress, Ring | clean | no directive | 83.6 kB | 12.4 kB | 34.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: the value is drawn at rest. |
+| separator | Separator | clean | no directive | 78.8 kB | 7.6 kB | 34.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: a hairline needs no behaviour. |
+| skeleton | Skeleton, Spinner | clean | no directive | 80.4 kB | 9.2 kB | 34.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: the loading shape and spinner are static. |
+| status | Status, Swatch | clean | no directive | 84.0 kB | 12.8 kB | 34.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: the verdict word is the state at rest. |
+| info-hint | InfoHint | clean | client:visible | 129.7 kB | 58.5 kB | 34.8 kB | Needs the island to work: the definition sits in a popover that opens on hover, focus or press. client:idle above the fold, client:visible below, up to 58.5 kB further. |
+| scroll-area | ScrollArea | clean | client:visible | 77.6 kB | 6.3 kB | 34.8 kB | Static picture first, the island adds behaviour: native overflow scrolls; JS adds the keyboard tab stop when content overflows. client:visible, up to 6.3 kB further (client:idle above the fold). |
+| resizable | ResizablePanelGroup, ResizablePanel, ResizableHandle | clean | client:visible | 91.7 kB | 20.5 kB | 34.8 kB | Static picture first, the island adds behaviour: sizes render as static flex ratios; JS drags the divider. client:visible, up to 20.5 kB further (client:idle above the fold). |
+| virtual-list | VirtualList | clean | client:visible | 84.9 kB | 13.7 kB | 34.8 kB | Static picture first, the island adds behaviour: the first window renders statically; JS windows the scroll. client:visible, up to 13.7 kB further (client:idle above the fold). |
+| stat-card | StatCard | clean | no directive | 101.0 kB | 29.8 kB | 36.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: figure, delta, verdict and sparkline are all drawn at rest. |
+| stat-group | StatGroup, StatCell | clean | no directive | 106.7 kB | 35.5 kB | 36.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: figures, deltas and sparklines are drawn at rest; the chart sits in its box. |
+| bar-list | BarList | clean | no directive | 94.1 kB | 22.9 kB | 34.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: the ranked bars are the picture; rows are plain text without a link. |
+| chain-view | ChainView | clean | client:visible | 95.0 kB | 23.8 kB | 34.8 kB | Static picture first, the island adds behaviour: pan, zoom and trace focus need JS; the laid-out graph is the static picture. client:visible, up to 23.8 kB further (client:idle above the fold). |
+| data-panel | DataPanel | clean | no directive | 89.7 kB | 18.5 kB | 34.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: the card frame and its body list are drawn at rest. |
+| event-list | EventList | clean | client:visible | 90.8 kB | 19.6 kB | 34.8 kB | Static picture first, the island adds behaviour: "Show more" pages the feed; the first page is the static picture. client:visible, up to 19.6 kB further (client:idle above the fold). |
+| kanban-card | KanbanCard | clean | client:visible | 91.4 kB | 20.2 kB | 34.8 kB | Static picture first, the island adds behaviour: the move menu and drag need JS; the card is drawn at rest. client:visible, up to 20.2 kB further (client:idle above the fold). |
+| row-list | RowList | clean | client:visible | 89.6 kB | 18.4 kB | 34.8 kB | Static picture first, the island adds behaviour: a row shares focus with its chart mark; hover and focus highlight need JS. client:visible, up to 18.4 kB further (client:idle above the fold). |
+| step-rail | StepRail | clean | no directive | 81.2 kB | 10.0 kB | 34.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: bars scaled to the longest step are drawn at rest; it never animates. |
+| lines | Lines | differs | client:visible | 192.8 kB | 121.6 kB | 36.8 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 121.6 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-light). |
+| bars | Bars | differs | client:visible | 192.8 kB | 121.5 kB | 36.8 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 121.5 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-light). |
+| cartesian-chart | CartesianChart | differs | client:visible | 192.7 kB | 121.5 kB | 36.8 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 121.5 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-light). |
+| chart-card | ChartCard | differs | client:visible | 204.7 kB | 133.5 kB | 36.8 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 133.5 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-light). |
+| heatmap | Heatmap | differs | client:visible | 189.5 kB | 118.3 kB | 36.8 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 118.3 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-light). |
+| interval-track | IntervalTrack | differs | client:visible | 190.5 kB | 119.3 kB | 36.8 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 119.3 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-dark). |
+| sparkline | Sparkline | clean | client:visible | 89.6 kB | 18.4 kB | 36.8 kB | Static picture first, the island adds behaviour: the keyboard and pointer readout of a labelled sparkline. client:visible, up to 18.4 kB further (client:idle above the fold). |
+| band-strip | BandStrip | differs | client:visible | 184.8 kB | 113.6 kB | 36.8 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 113.6 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-light). |
+| data-table | DataTable | clean | client:visible | 338.6 kB | 267.4 kB | 34.8 kB | Static picture first, the island adds behaviour: sorting, paging and selection. client:visible, up to 267.4 kB further (client:idle above the fold). |
+| static-table | Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableCaption | clean | no directive | 84.7 kB | 13.5 kB | 34.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: a static table; the picture is the whole part. |
+| table-toolbar | TableToolbar, BulkBar, TablePager | clean | client:visible | 293.9 kB | 222.6 kB | 34.8 kB | Static picture first, the island adds behaviour: search, filters, sorting, paging and bulk selection need JS. client:visible, up to 222.6 kB further (client:idle above the fold). |
+| data-table-body | DataTableBody | clean | client:visible | 327.9 kB | 256.7 kB | 34.8 kB | Static picture first, the island adds behaviour: sorting, selection and row activation need JS over the body. client:visible, up to 256.7 kB further (client:idle above the fold). |
+| markdown | Markdown | clean | client:visible | 215.4 kB | 144.2 kB | 34.8 kB | Static picture first, the island adds behaviour: the code is coloured in the static HTML; mermaid fences need JS. client:visible, up to 144.2 kB further (client:idle above the fold). |
+| code-block | CodeBlock | clean | client:visible | 171.6 kB | 100.3 kB | 34.8 kB | Static picture first, the island adds behaviour: the code is coloured in the static HTML; the copy button needs JS. client:visible, up to 100.3 kB further (client:idle above the fold). |
+| article-layout | ArticleLayout, Prose | clean | client:visible | 133.8 kB | 62.6 kB | 35.3 kB | Static picture first, the island adds behaviour: the scroll-spy TOC and reading progress need JS. client:visible, up to 62.6 kB further (client:idle above the fold). |
+| toc | Toc | clean | client:visible | 82.0 kB | 10.8 kB | 35.3 kB | Static picture first, the island adds behaviour: the scroll-spy marks the current section with JS. client:visible, up to 10.8 kB further (client:idle above the fold). |
+| site-header | SiteHeader | clean | no directive | 78.9 kB | 7.7 kB | 34.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: the panels are native popovers placed by CSS and the bar is the whole static picture; no component script. |
+| callout | Callout | clean | no directive | 80.9 kB | 9.7 kB | 35.3 kB | The static HTML is the whole part, 0 bytes of JavaScript: a static note; no behaviour. |
+| prose | Prose | clean | no directive | 76.7 kB | 5.5 kB | 35.3 kB | The static HTML is the whole part, 0 bytes of JavaScript: typography only. |
+| page | Page, PageBar, PageSummary, Section, CardGrid | clean | client:visible | 196.7 kB | 125.5 kB | 35.3 kB | Static picture first, the island adds behaviour: action buttons need JS; the frame, title, summary and figures are the static picture. client:visible, up to 125.5 kB further (client:idle above the fold). |
+| empty-state | EmptyState | clean | no directive | 86.6 kB | 15.4 kB | 35.3 kB | The static HTML is the whole part, 0 bytes of JavaScript: the cause line and the link action are drawn at rest; the filtered reset needs JS and is not shown. |
+| facts | Facts | clean | no directive | 73.1 kB | 1.9 kB | 35.3 kB | The static HTML is the whole part, 0 bytes of JavaScript: a definition list is drawn at rest. |
+| inner-nav | InnerNav | fails | none works | 164.5 kB | 93.4 kB | 35.3 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
+| page-aside | PageAside | clean | client:visible | 183.5 kB | 112.3 kB | 35.3 kB | Static picture first, the island adds behaviour: the docked panel is the picture; its open, close and sheet states need JS. client:visible, up to 112.3 kB further (client:idle above the fold). |
+| split-page | SplitPage | fails | none works | 175.8 kB | 104.7 kB | 35.3 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
+| dock | Dock | clean | client:visible | 163.9 kB | 92.7 kB | 35.3 kB | Static picture first, the island adds behaviour: the open record panel is the picture; close and focus hand-off need JS. client:visible, up to 92.7 kB further (client:idle above the fold). |
+| peek | Peek | clean | client:visible | 185.2 kB | 114.0 kB | 35.3 kB | Static picture first, the island adds behaviour: the open panel is the picture; Escape, close and the width drag need JS. client:visible, up to 114.0 kB further (client:idle above the fold). |
+| query-state | QueryState | clean | no directive | 89.9 kB | 18.7 kB | 35.3 kB | The static HTML is the whole part, 0 bytes of JavaScript: the ready branch is drawn at rest; loading and error arms are not shown. |
+| refresh-button | RefreshButton | differs | client:visible | 87.1 kB | 15.9 kB | 35.3 kB | Static picture first, the island adds behaviour: the press runs the refresh and needs JS; the age text is absent until hydration. client:visible, up to 15.9 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 1440-dark). |
+| connection-indicator | ConnectionIndicator | fails | none works | 133.0 kB | 61.9 kB | 35.3 kB | fails on the server (No QueryClient set, use QueryClientProvider to set one) and in the browser (No QueryClient set, use QueryClientProvider to set one) |
+| overlay-host | OverlayHost | clean | client:visible | 136.1 kB | 64.9 kB | 35.3 kB | Needs the island to work: overlays open by key from JS; nothing is open at rest, so the host draws nothing. client:idle above the fold, client:visible below, up to 64.9 kB further. |
+| toast-host | ToastHost | clean | client:visible | 108.9 kB | 37.7 kB | 35.3 kB | Static picture first, the island adds behaviour: it drains notify() calls made after mount; the viewport is empty at rest. client:visible, up to 37.7 kB further (client:idle above the fold). |
+| app-shell | AppShell | fails | none works | 242.6 kB | 171.5 kB | 35.3 kB | fails on the server (Invalid value used as weak map key) and in the browser (Invalid value used as weak map key) |
+| command-palette | CommandPalette | clean | client:visible | 181.8 kB | 110.6 kB | 34.8 kB | Needs the island to work: the palette opens on a key or the search row; rendered closed, the trigger is the picture. client:idle above the fold, client:visible below, up to 110.6 kB further. |
+| controls | FilterSet, ViewTabs | fails | none works | 250.4 kB | 179.3 kB | 34.8 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
+| control-home | ControlHome, ControlView | fails | none works | 212.4 kB | 141.3 kB | 34.8 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
+| basalt-provider | BasaltProvider | clean | no directive | 83.4 kB | 12.2 kB | 34.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: the provider only sets locale and scheme; a Button inside it is the whole picture. |
+| input | Input | clean | no directive | 84.4 kB | 13.2 kB | 34.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: native typing; the field needs no script. |
+| textarea | Textarea | clean | no directive | 84.0 kB | 12.8 kB | 34.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: native typing; the field grows with its content in CSS. |
+| checkbox | Checkbox, CheckboxGroup | clean | client:visible | 92.4 kB | 21.2 kB | 34.8 kB | Static picture first, the island adds behaviour: toggling and the indeterminate dash need JS; the checked state is the picture. client:visible, up to 21.2 kB further (client:idle above the fold). |
+| radio-group | RadioGroup, Radio | clean | client:visible | 101.0 kB | 29.8 kB | 34.8 kB | Static picture first, the island adds behaviour: arrow keys move the selection; the static picture shows the chosen value. client:visible, up to 29.8 kB further (client:idle above the fold). |
+| switch | Switch | clean | client:visible | 86.2 kB | 15.0 kB | 34.8 kB | Static picture first, the island adds behaviour: the toggle needs JS; the static on or off state is the picture. client:visible, up to 15.0 kB further (client:idle above the fold). |
+| select | Select, SelectTrigger, SelectValue, SelectContent, SelectGroup, SelectItem | clean | client:visible | 157.0 kB | 85.7 kB | 34.8 kB | Needs the island to work: the popup opens on JS; the closed trigger shows the label. client:idle above the fold, client:visible below, up to 85.7 kB further. |
+| native-select | NativeSelect | clean | no directive | 156.9 kB | 85.7 kB | 34.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: the platform select works without JS. |
+| number-field | NumberField | clean | client:visible | 93.6 kB | 22.4 kB | 34.8 kB | Static picture first, the island adds behaviour: steppers and arrow keys need JS; the formatted value is static. client:visible, up to 22.4 kB further (client:idle above the fold). |
+| slider | Slider | clean | client:visible | 100.3 kB | 29.1 kB | 34.8 kB | Static picture first, the island adds behaviour: dragging and the keyboard need JS; the value is static. client:visible, up to 29.1 kB further (client:idle above the fold). |
+| segmented | Segmented, SegmentedItem | clean | client:visible | 93.6 kB | 22.4 kB | 34.8 kB | Static picture first, the island adds behaviour: switching the option needs JS; the static row shows the selection. client:visible, up to 22.4 kB further (client:idle above the fold). |
+| date-picker | DatePicker | clean | client:visible | 150.1 kB | 78.9 kB | 34.8 kB | Needs the island to work: the calendar popup is JS; the trigger shows the day. client:idle above the fold, client:visible below, up to 78.9 kB further. |
+| date-range-picker | DateRangePicker | clean | client:visible | 150.1 kB | 78.9 kB | 34.8 kB | Needs the island to work: the calendar popup is JS; the trigger shows both ends. client:idle above the fold, client:visible below, up to 78.9 kB further. |
+| combobox | Combobox, ComboboxInput, ComboboxContent, ComboboxItem, ComboboxChips | clean | client:visible | 152.1 kB | 80.9 kB | 34.8 kB | Needs the island to work: search, the popup and chip removal need JS; the closed input is the picture. client:idle above the fold, client:visible below, up to 80.9 kB further. |
+| autocomplete | Autocomplete, AutocompleteInput, AutocompleteContent, AutocompleteItem | clean | client:visible | 152.0 kB | 80.8 kB | 34.8 kB | Needs the island to work: suggestions need JS; the typed text is the static picture. client:idle above the fold, client:visible below, up to 80.8 kB further. |
+| file-upload | FileUpload | clean | client:visible | 85.2 kB | 14.0 kB | 34.8 kB | Needs the island to work: the picker and drop zone need JS. client:idle above the fold, client:visible below, up to 14.0 kB further. |
+| field | Form, Field, FieldLabel, FieldDescription, FieldError, Fieldset, FieldsetLegend | clean | client:visible | 92.7 kB | 21.5 kB | 34.8 kB | Static picture first, the island adds behaviour: Base UI validates on blur and submit with JS; labels are static (FieldLabel, FieldDescription and FieldError render through Field). client:visible, up to 21.5 kB further (client:idle above the fold). |
+| form-layout | FormSection, FormRow, FormField, FormFooter | clean | client:visible | 113.8 kB | 42.6 kB | 34.8 kB | Static picture first, the island adds behaviour: the footer tracks dirty and submitting state with JS; the fields are static. client:visible, up to 42.6 kB further (client:idle above the fold). |
+| stepper | Stepper | clean | no directive | 77.3 kB | 6.1 kB | 34.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: the static step list is the whole part; steps are buttons only with onStepChange. |
 
 ## Several islands on one page
 
@@ -115,12 +115,12 @@ Every part of a family on one page, each its own island, in one mode: the JavaSc
 
 | Family | Parts | no directive | client:visible | client:idle | client:load | client:only |
 |-|-|-|-|-|-|-|
-| ui | 27 | 0 | 131.4 kB | 244.2 kB | 244.1 kB | 244.1 kB |
+| ui | 27 | 0 | 131.4 kB | 247.6 kB | 247.5 kB | 247.5 kB |
 | cards | 9 | 0 | 130.4 kB | 142.7 kB | 142.6 kB | 142.6 kB |
 | charts | 8 | 0 | 205.7 kB | 223.6 kB | 223.5 kB | 223.5 kB |
-| table | 4 | 0 | 334.9 kB | 349.6 kB | 349.5 kB | 349.5 kB |
+| table | 4 | 0 | 338.9 kB | 352.6 kB | 352.5 kB | 352.5 kB |
 | content | 6 | 0 | 271.7 kB | 276.3 kB | 276.3 kB | 276.3 kB |
-| page | 19 | 0 | 199.1 kB | 283.7 kB | 283.6 kB | 370.6 kB |
+| page | 19 | 0 | 199.1 kB | 287.1 kB | 287.1 kB | 374.0 kB |
 | forms | 18 | 0 | 184.2 kB | 248.6 kB | 248.6 kB | 248.6 kB |
 
 ## Charts: is the static picture correct?
@@ -140,101 +140,102 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 
 ## Raised budgets
 
-- button: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- accordion: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- alert: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- badge: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- pressable: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- card: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- collapsible: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- dialog: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- alert-dialog: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- sheet: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- menu: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- popover: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- preview-card: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- tooltip: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- tabs: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- toolbar: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- kbd: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- meter: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- num: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- progress: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- separator: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- skeleton: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- status: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- info-hint: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- scroll-area: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- resizable: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- virtual-list: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- stat-card: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- stat-group: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- bar-list: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- chain-view: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- data-panel: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- event-list: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- kanban-card: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- row-list: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- step-rail: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- lines: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- bars: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- cartesian-chart: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- chart-card: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- heatmap: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- interval-track: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- sparkline: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- band-strip: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- data-table: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- static-table: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- table-toolbar: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- data-table-body: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- markdown: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- code-block: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- article-layout: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- toc: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- callout: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- prose: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- page: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- empty-state: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- facts: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- inner-nav: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- page-aside: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- split-page: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- dock: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- peek: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- query-state: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- refresh-button: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- connection-indicator: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- overlay-host: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- toast-host: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- app-shell: the shared sheet gains the phone nav trial's classes and the shell reads the picked variant (Issue 3205): its section bar, tray, drawer, sliding sidebar and lazy palette sheet
-- command-palette: the shared sheet gains the phone nav trial's classes and the shell reads the picked variant (Issue 3205): its section bar, tray, drawer, sliding sidebar and lazy palette sheet
-- controls: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- control-home: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- basalt-provider: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- input: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- textarea: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- checkbox: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- radio-group: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- switch: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- select: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- native-select: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- number-field: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- slider: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- segmented: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- date-picker: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- date-range-picker: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- combobox: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- autocomplete: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- file-upload: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- field: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- form-layout: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- stepper: the site header's panel, tile and sheet classes add about 1.4 kB gzip to every sheet that scans the basalt dist
-- family ui: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
+- button: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- accordion: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- alert: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- badge: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- pressable: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- card: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- collapsible: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- dialog: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- alert-dialog: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- sheet: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- menu: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- popover: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- preview-card: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- tooltip: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- tabs: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- toolbar: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- kbd: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- meter: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- num: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- progress: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- separator: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- skeleton: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- status: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- info-hint: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- scroll-area: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- resizable: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- virtual-list: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- stat-card: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- stat-group: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- bar-list: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- chain-view: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- data-panel: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- event-list: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- kanban-card: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- row-list: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- step-rail: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- lines: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- bars: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- cartesian-chart: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- chart-card: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- heatmap: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- interval-track: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- sparkline: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- band-strip: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- data-table: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- static-table: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- table-toolbar: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- data-table-body: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- markdown: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- code-block: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- article-layout: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- toc: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- site-header: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- callout: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- prose: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- page: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- empty-state: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- facts: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- inner-nav: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- page-aside: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- split-page: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- dock: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- peek: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- query-state: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- refresh-button: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- connection-indicator: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- overlay-host: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- toast-host: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- app-shell: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- command-palette: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- controls: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- control-home: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- basalt-provider: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- input: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- textarea: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- checkbox: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- radio-group: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- switch: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- select: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- native-select: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- number-field: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- slider: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- segmented: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- date-picker: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- date-range-picker: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- combobox: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- autocomplete: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- file-upload: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- field: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- form-layout: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- stepper: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- family ui: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
 - family cards: phase.ts gains the settled-empty rule (settledEmpty, resolveFrame) every frame page imports; a few bytes on the form, cards and page families
-- family table: the shared sheet gains the phone nav trial's classes and the shell reads the picked variant (Issue 3205): its section bar, tray, drawer, sliding sidebar and lazy palette sheet
+- family table: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
 - family content: record the new site-header part; the content family pages now also carry its island code
-- family page: the shared sheet gains the phone nav trial's classes and the shell reads the picked variant (Issue 3205): its section bar, tray, drawer, sliding sidebar and lazy palette sheet
+- family page: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
 - family forms: one list engine behind Select, Combobox and the command palette (Issue 3102): shared option row and group header, loader states, create row, and a searchable Select on Base UI Combobox
 
 ## Findings
