@@ -1,5 +1,4 @@
 import { useEffect } from 'react'
-import type { RefObject } from 'react'
 
 // Built, not quoted: `scripts/gen-basalt-names.ts` reads every quoted `--basalt-*` name in shipped source into the 2.x allowlist.
 const INSET_VAR = `--basalt-${'keyboard-inset'}`
@@ -39,7 +38,7 @@ function keyboardInset(): number {
 }
 
 /**
- * While a text field has focus under a coarse pointer, `target` carries `data-keyboard` and the
+ * While a text field has focus under a coarse pointer, `<html>` carries `data-keyboard` and the
  * custom property `--basalt-keyboard-inset` holds the height the keyboard covers, read from the
  * `visualViewport` (browsers that resize the layout viewport for the keyboard report 0). The shell
  * hides its bottom bar on the attribute and pads its bottom edge by the inset, so a field outside a
@@ -47,12 +46,11 @@ function keyboardInset(): number {
  * are written to the element, not to React state: a keystroke re-renders nothing.
  *
  * @example
- * useKeyboardInset(rootRef)
+ * useKeyboardInset()
  */
-export function useKeyboardInset(target: RefObject<HTMLElement | null>): void {
+export function useKeyboardInset(): void {
   useEffect(() => {
-    const el = target.current
-    if (el === null) return undefined
+    const el = document.documentElement
     // a test DOM without `matchMedia` (the jsdom lane) has no pointer to read
     if (typeof window.matchMedia !== 'function') return undefined
     const coarse = window.matchMedia('(pointer: coarse)')
@@ -83,5 +81,5 @@ export function useKeyboardInset(target: RefObject<HTMLElement | null>): void {
       el.removeAttribute('data-keyboard')
       el.style.removeProperty(INSET_VAR)
     }
-  }, [target])
+  }, [])
 }

@@ -126,14 +126,10 @@ layout('Mobile foundation — the keyboard', () => {
     const p = await openFixture(specOf({ pageField: true }), PHONE)
     expect(await barShown(p)).toBe(true)
     await p.raw.focus('[data-testid="field-page"]')
-    await p.raw.waitForFunction(() =>
-      document.querySelector('[data-slot="shell"]')?.hasAttribute('data-keyboard'),
-    )
+    await p.raw.waitForFunction(() => document.documentElement.hasAttribute('data-keyboard'))
     expect(await barShown(p)).toBe(false)
     await p.raw.evaluate(() => (document.activeElement as HTMLElement).blur())
-    await p.raw.waitForFunction(
-      () => !document.querySelector('[data-slot="shell"]')?.hasAttribute('data-keyboard'),
-    )
+    await p.raw.waitForFunction(() => !document.documentElement.hasAttribute('data-keyboard'))
     expect(await barShown(p)).toBe(true)
   })
 
@@ -141,20 +137,16 @@ layout('Mobile foundation — the keyboard', () => {
     const p = await openFixture(specOf({ pageField: true }), PHONE, '/', 'reduce', 'fine')
     await p.raw.focus('[data-testid="field-page"]')
     await p.settle()
-    expect(
-      await p.raw.evaluate(() =>
-        document.querySelector('[data-slot="shell"]')?.hasAttribute('data-keyboard'),
-      ),
-    ).toBe(false)
+    expect(await p.raw.evaluate(() => document.documentElement.hasAttribute('data-keyboard'))).toBe(
+      false,
+    )
   })
 
   test('a field inside a Sheet stays visible and the bar is gone', async () => {
     const p = await openFixture(specOf({ sheet: { form: true } }), PHONE)
     await p.raw.waitForSelector(SHEET)
     await p.raw.focus('[data-testid="field-sheet-end"]')
-    await p.raw.waitForFunction(() =>
-      document.querySelector('[data-slot="shell"]')?.hasAttribute('data-keyboard'),
-    )
+    await p.raw.waitForFunction(() => document.documentElement.hasAttribute('data-keyboard'))
     await p.settle()
     expect(await barShown(p)).toBe(false)
     const field = await boxOf(p, '[data-testid="field-sheet-end"]')

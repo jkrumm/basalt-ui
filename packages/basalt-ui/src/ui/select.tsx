@@ -96,12 +96,12 @@ export const selectItemVariants = cva(
  * nativeSelectVariants({ size: 'sm' })
  */
 export const nativeSelectVariants = cva(
-  'relative block w-full min-w-0 [&_select]:w-full [&_select]:min-w-0 [&_select]:cursor-pointer [&_select]:appearance-none [&_select]:rounded-ctrl [&_select]:border [&_select]:border-input [&_select]:bg-background [&_select]:text-foreground [&_select]:focus-ring [&_select]:transition-colors [&_select]:aria-invalid:border-bad [&_select]:disabled:cursor-not-allowed [&_select]:disabled:opacity-50 [&_select]:pointer-coarse:min-h-11 [&_select]:pointer-coarse:text-base',
+  'relative block w-full min-w-0 [&_select]:w-full [&_select]:min-w-0 [&_select]:cursor-pointer [&_select]:appearance-none [&_select]:rounded-ctrl [&_select]:border [&_select]:border-input [&_select]:bg-background [&_select]:text-foreground [&_select]:focus-ring [&_select]:transition-colors [&_select]:aria-invalid:border-bad [&_select]:disabled:cursor-not-allowed [&_select]:disabled:opacity-50 [&_select]:pointer-coarse:text-base',
   {
     variants: {
       size: {
         md: '[&_select]:h-ctl [&_select]:pr-8 [&_select]:pl-3 [&_select]:text-sm',
-        sm: '[&_select]:h-6 [&_select]:pr-6 [&_select]:pl-2 [&_select]:text-xs',
+        sm: '[&_select]:h-6 [&_select]:pr-6 [&_select]:pl-2 [&_select]:text-xs [&_select]:pointer-coarse:h-ctl',
       },
     },
     defaultVariants: { size: 'md' },
