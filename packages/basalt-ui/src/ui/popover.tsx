@@ -53,7 +53,7 @@ export type PopoverProps = BasePopover.Root.Props & {
   present?: OverlayPresent
 }
 export type PopoverTriggerProps = Layout<BasePopover.Trigger.Props>
-export type PopoverContentProps = Layout<BasePopover.Popup.Props> &
+export type PopoverContentProps = Layout<Omit<BasePopover.Popup.Props, 'ref'>> &
   PopoverPlacement &
   PopoverName & {
     /** Where the panel renders. Default `document.body`. */

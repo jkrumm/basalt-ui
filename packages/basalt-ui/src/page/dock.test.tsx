@@ -89,12 +89,12 @@ describe('Dock: standalone', () => {
   })
 })
 
-function shelled(dock: ShellDock | null): void {
+function shelled(dock: ShellDock | null, present?: 'popup' | 'sheet'): void {
   const { host } = fakeHost()
   render(
     <PageHostContext value={host}>
       <ShellDockContext value={dock}>
-        <Dock title="Issue 12" onClose={() => {}} />
+        <Dock title="Issue 12" onClose={() => {}} {...(present !== undefined && { present })} />
       </ShellDockContext>
     </PageHostContext>,
   )
@@ -114,6 +114,17 @@ describe('Dock: under a shell', () => {
     expect(claim).toHaveBeenCalledTimes(1)
     cleanup()
     expect(release).toHaveBeenCalledTimes(1)
+    region.remove()
+  })
+
+  test('a Dock drawn as a sheet claims no region and publishes no width', () => {
+    const region = document.createElement('div')
+    document.body.append(region)
+    const claim = mock((_id: string) => () => {})
+    const setWidth = mock((_px: number) => () => {})
+    shelled({ slot: region, docked: true, claim, setWidth }, 'sheet')
+    expect(claim).not.toHaveBeenCalled()
+    expect(setWidth).not.toHaveBeenCalled()
     region.remove()
   })
 
