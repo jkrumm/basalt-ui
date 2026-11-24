@@ -301,7 +301,7 @@ describe('shipped messages', () => {
 
 // ── names a message proposes must be exported ────────────────────────────────────────────────────
 
-type ExportsMap = Record<string, string | { types?: string }>
+type ExportsMap = Record<string, string | { types?: string } | null>
 const EXPORTS = (
   JSON.parse(readFileSync(resolve(PKG, 'package.json'), 'utf8')) as {
     exports: ExportsMap
@@ -356,7 +356,8 @@ function exportedNames(file: string, seen = new Set<string>()): Set<string> {
 function publishedSubpaths(): Map<string, string[]> {
   const subpaths = new Map<string, string[]>()
   for (const [key, value] of Object.entries(EXPORTS)) {
-    if (typeof value === 'string' || !value.types) continue
+    // A null key publishes nothing.
+    if (value === null || typeof value === 'string' || !value.types) continue
     const specifier = key === '.' ? 'basalt-ui' : `basalt-ui/${key.slice(2)}`
     if (!key.endsWith('/*')) {
       const file = sourceOf(value.types)

@@ -33,19 +33,46 @@ const PRINT_WIDTH = 100
 export type UiRoots = {
   /** The package directory: `package.json`, `src/ui`, `docs`. */
   pkgRoot: string
-  /** Peer package names the `./ui/*` subpath needs. */
-  peers: () => readonly string[]
+  /** Peer package names one `./ui/<module>` needs. */
+  peers: (module: string) => readonly string[]
 }
 
-const realPeers = (): string[] => {
-  const spec = (SURFACES as Record<string, { optionalPeers?: readonly string[] }>)[UI_KEY]
-  const pkg = JSON.parse(readFileSync(join(REAL_PKG, 'package.json'), 'utf8')) as {
-    peerDependenciesMeta?: Record<string, { optional?: boolean }>
+/**
+ * The `./ui/*` peers one module reaches: its source graph through relative imports, the bare
+ * packages it names (lazy `import()` included), kept to the subpath's own list. `./ui/*` states the
+ * union for llms.txt; a module's doc names only what that module loads.
+ */
+function modulePeers(pkgRoot: string, module: string, allowed: ReadonlySet<string>): string[] {
+  const found = new Set<string>()
+  const seen = new Set<string>()
+  const stack = [join(pkgRoot, 'src/ui', `${module}.tsx`)]
+  const SPEC = /(?:\bfrom\s*|^\s*import\s*|\bimport\(\s*)['"]([^'"]+)['"]/gm
+  while (stack.length > 0) {
+    const file = stack.pop() as string
+    if (seen.has(file) || !existsSync(file)) continue
+    seen.add(file)
+    for (const [, spec = ''] of readFileSync(file, 'utf8').matchAll(SPEC)) {
+      if (spec.startsWith('.')) {
+        const base = join(file, '..', spec)
+        const next = [`${base}.ts`, `${base}.tsx`, join(base, 'index.ts')].find(existsSync)
+        if (next !== undefined) stack.push(next)
+        continue
+      }
+      const [first = '', second] = spec.split('/')
+      const name = first.startsWith('@') && second !== undefined ? `${first}/${second}` : first
+      if (allowed.has(name)) found.add(name)
+    }
   }
-  const optional = (spec?.optionalPeers ?? []).filter(
-    (p) => pkg.peerDependenciesMeta?.[p]?.optional === true,
-  )
-  return [...new Set([...(SUBPATH_REQUIRED_PEERS[UI_KEY] ?? []), ...optional])].toSorted()
+  return [...found].toSorted()
+}
+
+const realPeers = (module: string): string[] => {
+  const spec = (SURFACES as Record<string, { optionalPeers?: readonly string[] }>)[UI_KEY]
+  const allowed = new Set([
+    ...(SUBPATH_REQUIRED_PEERS[UI_KEY] ?? []),
+    ...(spec?.optionalPeers ?? []),
+  ])
+  return modulePeers(REAL_PKG, module, allowed)
 }
 
 export const REAL_ROOTS: UiRoots = { pkgRoot: REAL_PKG, peers: realPeers }
@@ -456,7 +483,7 @@ export function generate(roots: UiRoots): Map<string, string> {
   ])
   for (const [i, m] of modules.entries()) {
     const own = components.get(files[i]!) ?? []
-    out.set(`docs/${m.name}.md`, renderDoc(m, own, `${pkgName}/ui/${m.name}`, roots.peers()))
+    out.set(`docs/${m.name}.md`, renderDoc(m, own, `${pkgName}/ui/${m.name}`, roots.peers(m.name)))
   }
   return out
 }

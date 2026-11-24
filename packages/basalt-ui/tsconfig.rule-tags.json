@@ -1,0 +1,8 @@
+{
+  // The rule-tag type test imports each tagged name by its published specifier, so it resolves the
+  // built `dist/*.d.ts`; beside `src` in one program those declarations clash (`__APP_VERSION__`
+  // twice, two copies of every type). `bun run typecheck` runs it after the package program.
+  "extends": "./tsconfig.json",
+  "include": ["tests/types/*.type-test.ts"],
+  "exclude": ["node_modules", "dist"]
+}

@@ -20,6 +20,7 @@ import { join, resolve } from 'node:path'
 
 import { AGENT_NAMES, SKILL_NAMES, SURFACES } from '../src/surfaces'
 import type { DoctrineSpec, SurfaceSpec } from '../src/surfaces'
+import { subpathFamilies } from './export-keys'
 
 const PKG_ROOT = join(import.meta.dir, '..')
 
@@ -188,7 +189,7 @@ export function checkCoverage(flags: readonly string[] = [], pkgRoot: string = P
     const consumerPkg = JSON.parse(readFileSync(consumerPkgPath, 'utf8')) as {
       exports?: Record<string, unknown>
     }
-    pkgExports = new Set(Object.keys(consumerPkg.exports ?? {}))
+    pkgExports = new Set(subpathFamilies(consumerPkg.exports ?? {}))
   } catch {
     failures.push(`Cannot read package.json at ${pkgRoot}`)
   }

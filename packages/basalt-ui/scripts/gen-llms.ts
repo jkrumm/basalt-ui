@@ -19,6 +19,7 @@ import {
   releaseEntryProgram,
 } from './llms-signatures'
 import { SUBPATH_REQUIRED_PEERS } from './surface-gates'
+import { isEjectPath, subpathFamilies } from './export-keys'
 
 const root = join(import.meta.dirname, '..', '..', '..')
 const pkgPath = join(root, 'packages/basalt-ui/package.json')
@@ -46,14 +47,14 @@ const optionalPeerSet = new Set(
     .map(([name]) => name),
 )
 
-const publishedExportKeys = new Set(Object.keys(pkgExports))
+const publishedExportKeys = new Set(subpathFamilies(pkgExports))
 
 // ── Signatures ───────────────────────────────────────────────────────────────────────────────────
 // One line per public value export of every JS subpath, read from source by the TS checker.
 
 const SUBPATH_TYPES: Record<string, string> = Object.fromEntries(
   Object.entries(pkgExports).flatMap(([key, value]) =>
-    typeof value === 'object' && value !== null && 'types' in value
+    !isEjectPath(key) && typeof value === 'object' && value !== null && 'types' in value
       ? [[key, String((value as { types: string }).types)]]
       : [],
   ),

@@ -12,7 +12,11 @@ import { readFileSync } from 'node:fs'
 /** Subpaths of `exports` whose `## basalt-ui…` heading is absent from `llmsText`. */
 export function missingSubpaths(llmsText, exportsMap) {
   const headings = new Set(llmsText.split('\n'))
-  return Object.keys(exportsMap)
+  // A null key publishes nothing; the eject paths (`./core/<module>`) are one `./core/*` section.
+  const keys = Object.entries(exportsMap)
+    .filter(([, target]) => target !== null)
+    .map(([key]) => (key.startsWith('./core/') ? './core/*' : key))
+  return [...new Set(keys)]
     .map((key) => (key === '.' ? '## basalt-ui' : `## basalt-ui${key.slice(1)}`))
     .filter((heading) => !headings.has(heading))
 }

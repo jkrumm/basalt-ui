@@ -5,7 +5,14 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { consumerViolations, duplicateSymbols, peerClassViolations } from '../../surface-gates'
+import { SURFACES } from '../../../src/surfaces'
+import {
+  consumerViolations,
+  duplicateSymbols,
+  peerClassViolations,
+  reachedPeers,
+  surfacePeerDrift,
+} from '../../surface-gates'
 import { PKG_ROOT, Unmeasured, gate, readGatedSurface, readManifest } from '../lib'
 import type { Raises, RowDef } from '../lib'
 
@@ -14,7 +21,7 @@ export const rows: readonly RowDef[] = [
     id: 'duplicate-symbols',
     order: 60,
     label: 'symbols under more than one subpath (one import path per symbol)',
-    ceiling: 3, // v3 state-1 wiring: `createChannel` (root, ./data) until the teardown drops the root one; v3 page-kit: `defineOverlays` (./commands, ./page) until the 2.x commands subpath retires; v3 ctl-2: `field` (./router, ./state) until the 2.x state subpath retires
+    ceiling: 3, // v3 state-1 wiring: `createChannel` (root, ./data) until the teardown drops the root one; v3 page-kit: `defineOverlays` (./commands, ./page) until the 2.x commands subpath retires; v3 ctl-2: `field` (./router, ./state) until the 2.x state subpath retires; ga-exports: `BasaltProvider` (., ./router), the root its home and `./router` re-exporting it beside `routerDefaults` (the entry `init` writes)
     measure: () => gate(duplicateSymbols(readGatedSurface())),
   },
   {
@@ -40,6 +47,18 @@ export const rows: readonly RowDef[] = [
         throw new Unmeasured('dist/ missing, run `bun run build`')
       }
       return gate(peerClassViolations(PKG_ROOT, readManifest()))
+    },
+  },
+  {
+    id: 'surface-peers',
+    order: 85,
+    label: 'SURFACES optionalPeers vs the peers each subpath graph reaches (llms.txt, info)',
+    ceiling: 0,
+    measure: () => {
+      if (!existsSync(join(PKG_ROOT, 'dist/index.js'))) {
+        throw new Unmeasured('dist/ missing, run `bun run build`')
+      }
+      return gate(surfacePeerDrift(reachedPeers(PKG_ROOT, readManifest()), SURFACES))
     },
   },
 ]
