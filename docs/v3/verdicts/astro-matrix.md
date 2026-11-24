@@ -6,7 +6,7 @@ Every basalt-ui part rendered by `apps/playground-astro` (Astro 7, @astrojs/reac
 
 ## Summary
 
-- **90 parts**, **76** static-clean: the HTML Astro writes with no directive matches the client:only render word for word and to within 4 pixels (a measured flake) at 1440 and 390 px, light and dark.
+- **91 parts**, **77** static-clean: the HTML Astro writes with no directive matches the client:only render word for word and to within 4 pixels (a measured flake) at 1440 and 390 px, light and dark.
 - **Zero JavaScript without an island:** a page without an island loads no script, checked on every run.
 - **The first React island** (React, react-dom and the Astro island runtime, before any basalt code) is budgeted at 72.3 kB of gzip JavaScript.
 - **Budgets** are gzip ceilings, set at the size measured then plus 1.0 kB. A run fails past one and never below one; a budget is raised on purpose, with its reason, and an improvement leaves the record as it is.
@@ -69,6 +69,7 @@ Columns: `No directive` is the static HTML: `clean`, `differs` from the client:o
 | code-block | CodeBlock | clean | client:visible | 171.6 kB | 100.3 kB | 32.3 kB | Static picture first, the island adds behaviour: the code is coloured in the static HTML; the copy button needs JS. client:visible, up to 100.3 kB further (client:idle above the fold). |
 | article-layout | ArticleLayout, Prose | clean | client:visible | 133.8 kB | 62.6 kB | 32.8 kB | Static picture first, the island adds behaviour: the scroll-spy TOC and reading progress need JS. client:visible, up to 62.6 kB further (client:idle above the fold). |
 | toc | Toc | clean | client:visible | 82.0 kB | 10.8 kB | 32.8 kB | Static picture first, the island adds behaviour: the scroll-spy marks the current section with JS. client:visible, up to 10.8 kB further (client:idle above the fold). |
+| site-header | SiteHeader | clean | no directive | 78.9 kB | 7.7 kB | 33.6 kB | The static HTML is the whole part, 0 bytes of JavaScript: the panels are native popovers placed by CSS and the bar is the whole static picture; no component script. |
 | callout | Callout | clean | no directive | 80.9 kB | 9.7 kB | 32.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: a static note; no behaviour. |
 | prose | Prose | clean | no directive | 76.7 kB | 5.5 kB | 32.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: typography only. |
 | page | Page, PageBar, PageSummary, Section, CardGrid | clean | client:visible | 196.7 kB | 125.5 kB | 32.8 kB | Static picture first, the island adds behaviour: action buttons need JS; the frame, title, summary and figures are the static picture. client:visible, up to 125.5 kB further (client:idle above the fold). |
@@ -118,7 +119,7 @@ Every part of a family on one page, each its own island, in one mode: the JavaSc
 | cards | 9 | 0 | 130.4 kB | 142.7 kB | 142.6 kB | 142.6 kB |
 | charts | 8 | 0 | 205.7 kB | 223.6 kB | 223.5 kB | 223.5 kB |
 | table | 4 | 0 | 334.9 kB | 348.5 kB | 348.5 kB | 348.5 kB |
-| content | 5 | 0 | 271.7 kB | 272.9 kB | 272.9 kB | 272.9 kB |
+| content | 6 | 0 | 271.7 kB | 276.3 kB | 276.3 kB | 276.3 kB |
 | page | 19 | 0 | 199.1 kB | 280.6 kB | 280.5 kB | 365.6 kB |
 | forms | 18 | 0 | 184.2 kB | 248.6 kB | 248.6 kB | 248.6 kB |
 
@@ -232,6 +233,7 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 - family ui: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
 - family cards: phase.ts gains the settled-empty rule (settledEmpty, resolveFrame) every frame page imports; a few bytes on the form, cards and page families
 - family table: one list engine behind Select, Combobox and the command palette (Issue 3102): shared option row and group header, loader states, create row, and a searchable Select on Base UI Combobox
+- family content: record the new site-header part; the content family pages now also carry its island code
 - family page: phase.ts gains the settled-empty rule (settledEmpty, resolveFrame) every frame page imports; a few bytes on the form, cards and page families
 - family forms: one list engine behind Select, Combobox and the command palette (Issue 3102): shared option row and group header, loader states, create row, and a searchable Select on Base UI Combobox
 
