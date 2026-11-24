@@ -37,9 +37,11 @@ type Exports = { key: string; target: string }[]
 
 function readExports(root: string): Exports {
   const manifest = JSON.parse(readFileSync(join(root, PACKAGE_DIR, 'package.json'), 'utf8')) as {
-    exports: Record<string, string | Record<string, string>>
+    exports: Record<string, string | Record<string, string> | null>
   }
   return Object.entries(manifest.exports).flatMap(([key, value]) => {
+    // A null key hides a module the wildcard beside it would publish (`./ui/*.guard`).
+    if (value === null) return []
     const target = typeof value === 'string' ? value : (value['import'] ?? value['default'])
     return target === undefined ? [] : [{ key, target }]
   })

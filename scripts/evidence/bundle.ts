@@ -41,12 +41,13 @@ function moduleClosure(entry: string): string[] {
   return [...seen].toSorted()
 }
 
-type ExportTarget = string | { import?: string; default?: string }
+type ExportTarget = string | { import?: string; default?: string } | null
 
 export function subpathEntries(exportsMap: Record<string, ExportTarget>): Array<[string, string]> {
   const entries: Array<[string, string]> = []
   for (const [subpath, target] of Object.entries(exportsMap)) {
-    if (subpath.includes('*')) continue
+    // A null key publishes nothing; an eject path (`./core/<module>`) is no subpath of its own.
+    if (subpath.includes('*') || target === null || subpath.startsWith('./core/')) continue
     const file = typeof target === 'string' ? target : (target.import ?? target.default)
     if (file && /\.(?:[cm]?js|css)$/.test(file)) entries.push([subpath, file])
   }
