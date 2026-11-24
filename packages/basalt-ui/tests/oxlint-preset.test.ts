@@ -135,7 +135,9 @@ describe('profiles', () => {
     expect(restyle('oxlint-bridge.json').contracts).toEqual([])
     expect(restyle('oxlint-parts.json').componentImports).toEqual(['^basalt-ui/ui/'])
     expect(restyle('oxlint-parts.json').contracts.length).toBeGreaterThan(0)
-    expect(restyle('oxlint-site.json').componentImports).toEqual(['^basalt-ui/(?:ui|static)/'])
+    expect(restyle('oxlint-site.json').componentImports).toEqual([
+      '^basalt-ui/(?:ui/|static(?:/|$))',
+    ])
     expect(restyle('oxlint-site.json').contracts).toEqual([])
   })
 })

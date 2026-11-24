@@ -65,7 +65,7 @@ export const PARTS_COMPONENT_IMPORTS = ['^basalt-ui/ui/'] as const
 /** At bridge it recognises only the app's own `components/ui` (zone V is where they live). */
 export const BRIDGE_COMPONENT_IMPORTS = ['(?:^|/)components/ui(?:/|$)'] as const
 /** At site, basalt's own primitives and static parts: the site parts are basalt's, never a restyle. */
-export const SITE_COMPONENT_IMPORTS = ['^basalt-ui/(?:ui|static)/'] as const
+export const SITE_COMPONENT_IMPORTS = ['^basalt-ui/(?:ui/|static(?:/|$))'] as const
 /** The profiles that carry bridge's shape: bridge's rule options, no restyle contracts, zone V. */
 const BRIDGE_LIKE: readonly PresetProfile[] = ['bridge', 'site']
 const componentImportsAt = (profile: PresetProfile): readonly string[] =>

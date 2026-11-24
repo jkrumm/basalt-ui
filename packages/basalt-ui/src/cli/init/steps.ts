@@ -29,6 +29,7 @@ import { sync } from '../sync'
 import { claimPrefix } from '../sync/sibling'
 import { tokensCss } from '../tokens-css'
 import { DEFAULT_VIEWPORTS } from '../shot/types'
+import { ASTRO_CONFIGS, patchAstroConfig, SITE_LAYOUT, SITE_LAYOUT_TEMPLATE } from './site'
 
 export type Runner = (argv: string[], dir: string) => boolean
 
@@ -771,11 +772,15 @@ export const SHOTS_IGNORE = 'shots-*/'
  * `<viteDir>/.gitignore` lists `.basalt/sources.css` (regenerated on every run) and the `shot`
  * rounds (`SHOTS_IGNORE`), each once; the file is created when it is missing.
  */
-function ignoreGenerated(ctx: Ctx, viteDir: string): void {
+function ignoreGenerated(
+  ctx: Ctx,
+  viteDir: string,
+  entries: readonly string[] = [SOURCES_PATH, SHOTS_IGNORE],
+): void {
   const file = viteDir === '.' ? '.gitignore' : `${viteDir}/.gitignore`
   const text = readText(ctx.root, file) ?? ''
   const lines = text.split('\n').map((line) => line.trim())
-  const add = [SOURCES_PATH, SHOTS_IGNORE].filter(
+  const add = entries.filter(
     (entry) => !lines.some((line) => line === entry || line === `/${entry}`),
   )
   if (add.length === 0) return
@@ -803,17 +808,41 @@ function seedStartCss(ctx: Ctx, vite: string): void {
   }
 }
 
-/** Above `tokens`: the Vite plugin and the Tailwind entry, patched only when the shape is stock. A `site` is an Astro project: its wiring is the `basalt-ui/astro` integration, named as a to-do. */
+/**
+ * A `site` is an Astro project: `basaltAstro()` after `react()` in a stock `astro.config.*`, the
+ * layout when the site has none, and `.basalt/sources.css` ignored. The integration's sheet imports
+ * the token outputs the manifest records, so no stylesheet is written or edited by hand.
+ */
+function wireSite(ctx: Ctx): void {
+  const dirs = appDirs(ctx)
+  const config = dirs
+    .flatMap((d) => ASTRO_CONFIGS.map((f) => join(d, f)))
+    .find((f) => existsSync(resolve(ctx.root, f)))
+  const patched = config === undefined ? null : patchAstroConfig(readText(ctx.root, config) ?? '')
+  if (config !== undefined && patched !== null) {
+    if (writeText(ctx.root, config, patched)) say(`${config}: added basaltAstro() after react()`)
+  } else {
+    ctx.todo.push(
+      'add basaltAstro() from "basalt-ui/astro" after react() in astro.config: integrations: [react(), basaltAstro()]',
+    )
+  }
+  const site = config === undefined ? '.' : dirname(config)
+  ignoreGenerated(ctx, site, [SOURCES_PATH])
+  const layout = join(site, SITE_LAYOUT)
+  if (existsSync(resolve(ctx.root, layout))) return
+  const template = readIfExists(resolve(ctx.pkgRoot, SITE_LAYOUT_TEMPLATE))
+  if (template === null)
+    return void ctx.problems.push(`${ctx.pkgRoot} ships no ${SITE_LAYOUT_TEMPLATE}`)
+  if (writeText(ctx.root, layout, template))
+    say(`wrote ${layout}: the page layout (fonts, lang, title)`)
+}
+
+/** Above `tokens`: the Vite plugin and the Tailwind entry, patched only when the shape is stock; a `site` is wired by `wireSite`. */
 export function wireApp(ctx: Ctx): void {
   if (ctx.args.profile === 'tokens') {
     return void ctx.todo.push(`import ${ctx.args.tokensOut} in your stylesheet entry`)
   }
-  if (ctx.args.profile === 'site') {
-    ctx.todo.push(`import ${ctx.args.tokensOut} in your global stylesheet`)
-    return void ctx.todo.push(
-      'add basaltAstro() from "basalt-ui/astro" to integrations in astro.config: integrations: [react(), basaltAstro()]',
-    )
-  }
+  if (ctx.args.profile === 'site') return wireSite(ctx)
   const dirs = appDirs(ctx)
   const first = ctx.args.start ? START_FIRST : ctx.routerPlugin === true ? ROUTER_FIRST : null
   const vite = dirs

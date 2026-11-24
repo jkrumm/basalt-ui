@@ -55,13 +55,14 @@ for f in \
   src/index.ts \
   configs/oxlint-app.json configs/oxlint-parts.json configs/oxlint-bridge.json configs/oxlint-site.json configs/tsconfig.base.json configs/tsconfig.react-app.json \
   agent/rules/basalt-tokens.md agent/rules/basalt-ui.md agent/rules/basalt-page.md \
-  agent/rules/basalt-state.md agent/rules/basalt-charts.md \
+  agent/rules/basalt-state.md agent/rules/basalt-charts.md agent/rules/basalt-site.md \
   agent/templates/DESIGN.md.tpl agent/templates/AGENTS-block.md.tpl \
-  agent/templates/AGENTS-block.tokens.md.tpl agent/templates/main.tpl \
+  agent/templates/AGENTS-block.tokens.md.tpl agent/templates/AGENTS-block.site.md.tpl \
+  agent/templates/site-layout.astro.tpl agent/templates/main.tpl \
   agent/templates/_app.tpl agent/templates/_app-error.tpl agent/templates/_app-missing.tpl \
   agent/templates/_app-pending.tpl agent/templates/_app-index.tpl agent/templates/__root.start.tpl agent/templates/router.start.tpl \
   agent/skills/basalt-app/SKILL.md agent/skills/basalt-charts/SKILL.md \
-  agent/skills/basalt-design/SKILL.md \
+  agent/skills/basalt-design/SKILL.md agent/skills/basalt-site/SKILL.md \
   blocks/list-page/block.json blocks/record-page/block.json \
   llms.txt \
   bin/basalt-ui.mjs; do require "$f"; done

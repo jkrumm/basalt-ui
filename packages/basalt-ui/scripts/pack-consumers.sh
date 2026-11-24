@@ -9,8 +9,10 @@
 #    alias `basalt()` sets) and passes `doctor`.
 # 3. a missing peer: with a shell peer removed, `doctor` fails naming it and the build fails in
 #    `basalt()`'s gate on a line that adds it at its declared range; that line, run, makes the build pass.
-# 4. site: an Astro project, then `init --profile site`, then `astro build`: the static page ships no
-#    module script and the island page hydrates exactly one island.
+# 4. site: a stock Astro project, then `init --profile site` (it wires astro.config and writes the
+#    layout: no hand edit), then `astro build`: the static page ships no module script, the island page
+#    hydrates exactly one island, and `doctor` passes. A Dialog placed with no directive fails the
+#    build naming the part and the fix.
 #
 # A file the tarball lacks (a template `init` writes from, a preset `sync` renders) fails a step here.
 set -euo pipefail
@@ -241,37 +243,24 @@ git init -q
 echo '{ "name": "pack-site", "private": true, "type": "module", "scripts": { "build": "astro build" } }' >package.json
 quiet bun add "astro@$ASTRO" "@astrojs/react@$ASTRO_REACT" "react@$REACT" "react-dom@$REACT" "@base-ui/react@$(pin "$PKG/package.json" peerDependencies @base-ui/react)"
 quiet bun add "$TGZ"
-quiet ./node_modules/.bin/basalt-ui init --profile site
-# `init --profile site` prints these two as to-dos: the integration and the layout's font component.
+# The config `npm create astro` writes for an empty project: `init` wires it, nothing else does.
 cat >astro.config.mjs <<'JS'
-import react from '@astrojs/react'
-import { basaltAstro } from 'basalt-ui/astro'
-import { defineConfig } from 'astro/config'
+// @ts-check
+import { defineConfig } from 'astro/config';
 
-export default defineConfig({ output: 'static', prefetch: false, integrations: [react(), basaltAstro()] })
+// https://astro.build/config
+export default defineConfig({});
 JS
-mkdir -p src/layouts src/pages src/islands
-cat >src/layouts/Layout.astro <<'ASTRO'
----
-import BasaltFonts from 'basalt-ui/astro/BasaltFonts.astro'
----
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <BasaltFonts />
-    <title>pack-site</title>
-  </head>
-  <body><slot /></body>
-</html>
-ASTRO
+quiet ./node_modules/.bin/basalt-ui init --profile site
+grep -qF 'react(), basaltAstro()' astro.config.mjs || { echo "FAILED: init did not wire basaltAstro()"; cat astro.config.mjs; exit 1; }
+[ -f src/layouts/Layout.astro ] || { echo "FAILED: init wrote no layout"; exit 1; }
+mkdir -p src/pages src/islands
 cat >src/pages/index.astro <<'ASTRO'
 ---
 import { SiteArticle, SiteCallout } from 'basalt-ui/static'
 import Layout from '../layouts/Layout.astro'
 ---
-<Layout>
+<Layout title="Static">
   <SiteArticle title="Static" description="Static parts only.">
     <SiteCallout tone="info" title="No island">This page ships no client JavaScript.</SiteCallout>
   </SiteArticle>
@@ -292,7 +281,7 @@ import { SiteArticle } from 'basalt-ui/static'
 import Layout from '../layouts/Layout.astro'
 import { Counter } from '../islands/Counter'
 ---
-<Layout>
+<Layout title="Island">
   <SiteArticle title="Island" description="One hydrated part.">
     <Counter client:load />
   </SiteArticle>
@@ -311,5 +300,29 @@ node -e "
   if (!island.includes('data-slot=\"button\"')) { console.error('FAILED: the island did not render on the server'); process.exit(1) }
   console.log('site: static page 0 module scripts, island page 1 island')
 "
+[ -f .basalt/sources.css ] || { echo "FAILED: basaltAstro() wrote no .basalt/sources.css"; exit 1; }
+grep -qF 'dist/ui/button.*' .basalt/sources.css || { echo "FAILED: the island's button is not a source"; cat .basalt/sources.css; exit 1; }
+quiet ./node_modules/.bin/basalt-ui doctor
+echo "site: init wired it with no hand edit and doctor passes"
+
+echo "==> site: a Dialog outside an island fails the build, naming the part and the fix"
+cat >src/pages/dead.astro <<'ASTRO'
+---
+import { Dialog, DialogContent, DialogTrigger } from 'basalt-ui/ui/dialog'
+import Layout from '../layouts/Layout.astro'
+---
+<Layout title="Dead">
+  <Dialog>
+    <DialogTrigger>Open</DialogTrigger>
+    <DialogContent title="Details">Never opens: no island.</DialogContent>
+  </Dialog>
+</Layout>
+ASTRO
+if out=$(./node_modules/.bin/astro build 2>&1); then echo "FAILED: the build passed with a dead Dialog"; exit 1; fi
+for want in 'Dialog (data-slot="dialog-trigger") on /dead/index.html' 'client:visible'; do
+  grep -qF "$want" <<<"$out" || { echo "FAILED: the build error does not say: $want"; echo "$out"; exit 1; }
+done
+rm src/pages/dead.astro
+echo "dead island: the build fails naming Dialog, its page and the fix"
 
 echo "PACK CONSUMERS PASSED"
