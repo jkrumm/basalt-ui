@@ -98,7 +98,9 @@ describe('CellFilter', () => {
     render(<Subject>{(t) => <CellFilter table={t} column="payee" value="Acme" />}</Subject>)
     const button = screen.getByRole('button', { name: 'Filter Payee by Acme' })
     expect(button.hasAttribute('data-cell-filter')).toBe(true)
-    expect(button.className).toContain("[data-below='480'][data-phone='cards']")
+    expect(button.className).toContain(
+      "[data-below='480']:is([data-phone='cards'],[data-phone='fields'])",
+    )
     expect(button.className).toContain('@max-[479.9px]/table:hidden')
     expect(button.className).toContain('pointer-coarse:after:min-h-11')
   })

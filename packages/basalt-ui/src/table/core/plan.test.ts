@@ -51,6 +51,72 @@ describe('cardDetail', () => {
   })
 })
 
+describe('phoneValue and phoneMeta (the phone list row)', () => {
+  type Row = {
+    id: string
+    name: string
+    a: number
+    b: number
+    c: number
+    load: number
+    state: string
+  }
+  const c = col<Row>()
+
+  test('a named value slot answers; the displaced plain columns are the muted values, two at most', () => {
+    const plan = planTable(
+      [
+        c.entity('name', { header: 'Name' }),
+        c.number('a', { header: 'A' }),
+        c.number('b', { header: 'B' }),
+        c.number('c', { header: 'C' }),
+        c.meter('load', { header: 'Load', max: 100, card: 'value' }),
+      ],
+      quiet,
+    )
+    const by = Object.fromEntries(plan.columns.map((p) => [p.id, [p.phoneValue, p.phoneMeta]]))
+    expect(by).toEqual({
+      name: [false, null],
+      a: [false, 1],
+      b: [false, 2],
+      c: [false, null],
+      load: [true, null],
+    })
+  })
+
+  test('without a named slot a meter, a delta or a status answers before a plain number', () => {
+    const plan = planTable(
+      [
+        c.entity('name', { header: 'Name' }),
+        c.number('a', { header: 'A' }),
+        c.status('state', { header: 'State', options: ['ok', 'down'] }),
+        c.meter('load', { header: 'Load', max: 100 }),
+      ],
+      quiet,
+    )
+    const by = Object.fromEntries(plan.columns.map((p) => [p.id, [p.phoneValue, p.phoneMeta]]))
+    expect(by).toEqual({
+      name: [false, null],
+      a: [false, 1],
+      state: [true, null],
+      load: [false, 2],
+    })
+  })
+
+  test('with no marked column the first number answers and the rest are muted values', () => {
+    const plan = planTable(
+      [
+        c.entity('name', { header: 'Name' }),
+        c.number('a', { header: 'A' }),
+        c.number('b', { header: 'B' }),
+      ],
+      quiet,
+    )
+    const by = Object.fromEntries(plan.columns.map((p) => [p.id, [p.phoneValue, p.phoneMeta]]))
+    expect(by).toEqual({ name: [false, null], a: [true, null], b: [false, 1] })
+  })
+})
+
 describe('phoneKeep', () => {
   test("keeps the identity, the card's value, its first meta and the actions", () => {
     const c = col<{ id: string; name: string; a: number; b: number; c: number }>()

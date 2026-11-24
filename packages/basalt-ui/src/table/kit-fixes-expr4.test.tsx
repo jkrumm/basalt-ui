@@ -83,7 +83,7 @@ describe('card: hidden', () => {
     const sheet = readFileSync(new URL('./table.css', import.meta.url), 'utf8')
     for (const below of ['480', '800', 'always'])
       expect(sheet).toContain(
-        `[data-below='${below}'][data-phone='cards']\n      [data-slot='table-cell'][data-card='hidden']`,
+        `[data-below='${below}']:is([data-phone='cards'], [data-phone='fields'])\n      [data-slot='table-cell'][data-card='hidden']`,
       )
   })
 

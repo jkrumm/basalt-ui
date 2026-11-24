@@ -383,14 +383,18 @@ export type UseDataTable<
   filters?: PageFilters<T, F>
   resetOn?: readonly unknown[]
   /**
-   * What a narrow table becomes: `cards`; `scroll`, the table scrolling sideways with its first
-   * column pinned; or `columns`, the table keeping its header and three columns (the name, the
-   * column placed in the card's `value` and the first placed in its `meta` that draws a meter, a delta or a status, else the first placed in it) while the rest move to
-   * the row's details: a long numeric table that must keep its answer in view at 390.
+   * What a narrow table becomes: `cards` (the default), a list row: the title, up to two muted meta
+   * values under it, the answering value (the card's `value`) at the right edge, and every other
+   * column behind the tap; `fields`, the label-and-value grid, each value on a line of its own named
+   * by its column header, for a table that is a form of facts; `scroll`, the table scrolling sideways
+   * with its first column pinned; or `columns`, the table keeping its header and three columns (the
+   * name, the column placed in the card's `value` and the first placed in its `meta` that draws a
+   * meter, a delta or a status, else the first placed in it) while the rest move to the row's details:
+   * a long numeric table that must keep its answer in view at 390.
    *
    * @default 'cards'
    */
-  phone?: 'cards' | 'scroll' | 'columns'
+  phone?: 'cards' | 'fields' | 'scroll' | 'columns'
   /**
    * How the table draws its rules. `reading` draws a hairline under each row and drops columns by
    * `priority` as the table narrows: a list a reader scans down and summarises. `grid` draws a rule

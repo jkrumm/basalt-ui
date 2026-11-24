@@ -1,7 +1,7 @@
 /**
  * The `table-states` document fixture: one DataTable per phase in a 1013 px box, and a card list.
  * - `ts-empty`, `ts-error`, `ts-ready`: the same columns in an empty, a failed and a loaded table;
- * - `ts-cards`: a table with a title, a headed value, a headerless badge and a headerless meta;
+ * - `ts-cards`: a `phone: 'fields'` table with a title, a headed value, a headerless badge and a headerless meta;
  * - `ts-clipped`: the same columns over 20 rows in a `maxRows: 2` scrollport.
  */
 import { createRoot } from 'react-dom/client'
@@ -62,6 +62,8 @@ function Cards({ maxRows }: { maxRows?: number }): ReactElement {
     data: maxRows === undefined ? rows.slice(0, 3) : rows,
     getRowId: (r) => r.id,
     mode: { kind: 'client' },
+    // the clipped list is the default list row; `ts-cards` keeps the labelled field grid
+    ...(maxRows === undefined && { phone: 'fields' as const }),
   })
   return <DataTable table={t} {...(maxRows !== undefined && { height: { maxRows } })} />
 }

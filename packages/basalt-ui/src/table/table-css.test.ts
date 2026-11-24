@@ -33,6 +33,31 @@ describe('table.css', () => {
     expect(rule?.[1]).toContain('background-color: var(--basalt-surface, var(--basalt-canvas))')
   })
 
+  test('the phone projections: cards is a list row, fields the label-and-value grid, in every tier', () => {
+    for (const below of ['480', '700', '800', 'always']) {
+      const root = `[data-slot='table-root'][data-below='${below}']`
+      const flat = withoutComments.replaceAll(/\s+/g, ' ')
+      const block = flat.slice(
+        flat.indexOf(`${root}:is([data-phone='cards'], [data-phone='fields'])`),
+      )
+      // fields keeps the header prefix and the stacked grid
+      expect(block).toContain(
+        `${root}[data-phone='fields'] [data-slot='table-cell'][data-label]::before`,
+      )
+      // the list row never prints a header prefix: only the labelled fields do
+      expect(block).not.toContain(
+        `${root}[data-phone='cards'] [data-slot='table-cell'][data-label]`,
+      )
+      // the list row: one grid with the answering value at the end, two meta values, the rest hidden
+      expect(block).toContain(`${root}[data-phone='cards'] [data-slot='table-row'] {`)
+      expect(block).toContain("[data-phone-meta='1']")
+      expect(block).toContain("[data-phone-meta='2']")
+      expect(block).toContain('[data-phone-value]')
+      expect(block).toContain('var(--table-row-inset, calc(var(--spacing) * 4))')
+      expect(block).toContain('min-height: calc(var(--spacing) * 14)')
+    }
+  })
+
   test('the phone card puts a mono entity name on the title line, never a mono sub line', () => {
     const selectors = withoutComments.match(/[^{}]*:has\([^)]*data-monospace[^)]*\)[^{]*\{/g) ?? []
     expect(selectors.length).toBeGreaterThan(0)
@@ -55,8 +80,8 @@ describe('table.css', () => {
   // on the phone card, four container blocks (bench-table-reading); 6,807 with the list layout's one-line
   // rows and the gallery card's skipped paint (bench-view-layouts); 6,866 with the unclipped message row of an
   // empty or failed grid (Issue 3088); 6,931 with a grid table's cards at the container's width, one rule in
-  // each of the four card tiers (Issue 3091); 6,959 with the three hover rules behind (hover: hover) (Issue 3206).
-  test('stays small: under 6,980 bytes gzipped', () => {
-    expect(gzipSync(SHEET).length).toBeLessThan(6980)
+  // each of the four card tiers (Issue 3091); 6,959 with the three hover rules behind (hover: hover) (Issue 3206); 7,919 with the phone list row beside the fields grid.
+  test('stays small: under 7,950 bytes gzipped', () => {
+    expect(gzipSync(SHEET).length).toBeLessThan(7950)
   })
 })

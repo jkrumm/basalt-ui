@@ -4,7 +4,8 @@
  *
  *   full     >= data-full-at     every column
  *   reduced  below data-full-at  priority 3 hidden (cells and <col>); no data-full-at = always
- *   card     below data-below    the SAME rows projected as cards; thead visually hidden, never none
+ *   card     below data-below    the SAME rows projected as a list row (phone="cards") or a label-and-value
+ *                                grid (phone="fields"); thead visually hidden, never none
  *   scroll   below data-below    phone="scroll": identity pinned, scrolls inside the scroller
  *   columns  below data-below    phone="columns": identity, card value and first meta stay a table
  *
@@ -347,7 +348,9 @@
 
   /* card and scroll */
   @container table (max-width: 479.9px) {
-    [data-slot='table-root'][data-below='480'][data-phone='cards'] [data-slot='table-header'] {
+    /* a phone row: a list row (cards) or a label-and-value grid (fields); the rules both share */
+    [data-slot='table-root'][data-below='480']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-header'] {
       position: absolute;
       width: 1px;
       height: 1px;
@@ -355,63 +358,46 @@
       clip-path: inset(50%);
       white-space: nowrap;
     }
-    [data-slot='table-root'][data-below='480'][data-phone='cards']
+    [data-slot='table-root'][data-below='480']:is([data-phone='cards'], [data-phone='fields'])
       :is([data-slot='table'], [data-slot='table-body']) {
       display: block;
     }
     /* the head's controls are out of the tab order with the head (sort lives in the toolbar here) */
-    [data-slot='table-root'][data-below='480'][data-phone='cards']
+    [data-slot='table-root'][data-below='480']:is([data-phone='cards'], [data-phone='fields'])
       [data-slot='table-header']
       :is(button, [role='checkbox'], input, [role='separator']) {
       visibility: hidden;
     }
-    /* a card draws its edit slot as the control it is */
-    [data-slot='table-root'][data-below='480'][data-phone='cards'] [data-slot='table-select-cell'] {
+    /* a phone row draws its edit slot as the control it is */
+    [data-slot='table-root'][data-below='480']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-select-cell'] {
       --table-edit-line: var(--basalt-input);
       --table-edit-ground: var(--basalt-canvas);
       --table-edit-chevron: 1;
     }
-    [data-slot='table-root'][data-below='480'][data-phone='cards'] colgroup,
-    [data-slot='table-root'][data-below='480'][data-phone='cards'] [data-slot='table-row']::after {
+    [data-slot='table-root'][data-below='480']:is([data-phone='cards'], [data-phone='fields'])
+      colgroup,
+    [data-slot='table-root'][data-below='480']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-row']::after {
       display: none;
     }
-    [data-slot='table-root'][data-below='480'][data-phone='cards']
+    [data-slot='table-root'][data-below='480']:is([data-phone='cards'], [data-phone='fields'])
       [data-slot='table-row'][data-level] {
-      padding-inline-start: calc(var(--spacing) * (4 + 4 * (var(--table-level, 1) - 1)));
+      padding-inline-start: calc(
+        var(--table-row-inset, calc(var(--spacing) * 4)) + var(--spacing) * 4 *
+          (var(--table-level, 1) - 1)
+      );
     }
-    [data-slot='table-root'][data-below='480'][data-phone='cards'] [data-slot='table-tree-lead'] {
+    [data-slot='table-root'][data-below='480']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-tree-lead'] {
       padding-inline-start: 0;
     }
-    [data-slot='table-root'][data-below='480'][data-phone='cards'] [data-slot='table-tree-spacer'] {
+    [data-slot='table-root'][data-below='480']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-tree-spacer'] {
       display: none;
     }
-    [data-slot='table-root'][data-below='480'][data-phone='cards'] [data-slot='table-row'] {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      align-items: center;
-      gap: var(--spacing) calc(var(--spacing) * 3);
-      padding: calc(var(--spacing) * 3) calc(var(--spacing) * 4);
-      height: auto !important;
-      box-shadow: inset 0 -1px 0 var(--basalt-hairline);
-    }
-    /* a mono entity's value stays on its label's line: the meta cell is a block and the entity wraps inline */
-    /* a lamp's word and a stacked meter's parts, heard in the table, are read on the card */
-    [data-slot='table-root'][data-below='480'][data-phone='cards']
-      :is([data-slot='table-lamp-word'], [data-slot='table-meter-parts']) {
-      position: static !important;
-      width: auto !important;
-      height: auto !important;
-      margin: 0 !important;
-      overflow: visible !important;
-      clip-path: none !important;
-      white-space: nowrap !important;
-    }
-    [data-slot='table-root'][data-below='480'][data-phone='cards'] [data-slot='table-entity'] {
-      display: inline-flex !important;
-      flex-wrap: wrap;
-      max-width: 100%;
-    }
-    [data-slot='table-root'][data-below='480'][data-phone='cards'] [data-slot='table-cell'] {
+    [data-slot='table-root'][data-below='480']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-cell'] {
       display: block;
       background: none;
       grid-column: 1 / -1;
@@ -422,74 +408,229 @@
       white-space: normal !important;
       overflow-wrap: anywhere;
     }
-    [data-slot='table-root'][data-below='480'][data-phone='cards']
+    [data-slot='table-root'][data-below='480']:is([data-phone='cards'], [data-phone='fields'])
       [data-slot='table-cell'][data-priority='3'] {
       display: block;
     }
-    [data-slot='table-root'][data-below='480'][data-phone='cards']
-      [data-slot='table-cell'][data-identity] {
-      grid-column: 1;
-      font-weight: 500;
-    }
-    /* a value placed in the card's meta says which column it is */
-    [data-slot='table-root'][data-below='480'][data-phone='cards']
-      [data-slot='table-cell'][data-label]::before {
-      content: attr(data-label) ': ';
-      color: var(--basalt-ink-muted);
-    }
-    /* a labelled value reads from the card's start, a number or a boolean included */
-    [data-slot='table-root'][data-below='480'][data-phone='cards']
-      [data-slot='table-cell'][data-label] {
-      text-align: start !important;
-    }
     /* a money value keeps the currency its column header carried */
-    [data-slot='table-root'][data-below='480'][data-phone='cards']
+    [data-slot='table-root'][data-below='480']:is([data-phone='cards'], [data-phone='fields'])
       [data-slot='table-cell'][data-unit]::after {
       content: ' ' attr(data-unit);
       color: var(--basalt-ink-muted);
     }
-    /* a mono entity's id rides on the card's title line, in the mono face, with no labelled line of its own */
-    [data-slot='table-root'][data-below='480'][data-phone='cards']
+    /* a column that declared `card: 'hidden'` is drawn in the table and left off the phone row */
+    [data-slot='table-root'][data-below='480']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-cell'][data-card='hidden'] {
+      display: none;
+    }
+    /* a list the height clipped says how many rows it shows */
+    [data-slot='table-root'][data-below='480']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-rows-shown'] {
+      display: block;
+    }
+    [data-slot='table-root'][data-below='480']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-cell'][colspan] {
+      grid-column: 1 / -1;
+    }
+    /* a grid table drawn as a phone row keeps no sideways scroll or pinned column */
+    [data-slot='table-root'][data-below='480']:is(
+        [data-phone='cards'],
+        [data-phone='fields']
+      )[data-look='grid']
+      :is([data-slot='table'], [data-pin], [data-kind='tick'], [data-kind='row-number']) {
+      min-width: 0;
+      position: static;
+    }
+
+    /* fields: every value is a line of its own, named by its column header */
+    [data-slot='table-root'][data-below='480'][data-phone='fields'] [data-slot='table-row'] {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: var(--spacing) calc(var(--spacing) * 3);
+      padding: calc(var(--spacing) * 3) calc(var(--spacing) * 4);
+      height: auto !important;
+      box-shadow: inset 0 -1px 0 var(--basalt-hairline);
+    }
+    /* a lamp's word and a stacked meter's parts, heard in the table, are read on the field */
+    [data-slot='table-root'][data-below='480'][data-phone='fields']
+      :is([data-slot='table-lamp-word'], [data-slot='table-meter-parts']) {
+      position: static !important;
+      width: auto !important;
+      height: auto !important;
+      margin: 0 !important;
+      overflow: visible !important;
+      clip-path: none !important;
+      white-space: nowrap !important;
+    }
+    [data-slot='table-root'][data-below='480'][data-phone='fields'] [data-slot='table-entity'] {
+      display: inline-flex !important;
+      flex-wrap: wrap;
+      max-width: 100%;
+    }
+    [data-slot='table-root'][data-below='480'][data-phone='fields']
+      [data-slot='table-cell'][data-identity] {
+      grid-column: 1;
+      font-weight: 500;
+    }
+    /* a value placed in the field list says which column it is */
+    [data-slot='table-root'][data-below='480'][data-phone='fields']
+      [data-slot='table-cell'][data-label]::before {
+      content: attr(data-label) ': ';
+      color: var(--basalt-ink-muted);
+    }
+    /* a labelled value reads from the row's start, a number or a boolean included */
+    [data-slot='table-root'][data-below='480'][data-phone='fields']
+      [data-slot='table-cell'][data-label] {
+      text-align: start !important;
+    }
+    /* a mono entity's id rides on the row's title line, in the mono face, with no labelled line of its own */
+    [data-slot='table-root'][data-below='480'][data-phone='fields']
       [data-slot='table-cell'][data-label]:has([data-slot='table-entity-name'][data-monospace]) {
       grid-column: 2;
       grid-row: 1;
       justify-self: end;
       max-width: 100%;
     }
-    [data-slot='table-root'][data-below='480'][data-phone='cards']
+    [data-slot='table-root'][data-below='480'][data-phone='fields']
       [data-slot='table-cell'][data-label]:has(
         [data-slot='table-entity-name'][data-monospace]
       )::before {
       content: none;
     }
-    /* a column that declared `card: 'hidden'` is drawn in the table and left off the card */
-    [data-slot='table-root'][data-below='480'][data-phone='cards']
-      [data-slot='table-cell'][data-card='hidden'] {
-      display: none;
-    }
-    /* a card list the height clipped says how many cards it shows */
-    [data-slot='table-root'][data-below='480'][data-phone='cards'] [data-slot='table-rows-shown'] {
-      display: block;
-    }
-    [data-slot='table-root'][data-below='480'][data-phone='cards']
+    [data-slot='table-root'][data-below='480'][data-phone='fields']
       [data-slot='table-cell'][data-kind='actions'] {
       grid-column: 2;
       grid-row: 1;
     }
-    [data-slot='table-root'][data-below='480'][data-phone='cards']
+    [data-slot='table-root'][data-below='480'][data-phone='fields']
       [data-slot='table-cell'][data-kind='tick'] {
       grid-column: 1;
       grid-row: 1;
     }
-    [data-slot='table-root'][data-below='480'][data-phone='cards']
-      [data-slot='table-cell'][colspan] {
-      grid-column: 1 / -1;
+
+    /* cards: a list row. The title over up to two muted meta values (`data-phone-meta`, from the plan),
+       the answering value at the end, centred over both lines; every other column is behind the tap */
+    [data-slot='table-root'][data-below='480'][data-phone='cards'] [data-slot='table-row'] {
+      display: grid;
+      grid-template-columns:
+        auto minmax(0, max-content) minmax(0, 1fr)
+        fit-content(calc(var(--spacing) * 44)) auto;
+      align-items: center;
+      padding: calc(var(--spacing) * 3) var(--table-row-inset, calc(var(--spacing) * 4));
+      height: auto !important;
+      box-shadow: inset 0 -1px 0 var(--basalt-hairline);
     }
-    /* a grid table drawn as cards keeps no sideways scroll or pinned column */
-    [data-slot='table-root'][data-below='480'][data-phone='cards'][data-look='grid']
-      :is([data-slot='table'], [data-pin], [data-kind='tick'], [data-kind='row-number']) {
-      min-width: 0;
-      position: static;
+    [data-slot='table-root'][data-below='480'][data-phone='cards']
+      [data-slot='table-row']:not([data-group]) {
+      min-height: calc(var(--spacing) * 14);
+    }
+    [data-slot='table-root'][data-below='480'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-place]:not(
+        [data-place='title'],
+        [data-phone-value],
+        [data-place='kebab'],
+        [data-phone-meta]
+      ) {
+      display: none;
+    }
+    [data-slot='table-root'][data-below='480'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell']:is([data-place='title'], [data-phone-meta]) {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap !important;
+    }
+    [data-slot='table-root'][data-below='480'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-place='title'] {
+      grid-column: 2 / span 2;
+      grid-row: 1;
+      font-weight: 500;
+    }
+    [data-slot='table-root'][data-below='480'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-phone-meta] {
+      grid-row: 2;
+      margin-top: calc(var(--spacing) * 0.5);
+      color: var(--basalt-ink-muted);
+      text-align: start !important;
+    }
+    [data-slot='table-root'][data-below='480'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-phone-meta='1'] {
+      grid-column: 2;
+    }
+    [data-slot='table-root'][data-below='480'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-phone-meta='2'] {
+      grid-column: 3;
+    }
+    [data-slot='table-root'][data-below='480'][data-phone='cards']
+      [data-slot='table-body']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-phone-meta='1']
+      ~ [data-phone-meta='2']::before {
+      content: '\00b7';
+      margin-inline: calc(var(--spacing) * 1.5);
+    }
+    [data-slot='table-root'][data-below='480'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-phone-value] {
+      grid-column: 4;
+      grid-row: 1 / span 2;
+      justify-self: end;
+      min-width: auto;
+      margin-inline-start: calc(var(--spacing) * 3);
+      white-space: nowrap !important;
+      text-align: end !important;
+    }
+    /* a meter draws at a compact width, a lamp keeps its dot and says its word */
+    [data-slot='table-root'][data-below='480'][data-phone='cards']
+      [data-phone-value]
+      :is([data-slot='meter'], [data-slot='table-meter-stack']) {
+      width: calc(var(--spacing) * 28);
+    }
+    [data-slot='table-root'][data-below='480'][data-phone='cards']
+      [data-phone-value]
+      [data-slot='table-lamp-word'] {
+      position: static !important;
+      width: auto !important;
+      height: auto !important;
+      margin: 0 !important;
+      overflow: visible !important;
+      clip-path: none !important;
+    }
+    [data-slot='table-root'][data-below='480'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-kind='actions'] {
+      grid-column: 5;
+      grid-row: 1 / span 2;
+      margin-inline-start: calc(var(--spacing) * 2);
+    }
+    [data-slot='table-root'][data-below='480'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-kind='tick'] {
+      grid-column: 1;
+      grid-row: 1 / span 2;
+      margin-inline-end: calc(var(--spacing) * 3);
+    }
+    /* a mono entity with no answering value to share the row rides the title line's end */
+    [data-slot='table-root'][data-below='480'][data-phone='cards']
+      [data-slot='table-row']:not([data-group], :has([data-phone-value]))
+      [data-slot='table-cell'][data-phone-meta='1']:has(
+        [data-slot='table-entity-name'][data-monospace]
+      ) {
+      grid-column: 4;
+      grid-row: 1;
+      justify-self: end;
+    }
+    [data-slot='table-root'][data-below='480'][data-phone='cards']
+      [data-slot='table-row']:not(:has([data-phone-value]))
+      [data-phone-meta='1']:has([data-slot='table-entity-name'][data-monospace])
+      ~ [data-phone-meta='2']::before {
+      content: none;
     }
     [data-slot='table-root'][data-below='480'][data-phone='scroll']
       :is([data-slot='table-scroller'], [data-slot='virtual-list']) {
@@ -531,7 +672,9 @@
     }
   }
   @container table (max-width: 799.9px) {
-    [data-slot='table-root'][data-below='800'][data-phone='cards'] [data-slot='table-header'] {
+    /* a phone row: a list row (cards) or a label-and-value grid (fields); the rules both share */
+    [data-slot='table-root'][data-below='800']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-header'] {
       position: absolute;
       width: 1px;
       height: 1px;
@@ -539,63 +682,46 @@
       clip-path: inset(50%);
       white-space: nowrap;
     }
-    [data-slot='table-root'][data-below='800'][data-phone='cards']
+    [data-slot='table-root'][data-below='800']:is([data-phone='cards'], [data-phone='fields'])
       :is([data-slot='table'], [data-slot='table-body']) {
       display: block;
     }
     /* the head's controls are out of the tab order with the head (sort lives in the toolbar here) */
-    [data-slot='table-root'][data-below='800'][data-phone='cards']
+    [data-slot='table-root'][data-below='800']:is([data-phone='cards'], [data-phone='fields'])
       [data-slot='table-header']
       :is(button, [role='checkbox'], input, [role='separator']) {
       visibility: hidden;
     }
-    /* a card draws its edit slot as the control it is */
-    [data-slot='table-root'][data-below='800'][data-phone='cards'] [data-slot='table-select-cell'] {
+    /* a phone row draws its edit slot as the control it is */
+    [data-slot='table-root'][data-below='800']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-select-cell'] {
       --table-edit-line: var(--basalt-input);
       --table-edit-ground: var(--basalt-canvas);
       --table-edit-chevron: 1;
     }
-    [data-slot='table-root'][data-below='800'][data-phone='cards'] colgroup,
-    [data-slot='table-root'][data-below='800'][data-phone='cards'] [data-slot='table-row']::after {
+    [data-slot='table-root'][data-below='800']:is([data-phone='cards'], [data-phone='fields'])
+      colgroup,
+    [data-slot='table-root'][data-below='800']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-row']::after {
       display: none;
     }
-    [data-slot='table-root'][data-below='800'][data-phone='cards']
+    [data-slot='table-root'][data-below='800']:is([data-phone='cards'], [data-phone='fields'])
       [data-slot='table-row'][data-level] {
-      padding-inline-start: calc(var(--spacing) * (4 + 4 * (var(--table-level, 1) - 1)));
+      padding-inline-start: calc(
+        var(--table-row-inset, calc(var(--spacing) * 4)) + var(--spacing) * 4 *
+          (var(--table-level, 1) - 1)
+      );
     }
-    [data-slot='table-root'][data-below='800'][data-phone='cards'] [data-slot='table-tree-lead'] {
+    [data-slot='table-root'][data-below='800']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-tree-lead'] {
       padding-inline-start: 0;
     }
-    [data-slot='table-root'][data-below='800'][data-phone='cards'] [data-slot='table-tree-spacer'] {
+    [data-slot='table-root'][data-below='800']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-tree-spacer'] {
       display: none;
     }
-    [data-slot='table-root'][data-below='800'][data-phone='cards'] [data-slot='table-row'] {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      align-items: center;
-      gap: var(--spacing) calc(var(--spacing) * 3);
-      padding: calc(var(--spacing) * 3) calc(var(--spacing) * 4);
-      height: auto !important;
-      box-shadow: inset 0 -1px 0 var(--basalt-hairline);
-    }
-    /* a mono entity's value stays on its label's line: the meta cell is a block and the entity wraps inline */
-    /* a lamp's word and a stacked meter's parts, heard in the table, are read on the card */
-    [data-slot='table-root'][data-below='800'][data-phone='cards']
-      :is([data-slot='table-lamp-word'], [data-slot='table-meter-parts']) {
-      position: static !important;
-      width: auto !important;
-      height: auto !important;
-      margin: 0 !important;
-      overflow: visible !important;
-      clip-path: none !important;
-      white-space: nowrap !important;
-    }
-    [data-slot='table-root'][data-below='800'][data-phone='cards'] [data-slot='table-entity'] {
-      display: inline-flex !important;
-      flex-wrap: wrap;
-      max-width: 100%;
-    }
-    [data-slot='table-root'][data-below='800'][data-phone='cards'] [data-slot='table-cell'] {
+    [data-slot='table-root'][data-below='800']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-cell'] {
       display: block;
       background: none;
       grid-column: 1 / -1;
@@ -606,73 +732,229 @@
       white-space: normal !important;
       overflow-wrap: anywhere;
     }
-    [data-slot='table-root'][data-below='800'][data-phone='cards']
+    [data-slot='table-root'][data-below='800']:is([data-phone='cards'], [data-phone='fields'])
       [data-slot='table-cell'][data-priority='3'] {
       display: block;
     }
-    [data-slot='table-root'][data-below='800'][data-phone='cards']
-      [data-slot='table-cell'][data-identity] {
-      grid-column: 1;
-      font-weight: 500;
-    }
-    /* a value placed in the card's meta says which column it is */
-    [data-slot='table-root'][data-below='800'][data-phone='cards']
-      [data-slot='table-cell'][data-label]::before {
-      content: attr(data-label) ': ';
-      color: var(--basalt-ink-muted);
-    }
-    /* a labelled value reads from the card's start, a number or a boolean included */
-    [data-slot='table-root'][data-below='800'][data-phone='cards']
-      [data-slot='table-cell'][data-label] {
-      text-align: start !important;
-    }
     /* a money value keeps the currency its column header carried */
-    [data-slot='table-root'][data-below='800'][data-phone='cards']
+    [data-slot='table-root'][data-below='800']:is([data-phone='cards'], [data-phone='fields'])
       [data-slot='table-cell'][data-unit]::after {
       content: ' ' attr(data-unit);
       color: var(--basalt-ink-muted);
     }
-    /* a mono entity's id rides on the card's title line, in the mono face, with no labelled line of its own */
-    [data-slot='table-root'][data-below='800'][data-phone='cards']
+    /* a column that declared `card: 'hidden'` is drawn in the table and left off the phone row */
+    [data-slot='table-root'][data-below='800']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-cell'][data-card='hidden'] {
+      display: none;
+    }
+    /* a list the height clipped says how many rows it shows */
+    [data-slot='table-root'][data-below='800']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-rows-shown'] {
+      display: block;
+    }
+    [data-slot='table-root'][data-below='800']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-cell'][colspan] {
+      grid-column: 1 / -1;
+    }
+    /* a grid table drawn as a phone row keeps no sideways scroll or pinned column */
+    [data-slot='table-root'][data-below='800']:is(
+        [data-phone='cards'],
+        [data-phone='fields']
+      )[data-look='grid']
+      :is([data-slot='table'], [data-pin], [data-kind='tick'], [data-kind='row-number']) {
+      min-width: 0;
+      position: static;
+    }
+
+    /* fields: every value is a line of its own, named by its column header */
+    [data-slot='table-root'][data-below='800'][data-phone='fields'] [data-slot='table-row'] {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: var(--spacing) calc(var(--spacing) * 3);
+      padding: calc(var(--spacing) * 3) calc(var(--spacing) * 4);
+      height: auto !important;
+      box-shadow: inset 0 -1px 0 var(--basalt-hairline);
+    }
+    /* a lamp's word and a stacked meter's parts, heard in the table, are read on the field */
+    [data-slot='table-root'][data-below='800'][data-phone='fields']
+      :is([data-slot='table-lamp-word'], [data-slot='table-meter-parts']) {
+      position: static !important;
+      width: auto !important;
+      height: auto !important;
+      margin: 0 !important;
+      overflow: visible !important;
+      clip-path: none !important;
+      white-space: nowrap !important;
+    }
+    [data-slot='table-root'][data-below='800'][data-phone='fields'] [data-slot='table-entity'] {
+      display: inline-flex !important;
+      flex-wrap: wrap;
+      max-width: 100%;
+    }
+    [data-slot='table-root'][data-below='800'][data-phone='fields']
+      [data-slot='table-cell'][data-identity] {
+      grid-column: 1;
+      font-weight: 500;
+    }
+    /* a value placed in the field list says which column it is */
+    [data-slot='table-root'][data-below='800'][data-phone='fields']
+      [data-slot='table-cell'][data-label]::before {
+      content: attr(data-label) ': ';
+      color: var(--basalt-ink-muted);
+    }
+    /* a labelled value reads from the row's start, a number or a boolean included */
+    [data-slot='table-root'][data-below='800'][data-phone='fields']
+      [data-slot='table-cell'][data-label] {
+      text-align: start !important;
+    }
+    /* a mono entity's id rides on the row's title line, in the mono face, with no labelled line of its own */
+    [data-slot='table-root'][data-below='800'][data-phone='fields']
       [data-slot='table-cell'][data-label]:has([data-slot='table-entity-name'][data-monospace]) {
       grid-column: 2;
       grid-row: 1;
       justify-self: end;
       max-width: 100%;
     }
-    [data-slot='table-root'][data-below='800'][data-phone='cards']
+    [data-slot='table-root'][data-below='800'][data-phone='fields']
       [data-slot='table-cell'][data-label]:has(
         [data-slot='table-entity-name'][data-monospace]
       )::before {
       content: none;
     }
-    /* a column that declared `card: 'hidden'` is drawn in the table and left off the card */
-    [data-slot='table-root'][data-below='800'][data-phone='cards']
-      [data-slot='table-cell'][data-card='hidden'] {
-      display: none;
-    }
-    /* a card list the height clipped says how many cards it shows */
-    [data-slot='table-root'][data-below='800'][data-phone='cards'] [data-slot='table-rows-shown'] {
-      display: block;
-    }
-    [data-slot='table-root'][data-below='800'][data-phone='cards']
+    [data-slot='table-root'][data-below='800'][data-phone='fields']
       [data-slot='table-cell'][data-kind='actions'] {
       grid-column: 2;
       grid-row: 1;
     }
-    [data-slot='table-root'][data-below='800'][data-phone='cards']
+    [data-slot='table-root'][data-below='800'][data-phone='fields']
       [data-slot='table-cell'][data-kind='tick'] {
       grid-column: 1;
       grid-row: 1;
     }
-    [data-slot='table-root'][data-below='800'][data-phone='cards']
-      [data-slot='table-cell'][colspan] {
-      grid-column: 1 / -1;
+
+    /* cards: a list row. The title over up to two muted meta values (`data-phone-meta`, from the plan),
+       the answering value at the end, centred over both lines; every other column is behind the tap */
+    [data-slot='table-root'][data-below='800'][data-phone='cards'] [data-slot='table-row'] {
+      display: grid;
+      grid-template-columns:
+        auto minmax(0, max-content) minmax(0, 1fr)
+        fit-content(calc(var(--spacing) * 44)) auto;
+      align-items: center;
+      padding: calc(var(--spacing) * 3) var(--table-row-inset, calc(var(--spacing) * 4));
+      height: auto !important;
+      box-shadow: inset 0 -1px 0 var(--basalt-hairline);
     }
-    [data-slot='table-root'][data-below='800'][data-phone='cards'][data-look='grid']
-      :is([data-slot='table'], [data-pin], [data-kind='tick'], [data-kind='row-number']) {
-      min-width: 0;
-      position: static;
+    [data-slot='table-root'][data-below='800'][data-phone='cards']
+      [data-slot='table-row']:not([data-group]) {
+      min-height: calc(var(--spacing) * 14);
+    }
+    [data-slot='table-root'][data-below='800'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-place]:not(
+        [data-place='title'],
+        [data-phone-value],
+        [data-place='kebab'],
+        [data-phone-meta]
+      ) {
+      display: none;
+    }
+    [data-slot='table-root'][data-below='800'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell']:is([data-place='title'], [data-phone-meta]) {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap !important;
+    }
+    [data-slot='table-root'][data-below='800'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-place='title'] {
+      grid-column: 2 / span 2;
+      grid-row: 1;
+      font-weight: 500;
+    }
+    [data-slot='table-root'][data-below='800'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-phone-meta] {
+      grid-row: 2;
+      margin-top: calc(var(--spacing) * 0.5);
+      color: var(--basalt-ink-muted);
+      text-align: start !important;
+    }
+    [data-slot='table-root'][data-below='800'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-phone-meta='1'] {
+      grid-column: 2;
+    }
+    [data-slot='table-root'][data-below='800'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-phone-meta='2'] {
+      grid-column: 3;
+    }
+    [data-slot='table-root'][data-below='800'][data-phone='cards']
+      [data-slot='table-body']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-phone-meta='1']
+      ~ [data-phone-meta='2']::before {
+      content: '\00b7';
+      margin-inline: calc(var(--spacing) * 1.5);
+    }
+    [data-slot='table-root'][data-below='800'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-phone-value] {
+      grid-column: 4;
+      grid-row: 1 / span 2;
+      justify-self: end;
+      min-width: auto;
+      margin-inline-start: calc(var(--spacing) * 3);
+      white-space: nowrap !important;
+      text-align: end !important;
+    }
+    /* a meter draws at a compact width, a lamp keeps its dot and says its word */
+    [data-slot='table-root'][data-below='800'][data-phone='cards']
+      [data-phone-value]
+      :is([data-slot='meter'], [data-slot='table-meter-stack']) {
+      width: calc(var(--spacing) * 28);
+    }
+    [data-slot='table-root'][data-below='800'][data-phone='cards']
+      [data-phone-value]
+      [data-slot='table-lamp-word'] {
+      position: static !important;
+      width: auto !important;
+      height: auto !important;
+      margin: 0 !important;
+      overflow: visible !important;
+      clip-path: none !important;
+    }
+    [data-slot='table-root'][data-below='800'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-kind='actions'] {
+      grid-column: 5;
+      grid-row: 1 / span 2;
+      margin-inline-start: calc(var(--spacing) * 2);
+    }
+    [data-slot='table-root'][data-below='800'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-kind='tick'] {
+      grid-column: 1;
+      grid-row: 1 / span 2;
+      margin-inline-end: calc(var(--spacing) * 3);
+    }
+    /* a mono entity with no answering value to share the row rides the title line's end */
+    [data-slot='table-root'][data-below='800'][data-phone='cards']
+      [data-slot='table-row']:not([data-group], :has([data-phone-value]))
+      [data-slot='table-cell'][data-phone-meta='1']:has(
+        [data-slot='table-entity-name'][data-monospace]
+      ) {
+      grid-column: 4;
+      grid-row: 1;
+      justify-self: end;
+    }
+    [data-slot='table-root'][data-below='800'][data-phone='cards']
+      [data-slot='table-row']:not(:has([data-phone-value]))
+      [data-phone-meta='1']:has([data-slot='table-entity-name'][data-monospace])
+      ~ [data-phone-meta='2']::before {
+      content: none;
     }
     [data-slot='table-root'][data-below='800'][data-phone='scroll']
       :is([data-slot='table-scroller'], [data-slot='virtual-list']) {
@@ -715,7 +997,9 @@
   }
   /* a 700 step: priority 1+2 need more than 480 px and fit 700, under a 750 px cell's 718 px table (plan.ts reducedFromOf) */
   @container table (max-width: 699.9px) {
-    [data-slot='table-root'][data-below='700'][data-phone='cards'] [data-slot='table-header'] {
+    /* a phone row: a list row (cards) or a label-and-value grid (fields); the rules both share */
+    [data-slot='table-root'][data-below='700']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-header'] {
       position: absolute;
       width: 1px;
       height: 1px;
@@ -723,63 +1007,46 @@
       clip-path: inset(50%);
       white-space: nowrap;
     }
-    [data-slot='table-root'][data-below='700'][data-phone='cards']
+    [data-slot='table-root'][data-below='700']:is([data-phone='cards'], [data-phone='fields'])
       :is([data-slot='table'], [data-slot='table-body']) {
       display: block;
     }
     /* the head's controls are out of the tab order with the head (sort lives in the toolbar here) */
-    [data-slot='table-root'][data-below='700'][data-phone='cards']
+    [data-slot='table-root'][data-below='700']:is([data-phone='cards'], [data-phone='fields'])
       [data-slot='table-header']
       :is(button, [role='checkbox'], input, [role='separator']) {
       visibility: hidden;
     }
-    /* a card draws its edit slot as the control it is */
-    [data-slot='table-root'][data-below='700'][data-phone='cards'] [data-slot='table-select-cell'] {
+    /* a phone row draws its edit slot as the control it is */
+    [data-slot='table-root'][data-below='700']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-select-cell'] {
       --table-edit-line: var(--basalt-input);
       --table-edit-ground: var(--basalt-canvas);
       --table-edit-chevron: 1;
     }
-    [data-slot='table-root'][data-below='700'][data-phone='cards'] colgroup,
-    [data-slot='table-root'][data-below='700'][data-phone='cards'] [data-slot='table-row']::after {
+    [data-slot='table-root'][data-below='700']:is([data-phone='cards'], [data-phone='fields'])
+      colgroup,
+    [data-slot='table-root'][data-below='700']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-row']::after {
       display: none;
     }
-    [data-slot='table-root'][data-below='700'][data-phone='cards']
+    [data-slot='table-root'][data-below='700']:is([data-phone='cards'], [data-phone='fields'])
       [data-slot='table-row'][data-level] {
-      padding-inline-start: calc(var(--spacing) * (4 + 4 * (var(--table-level, 1) - 1)));
+      padding-inline-start: calc(
+        var(--table-row-inset, calc(var(--spacing) * 4)) + var(--spacing) * 4 *
+          (var(--table-level, 1) - 1)
+      );
     }
-    [data-slot='table-root'][data-below='700'][data-phone='cards'] [data-slot='table-tree-lead'] {
+    [data-slot='table-root'][data-below='700']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-tree-lead'] {
       padding-inline-start: 0;
     }
-    [data-slot='table-root'][data-below='700'][data-phone='cards'] [data-slot='table-tree-spacer'] {
+    [data-slot='table-root'][data-below='700']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-tree-spacer'] {
       display: none;
     }
-    [data-slot='table-root'][data-below='700'][data-phone='cards'] [data-slot='table-row'] {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      align-items: center;
-      gap: var(--spacing) calc(var(--spacing) * 3);
-      padding: calc(var(--spacing) * 3) calc(var(--spacing) * 4);
-      height: auto !important;
-      box-shadow: inset 0 -1px 0 var(--basalt-hairline);
-    }
-    /* a mono entity's value stays on its label's line: the meta cell is a block and the entity wraps inline */
-    /* a lamp's word and a stacked meter's parts, heard in the table, are read on the card */
-    [data-slot='table-root'][data-below='700'][data-phone='cards']
-      :is([data-slot='table-lamp-word'], [data-slot='table-meter-parts']) {
-      position: static !important;
-      width: auto !important;
-      height: auto !important;
-      margin: 0 !important;
-      overflow: visible !important;
-      clip-path: none !important;
-      white-space: nowrap !important;
-    }
-    [data-slot='table-root'][data-below='700'][data-phone='cards'] [data-slot='table-entity'] {
-      display: inline-flex !important;
-      flex-wrap: wrap;
-      max-width: 100%;
-    }
-    [data-slot='table-root'][data-below='700'][data-phone='cards'] [data-slot='table-cell'] {
+    [data-slot='table-root'][data-below='700']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-cell'] {
       display: block;
       background: none;
       grid-column: 1 / -1;
@@ -790,73 +1057,229 @@
       white-space: normal !important;
       overflow-wrap: anywhere;
     }
-    [data-slot='table-root'][data-below='700'][data-phone='cards']
+    [data-slot='table-root'][data-below='700']:is([data-phone='cards'], [data-phone='fields'])
       [data-slot='table-cell'][data-priority='3'] {
       display: block;
     }
-    [data-slot='table-root'][data-below='700'][data-phone='cards']
-      [data-slot='table-cell'][data-identity] {
-      grid-column: 1;
-      font-weight: 500;
-    }
-    /* a value placed in the card's meta says which column it is */
-    [data-slot='table-root'][data-below='700'][data-phone='cards']
-      [data-slot='table-cell'][data-label]::before {
-      content: attr(data-label) ': ';
-      color: var(--basalt-ink-muted);
-    }
-    /* a labelled value reads from the card's start, a number or a boolean included */
-    [data-slot='table-root'][data-below='700'][data-phone='cards']
-      [data-slot='table-cell'][data-label] {
-      text-align: start !important;
-    }
     /* a money value keeps the currency its column header carried */
-    [data-slot='table-root'][data-below='700'][data-phone='cards']
+    [data-slot='table-root'][data-below='700']:is([data-phone='cards'], [data-phone='fields'])
       [data-slot='table-cell'][data-unit]::after {
       content: ' ' attr(data-unit);
       color: var(--basalt-ink-muted);
     }
-    /* a mono entity's id rides on the card's title line, in the mono face, with no labelled line of its own */
-    [data-slot='table-root'][data-below='700'][data-phone='cards']
+    /* a column that declared `card: 'hidden'` is drawn in the table and left off the phone row */
+    [data-slot='table-root'][data-below='700']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-cell'][data-card='hidden'] {
+      display: none;
+    }
+    /* a list the height clipped says how many rows it shows */
+    [data-slot='table-root'][data-below='700']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-rows-shown'] {
+      display: block;
+    }
+    [data-slot='table-root'][data-below='700']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-cell'][colspan] {
+      grid-column: 1 / -1;
+    }
+    /* a grid table drawn as a phone row keeps no sideways scroll or pinned column */
+    [data-slot='table-root'][data-below='700']:is(
+        [data-phone='cards'],
+        [data-phone='fields']
+      )[data-look='grid']
+      :is([data-slot='table'], [data-pin], [data-kind='tick'], [data-kind='row-number']) {
+      min-width: 0;
+      position: static;
+    }
+
+    /* fields: every value is a line of its own, named by its column header */
+    [data-slot='table-root'][data-below='700'][data-phone='fields'] [data-slot='table-row'] {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: var(--spacing) calc(var(--spacing) * 3);
+      padding: calc(var(--spacing) * 3) calc(var(--spacing) * 4);
+      height: auto !important;
+      box-shadow: inset 0 -1px 0 var(--basalt-hairline);
+    }
+    /* a lamp's word and a stacked meter's parts, heard in the table, are read on the field */
+    [data-slot='table-root'][data-below='700'][data-phone='fields']
+      :is([data-slot='table-lamp-word'], [data-slot='table-meter-parts']) {
+      position: static !important;
+      width: auto !important;
+      height: auto !important;
+      margin: 0 !important;
+      overflow: visible !important;
+      clip-path: none !important;
+      white-space: nowrap !important;
+    }
+    [data-slot='table-root'][data-below='700'][data-phone='fields'] [data-slot='table-entity'] {
+      display: inline-flex !important;
+      flex-wrap: wrap;
+      max-width: 100%;
+    }
+    [data-slot='table-root'][data-below='700'][data-phone='fields']
+      [data-slot='table-cell'][data-identity] {
+      grid-column: 1;
+      font-weight: 500;
+    }
+    /* a value placed in the field list says which column it is */
+    [data-slot='table-root'][data-below='700'][data-phone='fields']
+      [data-slot='table-cell'][data-label]::before {
+      content: attr(data-label) ': ';
+      color: var(--basalt-ink-muted);
+    }
+    /* a labelled value reads from the row's start, a number or a boolean included */
+    [data-slot='table-root'][data-below='700'][data-phone='fields']
+      [data-slot='table-cell'][data-label] {
+      text-align: start !important;
+    }
+    /* a mono entity's id rides on the row's title line, in the mono face, with no labelled line of its own */
+    [data-slot='table-root'][data-below='700'][data-phone='fields']
       [data-slot='table-cell'][data-label]:has([data-slot='table-entity-name'][data-monospace]) {
       grid-column: 2;
       grid-row: 1;
       justify-self: end;
       max-width: 100%;
     }
-    [data-slot='table-root'][data-below='700'][data-phone='cards']
+    [data-slot='table-root'][data-below='700'][data-phone='fields']
       [data-slot='table-cell'][data-label]:has(
         [data-slot='table-entity-name'][data-monospace]
       )::before {
       content: none;
     }
-    /* a column that declared `card: 'hidden'` is drawn in the table and left off the card */
-    [data-slot='table-root'][data-below='700'][data-phone='cards']
-      [data-slot='table-cell'][data-card='hidden'] {
-      display: none;
-    }
-    /* a card list the height clipped says how many cards it shows */
-    [data-slot='table-root'][data-below='700'][data-phone='cards'] [data-slot='table-rows-shown'] {
-      display: block;
-    }
-    [data-slot='table-root'][data-below='700'][data-phone='cards']
+    [data-slot='table-root'][data-below='700'][data-phone='fields']
       [data-slot='table-cell'][data-kind='actions'] {
       grid-column: 2;
       grid-row: 1;
     }
-    [data-slot='table-root'][data-below='700'][data-phone='cards']
+    [data-slot='table-root'][data-below='700'][data-phone='fields']
       [data-slot='table-cell'][data-kind='tick'] {
       grid-column: 1;
       grid-row: 1;
     }
-    [data-slot='table-root'][data-below='700'][data-phone='cards']
-      [data-slot='table-cell'][colspan] {
-      grid-column: 1 / -1;
+
+    /* cards: a list row. The title over up to two muted meta values (`data-phone-meta`, from the plan),
+       the answering value at the end, centred over both lines; every other column is behind the tap */
+    [data-slot='table-root'][data-below='700'][data-phone='cards'] [data-slot='table-row'] {
+      display: grid;
+      grid-template-columns:
+        auto minmax(0, max-content) minmax(0, 1fr)
+        fit-content(calc(var(--spacing) * 44)) auto;
+      align-items: center;
+      padding: calc(var(--spacing) * 3) var(--table-row-inset, calc(var(--spacing) * 4));
+      height: auto !important;
+      box-shadow: inset 0 -1px 0 var(--basalt-hairline);
     }
-    [data-slot='table-root'][data-below='700'][data-phone='cards'][data-look='grid']
-      :is([data-slot='table'], [data-pin], [data-kind='tick'], [data-kind='row-number']) {
-      min-width: 0;
-      position: static;
+    [data-slot='table-root'][data-below='700'][data-phone='cards']
+      [data-slot='table-row']:not([data-group]) {
+      min-height: calc(var(--spacing) * 14);
+    }
+    [data-slot='table-root'][data-below='700'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-place]:not(
+        [data-place='title'],
+        [data-phone-value],
+        [data-place='kebab'],
+        [data-phone-meta]
+      ) {
+      display: none;
+    }
+    [data-slot='table-root'][data-below='700'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell']:is([data-place='title'], [data-phone-meta]) {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap !important;
+    }
+    [data-slot='table-root'][data-below='700'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-place='title'] {
+      grid-column: 2 / span 2;
+      grid-row: 1;
+      font-weight: 500;
+    }
+    [data-slot='table-root'][data-below='700'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-phone-meta] {
+      grid-row: 2;
+      margin-top: calc(var(--spacing) * 0.5);
+      color: var(--basalt-ink-muted);
+      text-align: start !important;
+    }
+    [data-slot='table-root'][data-below='700'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-phone-meta='1'] {
+      grid-column: 2;
+    }
+    [data-slot='table-root'][data-below='700'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-phone-meta='2'] {
+      grid-column: 3;
+    }
+    [data-slot='table-root'][data-below='700'][data-phone='cards']
+      [data-slot='table-body']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-phone-meta='1']
+      ~ [data-phone-meta='2']::before {
+      content: '\00b7';
+      margin-inline: calc(var(--spacing) * 1.5);
+    }
+    [data-slot='table-root'][data-below='700'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-phone-value] {
+      grid-column: 4;
+      grid-row: 1 / span 2;
+      justify-self: end;
+      min-width: auto;
+      margin-inline-start: calc(var(--spacing) * 3);
+      white-space: nowrap !important;
+      text-align: end !important;
+    }
+    /* a meter draws at a compact width, a lamp keeps its dot and says its word */
+    [data-slot='table-root'][data-below='700'][data-phone='cards']
+      [data-phone-value]
+      :is([data-slot='meter'], [data-slot='table-meter-stack']) {
+      width: calc(var(--spacing) * 28);
+    }
+    [data-slot='table-root'][data-below='700'][data-phone='cards']
+      [data-phone-value]
+      [data-slot='table-lamp-word'] {
+      position: static !important;
+      width: auto !important;
+      height: auto !important;
+      margin: 0 !important;
+      overflow: visible !important;
+      clip-path: none !important;
+    }
+    [data-slot='table-root'][data-below='700'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-kind='actions'] {
+      grid-column: 5;
+      grid-row: 1 / span 2;
+      margin-inline-start: calc(var(--spacing) * 2);
+    }
+    [data-slot='table-root'][data-below='700'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-kind='tick'] {
+      grid-column: 1;
+      grid-row: 1 / span 2;
+      margin-inline-end: calc(var(--spacing) * 3);
+    }
+    /* a mono entity with no answering value to share the row rides the title line's end */
+    [data-slot='table-root'][data-below='700'][data-phone='cards']
+      [data-slot='table-row']:not([data-group], :has([data-phone-value]))
+      [data-slot='table-cell'][data-phone-meta='1']:has(
+        [data-slot='table-entity-name'][data-monospace]
+      ) {
+      grid-column: 4;
+      grid-row: 1;
+      justify-self: end;
+    }
+    [data-slot='table-root'][data-below='700'][data-phone='cards']
+      [data-slot='table-row']:not(:has([data-phone-value]))
+      [data-phone-meta='1']:has([data-slot='table-entity-name'][data-monospace])
+      ~ [data-phone-meta='2']::before {
+      content: none;
     }
     [data-slot='table-root'][data-below='700'][data-phone='scroll']
       :is([data-slot='table-scroller'], [data-slot='virtual-list']) {
@@ -898,7 +1321,9 @@
     }
   }
   @container table (width >= 0px) {
-    [data-slot='table-root'][data-below='always'][data-phone='cards'] [data-slot='table-header'] {
+    /* a phone row: a list row (cards) or a label-and-value grid (fields); the rules both share */
+    [data-slot='table-root'][data-below='always']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-header'] {
       position: absolute;
       width: 1px;
       height: 1px;
@@ -906,67 +1331,46 @@
       clip-path: inset(50%);
       white-space: nowrap;
     }
-    [data-slot='table-root'][data-below='always'][data-phone='cards']
+    [data-slot='table-root'][data-below='always']:is([data-phone='cards'], [data-phone='fields'])
       :is([data-slot='table'], [data-slot='table-body']) {
       display: block;
     }
     /* the head's controls are out of the tab order with the head (sort lives in the toolbar here) */
-    [data-slot='table-root'][data-below='always'][data-phone='cards']
+    [data-slot='table-root'][data-below='always']:is([data-phone='cards'], [data-phone='fields'])
       [data-slot='table-header']
       :is(button, [role='checkbox'], input, [role='separator']) {
       visibility: hidden;
     }
-    /* a card draws its edit slot as the control it is */
-    [data-slot='table-root'][data-below='always'][data-phone='cards']
+    /* a phone row draws its edit slot as the control it is */
+    [data-slot='table-root'][data-below='always']:is([data-phone='cards'], [data-phone='fields'])
       [data-slot='table-select-cell'] {
       --table-edit-line: var(--basalt-input);
       --table-edit-ground: var(--basalt-canvas);
       --table-edit-chevron: 1;
     }
-    [data-slot='table-root'][data-below='always'][data-phone='cards'] colgroup,
-    [data-slot='table-root'][data-below='always'][data-phone='cards']
+    [data-slot='table-root'][data-below='always']:is([data-phone='cards'], [data-phone='fields'])
+      colgroup,
+    [data-slot='table-root'][data-below='always']:is([data-phone='cards'], [data-phone='fields'])
       [data-slot='table-row']::after {
       display: none;
     }
-    [data-slot='table-root'][data-below='always'][data-phone='cards']
+    [data-slot='table-root'][data-below='always']:is([data-phone='cards'], [data-phone='fields'])
       [data-slot='table-row'][data-level] {
-      padding-inline-start: calc(var(--spacing) * (4 + 4 * (var(--table-level, 1) - 1)));
+      padding-inline-start: calc(
+        var(--table-row-inset, calc(var(--spacing) * 4)) + var(--spacing) * 4 *
+          (var(--table-level, 1) - 1)
+      );
     }
-    [data-slot='table-root'][data-below='always'][data-phone='cards']
+    [data-slot='table-root'][data-below='always']:is([data-phone='cards'], [data-phone='fields'])
       [data-slot='table-tree-lead'] {
       padding-inline-start: 0;
     }
-    [data-slot='table-root'][data-below='always'][data-phone='cards']
+    [data-slot='table-root'][data-below='always']:is([data-phone='cards'], [data-phone='fields'])
       [data-slot='table-tree-spacer'] {
       display: none;
     }
-    [data-slot='table-root'][data-below='always'][data-phone='cards'] [data-slot='table-row'] {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      align-items: center;
-      gap: var(--spacing) calc(var(--spacing) * 3);
-      padding: calc(var(--spacing) * 3) calc(var(--spacing) * 4);
-      height: auto !important;
-      box-shadow: inset 0 -1px 0 var(--basalt-hairline);
-    }
-    /* a mono entity's value stays on its label's line: the meta cell is a block and the entity wraps inline */
-    /* a lamp's word and a stacked meter's parts, heard in the table, are read on the card */
-    [data-slot='table-root'][data-below='always'][data-phone='cards']
-      :is([data-slot='table-lamp-word'], [data-slot='table-meter-parts']) {
-      position: static !important;
-      width: auto !important;
-      height: auto !important;
-      margin: 0 !important;
-      overflow: visible !important;
-      clip-path: none !important;
-      white-space: nowrap !important;
-    }
-    [data-slot='table-root'][data-below='always'][data-phone='cards'] [data-slot='table-entity'] {
-      display: inline-flex !important;
-      flex-wrap: wrap;
-      max-width: 100%;
-    }
-    [data-slot='table-root'][data-below='always'][data-phone='cards'] [data-slot='table-cell'] {
+    [data-slot='table-root'][data-below='always']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-cell'] {
       display: block;
       background: none;
       grid-column: 1 / -1;
@@ -977,60 +1381,215 @@
       white-space: normal !important;
       overflow-wrap: anywhere;
     }
-    [data-slot='table-root'][data-below='always'][data-phone='cards']
+    [data-slot='table-root'][data-below='always']:is([data-phone='cards'], [data-phone='fields'])
       [data-slot='table-cell'][data-priority='3'] {
       display: block;
     }
-    [data-slot='table-root'][data-below='always'][data-phone='cards']
-      [data-slot='table-cell'][data-identity] {
-      grid-column: 1;
-      font-weight: 500;
-    }
-    /* a value placed in the card's meta says which column it is */
-    [data-slot='table-root'][data-below='always'][data-phone='cards']
-      [data-slot='table-cell'][data-label]::before {
-      content: attr(data-label) ': ';
-      color: var(--basalt-ink-muted);
-    }
-    /* a labelled value reads from the card's start, a number or a boolean included */
-    [data-slot='table-root'][data-below='always'][data-phone='cards']
-      [data-slot='table-cell'][data-label] {
-      text-align: start !important;
-    }
     /* a money value keeps the currency its column header carried */
-    [data-slot='table-root'][data-below='always'][data-phone='cards']
+    [data-slot='table-root'][data-below='always']:is([data-phone='cards'], [data-phone='fields'])
       [data-slot='table-cell'][data-unit]::after {
       content: ' ' attr(data-unit);
       color: var(--basalt-ink-muted);
     }
-    /* a column that declared `card: 'hidden'` is drawn in the table and left off the card */
-    [data-slot='table-root'][data-below='always'][data-phone='cards']
+    /* a column that declared `card: 'hidden'` is drawn in the table and left off the phone row */
+    [data-slot='table-root'][data-below='always']:is([data-phone='cards'], [data-phone='fields'])
       [data-slot='table-cell'][data-card='hidden'] {
       display: none;
     }
-    /* a card list the height clipped says how many cards it shows */
-    [data-slot='table-root'][data-below='always'][data-phone='cards']
+    /* a list the height clipped says how many rows it shows */
+    [data-slot='table-root'][data-below='always']:is([data-phone='cards'], [data-phone='fields'])
       [data-slot='table-rows-shown'] {
       display: block;
     }
-    [data-slot='table-root'][data-below='always'][data-phone='cards']
+    [data-slot='table-root'][data-below='always']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-cell'][colspan] {
+      grid-column: 1 / -1;
+    }
+    /* a grid table drawn as a phone row keeps no sideways scroll or pinned column */
+    [data-slot='table-root'][data-below='always']:is(
+        [data-phone='cards'],
+        [data-phone='fields']
+      )[data-look='grid']
+      :is([data-slot='table'], [data-pin], [data-kind='tick'], [data-kind='row-number']) {
+      min-width: 0;
+      position: static;
+    }
+
+    /* fields: every value is a line of its own, named by its column header */
+    [data-slot='table-root'][data-below='always'][data-phone='fields'] [data-slot='table-row'] {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: var(--spacing) calc(var(--spacing) * 3);
+      padding: calc(var(--spacing) * 3) calc(var(--spacing) * 4);
+      height: auto !important;
+      box-shadow: inset 0 -1px 0 var(--basalt-hairline);
+    }
+    /* a lamp's word and a stacked meter's parts, heard in the table, are read on the field */
+    [data-slot='table-root'][data-below='always'][data-phone='fields']
+      :is([data-slot='table-lamp-word'], [data-slot='table-meter-parts']) {
+      position: static !important;
+      width: auto !important;
+      height: auto !important;
+      margin: 0 !important;
+      overflow: visible !important;
+      clip-path: none !important;
+      white-space: nowrap !important;
+    }
+    [data-slot='table-root'][data-below='always'][data-phone='fields'] [data-slot='table-entity'] {
+      display: inline-flex !important;
+      flex-wrap: wrap;
+      max-width: 100%;
+    }
+    [data-slot='table-root'][data-below='always'][data-phone='fields']
+      [data-slot='table-cell'][data-identity] {
+      grid-column: 1;
+      font-weight: 500;
+    }
+    /* a value placed in the field list says which column it is */
+    [data-slot='table-root'][data-below='always'][data-phone='fields']
+      [data-slot='table-cell'][data-label]::before {
+      content: attr(data-label) ': ';
+      color: var(--basalt-ink-muted);
+    }
+    /* a labelled value reads from the row's start, a number or a boolean included */
+    [data-slot='table-root'][data-below='always'][data-phone='fields']
+      [data-slot='table-cell'][data-label] {
+      text-align: start !important;
+    }
+    [data-slot='table-root'][data-below='always'][data-phone='fields']
       [data-slot='table-cell'][data-kind='actions'] {
       grid-column: 2;
       grid-row: 1;
     }
-    [data-slot='table-root'][data-below='always'][data-phone='cards']
+    [data-slot='table-root'][data-below='always'][data-phone='fields']
       [data-slot='table-cell'][data-kind='tick'] {
       grid-column: 1;
       grid-row: 1;
     }
-    [data-slot='table-root'][data-below='always'][data-phone='cards']
-      [data-slot='table-cell'][colspan] {
-      grid-column: 1 / -1;
+
+    /* cards: a list row. The title over up to two muted meta values (`data-phone-meta`, from the plan),
+       the answering value at the end, centred over both lines; every other column is behind the tap */
+    [data-slot='table-root'][data-below='always'][data-phone='cards'] [data-slot='table-row'] {
+      display: grid;
+      grid-template-columns:
+        auto minmax(0, max-content) minmax(0, 1fr)
+        fit-content(calc(var(--spacing) * 44)) auto;
+      align-items: center;
+      padding: calc(var(--spacing) * 3) var(--table-row-inset, calc(var(--spacing) * 4));
+      height: auto !important;
+      box-shadow: inset 0 -1px 0 var(--basalt-hairline);
     }
-    [data-slot='table-root'][data-below='always'][data-phone='cards'][data-look='grid']
-      :is([data-slot='table'], [data-pin], [data-kind='tick'], [data-kind='row-number']) {
-      min-width: 0;
-      position: static;
+    [data-slot='table-root'][data-below='always'][data-phone='cards']
+      [data-slot='table-row']:not([data-group]) {
+      min-height: calc(var(--spacing) * 14);
+    }
+    [data-slot='table-root'][data-below='always'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-place]:not(
+        [data-place='title'],
+        [data-phone-value],
+        [data-place='kebab'],
+        [data-phone-meta]
+      ) {
+      display: none;
+    }
+    [data-slot='table-root'][data-below='always'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell']:is([data-place='title'], [data-phone-meta]) {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap !important;
+    }
+    [data-slot='table-root'][data-below='always'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-place='title'] {
+      grid-column: 2 / span 2;
+      grid-row: 1;
+      font-weight: 500;
+    }
+    [data-slot='table-root'][data-below='always'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-phone-meta] {
+      grid-row: 2;
+      margin-top: calc(var(--spacing) * 0.5);
+      color: var(--basalt-ink-muted);
+      text-align: start !important;
+    }
+    [data-slot='table-root'][data-below='always'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-phone-meta='1'] {
+      grid-column: 2;
+    }
+    [data-slot='table-root'][data-below='always'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-phone-meta='2'] {
+      grid-column: 3;
+    }
+    [data-slot='table-root'][data-below='always'][data-phone='cards']
+      [data-slot='table-body']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-phone-meta='1']
+      ~ [data-phone-meta='2']::before {
+      content: '\00b7';
+      margin-inline: calc(var(--spacing) * 1.5);
+    }
+    [data-slot='table-root'][data-below='always'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-phone-value] {
+      grid-column: 4;
+      grid-row: 1 / span 2;
+      justify-self: end;
+      min-width: auto;
+      margin-inline-start: calc(var(--spacing) * 3);
+      white-space: nowrap !important;
+      text-align: end !important;
+    }
+    /* a meter draws at a compact width, a lamp keeps its dot and says its word */
+    [data-slot='table-root'][data-below='always'][data-phone='cards']
+      [data-phone-value]
+      :is([data-slot='meter'], [data-slot='table-meter-stack']) {
+      width: calc(var(--spacing) * 28);
+    }
+    [data-slot='table-root'][data-below='always'][data-phone='cards']
+      [data-phone-value]
+      [data-slot='table-lamp-word'] {
+      position: static !important;
+      width: auto !important;
+      height: auto !important;
+      margin: 0 !important;
+      overflow: visible !important;
+      clip-path: none !important;
+    }
+    [data-slot='table-root'][data-below='always'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-kind='actions'] {
+      grid-column: 5;
+      grid-row: 1 / span 2;
+      margin-inline-start: calc(var(--spacing) * 2);
+    }
+    [data-slot='table-root'][data-below='always'][data-phone='cards']
+      [data-slot='table-row']:not([data-group])
+      [data-slot='table-cell'][data-kind='tick'] {
+      grid-column: 1;
+      grid-row: 1 / span 2;
+      margin-inline-end: calc(var(--spacing) * 3);
+    }
+    /* a mono entity with no answering value to share the row rides the title line's end */
+    [data-slot='table-root'][data-below='always'][data-phone='cards']
+      [data-slot='table-row']:not([data-group], :has([data-phone-value]))
+      [data-slot='table-cell'][data-phone-meta='1']:has(
+        [data-slot='table-entity-name'][data-monospace]
+      ) {
+      grid-column: 4;
+      grid-row: 1;
+      justify-self: end;
+    }
+    [data-slot='table-root'][data-below='always'][data-phone='cards']
+      [data-slot='table-row']:not(:has([data-phone-value]))
+      [data-phone-meta='1']:has([data-slot='table-entity-name'][data-monospace])
+      ~ [data-phone-meta='2']::before {
+      content: none;
     }
   }
 
@@ -1040,22 +1599,26 @@
     container: table-root / inline-size;
   }
   @container table-root (max-width: 479.9px) {
-    [data-below='480'][data-phone='cards'] [data-slot='table-pager-range'] {
+    [data-below='480']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-pager-range'] {
       display: none;
     }
   }
   @container table-root (max-width: 799.9px) {
-    [data-below='800'][data-phone='cards'] [data-slot='table-pager-range'] {
+    [data-below='800']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-pager-range'] {
       display: none;
     }
   }
   @container table-root (max-width: 699.9px) {
-    [data-below='700'][data-phone='cards'] [data-slot='table-pager-range'] {
+    [data-below='700']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-pager-range'] {
       display: none;
     }
   }
   @container table-root (width >= 0px) {
-    [data-below='always'][data-phone='cards'] [data-slot='table-pager-range'] {
+    [data-below='always']:is([data-phone='cards'], [data-phone='fields'])
+      [data-slot='table-pager-range'] {
       display: none;
     }
   }

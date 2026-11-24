@@ -1,8 +1,8 @@
 /**
  * The table exemplar's phone contract in real Chrome at 390 and 360
- * (docs/v3/issues/g3/v3-table-t5-exemplar.json): the rows are cards, every column's data is drawn
- * and reachable, and the three ways a row can be acted on (`detail`, `onRowActivate`, neither) each
- * do what they say. One fixture per case, eight columns of different kinds, two of them priority 3.
+ * (docs/v3/issues/g3/v3-table-t5-exemplar.json): the rows are list rows (`phone: 'fields'` keeps the
+ * label-and-value grid), every column's data is drawn or reachable, and the three ways a row can be
+ * acted on (`detail`, `onRowActivate`, neither) each do what they say. One fixture per case, eight columns of different kinds, two of them priority 3.
  *
  * Self-contained like `table-selection`: the fixture CSS is compiled with the Tailwind CLI into a
  * temp directory, the tier sheet `src/table/table.css` is inlined beside it, and the fixture
@@ -35,6 +35,7 @@ const PHONE_360: Viewport = { name: 'Android 360', width: 360, height: 780 }
 const VIEWPORTS: Viewport[] = [PHONE, PHONE_360]
 const EMPTY_SPEC = { sections: [] } as FixtureSpec
 const PROBES = ['te-detail', 'te-activate', 'te-none'] as const
+const FIELDS = 'te-fields'
 const COLUMNS = 8
 const FIRST_CELL = (probe: string): string =>
   `[data-testid="${probe}"] tbody tr:first-child td:first-child`
@@ -91,7 +92,7 @@ async function open(viewport: Viewport): Promise<LayoutPage> {
 const logOf = (page: LayoutPage): Promise<string[]> =>
   page.raw.evaluate(() => [...(window as unknown as { basaltLog: string[] }).basaltLog])
 
-/** The first row of a probe: one entry per cell, with its text and whether it paints a box. */
+/** The first row of a probe: one entry per cell, with its text and whether it paints a box (a hidden cell paints none). */
 const cellsOf = (page: LayoutPage, probe: string) =>
   page.raw.evaluate((id) => {
     const row = document.querySelector(`[data-testid="${id}"] tbody tr`)!
@@ -117,7 +118,7 @@ layout('Table exemplar at the phone widths', () => {
       test('the rows are cards: cells are blocks and the head is clipped, not display none', async () => {
         const page = await open(viewport)
         const info = await page.raw.evaluate(() => {
-          const root = document.querySelector('[data-testid="te-none"]')!
+          const root = document.querySelector('[data-testid="te-fields"]')!
           return {
             cell: getComputedStyle(root.querySelector('tbody td')!).display,
             head: getComputedStyle(root.querySelector('thead')!).display,
@@ -131,7 +132,7 @@ layout('Table exemplar at the phone widths', () => {
         const page = await open(viewport)
         const info = await page.raw.evaluate(() => {
           const cell = document.querySelector<HTMLElement>(
-            '[data-testid="te-none"] tbody tr:first-child td[data-label="Owner"]',
+            '[data-testid="te-fields"] tbody tr:first-child td[data-label="Owner"]',
           )!
           const before = getComputedStyle(cell, '::before')
           return {
@@ -153,7 +154,7 @@ layout('Table exemplar at the phone widths', () => {
         const cells = await page.raw.evaluate(() =>
           [
             ...document.querySelectorAll<HTMLElement>(
-              '[data-testid="te-none"] tbody tr:first-child td',
+              '[data-testid="te-fields"] tbody tr:first-child td',
             ),
           ].map((td) => ({
             label: td.getAttribute('data-label'),
@@ -174,7 +175,7 @@ layout('Table exemplar at the phone widths', () => {
       test('a money value in the card names its column and never stands alone at the right', async () => {
         const page = await open(viewport)
         const cells = await page.raw.evaluate(() => {
-          const row = document.querySelector('[data-testid="te-none"] tbody tr:first-child')!
+          const row = document.querySelector('[data-testid="te-fields"] tbody tr:first-child')!
           return [...row.querySelectorAll<HTMLElement>('td')].map((td) => {
             return {
               label: td.getAttribute('data-label'),
@@ -194,23 +195,33 @@ layout('Table exemplar at the phone widths', () => {
           expect(cell.align, `${cell.label} reads from the start`).toBe('start')
       })
 
-      for (const probe of PROBES) {
-        test(`${probe}: every column of a row is drawn, with its data`, async () => {
-          const page = await open(viewport)
-          const cells = await cellsOf(page, probe)
-          expect(cells).toHaveLength(COLUMNS)
-          for (const [index, cell] of cells.entries()) {
-            expect(cell.painted, `column ${index} paints no box`).toBe(true)
-            expect(cell.text, `column ${index} has no text`).not.toBe('')
-          }
-        })
+      test(`${FIELDS}: every column of a row is drawn, with its data`, async () => {
+        const page = await open(viewport)
+        const cells = await cellsOf(page, FIELDS)
+        expect(cells).toHaveLength(COLUMNS)
+        for (const [index, cell] of cells.entries()) {
+          expect(cell.painted, `column ${index} paints no box`).toBe(true)
+          expect(cell.text, `column ${index} has no text`).not.toBe('')
+        }
+      })
 
-        // A card row is as tall as its stacked cells: the row's `h-(--table-row-h)` utility sits above
-        // the tier sheet, so the sheet's `height: auto` is `!important`.
-        test(`${probe}: every cell of a card sits inside its card`, async () => {
+      // A fields row is as tall as its stacked cells: the row's `h-(--table-row-h)` utility sits above
+      // the tier sheet, so the sheet's `height: auto` is `!important`.
+      test(`${FIELDS}: every cell of a card sits inside its card`, async () => {
+        const page = await open(viewport)
+        const cells = await cellsOf(page, FIELDS)
+        expect(cells.filter((cell) => !cell.inside)).toEqual([])
+      })
+
+      for (const probe of PROBES) {
+        test(`${probe}: the list row draws its title, muted values and answer inside the row`, async () => {
           const page = await open(viewport)
-          const cells = await cellsOf(page, probe)
-          expect(cells.filter((cell) => !cell.inside)).toEqual([])
+          const cells = (await cellsOf(page, probe)).filter((cell) => cell.painted)
+          expect(cells).toHaveLength(4)
+          for (const cell of cells) {
+            expect(cell.text, 'a drawn cell has no text').not.toBe('')
+            expect(cell.inside).toBe(true)
+          }
         })
       }
     })

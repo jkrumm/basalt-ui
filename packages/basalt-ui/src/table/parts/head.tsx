@@ -80,6 +80,10 @@ export function tierAttributes(
     'data-place': planned.place,
     // A column `phone: 'columns'` leaves off the phone row (the tier CSS reads it only there).
     'data-phone-drop': planned.phoneKeep ? undefined : '',
+    // The answering value of the phone list row (`phone: 'cards'`), at its end.
+    'data-phone-value': planned.phoneValue ? '' : undefined,
+    // The muted line value of the phone list row (`phone: 'cards'`): the first two meta values, 1 then 2.
+    'data-phone-meta': planned.phoneMeta === null ? undefined : String(planned.phoneMeta),
     // A column left off the phone card: hidden by the display state, or placed in the detail (a meter,
     // a spark, or the overflow of the card's six meta values), which the row's derived detail sheet
     // lists; a custom `detail` render lists only what it writes, so there the column (the overflow

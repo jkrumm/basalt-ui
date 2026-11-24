@@ -4,7 +4,8 @@
  * probe is a `data-testid` box:
  * - `te-detail`: `detail` and a host, so activating a row shows its detail;
  * - `te-activate`: `onRowActivate`, so activating a row calls the app;
- * - `te-none`: neither, so a row is inert and the table alone carries the data.
+ * - `te-none`: neither, so a row is inert and the table alone carries the data;
+ * - `te-fields`: neither, with `phone: 'fields'`, the label-and-value grid of every column.
  * Every activation lands in `window.basaltLog` for the test to read.
  */
 import { createRoot } from 'react-dom/client'
@@ -97,6 +98,11 @@ function Inert({ id }: { id: string }): ReactElement {
   return <DataTable table={t} />
 }
 
+function Fields({ id }: { id: string }): ReactElement {
+  const t = useDataTable<Row>({ ...base, id, label: `${id} rows`, phone: 'fields' })
+  return <DataTable table={t} />
+}
+
 function Fixture(): ReactElement {
   return (
     // theme-allow -- the wrappers are the probe's payload (tables in a column)
@@ -109,6 +115,9 @@ function Fixture(): ReactElement {
       </div>
       <div data-testid="te-none" className="min-w-0">
         <Inert id="te-none" />
+      </div>
+      <div data-testid="te-fields" className="min-w-0">
+        <Fields id="te-fields" />
       </div>
     </main>
   )
