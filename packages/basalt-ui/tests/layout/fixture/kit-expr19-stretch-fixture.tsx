@@ -16,7 +16,7 @@ const ROWS: readonly Row[] = Array.from({ length: 4 }, (_, i) => ({
   id: `r${i}`,
   name:
     i === 0
-      ? 'Quarterly ledger entry with a very long descriptive name that needs a second line'
+      ? 'Quarterly ledger entry with a very long descriptive name that needs a second line, then a third clause that keeps it past one line of the whole panel'
       : `Entry ${i}`,
   amount: `${i}`,
 }))

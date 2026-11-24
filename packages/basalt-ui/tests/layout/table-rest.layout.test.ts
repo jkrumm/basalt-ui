@@ -179,10 +179,10 @@ const clear = (color: string): boolean => /rgba\(0, 0, 0, 0\)|transparent|\/ 0\)
 
 layout('DataTable at rest', () => {
   for (const scheme of ['light', 'dark'] as const) {
-    test(`${scheme}: a header at rest is its icon and its label; a sorted and a filtered column show their one mark`, async () => {
+    test(`${scheme}: a header at rest is its label, no icon; a sorted and a filtered column show their one mark`, async () => {
       const page = await open(scheme)
       for (const head of await heads(page, 'tr-plain')) {
-        expect(head).toMatchObject({ buttons: 1, icons: 1, sort: [], filter: 0, glyphs: 1 })
+        expect(head).toMatchObject({ buttons: 1, icons: 0, sort: [], filter: 0, glyphs: 0 })
       }
       await page.raw.evaluate(() =>
         (window as unknown as { basaltTableState: () => void }).basaltTableState(),
@@ -192,20 +192,20 @@ layout('DataTable at rest', () => {
       const byName = (name: string): Head | undefined => state.find((h) => h.name.startsWith(name))
       expect(byName('Amount')).toMatchObject({
         buttons: 1,
-        icons: 1,
+        icons: 0,
         sort: ['asc'],
         filter: 0,
-        glyphs: 2,
+        glyphs: 1,
       })
       expect(byName('State')).toMatchObject({
         buttons: 1,
-        icons: 1,
+        icons: 0,
         sort: [],
         filter: 1,
-        glyphs: 2,
+        glyphs: 1,
       })
       for (const head of state.filter((h) => !/^(Amount|State)/.test(h.name)))
-        expect(head).toMatchObject({ sort: [], filter: 0, glyphs: 1 })
+        expect(head).toMatchObject({ sort: [], filter: 0, glyphs: 0 })
     })
   }
 
@@ -230,7 +230,7 @@ layout('DataTable at rest', () => {
     })
   }
 
-  test('the text-like columns share the free width up to their cap; figures and dates keep theirs', async () => {
+  test('the text-like columns share the free width past any cap; figures and dates keep theirs', async () => {
     const page = await open()
     const cols = await page.raw.evaluate(() =>
       [...document.querySelectorAll('[data-testid="tr-plain"] col')].map((col) => ({
@@ -240,12 +240,15 @@ layout('DataTable at rest', () => {
       })),
     )
     const [name, note, state, amount, due, fill] = cols
-    // Account is the title: 40 ch at 8 px and 24 px padding, the cap; Note a text column at its 48 ch cap.
-    expect(name).toEqual({ fill: false, flex: true, width: 344 })
-    expect(note).toEqual({ fill: false, flex: true, width: 408 })
+    // The reading look has no cap: Account (the title, 344 px at 40 ch) and Note (408 px at 48 ch) grow past it
+    // and leave the filler no width, so the table ends at the container's edge.
+    expect(name?.flex).toBe(true)
+    expect(note?.flex).toBe(true)
+    expect(name?.width).toBeGreaterThan(344)
+    expect(note?.width).toBeGreaterThan(408)
     for (const fixed of [state, amount, due]) expect(fixed?.flex).toBe(false)
     expect(fill?.fill).toBe(true)
-    expect(fill?.width).toBeGreaterThan(0)
+    expect(fill?.width).toBeLessThanOrEqual(1)
   })
 
   test('below its full tier the hidden columns leave the free width to the title', async () => {
