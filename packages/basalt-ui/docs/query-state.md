@@ -3,7 +3,7 @@ name: QueryState
 use when: 'a page or region renders the result of one query and must tell loading, failure, offline and empty apart'
 never when: 'the container is a frame that already takes `phase` (`StatCard`, `ChartCard`) or the data is synchronous'
 subpath: basalt-ui/page
-peers: ['@base-ui/react', '@tanstack/react-router']
+peers: ['@base-ui/react']
 slots: [query-state, query-state-banner, query-state-retry]
 ---
 

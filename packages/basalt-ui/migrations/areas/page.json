@@ -67,6 +67,16 @@
       "from": "basalt-ui/page#Callout.kind",
       "to": "tone",
       "note": "`Callout` takes `Alert`'s six tones (`neutral` and `accent` added to `info`, `good`, `warn`, `bad`); `kind` stays a deprecated alias for one minor"
+    },
+    {
+      "id": "page-innernav-usehref",
+      "kind": "replace",
+      "from": "InnerNav state with a structural link(value) returning { href, onClick }",
+      "to": "a defineControls push field, or a handle with useHref(): (value) => string",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "`basalt-ui/page` no longer imports the router: `InnerNav` reads each href from the handle's `useHref()`, and a plain click writes the field",
+      "verify": "tsc"
     }
   ],
   "tokens": { "renamed": [], "valueShifts": [] },

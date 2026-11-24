@@ -3,7 +3,7 @@ name: ArticleLayout
 use when: 'a docs or note page needs a title header, a table of contents and prev/next links around its body'
 never when: 'the page is a dashboard or a form (use Page)'
 subpath: basalt-ui/page
-peers: ['@base-ui/react', '@tanstack/react-router']
+peers: ['@base-ui/react']
 slots: [article-layout]
 ---
 

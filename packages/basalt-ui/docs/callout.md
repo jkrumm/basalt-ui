@@ -3,7 +3,7 @@ name: Callout
 use when: 'an article or reply carries a note, tip, warning or error beside its prose'
 never when: 'the message is about the state of the page or a form (use Alert directly)'
 subpath: basalt-ui/page
-peers: ['@base-ui/react', '@tanstack/react-router']
+peers: ['@base-ui/react']
 slots: []
 ---
 

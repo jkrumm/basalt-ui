@@ -1,6 +1,6 @@
 /**
  * A test-local push field over the address bar: the structural stand-in for the controls layer's
- * handle (`use`, `useIsSet`, `link`). Writes `?<key>=<value>` with `history.pushState`, so a
+ * handle (`use`, `useIsSet`, `useHref`). Writes `?<key>=<value>` with `history.pushState`, so a
  * Back walks the sections exactly as a router-backed push field would. Shared by the unit suites and
  * the layout fixture; never exported from the package.
  */
@@ -73,12 +73,6 @@ export function pushField<K extends string>(
         () => raw() !== null,
         () => false,
       ),
-    link: (value) => ({
-      href: hrefOf(value),
-      onClick: (event) => {
-        event.preventDefault()
-        go(value)
-      },
-    }),
+    useHref: () => hrefOf,
   }
 }

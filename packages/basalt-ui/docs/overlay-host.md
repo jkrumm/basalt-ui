@@ -3,7 +3,7 @@ name: OverlayHost
 use when: 'an app opens overlays by key through `defineOverlays`'
 never when: 'the app has no imperative overlays (omit it; it then ships nothing)'
 subpath: basalt-ui/page
-peers: ['@base-ui/react', '@tanstack/react-router']
+peers: ['@base-ui/react']
 slots: []
 ---
 

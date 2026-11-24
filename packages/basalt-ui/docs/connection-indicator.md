@@ -3,7 +3,7 @@ name: ConnectionIndicator
 use when: 'a live surface shows whether its data is streaming, polling or cut off, in the end slot of the page bar'
 never when: 'the verdict is about a record, not the connection (use `Status`)'
 subpath: basalt-ui/page
-peers: ['@base-ui/react', '@tanstack/react-router']
+peers: ['@base-ui/react']
 slots: [connection-indicator]
 ---
 

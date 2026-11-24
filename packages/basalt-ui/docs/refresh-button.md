@@ -3,7 +3,7 @@ name: RefreshButton
 use when: 'a page or the shell header offers a refresh of live data, with how old it is'
 never when: 'the action is not a refresh (use `Button`) or the data never changes (omit it)'
 subpath: basalt-ui/page
-peers: ['@base-ui/react', '@tanstack/react-router']
+peers: ['@base-ui/react']
 slots: [refresh-button, refresh-button-age, refresh-button-print]
 ---
 

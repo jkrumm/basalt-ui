@@ -3,7 +3,7 @@ name: Toc
 use when: 'a long page with h2 and h3 headings needs an on-this-page list that follows the scroll'
 never when: 'the page has fewer than three headings or its sections are tabs'
 subpath: basalt-ui/page
-peers: ['@base-ui/react', '@tanstack/react-router']
+peers: ['@base-ui/react']
 slots: [toc]
 ---
 

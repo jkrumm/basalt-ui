@@ -3,7 +3,7 @@ name: SplitPage
 use when: 'a page is a list of things plus the pane for the chosen one (settings sections, a record browser)'
 never when: 'the detail is a transient inspector over a table (use `PageAside`) or the choices are views of one dataset (use `ViewTabs`)'
 subpath: basalt-ui/page
-peers: ['@base-ui/react', '@tanstack/react-router']
+peers: ['@base-ui/react']
 slots: [split-page, split-page-detail, split-page-list]
 ---
 

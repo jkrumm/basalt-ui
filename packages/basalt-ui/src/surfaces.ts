@@ -299,7 +299,7 @@ export const SURFACES = {
     skill: ['basalt-design'],
     description:
       'v3 page composites — Page, PageBar, PageAside, Section, SplitPage, InnerNav, QueryState, overlays, and the article parts (Prose, Callout, Toc, ArticleLayout)',
-    optionalPeers: ['@base-ui/react', '@tanstack/react-router'],
+    optionalPeers: ['@base-ui/react'],
     globs: { shipped: [], repo: ['packages/basalt-ui/src/page/**'] },
     forbiddenImports: [],
   },

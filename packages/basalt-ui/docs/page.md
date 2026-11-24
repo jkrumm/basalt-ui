@@ -3,7 +3,7 @@ name: Page
 use when: 'a route renders a screen: its bar, its sections and an optional aside live under one Page'
 never when: 'the screen is a long-form article (use ArticleLayout) or only a fragment of a screen (use Section)'
 subpath: basalt-ui/page
-peers: ['@base-ui/react', '@tanstack/react-router']
+peers: ['@base-ui/react']
 slots: [page, page-aside-slot, page-main]
 ---
 

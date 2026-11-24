@@ -3,7 +3,7 @@ name: PageAside
 use when: 'a screen inspects or edits one record beside its list, or shows the detail of a record without leaving the page'
 never when: 'the panel holds page-wide filters (use the PageBar controls) or two panels are needed (one aside per page)'
 subpath: basalt-ui/page
-peers: ['@base-ui/react', '@tanstack/react-router']
+peers: ['@base-ui/react']
 slots: []
 ---
 

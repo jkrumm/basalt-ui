@@ -511,6 +511,64 @@ console.log('controls-dates is no longer exported')
 JS
 node --import "$PKGDIR/scripts/css-noop-register.mjs" controls.mjs
 
+echo "==> page type-checks, bundles and renders with no router installed (the parts profile)"
+SCRATCH6=$(mktemp -d)
+cd "$SCRATCH6"
+echo '{ "name": "scratch-no-router", "private": true, "type": "module" }' >package.json
+# The parts profile installs no router. `InnerNav` builds its hrefs through the field handle's
+# `useHref()`, so nothing `basalt-ui/page` reaches, in its JS or its .d.ts, may import
+# `@tanstack/react-router`. `skipLibCheck: false` is the point: with it on, an import of a missing
+# package inside a declaration file silently becomes `any`.
+scratch_install "$ABS_TGZ" react react-dom @base-ui/react @types/react @types/react-dom
+if [ -e node_modules/@tanstack/react-router ]; then
+  echo "pack-test: the no-router scratch has @tanstack/react-router installed; the proof needs it absent"
+  exit 1
+fi
+cat >tsconfig.json <<'JSON'
+{
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "skipLibCheck": false,
+    "noEmit": true
+  },
+  "include": ["page.tsx"]
+}
+JSON
+cat >page.tsx <<'TSX'
+import type { ComponentProps, ReactElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { InnerNav, Page, PageBar, Section } from 'basalt-ui/page'
+
+// The type of `InnerNav state` is reachable with no router package in the tree.
+export type SectionState = ComponentProps<typeof InnerNav>['state']
+
+function Settings(): ReactElement {
+  return (
+    <Page>
+      <PageBar title="Settings" />
+      <Section title="General">General settings</Section>
+    </Page>
+  )
+}
+
+const html = renderToStaticMarkup(<Settings />)
+if (!html.includes('Settings')) throw new Error('Page did not render its bar title')
+console.log('page: no-router render OK')
+TSX
+"$PKGDIR/node_modules/.bin/tsc" --project tsconfig.json
+echo "page: no-router tsc OK"
+bun build page.tsx --target node --outdir out >/dev/null
+node --import "$PKGDIR/scripts/css-noop-register.mjs" out/page.js
+
 echo "==> subpath-required peers: installed vs absent (docs/V2-SPEC.md § 1 Peers)"
 # `peerDependenciesMeta` marks every subpath-required peer optional, and npm has no per-subpath
 # optionality, so the ONLY proof that a classification holds is a pair of installs: the required

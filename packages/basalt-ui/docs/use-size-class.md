@@ -3,7 +3,7 @@ name: useSizeClass
 use when: 'frame chrome must mount one of two components by viewport width (a docked aside or a sheet)'
 never when: 'the layout of page content changes with width (use a container tier, `CardGrid`) or only the look changes (use CSS)'
 subpath: basalt-ui/page
-peers: ['@base-ui/react', '@tanstack/react-router']
+peers: ['@base-ui/react']
 slots: []
 ---
 

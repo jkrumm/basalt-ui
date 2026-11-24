@@ -3,7 +3,7 @@ name: PageSummary
 use when: 'a page opens with a headline that carries its live number and a line of supporting facts'
 never when: 'the headline would restate the page title (leave it out) or the figure is a KPI card (use `StatCard`)'
 subpath: basalt-ui/page
-peers: ['@base-ui/react', '@tanstack/react-router']
+peers: ['@base-ui/react']
 slots: [page-summary, page-summary-aside, page-summary-error, page-summary-fact, page-summary-facts]
 ---
 

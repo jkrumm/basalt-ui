@@ -3,7 +3,7 @@ name: Section
 use when: 'a page has several parts that each need a heading, their own controls or an anchor'
 never when: 'the part is a single card (the card has its own title) or the heading restates the page title'
 subpath: basalt-ui/page
-peers: ['@base-ui/react', '@tanstack/react-router']
+peers: ['@base-ui/react']
 slots: []
 ---
 

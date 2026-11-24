@@ -127,7 +127,8 @@ export const SUBPATH_REQUIRED_PEERS: Readonly<Record<string, readonly string[]>>
   './table': ['@tanstack/react-table', '@base-ui/react'],
   // `ui/card` imports Base UI `useRender`, so `StatCard` reaches it; the concept (charts-cards-kanban 3, 'Shared frame') wants no Base UI import there. Remove this row when `ui/card` drops it.
   './cards': ['@base-ui/react'],
-  './page': ['@base-ui/react', '@tanstack/react-router'],
+  // `InnerNav` draws its hrefs through the field handle's `useHref()`, so the page parts reach no router.
+  './page': ['@base-ui/react'],
   // v3 shell: the header's popover actions and the compact aside sheet draw `ui/popover`, `ui/sheet` and `ui/button`, which wrap Base UI.
   // `CommandPalette` binds every `defineCommands` chord through `@tanstack/react-hotkeys`, pinned exact.
   './shell': ['@base-ui/react', '@tanstack/react-router', '@tanstack/react-hotkeys'],
