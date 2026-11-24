@@ -1,8 +1,7 @@
 /**
  * Area: charts-api — the `./charts` value-export list, frozen by v3-freeze-g4 (docs/v3/
  * ARCHITECTURE.md section 3: 12 symbols), amended to 13 by Issue 2306 for `IntervalTrack` (the owner
- * review's interval track, Spec verdict looks good on 2026-11-18), and back to 12 when the unused
- * `defineSeries` name left with the series register; a thirteenth is red. `ALLOWED` is the frozen set (the
+ * review's interval track, Spec verdict looks good on 2026-11-18); a fourteenth is red. `ALLOWED` is the frozen set (the
  * geometry seam's `useChartFocus` and `chartLabels` included). `LEGACY` is the 2.x kinds still in
  * `src/charts` until v3-teardown-views deletes them: tolerated, never added to, never new. A name in
  * neither list is a violation, so the 13th value export fails the row on the day it lands.
@@ -21,6 +20,7 @@ export const ALLOWED: readonly string[] = [
   'BandStrip',
   'IntervalTrack',
   'ChartCard',
+  'defineSeries',
   'chartCursor',
   'useChartFocus',
   'chartLabels',
