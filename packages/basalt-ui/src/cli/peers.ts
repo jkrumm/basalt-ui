@@ -8,7 +8,7 @@ import { addCommand } from './package-manager'
 
 const FRAME = ['tailwindcss', '@base-ui/react'] as const
 const APP_RUNTIME = ['@tanstack/react-query', '@tanstack/react-router'] as const
-// What `basalt-ui/shell` imports statically: hotkeys, and drag and drop for the rail's favourites.
+// What `basalt-ui/shell` imports statically: hotkeys, and drag and drop for the rail's favorites.
 const SHELL = ['@tanstack/react-hotkeys', '@atlaskit/pragmatic-drag-and-drop'] as const
 
 export const RUNTIME_PEERS: Readonly<Record<Profile, readonly string[]>> = {
