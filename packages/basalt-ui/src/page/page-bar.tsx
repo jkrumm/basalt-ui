@@ -1,4 +1,4 @@
-import { useCallback, useContext, useId, useState, useSyncExternalStore } from 'react'
+import { useCallback, useContext, useId, useRef, useState, useSyncExternalStore } from 'react'
 import type { ChangeEvent, MouseEvent, ReactElement, ReactNode } from 'react'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { requestMainFocus } from '../common/focus'
@@ -7,13 +7,15 @@ import { AppLink } from '../core/link'
 import { page } from '../core/messages/page'
 import { SlotHomeContext } from '../core/slot-home'
 import { useMessages } from '../core/messages/use-messages'
-import { Button } from '../ui/button'
+import { Button, buttonVariants } from '../ui/button'
 import { ButtonGroup } from '../ui/control-group'
 import { EntityTitle } from '../ui/entity'
 import { Input } from '../ui/input'
 import { Menu, MenuContent, MenuItem, MenuTrigger } from '../ui/menu'
 import { ConnectionIndicator } from './connection-indicator'
 import { FavoriteToggle } from './favorites'
+import { PanelSteps } from './record-panel'
+import { registerRecordSteps } from '../core/record-steps'
 import { devAssertOnce, createBarClaims } from './core/claims'
 import { observeBarHeight, publishBarHeight } from './core/bar-measure'
 import type {
@@ -21,10 +23,12 @@ import type {
   PageBarProps,
   PageButtonAction,
   PageLayout,
+  PageRecords,
   PageSearch,
   PageSettings,
   PageTextAction,
 } from './contract'
+import type { NavTarget } from '../core/ports'
 import { PageContext, PageHostContext } from './page'
 import { isEmptyTabs, renderTabs } from './page-tabs'
 import { RefreshButton } from './refresh-button'
@@ -132,6 +136,39 @@ function ActionText({ action, folded }: { action: PageTextAction; folded: boolea
 
 const isText = (action: PageAction): action is PageTextAction =>
   'kind' in action && action.kind === 'text'
+
+const CLOSE = 'M4 4l8 8M12 4l-8 8'
+
+/**
+ * A routed record page's way through its list: the panels' previous and next, then close back to the
+ * list. `k` and `j` step through the same sequence (`core/record-steps.ts`).
+ */
+function RecordNav({
+  records,
+  close,
+}: {
+  records: PageRecords
+  close: string | NavTarget | undefined
+}): ReactElement {
+  const t = useMessages(page)
+  return (
+    <div data-slot="page-records" className="flex items-center gap-0.5">
+      <PanelSteps records={records} />
+      {close !== undefined && (
+        <AppLink
+          href={close}
+          aria-label={t('page.backToList')}
+          data-slot="page-records-close"
+          className={buttonVariants({ variant: 'ghost', size: 'sm', shape: 'icon' })}
+        >
+          <svg viewBox="0 0 16 16" className="size-icon" fill="none" aria-hidden="true">
+            <path d={CLOSE} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+        </AppLink>
+      )}
+    </div>
+  )
+}
 
 /** Consecutive actions sharing a `group` render joined; the rest stand alone. */
 function segments(placed: readonly Placed[]): Placed[][] {
@@ -443,6 +480,7 @@ export function PageBar<K extends string = string, L extends string = string>({
   layout,
   settings,
   favorite,
+  records,
   actions,
 }: PageBarProps<K, L>): ReactElement | null {
   const context = useContext(PageContext)
@@ -470,6 +508,20 @@ export function PageBar<K extends string = string, L extends string = string>({
     layout !== undefined ||
     settings !== undefined
   const actionsInHeader = inShell && !hasRow
+  const recordNav =
+    records === undefined ? null : (
+      <RecordNav records={records} close={records.close ?? parent?.href} />
+    )
+
+  // The keys reach the sequence of the bar that owns the page, read at each press.
+  const latestRecords = useRef(records)
+  useIsomorphicLayoutEffect(() => {
+    latestRecords.current = records
+  })
+  useIsomorphicLayoutEffect(() => {
+    if (!owns || records === undefined) return undefined
+    return registerRecordSteps(() => latestRecords.current)
+  }, [owns, records === undefined])
 
   useIsomorphicLayoutEffect(() => {
     const handle = store.claim(id, undefined)
@@ -496,17 +548,18 @@ export function PageBar<K extends string = string, L extends string = string>({
 
   useIsomorphicLayoutEffect(() => {
     if (host === null || !owns || !actionsInHeader) return undefined
-    if (list.length === 0 && favorite === undefined) return undefined
+    if (list.length === 0 && favorite === undefined && records === undefined) return undefined
     return host.claim(
       'actions',
       <div data-slot="page-header-actions" className="flex min-w-0 items-center gap-2">
+        {recordNav}
         {favorite !== undefined && <FavoriteToggle {...favorite} />}
         {list.length > 0 && <PageActions actions={list} primaryLast={false} />}
       </div>,
       `${id}:actions`,
     )
     // `list` is rebuilt per render, `actions` is the caller's value.
-  }, [host, owns, id, actions, favorite, actionsInHeader])
+  }, [host, owns, id, actions, favorite, records, actionsInHeader])
 
   // Publish the band height onto Page before paint, then on every resize. A zero reading is refused.
   useIsomorphicLayoutEffect(() => {
@@ -535,7 +588,7 @@ export function PageBar<K extends string = string, L extends string = string>({
   if (!owns) return null
 
   const bandActions = !actionsInHeader && list.length > 0
-  const hasControls = hasRow || (!inShell && list.length > 0)
+  const hasControls = hasRow || (!inShell && (list.length > 0 || records !== undefined))
   const named = identity !== undefined && title !== undefined
   const bandHasContent = hasControls || named || (!inShell && title !== undefined)
 
@@ -644,6 +697,7 @@ export function PageBar<K extends string = string, L extends string = string>({
             )}
             {refresh !== undefined && <RefreshButton {...refresh} />}
             {layout !== undefined && <LayoutToggle layout={layout} />}
+            {!actionsInHeader && recordNav}
             {favorite !== undefined && <FavoriteToggle {...favorite} />}
             {settings !== undefined && <SettingsButton settings={settings} />}
             {bandActions && <PageActions actions={list} primaryLast />}

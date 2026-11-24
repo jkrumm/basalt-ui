@@ -4,6 +4,7 @@
  * set and binds its chords through `bindings.ts`; `toMenuTemplate` reads the same set for the host menu.
  */
 import type { IconComponent } from '../../core/ports'
+import { canStepRecord, stepRecord } from '../../core/record-steps'
 import { chordId, parseChord, parseChordSequence, sequenceId } from './chord'
 import type { Chord } from './chord'
 
@@ -40,7 +41,7 @@ export type CommandMap = Record<string, Command>
 export type CommandEntry = Command & {
   readonly id: string
   readonly steps: readonly Chord[]
-  /** True for the commands the shell itself adds (`shell.*`). */
+  /** True for the commands the shell itself adds (`shell.*`, `record.*`). */
   readonly builtin: boolean
 }
 
@@ -64,6 +65,9 @@ export type CommandSet<T extends CommandMap = CommandMap> = {
 export const SHELL_TOGGLE_RAIL = 'shell.toggle-rail'
 export const SHELL_PALETTE = 'shell.palette'
 export const SHELL_SHORTCUTS = 'shell.shortcuts'
+
+export const RECORD_PREVIOUS = 'record.previous'
+export const RECORD_NEXT = 'record.next'
 
 /** The nav chords: `Mod+1`..`Mod+9` go to the Nth top-level `defineNav` item. */
 export const NAV_CHORD_COUNT = 9
@@ -96,6 +100,21 @@ const BUILTINS: ReadonlyArray<{
     listed: true,
     action: 'toggleShortcuts',
   },
+]
+
+/**
+ * The steps of a routed record page (`PageBar records`): global, live only while such a page is on
+ * screen with a record on that side. An app's global command may not take their chords; one in an
+ * area may, and beats them there.
+ */
+const RECORD_STEPS: ReadonlyArray<{
+  id: string
+  label: string
+  chord: string
+  direction: 'previous' | 'next'
+}> = [
+  { id: RECORD_PREVIOUS, label: 'Previous record', chord: 'k', direction: 'previous' },
+  { id: RECORD_NEXT, label: 'Next record', chord: 'j', direction: 'next' },
 ]
 
 /** Whether `a` is `b` or its first steps; two commands in one scope may not be. */
@@ -158,6 +177,21 @@ export function defineCommands<const T extends CommandMap>(spec: T): CommandSet<
         enabled: () => handlers[builtin.action] !== undefined,
       }),
       run: () => handlers[builtin.action]?.(),
+    })
+  }
+
+  for (const step of RECORD_STEPS) {
+    const steps = [parseChord(step.chord)]
+    taken.set('', [...(taken.get('') ?? []), { id: step.id, chord: step.chord, steps }])
+    entries.push({
+      id: step.id,
+      label: step.label,
+      chord: step.chord,
+      steps,
+      group: 'Record',
+      builtin: true,
+      enabled: () => canStepRecord(step.direction),
+      run: () => stepRecord(step.direction),
     })
   }
 

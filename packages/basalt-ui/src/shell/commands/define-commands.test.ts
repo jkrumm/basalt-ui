@@ -50,6 +50,8 @@ describe('defineCommands', () => {
       'shell.toggle-rail',
       'shell.palette',
       'shell.shortcuts',
+      'record.previous',
+      'record.next',
       'b',
       'a',
     ])

@@ -15,6 +15,7 @@ import type {
   NavTarget,
   Phase,
   QueryStateLike,
+  RecordSequence,
   Tone,
 } from '../core/ports'
 
@@ -115,6 +116,13 @@ export type PageIdentity = {
   tags?: ReactNode
 }
 
+/**
+ * The records a routed record page steps through: the opener's order, the shown id and the step
+ * (`RecordSequence`), with `close`, the list the record was opened from. Absent, close goes to
+ * `parent`; with neither there is no close.
+ */
+export type PageRecords = RecordSequence & { close?: string | NavTarget }
+
 export type PageBarProps<K extends string = string, L extends string = string> = {
   /** Breadcrumb leaf and `h1` in a shell; the visible `h1` without one. */
   title?: string
@@ -141,6 +149,13 @@ export type PageBarProps<K extends string = string, L extends string = string> =
    * sits before `settings`; without a row it leads the header's actions. Nothing outside an `AppShell`.
    */
   favorite?: FavoriteInput
+  /**
+   * The list a routed record page was opened from: previous, next and close beside the page's
+   * actions, the same steps a `Peek` draws, and `k` and `j` step through it (the shell's
+   * `record.previous` and `record.next` commands, listed in the palette and the shortcut list).
+   * `onStep` navigates to the record's route; the list's order is the opener's.
+   */
+  records?: PageRecords | undefined
   /**
    * At most 5, at most one `primary`, none required. In a shell they claim the header's end unless
    * the band holds a control; then they end the band, the primary last.

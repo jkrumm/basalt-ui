@@ -3,6 +3,7 @@ import type { Format, NavTarget } from 'basalt-ui'
 import { EventList, RelationshipCard } from 'basalt-ui/cards'
 import type { QueryStateLike } from 'basalt-ui/cards'
 import { CardGrid, EmptyState, Page, PageBar, PropertyList, Section } from 'basalt-ui/page'
+import type { PageRecords } from 'basalt-ui/page'
 import { defineControls, field } from 'basalt-ui/router'
 import { col, DataTable, useDataTable } from 'basalt-ui/table'
 import { Lozenge } from 'basalt-ui/ui/badge'
@@ -371,6 +372,8 @@ export type RecordPageProps = {
   partHref: (partId: string) => NavTarget
   /** Renders the create flow over the page; it receives the dialog state the page owns. */
   newOrder: (dialog: NewOrderSlot) => ReactNode
+  /** The supplier list the page was opened from: previous, next and close in the bar, `k` and `j`. */
+  steps?: PageRecords
 }
 
 /**
@@ -386,6 +389,7 @@ export function RecordPage({
   recordHref,
   partHref,
   newOrder,
+  steps,
 }: RecordPageProps): ReactElement {
   // The demo has no server: an edit lives in the page, per supplier, over the one the inventory holds.
   const [edits, setEdits] = useState<Readonly<Record<string, Partial<Supplier>>>>({})
@@ -414,6 +418,7 @@ export function RecordPage({
           tags: <Lozenge tone={RATING_TONE[record.rating]}>{RATING_LABELS[record.rating]}</Lozenge>,
         }}
         parent={parent}
+        records={steps}
         favorite={{
           id: `supplier-${id}`,
           label: record.name,
