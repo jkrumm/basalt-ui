@@ -160,8 +160,9 @@ export function Dock({
   const claim = dock?.claim
   const setWidth = dock?.setWidth
   const px = width.width ?? DOCK_WIDTH
-  useIsomorphicLayoutEffect(() => claim?.(id), [claim, id])
-  useIsomorphicLayoutEffect(() => setWidth?.(px), [setWidth, px])
+  // a Dock drawn as a sheet reserves no column: only the side panel claims the shell's dock region
+  useIsomorphicLayoutEffect(() => (sheet ? undefined : claim?.(id)), [claim, id, sheet])
+  useIsomorphicLayoutEffect(() => (sheet ? undefined : setWidth?.(px)), [setWidth, px, sheet])
   useFocusIn(panel, ready)
   if (sheet) {
     return (
