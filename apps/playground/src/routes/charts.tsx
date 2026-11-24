@@ -1,15 +1,8 @@
-import { rect } from '@tanstack/charts/rect'
 import { createFileRoute } from '@tanstack/react-router'
 import { CardGrid, Page, Section } from 'basalt-ui/page'
-import { Card } from 'basalt-ui/ui/card'
-import type { ReactElement, ReactNode } from 'react'
-import { CartesianChart } from '../../../../packages/basalt-ui/dist/charts/parts/cartesian'
-import type { Series } from '../../../../packages/basalt-ui/dist/charts/contract'
-import { pixelExtent } from '../../../../packages/basalt-ui/dist/charts/seams/pixel-extent'
-
-// The v3 `CartesianChart` is not on the public `basalt-ui/charts` barrel yet (it still exports the
-// 2.x rung), so this route reaches the built module by path until the barrel switch lands. Dist, not
-// src: the playground's strict index-signature check would otherwise judge the package's sources.
+import { CartesianChart, ChartCard } from 'basalt-ui/charts'
+import type { Series } from 'basalt-ui/charts'
+import type { ReactElement } from 'react'
 
 type Day = {
   t: Date
@@ -44,25 +37,10 @@ const pair = (n: number): { light: string; dark: string } => ({
 const x = { value: (d: Day): Date => d.t }
 const kg = (v: number): string => `${v.toFixed(1)} kg`
 
-function Panel({
-  seam,
-  consumer,
-  children,
-}: {
-  seam: string
-  consumer: string
-  children: ReactNode
-}): ReactElement {
-  return (
-    <Card render={<figure />} className="min-w-0">
-      <figcaption className="flex flex-col gap-0.5 pb-2">
-        <span className="text-sm font-semibold">{seam}</span>
-        <span className="text-xs text-muted-foreground">{consumer}</span>
-      </figcaption>
-      {children}
-    </Card>
-  )
-}
+/** The last reading the month has, for the headline. */
+const lastWeight = DATA.findLast((d) => d.weight !== null)?.weight ?? null
+const firstWeight = DATA.find((d) => d.weight !== null)?.weight ?? null
+const weightDelta = lastWeight === null || firstWeight === null ? null : lastWeight - firstWeight
 
 // #region weight-chart
 const weightSeries: Series<Day>[] = [
@@ -92,12 +70,12 @@ const weightSeries: Series<Day>[] = [
   },
 ]
 
-const weightChart = (
+const weightChart = (height: number | 'fill'): ReactElement => (
   <CartesianChart
     label="Body weight with its 7-day mean"
     data={DATA}
     x={x}
-    height={220}
+    height={height}
     series={weightSeries}
     y={{ domain: { floor: 78, ceil: 84, pad: 0.05 } }}
   />
@@ -105,12 +83,12 @@ const weightChart = (
 // #endregion
 
 // #region domain-chart
-const loadChart = (
+const loadChart = (height: number | 'fill'): ReactElement => (
   <CartesianChart
-    label="Training load with the envelope in the domain"
+    label="Training load with the top set on the right axis"
     data={DATA}
     x={x}
-    height={220}
+    height={height}
     series={[
       {
         mark: 'line',
@@ -137,27 +115,27 @@ const loadChart = (
 // #endregion
 
 const shortWindow = DATA.slice(0, 14)
-const longWindow = DATA
 
 // #region shared-x
-const sharedX = (data: readonly Day[]): ReactElement => (
+/** Two windows of one month on one x domain: the same day sits in the same pixel column in both. */
+const sharedX = (data: readonly Day[], height: number | 'fill'): ReactElement => (
   <CartesianChart
     label={`Load, first ${data.length} days`}
     data={data}
     x={{ value: (d) => d.t, domain: [day(0), day(DAYS - 1)] }}
-    height={120}
+    height={height}
     series={[{ mark: 'line', key: 'load', label: 'Load', color: pair(2), y: (d) => d.load }]}
     cursor="shared-x"
   />
 )
 // #endregion
 
-const bars = (
+const bars = (height: number | 'fill'): ReactElement => (
   <CartesianChart
-    label="Spikes, older bars fade"
+    label="Spikes per day, older bars fade"
     data={DATA}
     x={x}
-    height={180}
+    height={height}
     series={[
       {
         mark: 'bar',
@@ -171,103 +149,71 @@ const bars = (
   />
 )
 
-// #region plot-marks
-const RAIL_PX = 4
-const railed = (
-  <CartesianChart
-    label="Load with absent days on a 4 px rail"
-    data={DATA}
-    x={x}
-    height={200}
-    y={{ domain: [0, 100] }}
-    series={[
-      {
-        mark: 'line',
-        key: 'weight',
-        label: 'Weight',
-        color: pair(1),
-        y: (d) => (d.weight === null ? null : d.weight - 20),
-      },
-    ]}
-    marks={CartesianChart.custom<Day>((plot) => {
-      // `plot.data` is every datum whatever the legend hides: the slot grid. `pixelExtent` keeps the
-      // rail `RAIL_PX` tall at any y domain.
-      const absent = plot.data.filter((d) => d.weight === null)
-      const { y1, y2 } = pixelExtent(
-        { plotWidth: 0, plotHeight: plot.plotHeight, yDomain: [0, 100] },
-        { edge: 'bottom', px: RAIL_PX },
-      )
-      return [
-        rect(absent, {
-          id: 'absent',
-          x1: (d: Day) => new Date(d.t.getTime() - 43_200_000),
-          x2: (d: Day) => new Date(d.t.getTime() + 43_200_000),
-          y1: () => y1,
-          y2: () => y2,
-          fill: 'var(--basalt-warn)',
-        }),
-      ]
-    })}
-  />
-)
-// #endregion
-
-const lone = (
+const lone = (height: number | 'fill'): ReactElement => (
   <CartesianChart
     label="A lift logged on three days, one of them alone"
     data={DATA}
     x={x}
-    height={180}
+    height={height}
     series={[{ mark: 'line', key: 'lift', label: 'Top set', color: pair(3), y: (d) => d.lift }]}
   />
 )
 
+/**
+ * Charts on `CartesianChart` from `basalt-ui/charts`, each in its `ChartCard`: a line with its mean
+ * and gaps, a second axis, two windows on one x domain, faded bars and a lone point.
+ */
 function ChartsRoute(): ReactElement {
   return (
     <Page area="charts">
-      <Section title="Chart seams">
+      <ChartCard
+        title="Body weight"
+        subtitle="daily, October"
+        info="A day with no weigh-in is bridged; the dashed line is the 7-day mean."
+        figure={{
+          value: lastWeight === null ? '–' : kg(lastWeight),
+          delta:
+            weightDelta === null
+              ? undefined
+              : { value: `${weightDelta.toFixed(1)} kg`, polarity: 'up-bad', label: 'since Oct 1' },
+        }}
+        height="tall"
+        chart={(box) => weightChart(box.height)}
+      />
+      <CardGrid min="regular">
+        <ChartCard
+          title="Training load"
+          subtitle="per day, top set on the right axis"
+          chart={(box) => loadChart(box.height)}
+        />
+        <ChartCard
+          title="Spikes"
+          subtitle="per day, older days fade"
+          chart={(box) => bars(box.height)}
+        />
+      </CardGrid>
+      <Section title="One x domain">
         <CardGrid min="regular">
-          <Panel
-            seam="format, weight, dash, parent, legend and tooltip false, gaps, note, role, y.domain"
-            consumer="argo body-composition/charts/weight-chart.tsx:60-72"
-          >
-            {weightChart}
-          </Panel>
-          <Panel
-            seam="y.domain function, y.gutter, axis, getMarker"
-            consumer="linewatch charts/latency-band-chart.tsx:328-337, 254"
-          >
-            {loadChart}
-          </Panel>
-          <Panel
-            seam="x.domain: one instant, one pixel column"
-            consumer="linewatch charts/bufferbloat-chart.tsx:90,118"
-          >
-            <div className="flex flex-col gap-2">
-              {sharedX(shortWindow)}
-              {sharedX(longWindow)}
-            </div>
-          </Panel>
-          <Panel
-            seam="per-datum opacity"
-            consumer="argo bars that fade with the datum they stand for (5 sites)"
-          >
-            {bars}
-          </Panel>
-          <Panel
-            seam="plot.data, pixel-extent rule, plot.pxToY"
-            consumer="linewatch charts/latency-band-chart.tsx:407-435"
-          >
-            {railed}
-          </Panel>
-          <Panel
-            seam="lone point drawn"
-            consumer="argo strength-tracker/charts/one-rm-trend-chart.tsx:49"
-          >
-            {lone}
-          </Panel>
+          <ChartCard
+            title="First two weeks"
+            subtitle="on the month's axis"
+            height="short"
+            chart={(box) => sharedX(shortWindow, box.height)}
+          />
+          <ChartCard
+            title="Whole month"
+            subtitle="the same days line up"
+            height="short"
+            chart={(box) => sharedX(DATA, box.height)}
+          />
         </CardGrid>
       </Section>
+      <ChartCard
+        title="Top set"
+        subtitle="three sessions, one alone"
+        height="short"
+        chart={(box) => lone(box.height)}
+      />
     </Page>
   )
 }

@@ -4,10 +4,9 @@ import { filterSlot, spec } from 'basalt-ui/controls'
 import { Facts, Page, Section } from 'basalt-ui/page'
 import { defineControls, field } from 'basalt-ui/router'
 import { col, DataTable, TableToolbar, tableCodec, useDataTable } from 'basalt-ui/table'
-import type { DetailEntry, DetailHost, IconComponent } from 'basalt-ui'
+import type { IconComponent } from 'basalt-ui'
 import { DateRangePicker } from 'basalt-ui/ui/date-picker'
 import { Progress } from 'basalt-ui/ui/progress'
-import { Sheet, SheetContent } from 'basalt-ui/ui/sheet'
 import { VirtualList } from 'basalt-ui/ui/virtual-list'
 import {
   Building,
@@ -151,6 +150,7 @@ const exemplar = defineControls({
     table: field.composite(tableCodec(bookingsSchema)),
     large: field.composite(tableCodec(entriesSchema)),
     grouped: field.composite(tableCodec(roomsSchema)),
+    booking: field.string(''),
   },
 })
 
@@ -242,24 +242,6 @@ function BookingDetail({ row }: { row: Booking }): ReactElement {
   )
 }
 
-/** A `DetailHost` over a sheet: `show` opens it on the row's detail, `hide` closes it. */
-function useSheetHost(): { host: DetailHost; sheet: ReactElement } {
-  const [entry, setEntry] = useState<DetailEntry | null>(null)
-  const host: DetailHost = {
-    isOpen: entry !== null,
-    show: setEntry,
-    hide: () => setEntry(null),
-  }
-  const sheet = (
-    <Sheet open={entry !== null} onOpenChange={(open) => !open && setEntry(null)}>
-      <SheetContent title={entry?.title ?? ''}>
-        {entry?.body({ height: 'fill', phase: 'ready' })}
-      </SheetContent>
-    </Sheet>
-  )
-  return { host, sheet }
-}
-
 const TONES = { Settled: 'good', Awaiting: 'warn', Disputed: 'bad' } as const
 
 // #region finances-table
@@ -268,7 +250,6 @@ function Finances(): ReactElement {
   const [month] = exemplar.field.month.use()
   const [look] = exemplar.field.look.use()
   const [done, setDone] = useState('')
-  const { host, sheet } = useSheetHost()
   const page = serve(state.request, month)
   const t = useDataTable({
     id: 'bookings',
@@ -324,12 +305,13 @@ function Finances(): ReactElement {
       selectAll: true,
     },
     detail: (row) => <BookingDetail row={row} />,
+    detailTitle: (row) => row.payee,
+    detailState: exemplar.field.booking,
   })
   return (
     <>
       <TableToolbar table={t} />
-      <DataTable table={t} detail={host} />
-      {sheet}
+      <DataTable table={t} />
       <output className="block text-sm text-muted-foreground">{done}</output>
     </>
   )
