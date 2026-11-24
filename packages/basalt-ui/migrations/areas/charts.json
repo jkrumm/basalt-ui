@@ -90,7 +90,7 @@
       "id": "meter-zones",
       "kind": "codemod",
       "from": "basalt-ui/ui#Meter.zones",
-      "to": "MeterSpec.zones as { to } entries, with tone for colour",
+      "to": "MeterSpec.zones as { to } entries, with tone for color",
       "profiles": ["parts", "app"],
       "codemod": "charts",
       "note": "a zone whose bounds do not chain is flagged",

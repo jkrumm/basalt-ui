@@ -181,9 +181,9 @@
       "from": "basalt-ui#Phase",
       "to": "basalt-ui/cards#Phase",
       "profiles": ["parts", "app"],
-      "manual": true,
-      "note": "the frame's value types import from one subpath; the root keeps a deprecated alias of the same type for one minor",
-      "verify": "tsc"
+      "note": "the frame's value types import from one subpath; the root alias is gone in 3.0",
+      "verify": "tsc",
+      "codemod": "imports"
     },
     {
       "id": "cards-frame-types-QueryStateLike",
@@ -191,9 +191,9 @@
       "from": "basalt-ui#QueryStateLike",
       "to": "basalt-ui/cards#QueryStateLike",
       "profiles": ["parts", "app"],
-      "manual": true,
-      "note": "root alias kept for one minor",
-      "verify": "tsc"
+      "note": "the root alias is gone in 3.0",
+      "verify": "tsc",
+      "codemod": "imports"
     },
     {
       "id": "cards-frame-types-Empty",
@@ -201,9 +201,9 @@
       "from": "basalt-ui#Empty",
       "to": "basalt-ui/cards#Empty",
       "profiles": ["parts", "app"],
-      "manual": true,
-      "note": "root alias kept for one minor",
-      "verify": "tsc"
+      "note": "the root alias is gone in 3.0",
+      "verify": "tsc",
+      "codemod": "imports"
     },
     {
       "id": "cards-frame-types-FrameState",
@@ -211,9 +211,9 @@
       "from": "basalt-ui#FrameState",
       "to": "basalt-ui/cards#FrameState",
       "profiles": ["parts", "app"],
-      "manual": true,
-      "note": "root alias kept for one minor",
-      "verify": "tsc"
+      "note": "the root alias is gone in 3.0",
+      "verify": "tsc",
+      "codemod": "imports"
     },
     {
       "id": "cards-frame-types-Delta-Status-Tone",
@@ -231,9 +231,9 @@
       "from": "basalt-ui/cards#Status",
       "to": "basalt-ui/cards#Verdict",
       "profiles": ["parts", "app"],
-      "manual": true,
-      "note": "the type of `StatCard status` no longer shares a name with the `Status` component of `basalt-ui/ui/status`; `Status` stays a deprecated alias for one minor",
-      "verify": "tsc"
+      "note": "the type of `StatCard status` no longer shares a name with the `Status` component of `basalt-ui/ui/status`; the old name is gone in 3.0",
+      "verify": "tsc",
+      "codemod": "imports"
     },
     {
       "id": "cards-cardmenu",
@@ -241,29 +241,69 @@
       "from": "basalt-ui/cards#Menu",
       "to": "basalt-ui/cards#CardMenu",
       "profiles": ["parts", "app"],
-      "manual": true,
-      "note": "the type of every `menu` prop no longer shares a name with the `Menu` component of `basalt-ui/ui/menu`; `Menu` stays a deprecated alias for one minor",
-      "verify": "tsc"
+      "note": "the type of every `menu` prop no longer shares a name with the `Menu` component of `basalt-ui/ui/menu`; the old name is gone in 3.0",
+      "verify": "tsc",
+      "codemod": "imports"
     },
     {
       "profiles": ["parts", "app"],
-      "manual": true,
       "verify": "tsc",
       "id": "cards-barlist-bodyrows",
       "kind": "renamed-prop",
       "from": "basalt-ui/cards#BarList.rows",
       "to": "bodyRows",
-      "note": "the body height in rows is `bodyRows`; `rows` stays a deprecated alias for one minor and no longer shares its name with the data rows of `StatCell` and `Facts`"
+      "note": "the body height in rows is `bodyRows`; it no longer shares its name with the data rows of `StatCell` and `Facts`",
+      "codemod": "props"
     },
     {
       "profiles": ["parts", "app"],
-      "manual": true,
       "verify": "tsc",
       "id": "cards-eventlist-bodyrows",
       "kind": "renamed-prop",
       "from": "basalt-ui/cards#EventList.rows",
       "to": "bodyRows",
-      "note": "the body height in rows is `bodyRows`; `rows` stays a deprecated alias for one minor and no longer shares its name with the data rows of `StatCell` and `Facts`"
+      "note": "the body height in rows is `bodyRows`; it no longer shares its name with the data rows of `StatCell` and `Facts`",
+      "codemod": "props"
+    },
+    {
+      "id": "cards-statcell-title",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/cards#StatCell.label",
+      "to": "title",
+      "profiles": ["parts", "app"],
+      "codemod": "props",
+      "verify": "tsc",
+      "note": "a card and a stat name themselves with `title` and `subtitle`, as `StatCard` does"
+    },
+    {
+      "id": "cards-statcell-subtitle",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/cards#StatCell.qualifier",
+      "to": "subtitle",
+      "profiles": ["parts", "app"],
+      "codemod": "props",
+      "verify": "tsc",
+      "note": "a card and a stat name themselves with `title` and `subtitle`, as `StatCard` does"
+    },
+    {
+      "id": "cards-statcard-axislabels",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/cards#StatCard.xLabels",
+      "to": "axisLabels",
+      "profiles": ["parts", "app"],
+      "codemod": "props",
+      "verify": "tsc",
+      "note": "the label row under a small chart is `axisLabels`, as on `Sparkline`"
+    },
+    {
+      "id": "cards-statcard-height",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/cards#StatCard.chartHeight",
+      "to": "height",
+      "profiles": ["parts", "app"],
+      "codemod": "props",
+      "verify": "tsc",
+      "note": "a card's chart box height is `height`, as on `ChartCard`"
     }
   ],
   "tokens": {

@@ -257,13 +257,13 @@
     },
     {
       "profiles": ["parts", "app"],
-      "manual": true,
       "verify": "tsc",
       "id": "controls-viewtabs-state",
       "kind": "renamed-prop",
       "from": "basalt-ui/controls#ViewTabs.handle",
       "to": "state",
-      "note": "a bound `ControlHandle` is `state` on every part that takes one; `handle` stays a deprecated alias for one minor"
+      "note": "a bound `ControlHandle` is `state` on every part that takes one; the old name is gone in 3.0",
+      "codemod": "props"
     },
     {
       "id": "controls-slot-types",

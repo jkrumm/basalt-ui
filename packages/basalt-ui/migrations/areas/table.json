@@ -109,6 +109,26 @@
       "to": "useDataTable({ empty: { cause, action } })",
       "profiles": ["parts", "app"],
       "note": "optional: the table takes empty like every frame; omit it to keep the default sentence"
+    },
+    {
+      "id": "table-rowheight-dense",
+      "kind": "map",
+      "from": "basalt-ui/table#RowHeight 'compact'",
+      "to": "'dense'",
+      "profiles": ["parts", "app"],
+      "codemod": "values",
+      "verify": "tsc",
+      "note": "a row height takes the density words `dense`, `normal`, `comfortable`; `compact` names the phone size class. A saved view that still holds the old word draws at the app density"
+    },
+    {
+      "id": "table-rowheight-normal",
+      "kind": "map",
+      "from": "basalt-ui/table#RowHeight 'default'",
+      "to": "'normal'",
+      "profiles": ["parts", "app"],
+      "codemod": "values",
+      "verify": "tsc",
+      "note": "a row height takes the density words `dense`, `normal`, `comfortable`. A saved view that still holds the old word draws at the app density"
     }
   ],
   "tokens": {

@@ -8,9 +8,9 @@
       "from": "basalt-ui#ControlHandle",
       "to": "basalt-ui/router#ControlHandle",
       "profiles": ["parts", "app"],
-      "manual": true,
-      "note": "the type of every bound `state` or `handle` prop imports from the router subpath beside `defineControls` and `field`; the root keeps a deprecated alias for one minor; `PushField` (the type of `InnerNav state`) is new on the same subpath",
-      "verify": "tsc"
+      "note": "the type of every bound `state` or `handle` prop imports from the router subpath beside `defineControls` and `field`; the root alias is gone in 3.0",
+      "verify": "tsc",
+      "codemod": "imports"
     },
     {
       "id": "router-provider-root",
