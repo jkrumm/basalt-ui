@@ -80,6 +80,7 @@ const CLOCK = glyph(['M13.5 8a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z', 'M8 5v3l2
 const STATUS = glyph(['M13.5 8a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'], [[8, 8, 2]])
 const DELTA = glyph(['M2 11.5l4-4 3 3 5-5', 'M10 5.5h4v4'])
 const METER = glyph(['M2.5 11.5a5.5 5.5 0 1 1 11 0', 'M8 11.5l2.5-3'])
+const PROGRESS = glyph(['M3 6h10', 'M3 10h6'])
 const BOOLEAN = glyph([
   'M4.5 2.5h7a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-7a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2z',
   'M5.5 8l1.75 1.75L10.5 6.5',
@@ -102,6 +103,7 @@ export const KIND_ICONS: Readonly<Record<KindName, IconComponent | null>> = {
   status: STATUS,
   delta: DELTA,
   meter: METER,
+  progress: PROGRESS,
   boolean: BOOLEAN,
   spark: SPARK,
   select: SELECT,

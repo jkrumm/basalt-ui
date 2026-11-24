@@ -8,7 +8,11 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import type { ReactNode } from 'react'
 import { createFormat } from '../../core/format'
 import type { DateStyle } from '../../core/format'
+import type { IconComponent } from '../../core/ports'
+import type { KindColumn } from '../contract'
+import { matchesFilter } from './filters'
 import { checkSchema, col, specOf } from './kinds'
+import { engineColumn } from './kinds-engine'
 import { ABSENT, DeltaCell, cellAttributes, deltaText } from './kinds-cells'
 import { KIND_DEFAULTS } from './kinds-spec'
 import type { CellEnv, KindName } from './kinds-spec'
@@ -99,6 +103,7 @@ const ALL = () => [
     commit: () => {},
   }),
   c.actions([{ id: 'edit', label: 'Edit', onClick: () => {} }]),
+  c.progress('count'),
   c.custom('score', { render: () => 'x', sortValue: (r) => r.count, card: 'meta', priority: 3 }),
 ]
 
@@ -354,5 +359,122 @@ describe('c.codec', () => {
     expect(() =>
       c.codec({ name: 'entity' }, { defaults: { sort: [{ id: 'nope', desc: false }] } }),
     ).toThrow(/"nope"/)
+  })
+})
+
+type Plan = { name: string; done: number | null; tags: string[] }
+const Glyph: IconComponent = ({ className }) => <svg data-glyph="" className={className} />
+const PLAN: Plan = { name: 'Launch', done: 0.62, tags: ['design', 'ops'] }
+const p = col<Plan>()
+
+function renderPlan(column: KindColumn<Plan>, row: Plan): HTMLElement {
+  const spec = specOf(column)
+  function Cell(): ReactNode {
+    return (
+      <table>
+        <tbody>
+          <tr>
+            <td {...cellAttributes(spec)}>{spec.render?.(row, ENV)}</td>
+          </tr>
+        </tbody>
+      </table>
+    )
+  }
+  return render(<Cell />).container.querySelector('td') as HTMLElement
+}
+
+describe('progress', () => {
+  test('sorts by the share as a percent, and is absent when null', () => {
+    const spec = specOf(p.progress('done'))
+    expect(spec.sort).toEqual({ fn: 'basic' })
+    expect(spec.value(PLAN)).toBe(62)
+    expect(spec.value({ ...PLAN, done: null })).toBeNull()
+  })
+
+  test('searches its percent label', () => {
+    expect(specOf(p.progress('done')).search?.(PLAN, ENV.format, ENV.now)).toContain('62%')
+  })
+
+  test('a range filter keeps the rows inside a percent range', () => {
+    const spec = specOf(p.progress('done', { filter: 'range' }))
+    expect(spec.filter).toBe('range')
+    expect(spec.bounds).toEqual([0, 100])
+    expect(matchesFilter('range', spec.value(PLAN), ['50', '70'])).toBe(true)
+    expect(matchesFilter('range', spec.value({ ...PLAN, done: 0.1 }), ['50', '70'])).toBe(false)
+    expect(matchesFilter('range', spec.value({ ...PLAN, done: null }), ['50', '70'])).toBe(false)
+    expect(specOf(p.progress('done')).filter).toBeNull()
+  })
+
+  test('the bar clamps to the scale, the label keeps the share, and null draws the dash', () => {
+    const over = renderPlan(p.progress('done'), { ...PLAN, done: 1.4 })
+    expect(over.querySelector('[data-slot="meter"]')?.getAttribute('aria-valuenow')).toBe('1')
+    expect(over.textContent).toContain('140%')
+    const under = renderPlan(p.progress('done'), { ...PLAN, done: -0.2 })
+    expect(under.querySelector('[data-slot="meter"]')?.getAttribute('aria-valuenow')).toBe('0')
+    const none = renderPlan(p.progress('done'), { ...PLAN, done: null })
+    expect(none.querySelector('[data-slot="table-absent"]')).not.toBeNull()
+  })
+
+  test('tone colors the fill, and footer reduces the shares', () => {
+    const td = renderPlan(p.progress('done', { tone: (v) => (v > 0.5 ? 'good' : 'warn') }), PLAN)
+    expect(td.querySelector('[data-slot="meter"]')?.className).toContain('bg-good')
+    expect(specOf(p.progress('done', { footer: 'mean' })).footer?.fn).toBe('mean')
+  })
+})
+
+describe('custom with search', () => {
+  const LABEL = p.custom('label', {
+    render: (row) => row.name,
+    sortValue: (row) => row.done,
+    search: (row) => `ref ${row.name}`,
+    filter: 'text',
+    card: 'meta',
+    priority: 3,
+  })
+
+  test('the table search reads the search text, and the sort stays on the value', () => {
+    const spec = specOf(LABEL)
+    expect(spec.search?.(PLAN, ENV.format, ENV.now)).toBe('ref Launch')
+    expect(spec.value(PLAN)).toBe(0.62)
+  })
+
+  test("filter 'text' matches the search text through the column's accessor", () => {
+    const spec = specOf(LABEL)
+    expect(spec.filter).toBe('contains')
+    const def = engineColumn(spec) as { accessorFn?: (row: Plan, index: number) => unknown }
+    expect(def.accessorFn?.(PLAN, 0)).toBe('ref Launch')
+    expect(matchesFilter('contains', 'ref Launch', ['LAUNCH'])).toBe(true)
+    expect(
+      specOf(
+        p.custom('x', { render: () => null, sortValue: (r) => r.name, card: 'meta', priority: 3 }),
+      ).filter,
+    ).toBeNull()
+  })
+
+  test("filter 'text' without search throws in development", () => {
+    expect(() =>
+      p.custom('x', {
+        render: () => null,
+        sortValue: () => 0,
+        card: 'meta',
+        priority: 3,
+        filter: 'text',
+      } as never),
+    ).toThrow(/needs the option "search"/)
+  })
+})
+
+describe('tags icon', () => {
+  test('an icon draws before the text of its chip', () => {
+    const chip = renderPlan(p.tags('tags', { icon: () => Glyph }), PLAN).querySelector(
+      '[data-slot="table-tag"]',
+    )
+    expect(chip?.firstElementChild?.tagName.toLowerCase()).toBe('svg')
+    expect(chip?.lastChild?.textContent).toBe('design')
+  })
+
+  test('a chip without an icon draws its text alone', () => {
+    const chip = renderPlan(p.tags('tags'), PLAN).querySelector('[data-slot="table-tag"]')
+    expect(chip?.firstElementChild).toBeNull()
   })
 })

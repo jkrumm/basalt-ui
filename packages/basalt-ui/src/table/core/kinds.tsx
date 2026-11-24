@@ -167,6 +167,8 @@ export type TagsOptions = CommonOptions & {
   labels?: Readonly<Record<string, string>>
   /** The chip's tone, from the status tone map. Default neutral. */
   tone?: (tag: string) => Tone
+  /** An icon drawn before the chip's text, per tag. */
+  icon?: (tag: string) => IconComponent | undefined
   /** `'multi'` filters by a checklist of the tags the rows hold; a row passes on any of its tags. */
   filter?: 'multi'
 }
@@ -286,6 +288,16 @@ export type MeterOptions<T = unknown> = CommonOptions & {
   fraction?: boolean
   filter?: 'range'
 }
+/**
+ * A share from 0 to 1 drawn as a thin bar with its percent label. `footer` reduces the shares of the
+ * filtered rows (`mean` is the usual one); `filter: 'range'` filters in percent, 0 to 100.
+ */
+export type ProgressOptions<T = unknown> = CommonOptions &
+  FooterOption & {
+    /** The bar's fill tone for one row's share (0 to 1). Default neutral. */
+    tone?: (value: number, row: T) => Tone
+    filter?: 'range'
+  }
 /** `filter: 'multi'` filters by Yes or No (the two `labels`). */
 export type BooleanOptions<T = unknown> = CommonOptions &
   CellIconOption<T> & {
@@ -299,7 +311,7 @@ export type SparkOptions<T> = Omit<CommonOptions, 'id' | 'sortable'> & {
   value?: (row: T) => number | null | undefined
 }
 export type SelectOptions<T> = CommonOptions & SelectEdit<T> & { filter?: 'multi' }
-export type CustomOptions<T> = {
+type CustomBase<T> = {
   header?: string
   /** An icon drawn before the header text. */
   headerIcon?: IconComponent
@@ -316,6 +328,20 @@ export type CustomOptions<T> = {
   width?: number
   align?: Align
 }
+
+/**
+ * `search` is the text the table search and the card read for the column, and what `filter: 'text'`
+ * matches; a `custom` without it is searched by its sort value, as before.
+ */
+type CustomSearch<T> =
+  | {
+      search: (row: T) => string | null | undefined
+      /** A text filter over `search`. */
+      filter?: 'text'
+    }
+  | { search?: undefined; filter?: undefined }
+
+export type CustomOptions<T> = CustomBase<T> & CustomSearch<T>
 
 export type Col<T> = {
   entity(key: KeysOf<T, string>, o?: EntityOptions<T>): KindColumn<T>
@@ -339,6 +365,8 @@ export type Col<T> = {
   status<const O extends string>(key: KeysOf<T, string>, o: StatusOptions<O, T>): KindColumn<T>
   delta(key: KeysOf<T, number>, o: DeltaOptions): KindColumn<T>
   meter(key: KeysOf<T, number>, o?: MeterOptions<T>): KindColumn<T>
+  /** A share from 0 to 1 as a thin bar with its percent label. */
+  progress(key: KeysOf<T, number>, o?: ProgressOptions<T>): KindColumn<T>
   boolean(key: KeysOf<T, boolean>, o?: BooleanOptions<T>): KindColumn<T>
   spark(id: string, o: SparkOptions<T>): KindColumn<T>
   select(key: KeysOf<T, string>, o: SelectOptions<T>): KindColumn<T>
@@ -379,7 +407,7 @@ const OPTION_KEYS: Readonly<
     allowed: [...COMMON, 'avatar', 'role', 'href', 'max', 'filter'],
     required: [],
   },
-  tags: { allowed: [...COMMON, 'labels', 'tone', 'filter'], required: [] },
+  tags: { allowed: [...COMMON, 'labels', 'tone', 'filter', 'icon'], required: [] },
   countdown: {
     allowed: [...COMMON, 'bad', 'warn', 'horizon', 'filter', 'picker'],
     required: [],
@@ -418,6 +446,7 @@ const OPTION_KEYS: Readonly<
     required: ['polarity'],
   },
   meter: { allowed: [...COMMON, 'max', 'segments', 'fraction', 'filter'], required: [] },
+  progress: { allowed: [...COMMON, 'tone', 'footer', 'filter'], required: [] },
   boolean: { allowed: [...COMMON, 'labels', 'filter', 'icon'], required: [] },
   spark: {
     allowed: ['header', 'priority', 'card', 'label', 'render', 'headerIcon', 'help', 'value'],
@@ -439,6 +468,8 @@ const OPTION_KEYS: Readonly<
       'priority',
       'width',
       'align',
+      'search',
+      'filter',
     ],
     required: ['render', 'sortValue', 'card', 'priority'],
   },
@@ -492,6 +523,8 @@ const FILTER_VALUES: Partial<Record<KindName, readonly string[]>> = {
   money: ['range'],
   delta: ['range'],
   meter: ['range'],
+  progress: ['range'],
+  custom: ['text'],
   date: ['range'],
   relativeTime: ['range'],
 }
@@ -546,6 +579,8 @@ function validate(kind: KindName, id: string, options: object | undefined): void
       'has "warnBelow" or "badBelow" and needs "of": the thresholds are shares of a whole',
     )
   }
+  if (kind === 'custom' && given['filter'] === 'text' && given['search'] === undefined)
+    fail(kind, id, 'has filter: "text" and needs the option "search" (the text the filter matches)')
   if (given['segments'] !== undefined && given['fraction'] === true)
     fail(kind, id, 'has "segments" and "fraction": a stacked meter writes its total')
   const bounds = given['bounds']
@@ -714,6 +749,9 @@ function dateText(value: unknown, format: Format, style: DateStyle): string {
   return label === null ? '' : `${label.text}\n${label.iso.slice(0, 10)}`
 }
 
+/** A share as a percent, rounded past float noise so a range end of `70` matches `0.7`. */
+const toPercent = (share: number): number => Math.round(share * 1e8) / 1e6
+
 /** A meter's readout as a fraction of its scale: `455/472`. */
 const meterFraction = (format: Format, value: number, of: number): string =>
   `${format.number(value)}/${format.number(of)}`
@@ -880,7 +918,14 @@ export function col<T>(): Col<T> {
         'tags',
         key,
         o,
-        (v) => <TagsCell tags={v as readonly string[]} labels={o?.labels} tone={o?.tone} />,
+        (v) => (
+          <TagsCell
+            tags={v as readonly string[]}
+            labels={o?.labels}
+            tone={o?.tone}
+            icon={o?.icon}
+          />
+        ),
         {
           text: (v) => (v as readonly string[]).map((tag) => o?.labels?.[tag] ?? tag).join('\n'),
           spec: {
@@ -1291,6 +1336,43 @@ export function col<T>(): Col<T> {
         },
       )
     },
+    progress: (key, o) => {
+      const part = read<T>(key)
+      const label = o?.header ?? humanize(o?.id ?? key)
+      // the sort, range filter and footers read the share in percent; the cell reads the share
+      const percentOf = (row: T): number | null => {
+        const share = part(row)
+        return typeof share === 'number' && Number.isFinite(share) ? toPercent(share) : null
+      }
+      return keyed<T>(
+        'progress',
+        key,
+        o,
+        (v, row, env) => {
+          if (typeof v !== 'number' || !Number.isFinite(v)) return <Absent />
+          const text = env.format.percent(v)
+          return (
+            <MeterCell
+              label={label}
+              value={Math.min(1, Math.max(0, v))}
+              max={1}
+              tone={o?.tone?.(v, row)}
+              write={() => text}
+            />
+          )
+        },
+        {
+          text: (v, _row, format) =>
+            typeof v === 'number' && Number.isFinite(v) ? format.percent(v) : '',
+          spec: {
+            value: percentOf,
+            ...(o?.filter === 'range' && { filter: 'range' as const, bounds: [0, 100] as const }),
+            drawTotal: (v, env) => env.format.percent(v / 100),
+            ...footerOf<T>(o?.footer, (v, env) => env.format.percent(v / 100)).spec,
+          },
+        },
+      )
+    },
     boolean: (key, o) => {
       const [yes, no] = o?.labels ?? ['Yes', 'No']
       return keyed<T>(
@@ -1363,6 +1445,8 @@ export function col<T>(): Col<T> {
     custom: (id, o) => {
       validate('custom', id, o)
       const width = o?.width ?? KIND_DEFAULTS.custom.width
+      const text = o.search
+      const readText = text === undefined ? undefined : (row: T): string => text(row) ?? ''
       return build<T>({
         kind: 'custom',
         id,
@@ -1373,6 +1457,9 @@ export function col<T>(): Col<T> {
         extra: {
           ...(o.headerIcon !== undefined && { headerIcon: o.headerIcon }),
           ...(o.help !== undefined && { help: o.help }),
+          ...(readText !== undefined && { search: readText }),
+          ...(readText !== undefined &&
+            o.filter === 'text' && { filter: 'contains' as const, filterText: readText }),
           sort: { fn: 'basic' },
           card: [o.card],
           cardFirst: true,
