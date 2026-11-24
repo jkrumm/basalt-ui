@@ -57,16 +57,6 @@ export const NON_EXPORT_NAMES: ReadonlyMap<string, string> = new Map<string, str
   ]),
 ])
 
-/**
- * Types a shipped rule names that exist in `src` but no published entry exports yet. Publishing
- * them belongs to the exports row (ga-exports), whose rule-tag check then holds them. A name here
- * that a published entry exports is itself a finding, so the list empties as they land.
- */
-export const UNPUBLISHED_NAMES: ReadonlyMap<string, string> = new Map([
-  ['GlobalAction', 'src/shell/contract.ts'],
-  ['SidebarBlock', 'src/shell/contract.ts'],
-])
-
 export const HISTORY_PATTERNS: ReadonlyArray<HistoryPattern> = [
   { id: 'cycle-number', re: /\bcycle \d+/i, why: 'a numbered build cycle is history, not a rule' },
   { id: 'expression-id', re: /\bexpression-\d/i, why: 'an expression-track id is history' },
@@ -387,23 +377,7 @@ function exportNameFindings(
     .flatMap((line) =>
       spansOf(line.text).flatMap((span) => {
         const name = exportCandidate(span)
-        if (name !== undefined && ctx.known.has(name) && UNPUBLISHED_NAMES.has(name)) {
-          return [
-            {
-              file,
-              line: line.no,
-              kind: 'export-name' as const,
-              text: `${name} is exported now: remove it from UNPUBLISHED_NAMES`,
-            },
-          ]
-        }
-        if (
-          name === undefined ||
-          ctx.known.has(name) ||
-          NON_EXPORT_NAMES.has(name) ||
-          UNPUBLISHED_NAMES.has(name)
-        )
-          return []
+        if (name === undefined || ctx.known.has(name) || NON_EXPORT_NAMES.has(name)) return []
         return [{ file, line: line.no, kind: 'export-name' as const, text: name }]
       }),
     )
