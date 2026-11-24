@@ -21,12 +21,12 @@ import type { Box, BoxSlot, IconComponent } from '../core/ports'
  * cardVariants({ flush: true }) // class string for a non-`Card` element
  */
 export const cardVariants = cva(
-  'flex flex-col overflow-clip rounded-card bg-card text-foreground shadow-card [--card-edge:1rem] @max-narrow:[--card-edge:0.75rem] [--card-gutter:calc(var(--radius-card)_-_var(--radius-inset))]',
+  'flex flex-col overflow-clip rounded-card bg-card text-foreground shadow-card [--card-edge:1rem] @max-regular:[--card-edge:0.75rem] [--card-gutter:calc(var(--radius-card)_-_var(--radius-inset))]',
   {
     variants: {
       flush: {
         true: 'p-0',
-        false: 'p-4',
+        false: 'p-(--card-edge)',
       },
     },
     defaultVariants: { flush: false },
