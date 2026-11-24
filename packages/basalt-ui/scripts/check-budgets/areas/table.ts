@@ -119,13 +119,21 @@ export const rows: readonly RowDef[] = [
     // 222600 -> 226200 (Issue 3206): 225987 B measured; the detail Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points.
     // 226200 -> 226500 (Issue 3211): +286 B gz for the phone list row: the plan's answering column and the two meta places the stylesheet reads.
     // 226500 -> 233000 (Issue 3207): 232644 B measured; the table closure carries Select and Menu, which present as a sheet on a phone.
-    ceiling: 233000,
+    // 233000 -> 234400 (Issue 3262): 233991 B measured; layout specs an app adds (resolved beside the built-ins, drawn inside the table's frame), the progress kind and a searchable custom column.
+    ceiling: 234400,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
 
 export const raises: Raises = {
   'table-own': [
+    {
+      from: 233000,
+      to: 234400,
+      consumer:
+        'the typed seams before the 3.0 freeze (plan row ga-seams, Issue 3262): Accordee-grade record search in the palette (PaletteSource rows, recents, actions), a routed record page that steps its list with k and j, and table layouts an app adds as specs',
+      repo: 'basalt-ui',
+    },
     {
       from: 226500,
       to: 233000,

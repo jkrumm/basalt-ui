@@ -19,20 +19,36 @@ the shell's search row the same open state (`search={{ onOpen }}`, as in the exa
 ## Signature
 
 ```ts
-CommandPalette({ commands, rank, open: openProp, onOpenChange, placeholder, present, }: CommandPaletteProps): ReactElement
+CommandPalette({ commands, rank, open: openProp, onOpenChange, placeholder, present, sources, }: CommandPaletteProps): ReactElement
   commands: CommandSet
   rank?: RankFn  // Orders and filters the rows for a query
   open?: boolean  // Controlled state, for `AppShell search={{ onOpen }}`; without it the palette keeps its own
   onOpenChange?: (open: boolean) => void
   placeholder?: string
   present?: OverlayPresent  // How it opens: `auto` is a full-height sheet with the field on top on a phone (compact width, coarse pointer) and the centred dialog elsewhere; `popup` and `sheet` force one
+  sources?: readonly PaletteSource[]  // Record search beside the commands: one group per source, after the command and nav groups, in this order and headed by the source's `label`
 ```
+
+`PaletteSource` import from `basalt-ui/shell`: `import type { PaletteSource } from 'basalt-ui/shell'`.
 
 ## Example
 
 ```tsx
 <AppShell nav={NAV} brand={{ name: 'Argo' }} search={{ onOpen: () => setOpen(true) }}>
   <Outlet />
-  <CommandPalette commands={COMMANDS} open={open} onOpenChange={setOpen} />
+  <CommandPalette commands={COMMANDS} open={open} onOpenChange={setOpen} sources={[SUPPLIERS]} />
 </AppShell>
+```
+
+## Example
+
+```tsx
+const SUPPLIERS: PaletteSource = {
+  id: 'suppliers',
+  label: 'Suppliers',
+  search: async (query, signal) => {
+    const found = await findSuppliers(query, { signal })
+    return found.map((s) => ({ id: s.id, title: s.name, kind: 'Supplier', detail: s.city, to: `/suppliers/${s.id}` }))
+  },
+}
 ```
