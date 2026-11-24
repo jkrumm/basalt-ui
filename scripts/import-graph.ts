@@ -7,7 +7,8 @@
  * `import type` edge never makes a page reach a module it does not run). A `basalt-ui/<subpath>` import resolves through
  * the package's `exports` map to the built file and from there to its source: the build is unbundled and mirrors
  * `src/` under `dist/` (tsup.config.ts), so `dist/ui/button.js` is `src/ui/button.tsx`. Any other bare import is a
- * dependency and ends the walk. A relative import or a `basalt-ui` subpath that resolves to no file is kept in
+ * dependency and ends the walk. An import of `basalt-ui/table` also reaches `table.css`, which `basalt()` appends to
+ * it. A relative import or a `basalt-ui` subpath that resolves to no file is kept in
  * `unresolved`: a test holds it empty on the real tree, so a resolver gap cannot make a page look as if it reached
  * nothing.
  */
@@ -119,7 +120,10 @@ export function createImportGraph(root: string): ImportGraph {
     const known = edges.get(file)
     if (known !== undefined) return known
     const out: string[] = []
-    for (const specifier of specifiersOf(file)) {
+    const specifiers = specifiersOf(file)
+    // `basalt()` appends `import 'basalt-ui/table.css'` to a module that imports `basalt-ui/table` (src/vite/index.ts).
+    if (specifiers.includes(`${PACKAGE_NAME}/table`)) specifiers.push(`${PACKAGE_NAME}/table.css`)
+    for (const specifier of specifiers) {
       const target = resolveSpecifier(file, specifier)
       if (target === undefined) missing.add(`${file} -> ${specifier}`)
       else if (target !== null) out.push(target)
