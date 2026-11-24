@@ -10,13 +10,14 @@
 import { createElement } from 'react'
 import type { ComponentPropsWithoutRef, ElementType, ReactElement } from 'react'
 import { Link } from '@tanstack/react-router'
-import type { AnyNavItem } from './types'
+import type { AnyNavLink } from './types'
 
 export type NavAnchor = (props: ComponentPropsWithoutRef<'a'>) => ReactElement
 
-const anchors = new WeakMap<AnyNavItem, NavAnchor>()
+const anchors = new WeakMap<object, NavAnchor>()
 
-export function navAnchor(item: AnyNavItem): NavAnchor {
+/** The anchor reads only the item's `link`, so any read shape that carries it is accepted. */
+export function navAnchor(item: { readonly link?: AnyNavLink }): NavAnchor {
   const cached = anchors.get(item)
   if (cached) return cached
   // `exact: true` makes the resolver the only authority on active: a `Link` spreads its own

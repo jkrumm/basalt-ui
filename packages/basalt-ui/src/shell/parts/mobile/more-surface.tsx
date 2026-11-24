@@ -17,7 +17,6 @@ import { CountBadge } from '../../../ui/badge'
 import { Sheet, SheetContent } from '../../../ui/sheet'
 import { requestMainFocus } from '../../../common/focus'
 import { navAnchor } from '../../../router/nav/anchor'
-import type { AnyNavItem } from '../../../router/nav/types'
 import { AppLink } from '../../../core/link'
 import { Avatar } from '../../../ui/avatar'
 import type { Account, SidebarBlock, WorkspaceSwitcher } from '../../contract'
@@ -133,7 +132,7 @@ function DestinationRow({ row, depth, close }: DestinationProps): ReactElement {
       </span>
     )
   }
-  const Anchor = navAnchor(row.item as unknown as AnyNavItem)
+  const Anchor = navAnchor(row.item)
   const onClick = (event: MouseEvent<HTMLElement>): void => {
     if (!retap(row, event, router.state.location.href)) return
     if (!row.active) requestMainFocus()
