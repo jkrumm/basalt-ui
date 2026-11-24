@@ -53,7 +53,7 @@ Columns: `No directive` is the static HTML: `clean`, `differs` from the client:o
 | kanban-card | KanbanCard | clean | client:visible | 91.4 kB | 20.2 kB | 34.8 kB | Static picture first, the island adds behaviour: the move menu and drag need JS; the card is drawn at rest. client:visible, up to 20.2 kB further (client:idle above the fold). |
 | row-list | RowList | clean | client:visible | 89.6 kB | 18.4 kB | 34.8 kB | Static picture first, the island adds behaviour: a row shares focus with its chart mark; hover and focus highlight need JS. client:visible, up to 18.4 kB further (client:idle above the fold). |
 | step-rail | StepRail | clean | no directive | 81.2 kB | 10.0 kB | 34.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: bars scaled to the longest step are drawn at rest; it never animates. |
-| lines | Lines | differs | client:visible | 192.8 kB | 121.6 kB | 36.8 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 121.6 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-light). |
+| lines | Lines | differs | client:visible | 192.8 kB | 121.6 kB | 36.8 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 121.6 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-dark). |
 | bars | Bars | differs | client:visible | 192.8 kB | 121.5 kB | 36.8 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 121.5 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-light). |
 | cartesian-chart | CartesianChart | differs | client:visible | 192.7 kB | 121.5 kB | 36.8 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 121.5 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-light). |
 | chart-card | ChartCard | differs | client:visible | 204.7 kB | 133.5 kB | 36.8 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 133.5 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-light). |
@@ -85,7 +85,7 @@ Columns: `No directive` is the static HTML: `clean`, `differs` from the client:o
 | connection-indicator | ConnectionIndicator | fails | none works | 133.0 kB | 61.9 kB | 35.3 kB | fails on the server (No QueryClient set, use QueryClientProvider to set one) and in the browser (No QueryClient set, use QueryClientProvider to set one) |
 | overlay-host | OverlayHost | clean | client:visible | 136.1 kB | 64.9 kB | 35.3 kB | Needs the island to work: overlays open by key from JS; nothing is open at rest, so the host draws nothing. client:idle above the fold, client:visible below, up to 64.9 kB further. |
 | toast-host | ToastHost | clean | client:visible | 108.9 kB | 37.7 kB | 35.3 kB | Static picture first, the island adds behaviour: it drains notify() calls made after mount; the viewport is empty at rest. client:visible, up to 37.7 kB further (client:idle above the fold). |
-| app-shell | AppShell | fails | none works | 242.6 kB | 171.5 kB | 35.3 kB | fails on the server (Invalid value used as weak map key) and in the browser (Invalid value used as weak map key) |
+| app-shell | AppShell | fails | none works | 245.1 kB | 173.9 kB | 35.3 kB | fails on the server (Invalid value used as weak map key) and in the browser (Invalid value used as weak map key) |
 | command-palette | CommandPalette | clean | client:visible | 181.8 kB | 110.6 kB | 34.8 kB | Needs the island to work: the palette opens on a key or the search row; rendered closed, the trigger is the picture. client:idle above the fold, client:visible below, up to 110.6 kB further. |
 | controls | FilterSet, ViewTabs | fails | none works | 250.4 kB | 179.3 kB | 34.8 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
 | control-home | ControlHome, ControlView | fails | none works | 212.4 kB | 141.3 kB | 34.8 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
@@ -115,13 +115,13 @@ Every part of a family on one page, each its own island, in one mode: the JavaSc
 
 | Family | Parts | no directive | client:visible | client:idle | client:load | client:only |
 |-|-|-|-|-|-|-|
-| ui | 27 | 0 | 131.4 kB | 247.6 kB | 247.5 kB | 247.5 kB |
+| ui | 27 | 0 | 133.1 kB | 251.0 kB | 251.0 kB | 251.0 kB |
 | cards | 9 | 0 | 130.4 kB | 142.7 kB | 142.6 kB | 142.6 kB |
 | charts | 8 | 0 | 205.7 kB | 223.6 kB | 223.5 kB | 223.5 kB |
 | table | 4 | 0 | 338.9 kB | 352.6 kB | 352.5 kB | 352.5 kB |
-| content | 6 | 0 | 271.7 kB | 276.3 kB | 276.3 kB | 276.3 kB |
-| page | 19 | 0 | 199.1 kB | 287.1 kB | 287.1 kB | 374.0 kB |
-| forms | 18 | 0 | 184.2 kB | 248.6 kB | 248.6 kB | 248.6 kB |
+| content | 6 | 0 | 274.7 kB | 278.7 kB | 278.6 kB | 278.6 kB |
+| page | 19 | 0 | 202.7 kB | 290.5 kB | 290.4 kB | 377.6 kB |
+| forms | 18 | 0 | 187.3 kB | 253.4 kB | 253.3 kB | 253.3 kB |
 
 ## Charts: is the static picture correct?
 
@@ -208,7 +208,7 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 - connection-indicator: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
 - overlay-host: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
 - toast-host: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
-- app-shell: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- app-shell: the mobile overlays (Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom sheet on a phone; the sheet is one lazy chunk and the presenter hooks ship in every ui island
 - command-palette: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
 - controls: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
 - control-home: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
@@ -231,12 +231,12 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 - field: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
 - form-layout: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
 - stepper: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
-- family ui: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- family ui: the mobile overlays (Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom sheet on a phone; the sheet is one lazy chunk and the presenter hooks ship in every ui island
 - family cards: phase.ts gains the settled-empty rule (settledEmpty, resolveFrame) every frame page imports; a few bytes on the form, cards and page families
 - family table: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
-- family content: record the new site-header part; the content family pages now also carry its island code
-- family page: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
-- family forms: one list engine behind Select, Combobox and the command palette (Issue 3102): shared option row and group header, loader states, create row, and a searchable Select on Base UI Combobox
+- family content: the mobile overlays (Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom sheet on a phone; the sheet is one lazy chunk and the presenter hooks ship in every ui island
+- family page: the mobile overlays (Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom sheet on a phone; the sheet is one lazy chunk and the presenter hooks ship in every ui island
+- family forms: the mobile overlays (Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom sheet on a phone; the sheet is one lazy chunk and the presenter hooks ship in every ui island
 
 ## Findings
 
