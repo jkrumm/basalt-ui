@@ -1,7 +1,7 @@
 /**
  * The phone list row (`phone: 'cards'`) and the label-and-value grid (`phone: 'fields'`) at 390 px: a
  * room, three figures and a load meter that answers. `data-testid="pl-list"` and `"pl-fields"` are the
- * two tables. Entry of `table-phone-list.layout.test.ts`.
+ * three tables (`"pl-activate"` is the list row with `onRowActivate`, whose tap navigates). Entry of `table-phone-list.layout.test.ts`.
  */
 import { createRoot } from 'react-dom/client'
 import type { ReactElement } from 'react'
@@ -17,21 +17,32 @@ const ROOMS: readonly Room[] = [
 ]
 const c = col<Room>()
 
-function Table({ phone, id }: { phone: 'cards' | 'fields'; id: string }): ReactElement {
+function Table({
+  phone,
+  id,
+  activate,
+}: {
+  phone: 'cards' | 'fields'
+  id: string
+  activate?: boolean
+}): ReactElement {
+  // The activating table holds every figure at priority 2: only the list row, not a tier, leaves one out.
+  const pri = activate === true ? ({ priority: 2 } as const) : {}
   const table = useDataTable<Room>({
     id,
     label: 'Rooms',
     columns: [
       c.entity('name', { header: 'Room' }),
-      c.number('a', { header: 'Alpha', digits: 0 }),
-      c.number('b', { header: 'Beta', digits: 0 }),
-      c.number('c', { header: 'Gamma', digits: 0 }),
-      c.meter('load', { header: 'Load', max: 100, card: 'value' }),
+      c.number('a', { header: 'Alpha', digits: 0, ...pri }),
+      c.number('b', { header: 'Beta', digits: 0, ...pri }),
+      c.number('c', { header: 'Gamma', digits: 0, ...pri }),
+      c.meter('load', { header: 'Load', max: 100, card: 'value', ...pri }),
     ],
     data: ROOMS,
     getRowId: (r) => r.id,
     mode: { kind: 'client' },
     phone,
+    ...(activate === true && { onRowActivate: () => {} }),
   })
   return <DataTable table={table} />
 }
@@ -41,6 +52,9 @@ function Fixture(): ReactElement {
     <main className="flex flex-col gap-8 p-4 text-foreground">
       <div data-testid="pl-list" className="min-w-0">
         <Table id="pl-list" phone="cards" />
+      </div>
+      <div data-testid="pl-activate" className="min-w-0">
+        <Table id="pl-activate" phone="cards" activate />
       </div>
       <div data-testid="pl-fields" className="min-w-0">
         <Table id="pl-fields" phone="fields" />
