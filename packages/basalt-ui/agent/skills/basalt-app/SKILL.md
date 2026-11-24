@@ -73,7 +73,7 @@ The profile is declared in `.basalt/manifest.json` and never inferred. Choose th
 
 ## Upgrade within 3.x
 
-A 3.x release never removes a public shape without a migration row and never changes a value silently: a change to a number is a `valueShifts` row. After the bump, run `sync`, then `migrate --from <old version> --profile <profile>` and read what it prints beside the version rows of `MIGRATING.md` ([migrate](references/migrate.md)). A removed symbol that is still imported fails `migrate --check`.
+A 3.x release never removes a public shape without a migration row and never changes a value silently: a change to a number is a `valueShifts` row. After the bump, run `sync`, then read `migrate --from <old version> --profile <profile>` beside the `MIGRATING.md` rows ([migrate](references/migrate.md)). A removed symbol that is still imported fails `migrate --check`.
 
 ## Migrate from 2.x
 
