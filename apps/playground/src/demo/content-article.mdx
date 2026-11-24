@@ -1,0 +1,56 @@
+## Start from the question
+
+A page answers one question before it shows anything else. Write the question down, then pick the
+form that answers it: a figure and how it moves, a value over time, a ranking, a list of records.
+Every form in this playground is a part `basalt-ui` ships; a page composes them and draws nothing
+by hand.
+
+<Callout tone="info" title="One accent">The accent is spent on the one thing the reader acts on. Everything else stays neutral.</Callout>
+
+## Install the app
+
+<Steps>
+  <Step title="Add the package">
+    Install `basalt-ui` and run `basalt-ui init --profile app` from the local bin.
+  </Step>
+  <Step title="Mount the shell">
+    Declare the navigation once with `defineNav` and hand it to `AppShell`.
+  </Step>
+  <Step title="Check it">Run `basalt-ui doctor`; it names anything the install is missing.</Step>
+</Steps>
+
+### Package managers
+
+<Tabs defaultValue="bun">
+  <Tab value="bun" label="bun">
+    Use `bun add basalt-ui`.
+  </Tab>
+  <Tab value="npm" label="npm">
+    Use `npm install basalt-ui`.
+  </Tab>
+</Tabs>
+
+## Add a page
+
+A route returns `Page`; the nav entry names it, so the body never repeats the title.
+
+```tsx
+export const Route = createFileRoute('/invoices')({
+  staticData: { title: 'Invoices' },
+  component: () => (
+    <Page area="invoices">
+      <PageBar tabs={{ state: store.field.status, label: 'Invoices' }} />
+      <DataTable table={useInvoices()} />
+    </Page>
+  ),
+})
+```
+
+## Check the frames
+
+| Width   | What to look at                              |
+| ------- | -------------------------------------------- |
+| 1800 px | the rail, the page bar, the aside            |
+| 390 px  | the tab bar, More, cards in place of columns |
+
+Press <Kbd>Mod</Kbd> <Kbd>K</Kbd> to open any page from the palette.

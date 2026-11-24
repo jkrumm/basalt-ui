@@ -13,6 +13,7 @@
 import { Outlet, createRootRouteWithContext, useNavigate } from '@tanstack/react-router'
 import type { QueryClient } from '@tanstack/react-query'
 import { AppearanceSwitcher } from 'basalt-ui/controls'
+import { OverlayHost } from 'basalt-ui/page'
 import { AppShell, CommandPalette } from 'basalt-ui/shell'
 import { Building2, Globe, Palette, Rocket } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -20,6 +21,7 @@ import type { ComponentProps } from 'react'
 import { COMMANDS } from '../demo/commands'
 import { globals } from '../demo/globals'
 import { NAV } from '../demo/nav-model'
+import { OVERLAYS } from '../demo/overlays'
 import { PALETTE_SOURCES } from '../demo/palette-sources'
 import { PeekLayer } from '../demo/peek-layer'
 import { ACCENTS } from '../lib/accents'
@@ -32,7 +34,7 @@ type Blocks = NonNullable<ShellProps['blocks']>
  * Live per-destination badges. Static here, so it is hoisted: a fresh literal per render would be a
  * new identity into the shell on every commit. A real app memoizes its query result.
  */
-const BADGES = { cards: { count: 4 } }
+const BADGES = { 'ref-mail': { count: 3 } }
 
 /** Rail blocks, declared once: a progress row pinned at the bottom of the rail. */
 const BLOCKS: Blocks = [
@@ -112,6 +114,7 @@ function RootLayout() {
     >
       <Outlet />
       <PeekLayer />
+      <OverlayHost overlays={OVERLAYS} />
       <CommandPalette
         commands={COMMANDS}
         sources={PALETTE_SOURCES}
