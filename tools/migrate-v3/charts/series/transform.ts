@@ -49,7 +49,7 @@ const FLAG_REASONS: Record<string, string> = {
   'fold-bands': 'foldBands is internal to BandStrip in v3',
 }
 const AUTO_DOMAIN = new Set(['autoMaxFloor', 'autoMinCeil', 'autoPad'])
-/** Zone colours that map to a v3 tone. */
+/** Zone colors that map to a v3 tone. */
 const TONE_COLOR = /status[-.](good|warn|bad|neutral)\b/i
 /** 1.x Bars props with no known v3 spelling: left in place and flagged. */
 const BARS_1X_LEFT = ['xTickValues', 'xLabelRotate', 'cursorResolution', 'barWidthRatio']
@@ -316,7 +316,7 @@ export function transformSeries(source: string, { file }: SeriesOptions): Series
       let toneName = 'neutral'
       if (color && color !== zone) {
         const m = TONE_COLOR.exec(color.getText())
-        if (!m) return review('meter-zones', el, `the zone colour ${color.getText()} has no tone`)
+        if (!m) return review('meter-zones', el, `the zone color ${color.getText()} has no tone`)
         toneName = m[1]!.toLowerCase()
       } else if (tone && tone !== zone && !/^['"]muted['"]$/.test(tone.getText())) {
         return review('meter-zones', el, `the zone tone ${tone.getText()} has no v3 spelling`)

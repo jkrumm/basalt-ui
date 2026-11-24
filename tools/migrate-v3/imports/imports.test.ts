@@ -20,7 +20,31 @@ describe('rows', () => {
     const shipped = loadRenameRows(
       join(import.meta.dir, '../../../packages/basalt-ui/migrations/areas'),
     )
-    expect(shipped.rows.map((r) => r.id)).toEqual(['shell-r01', 'tok-js-accessor'])
+    expect(shipped.rows.map((r) => r.id)).toEqual([
+      'cards-frame-types-Phase',
+      'cards-frame-types-QueryStateLike',
+      'cards-frame-types-Empty',
+      'cards-frame-types-FrameState',
+      'cards-verdict',
+      'cards-cardmenu',
+      'charts-frame-types-CardAction',
+      'charts-frame-types-Empty',
+      'charts-frame-types-Fact',
+      'charts-frame-types-FootFacts',
+      'charts-frame-types-FrameHead',
+      'charts-frame-types-FrameState',
+      'charts-frame-types-Menu',
+      'charts-frame-types-MenuEntry',
+      'page-favoritetoggle',
+      'page-use-favorite',
+      'page-favoritetoggleprops',
+      'page-favoriteentry',
+      'page-favoriteinput',
+      'page-favoritesstore',
+      'router-control-handle',
+      'shell-r01',
+      'tok-js-accessor',
+    ])
     const reported = shipped.skipped.join('\n')
     for (const id of [
       'content-Callout',

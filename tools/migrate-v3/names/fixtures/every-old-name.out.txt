@@ -1,0 +1,61 @@
+// oxlint-disable-next-line basalt/color-literal -- a photo overlay draws its own dim
+const DIM = '#000a'
+// oxlint-disable-next-line basalt/fixed-color, basalt/app-color -- the brand sheet is printed
+// oxlint-disable-next-line basalt/app-color-arbitrary -- the print palette
+import type { ControlHandle } from 'basalt-ui/router'
+import { BarList, EventList, StatCard, StatCell } from 'basalt-ui/cards'
+import type { Empty, FrameState, Phase, QueryStateLike, CardAction, Empty as ChartEmpty, Fact, FootFacts, FrameHead, FrameState as ChartFrameState, CardMenu as ChartMenu, MenuEntry, CardMenu, Verdict } from 'basalt-ui/cards'
+import {
+  BandStrip,
+  Bars,
+  CartesianChart,
+  Heatmap,
+  IntervalTrack,
+  Lines,
+  MiniBars,
+  Sparkline,
+} from 'basalt-ui/charts'
+import { ViewTabs } from 'basalt-ui/controls'
+import { Callout, Dock, PageBar, Peek, FavoriteToggle, useFavorite } from 'basalt-ui/page'
+import type { FavoriteEntry, FavoriteInput, FavoritesStore, FavoriteToggleProps } from 'basalt-ui/page'
+import { AppShell } from 'basalt-ui/shell'
+import { useDataTable } from 'basalt-ui/table'
+import { Calendar } from 'basalt-ui/ui/calendar'
+import { DatePicker, DateRangePicker } from 'basalt-ui/ui/date-picker'
+
+type Frame = { phase: Phase | QueryStateLike; empty: Empty; state: FrameState; tab: ControlHandle<'a'> }
+type Charted = [CardAction, ChartEmpty, Fact, FootFacts, FrameHead, ChartFrameState, ChartMenu, MenuEntry]
+type Carded = [CardMenu, Verdict]
+type Starred = [FavoriteEntry, FavoriteInput, FavoritesStore, FavoriteToggleProps]
+
+export function Page({ store, view, star }: { store: FavoritesStore; view: ControlHandle<'a'>; star: FavoriteInput }) {
+  const toggle = useFavorite(star)
+  const table = useDataTable({ rows: [], columns: [], rowHeight: 'dense' })
+  table.setRowHeight('normal')
+  return (
+    <AppShell nav={nav} favorites={store}>
+      <PageBar title="Runs" favorite={star} />
+      <Peek favorite={star} />
+      <Dock favorite={star} />
+      <FavoriteToggle {...toggle} />
+      <Callout tone="warn">Heads up</Callout>
+      <ViewTabs state={view} />
+      <StatCell title="Deploys" subtitle="7 day" value={164} />
+      <StatCard title="Shipped" value={388} axisLabels={['Mon', 'Thu', 'Sun']} height={40} />
+      <BarList title="Top" items={[]} bodyRows={6} />
+      <EventList title="Log" items={[]} bodyRows={8} />
+      <Sparkline points={[1, 2]} height={24} label="Trend" />
+      <MiniBars points={[1, 2]} height={24} label="Per day" />
+      <Lines data={[]} x={x} series={[]} label="Pace" />
+      <Bars data={[]} x={x} series={[]} label="Count" />
+      <CartesianChart data={[]} x={x} series={[]} label="Mixed" />
+      <Heatmap data={[]} label="Grid" />
+      <BandStrip data={[]} label="Bands" />
+      <IntervalTrack data={[]} label="Spans" />
+      <DatePicker aria-label="Due" onValueChange={setDay} />
+      <DateRangePicker aria-label="Window" onValueChange={setRange} />
+      <Calendar aria-label="Month" onValueChange={setDay} />
+      <div style={{ background: DIM }} />
+    </AppShell>
+  )
+}

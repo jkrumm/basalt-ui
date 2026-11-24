@@ -23,6 +23,6 @@ const x = <Select />
 const bare = '#fff'
 // theme-allow raw-hexx — typo kind
 const typo = '#fff'
-// theme-allow raw-hex, raw-color-fn — both colour literals, one line
+// theme-allow raw-hex, raw-color-fn — both color literals, one line
 const both = ['#fff', 'rgb(1,2,3)']
 // a docblock mentioning `theme-allow` in prose stays untouched

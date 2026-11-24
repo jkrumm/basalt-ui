@@ -3,7 +3,7 @@ export const PHONE_QUERY = '(max-width: 36em)'
 const dot = {
   // oxlint-disable-next-line shadcn/no-inline-styles -- decorative difficulty pip, not a card/panel surface
   borderRadius: '50%',
-  // oxlint-disable-next-line basalt/colour-literal -- neutral dim over unknown pixels
+  // oxlint-disable-next-line basalt/color-literal -- neutral dim over unknown pixels
   scrim: 'rgba(8,9,10,0.62)',
 }
 function A() {
@@ -24,6 +24,6 @@ const x = <Select />
 const bare = '#fff'
 // theme-allow raw-hexx — typo kind
 const typo = '#fff'
-// oxlint-disable-next-line basalt/colour-literal -- both colour literals, one line
+// oxlint-disable-next-line basalt/color-literal -- both color literals, one line
 const both = ['#fff', 'rgb(1,2,3)']
 // a docblock mentioning `theme-allow` in prose stays untouched
