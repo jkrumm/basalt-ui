@@ -14,7 +14,6 @@ import { RouteError } from './components/route-error'
 import { RouteMissing } from './components/route-missing'
 import { RoutePending } from './components/route-pending'
 import { PAGE_FORMAT } from './demo/page-format'
-import { bootPhoneNav } from './lib/phone-nav'
 import { routeTree } from './routeTree.gen'
 
 const queryClient = createQueryClient()
@@ -38,8 +37,6 @@ declare module '@tanstack/react-router' {
     router: typeof router
   }
 }
-
-bootPhoneNav()
 
 const root = document.getElementById('root')
 if (!root) throw new Error('root element not found')
