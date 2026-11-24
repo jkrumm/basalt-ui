@@ -385,7 +385,7 @@ export type UseDataTable<
   /**
    * What a narrow table becomes: `cards`; `scroll`, the table scrolling sideways with its first
    * column pinned; or `columns`, the table keeping its header and three columns (the name, the
-   * column placed in the card's `value` and the first placed in its `meta`) while the rest move to
+   * column placed in the card's `value` and the first placed in its `meta` that draws a meter, a delta or a status, else the first placed in it) while the rest move to
    * the row's details: a long numeric table that must keep its answer in view at 390.
    *
    * @default 'cards'
