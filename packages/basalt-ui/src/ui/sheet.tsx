@@ -95,13 +95,7 @@ export const sheetContentVariants = cva(
 )
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
-export const sheetParts = [
-  'sheet-trigger',
-  'sheet-content',
-  'sheet-grabber',
-  'sheet-title',
-  'sheet-close',
-] as const
+export const sheetParts = ['sheet-trigger', 'sheet-content', 'sheet-title', 'sheet-close'] as const
 
 type Layout<P> = Omit<P, 'className'> & {
   /** Layout only (`w-120`, `mt-2`). Display and height belong to the part. */
@@ -365,7 +359,7 @@ function KeyboardAware({
 /** The pill on a bottom sheet's top edge: it says the panel drags, and it is a drag handle in itself. */
 const GRABBER = (
   <div
-    data-slot="sheet-grabber"
+    data-panel="grabber"
     aria-hidden="true"
     className="flex h-6 shrink-0 touch-none items-end justify-center pb-1"
   >

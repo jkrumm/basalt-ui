@@ -184,5 +184,5 @@ Every shipped part, grouped by the question it answers; open `node_modules/basal
 - `basalt-ui/ui/textarea` (`Textarea`): free text of several lines (a note, a message)
 - `basalt-ui/ui/toast` (`Toast`): a result needs a short, passing note the user can ignore (toast vs inline vs inbox)
 - `basalt-ui/ui/toolbar` (`Toolbar`): a row of related controls should be one tab stop with arrow-key movement (a viewer, an editor)
-- `basalt-ui/ui/tooltip` (`Tooltip`): an icon or a clipped value needs a one-line name on hover, focus or a long press
+- `basalt-ui/ui/tooltip` (`Tooltip`): an icon or a clipped value needs a one-line name on hover and focus
 - `basalt-ui/ui/virtual-list` (`VirtualList`): a list is long enough (hundreds of rows) that mounting every row costs more than the user sees
