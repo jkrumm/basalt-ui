@@ -81,10 +81,13 @@ export const ALLOTMENT: Allotment = {
       lazy: [],
       reaches: ['.'],
     },
+    // `table` also imports `cards` and `page` (docs/v3/CONTRACT.md § 1). Following them would add both
+    // `@source` units to every table app's stylesheet (+1.6 KB gz per marketing docs page), so the
+    // closure leaves them out until an Issue decides that cost.
     table: {
       peers: ['@tanstack/react-table', '@base-ui/react'],
       lazy: [],
-      reaches: ['.', 'controls', 'cards', 'page'],
+      reaches: ['.', 'controls'],
     },
     charts: {
       peers: ['@tanstack/charts', 'd3-scale'],

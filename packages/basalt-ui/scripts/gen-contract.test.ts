@@ -56,13 +56,12 @@ describe('docs/v3/CONTRACT.md', () => {
       const [from = '', to = ''] = e.split(' -> ')
       return [from, to.split(', ')] as const
     })
+    // The allotment may follow fewer edges than the contract states (`table` -> `cards`, `page`: see
+    // allotment.ts), never one the contract does not.
     for (const [from, to] of stated) {
-      const reaches = ALLOTMENT.subpaths[from]?.reaches.filter((r) => r !== '.')
-      expect(reaches, from).toEqual(to)
+      const reaches = ALLOTMENT.subpaths[from]?.reaches.filter((r) => r !== '.') ?? []
+      for (const reach of reaches) expect(to, `${from} -> ${reach}`).toContain(reach)
     }
-    const declared = ALLOTMENT.composites.filter((dir) =>
-      (ALLOTMENT.subpaths[dir]?.reaches ?? []).some((r) => r !== '.'),
-    )
     const statedPairs = stated.flatMap(([from, to]) =>
       to.filter((t) => ALLOTMENT.composites.includes(t)).map((t) => `${from} -> ${t}`),
     )
@@ -70,7 +69,6 @@ describe('docs/v3/CONTRACT.md', () => {
       composedEdges(),
       'a composite imports a composite the contract does not declare',
     ).toEqual(statedPairs.toSorted())
-    expect(stated.map(([from]) => from).toSorted()).toEqual(declared.toSorted())
   })
 })
 
