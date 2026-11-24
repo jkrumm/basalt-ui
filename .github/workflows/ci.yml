@@ -108,6 +108,35 @@ jobs:
           UNIT_PEAK_MIB: 16384
         run: bun scripts/unit-test.ts
 
+  # The CLI under Node with no Bun on PATH (engines.node >=22): Bun builds and packs the tarball, then a
+  # scratch npm app runs init, sync, doctor and lint through the local bin, ages the install the way an
+  # upgrade finds it, and proves sync heals it (packages/basalt-ui/scripts/node-cli-smoke.sh).
+  node-cli:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Build and pack the package
+        working-directory: packages/basalt-ui
+        run: bun run build && bun pm pack
+
+      - name: Setup Node.js 22 (the engines floor)
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+
+      - name: init, sync, doctor and lint with no Bun on PATH
+        working-directory: packages/basalt-ui
+        run: |
+          NODE_ONLY="$(mktemp -d)"
+          for tool in node npm npx; do ln -s "$(command -v "$tool")" "$NODE_ONLY/$tool"; done
+          env PATH="$NODE_ONLY:/usr/bin:/bin" bash scripts/node-cli-smoke.sh "$(ls basalt-ui-*.tgz)"
+
   # The site profile's proof (apps/marketing, basalt-ui.com): build the site on the built package and
   # hold its measured numbers to apps/marketing/site-budgets.json — zero module JavaScript on a page
   # without an island, the React runtime and island cost, CSS per page, LCP and CLS in a headless shell.
@@ -319,7 +348,7 @@ jobs:
   # failure too), so a green ci.yml run still means everything passed.
   ci:
     if: always()
-    needs: [checks, unit, site, layout, gate, quality-matrix, astro-matrix]
+    needs: [checks, unit, node-cli, site, layout, gate, quality-matrix, astro-matrix]
     runs-on: ubuntu-latest
 
     steps:
@@ -357,10 +386,10 @@ jobs:
         run: bun scripts/check-matrix-shards.ts quality-matrix-logs --shards 8
 
       - name: Fail unless every job succeeded
-        if: needs.checks.result != 'success' || needs.unit.result != 'success' || needs.site.result != 'success' || needs.layout.result != 'success' || needs.gate.result != 'success' || needs.quality-matrix.result != 'success' || needs.astro-matrix.result != 'success'
+        if: needs.checks.result != 'success' || needs.unit.result != 'success' || needs.node-cli.result != 'success' || needs.site.result != 'success' || needs.layout.result != 'success' || needs.gate.result != 'success' || needs.quality-matrix.result != 'success' || needs.astro-matrix.result != 'success'
         run: |
-          echo "checks=${{ needs.checks.result }} unit=${{ needs.unit.result }} site=${{ needs.site.result }} layout=${{ needs.layout.result }} gate=${{ needs.gate.result }} quality-matrix=${{ needs.quality-matrix.result }} astro-matrix=${{ needs.astro-matrix.result }}"
+          echo "checks=${{ needs.checks.result }} unit=${{ needs.unit.result }} node-cli=${{ needs.node-cli.result }} site=${{ needs.site.result }} layout=${{ needs.layout.result }} gate=${{ needs.gate.result }} quality-matrix=${{ needs.quality-matrix.result }} astro-matrix=${{ needs.astro-matrix.result }}"
           exit 1
 
       - name: Every job succeeded
-        run: echo "checks, unit, the site budgets, all layout shards, the gate, all quality-matrix shards and the Astro matrix passed"
+        run: echo "checks, unit, the CLI under Node, the site budgets, all layout shards, the gate, all quality-matrix shards and the Astro matrix passed"
