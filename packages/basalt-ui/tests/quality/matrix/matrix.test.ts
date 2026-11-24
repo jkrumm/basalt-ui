@@ -1,5 +1,5 @@
 /**
- * The quality matrix (quality-contract section 4): every playground route x viewport x scheme, each
+ * The quality matrix (quality-contract section 4): every playground route and the expression app's index x viewport x scheme, each
  * cell running the same assertions consumers import as `quality.*`, plus one 390 dark pseudo-locale
  * cell per route.
  *
@@ -14,7 +14,7 @@ import { classify, KNOWN, KNOWN_CHIPS } from './known'
 import type { KnownFinding } from './known'
 import { bootMatrix } from './harness'
 import { hoverFindings, KNOWN_SHIFTS, REBUILT_PAGES, TRIAL_PAGES } from './hover-shift'
-import { parseRoutes, routePaths, scenarioPaths } from './routes'
+import { EXPRESSION_INDEX, appOf, parseRoutes, routePaths, scenarioPaths } from './routes'
 import { inShard, parseShard, shardLine } from './shard'
 
 const mode = process.env['BASALT_MATRIX']
@@ -41,7 +41,8 @@ const PHONE = { width: 390, height: 844 }
 
 function cells(): Cell[] {
   const out: Cell[] = []
-  for (const route of routePaths().filter(wanted)) {
+  // The playground's routes, and the expression app's index (its scenarios are hover-guard pages only).
+  for (const route of [...routePaths(), EXPRESSION_INDEX].filter(wanted)) {
     if (mode === 'full') {
       for (const size of [DESKTOP, PHONE]) {
         for (const scheme of ['light', 'dark'] as const) {
@@ -85,7 +86,8 @@ describe.skipIf(harness === null)(`quality matrix (${mode})`, () => {
       try {
         const { quality } = await import('../../../src/testing/quality')
         await quality.setScheme(page, cell.scheme)
-        await page.goto((cell.pseudo ? harness.pseudoOrigin : harness.origin) + cell.route)
+        const origin = cell.pseudo ? harness.pseudoOrigin : harness.origin
+        await page.goto(origin(appOf(cell.route)) + cell.route)
         await page.waitForSelector('[data-slot], main', { timeout: 15_000 })
         const failures = await runCell(page, { pointer: cell.width <= 600 ? 'coarse' : 'fine' })
         const { unexpected, matched } = classify(cell.route, failures)
@@ -103,7 +105,7 @@ describe.skipIf(harness === null)(`quality matrix (${mode})`, () => {
 // swept across each chart plot. A plot that moves under the pointer, a tooltip that changes side more
 // than once, or a card whose text or widths change outside its readout line fails its page.
 describe.skipIf(harness === null)('hover changes the readout, never the chart or its card', () => {
-  const pages = [...new Set([...routePaths(), ...scenarioPaths()])].filter(wanted)
+  const pages = [...new Set([...routePaths(), EXPRESSION_INDEX, ...scenarioPaths()])].filter(wanted)
   const sizes = [DESKTOP, PHONE] as const
   const all = enabled ? pages.flatMap((route) => sizes.map((size) => ({ route, ...size }))) : []
   total += all.length
@@ -114,7 +116,7 @@ describe.skipIf(harness === null)('hover changes the readout, never the chart or
       ran += 1
       const page = await harness.open({ width: cell.width, height: cell.height, pointer: 'fine' })
       try {
-        await page.goto(harness.origin + cell.route)
+        await page.goto(harness.origin(appOf(cell.route)) + cell.route)
         await page.waitForSelector('[data-slot], main', { timeout: 15_000 })
         const found = await hoverFindings(page)
         const of = (kind: string): string =>

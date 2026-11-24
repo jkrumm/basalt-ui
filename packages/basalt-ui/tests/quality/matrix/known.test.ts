@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { KNOWN, KNOWN_CHIPS, classify, loadCycleChips, loadCycleKnown } from './known'
-import { routePaths, scenarioPaths } from './routes'
+import { EXPRESSION_INDEX, routePaths, scenarioPaths } from './routes'
 
 describe('cycle chip waivers', () => {
   const inCycle = async <T>(files: Record<string, string>, read: (root: string) => Promise<T>) => {
@@ -88,8 +88,8 @@ describe('cycle waivers', () => {
     expect(unknown).toEqual([])
   })
 
-  test('every chip waiver names a route the playground has', () => {
-    const paths = new Set([...routePaths(), ...scenarioPaths()])
+  test('every chip waiver names a route one of the apps has', () => {
+    const paths = new Set([...routePaths(), EXPRESSION_INDEX, ...scenarioPaths()])
     expect(KNOWN_CHIPS.filter((route) => !paths.has(route))).toEqual([])
   })
 

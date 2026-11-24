@@ -1,7 +1,7 @@
 /**
- * The matrix harness (quality-contract section 4): bundles the playground (`build-playground.ts`, in a
- * child process), serves the output plus the seeded offenders from one ephemeral port, drives real
- * Chrome. No dev server is started and no Vite process runs. The package resolves through its built
+ * The matrix harness (quality-contract section 4): bundles the playground and the expression app (`build-app.ts`,
+ * each in a child process), serves each output from its own ephemeral port (the playground's with the seeded
+ * offenders), drives real Chrome. No dev server is started and no Vite process runs. The package resolves through its built
  * `dist` (`make check` builds first), which is the surface a consumer imports.
  */
 import { mkdtemp, rm } from 'node:fs/promises'
@@ -11,6 +11,7 @@ import { chromium } from 'playwright-core'
 import type { Browser, BrowserContext, BrowserServer, Page } from 'playwright-core'
 import { themeScript } from '../../../src/css/theme-script'
 import { readTestBrowser, testBrowserOptions } from '../../support/test-browser'
+import type { MatrixApp } from './routes'
 
 const OFFENDERS = resolve(import.meta.dirname, 'offenders')
 
@@ -40,23 +41,23 @@ const MIME: Record<string, string> = {
   '.svg': 'image/svg+xml',
 }
 
-const BUILD = join(import.meta.dirname, 'build-playground.ts')
+const BUILD = join(import.meta.dirname, 'build-app.ts')
 
-/** Bundles the playground in a child process, so the bundler's memory is back with the host before Chrome starts. */
-async function buildPlayground(outdir: string, pseudo: boolean): Promise<void> {
-  const child = Bun.spawn([process.execPath, BUILD, outdir, ...(pseudo ? ['pseudo'] : [])], {
+/** Bundles an app in a child process, so the bundler's memory is back with the host before Chrome starts. */
+async function buildApp(app: MatrixApp, outdir: string, pseudo: boolean): Promise<void> {
+  const child = Bun.spawn([process.execPath, BUILD, app, outdir, ...(pseudo ? ['pseudo'] : [])], {
     stdout: 'ignore',
     stderr: 'pipe',
   })
   const [stderr, code] = await Promise.all([new Response(child.stderr).text(), child.exited])
-  if (code !== 0) throw new Error(`matrix: the playground build failed (exit ${code}):\n${stderr}`)
+  if (code !== 0) throw new Error(`matrix: the ${app} build failed (exit ${code}):\n${stderr}`)
 }
 
 export type MatrixHarness = {
-  /** `http://127.0.0.1:<port>`: the English bundle. */
-  origin: string
+  /** `http://127.0.0.1:<port>`: the app's English bundle. */
+  origin(app: MatrixApp): string
   /** `http://localhost:<port>`: the same app with the pseudo-locale catalog. */
-  pseudoOrigin: string
+  pseudoOrigin(app: MatrixApp): string
   offenderUrl(name: string): string
   /** A fresh context + page. Closed by {@link MatrixHarness.close}. */
   open(options: PageOptions): Promise<Page>
@@ -103,31 +104,44 @@ async function launchMatrix(): Promise<MatrixHarness | null> {
   // created), not read as 'no browser installed'.
   const launchOptions = testBrowserOptions(readTestBrowser())
   const dir = await mkdtemp(join(tmpdir(), 'basalt-matrix-'))
-  const pseudoDir = join(dir, 'pseudo')
-  await buildPlayground(dir, false)
-  await buildPlayground(pseudoDir, true)
-
-  const server = Bun.serve({
-    port: 0,
-    async fetch(request) {
-      const url = new URL(request.url)
-      if (url.pathname === '/favicon.ico') return new Response(null, { status: 204 })
-      if (url.pathname.startsWith('/offenders/')) {
-        const file = Bun.file(join(OFFENDERS, url.pathname.slice('/offenders/'.length)))
-        if (!(await file.exists())) return new Response('no such offender', { status: 404 })
-        return new Response(file, { headers: { 'content-type': 'text/html' } })
-      }
-      // `localhost` serves the pseudo-locale bundle, `127.0.0.1` the English one: same routes, same paths.
-      const root = url.hostname === 'localhost' ? pseudoDir : dir
-      const asset = Bun.file(join(root, url.pathname))
-      if (extname(url.pathname) !== '' && (await asset.exists())) {
-        return new Response(asset, {
-          headers: { 'content-type': MIME[extname(url.pathname)] ?? 'application/octet-stream' },
-        })
-      }
-      return new Response(INDEX_HTML, { headers: { 'content-type': 'text/html' } })
-    },
-  })
+  const apps: readonly MatrixApp[] = ['playground', 'expression']
+  const servers = new Map<MatrixApp, ReturnType<typeof Bun.serve>>()
+  for (const app of apps) {
+    const appDir = join(dir, app)
+    const pseudoDir = join(appDir, 'pseudo')
+    await buildApp(app, appDir, false)
+    await buildApp(app, pseudoDir, true)
+    servers.set(
+      app,
+      Bun.serve({
+        port: 0,
+        async fetch(request) {
+          const url = new URL(request.url)
+          if (url.pathname === '/favicon.ico') return new Response(null, { status: 204 })
+          if (app === 'playground' && url.pathname.startsWith('/offenders/')) {
+            const file = Bun.file(join(OFFENDERS, url.pathname.slice('/offenders/'.length)))
+            if (!(await file.exists())) return new Response('no such offender', { status: 404 })
+            return new Response(file, { headers: { 'content-type': 'text/html' } })
+          }
+          // `localhost` serves the pseudo-locale bundle, `127.0.0.1` the English one: same routes, same paths.
+          const root = url.hostname === 'localhost' ? pseudoDir : appDir
+          const asset = Bun.file(join(root, url.pathname))
+          if (extname(url.pathname) !== '' && (await asset.exists())) {
+            return new Response(asset, {
+              headers: {
+                'content-type': MIME[extname(url.pathname)] ?? 'application/octet-stream',
+              },
+            })
+          }
+          return new Response(INDEX_HTML, { headers: { 'content-type': 'text/html' } })
+        },
+      }),
+    )
+  }
+  const portOf = (app: MatrixApp): number => servers.get(app)?.port ?? 0
+  const stopServers = (): void => {
+    for (const server of servers.values()) server.stop(true)
+  }
 
   let chromeProcess: BrowserServer
   let browser: Browser
@@ -135,7 +149,7 @@ async function launchMatrix(): Promise<MatrixHarness | null> {
     chromeProcess = await chromium.launchServer(launchOptions)
     browser = await chromium.connect(chromeProcess.wsEndpoint())
   } catch (error) {
-    server.stop(true)
+    stopServers()
     await rm(dir, { recursive: true, force: true })
     if (process.env['CI']) {
       throw new Error(
@@ -156,9 +170,9 @@ async function launchMatrix(): Promise<MatrixHarness | null> {
   // A closed context leaves this set: holding all of them kept every page's Playwright objects alive for the run.
   const contexts = new Set<BrowserContext>()
   return {
-    origin: `http://127.0.0.1:${server.port}`,
-    pseudoOrigin: `http://localhost:${server.port}`,
-    offenderUrl: (name) => `http://127.0.0.1:${server.port}/offenders/${name}.html`,
+    origin: (app) => `http://127.0.0.1:${portOf(app)}`,
+    pseudoOrigin: (app) => `http://localhost:${portOf(app)}`,
+    offenderUrl: (name) => `http://127.0.0.1:${portOf('playground')}/offenders/${name}.html`,
     async open(options) {
       const context = await browser.newContext({
         viewport: { width: options.width, height: options.height },
@@ -178,7 +192,7 @@ async function launchMatrix(): Promise<MatrixHarness | null> {
       await browser.close().catch(() => {})
       clearInterval(keepAwake)
       await chromeProcess.kill()
-      server.stop(true)
+      stopServers()
       await rm(dir, { recursive: true, force: true })
     },
   }
