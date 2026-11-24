@@ -109,7 +109,6 @@
         "Separator": "div",
         "SheetClose": "div",
         "SheetContent": "div",
-        "SheetGrabber": "div",
         "SheetTitle": "div",
         "SheetTrigger": "div",
         "Skeleton": "div",

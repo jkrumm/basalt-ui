@@ -42,7 +42,7 @@ const HEADER = S('shell-header')
 const BAR = slot('shell-tab-bar')
 const FOOTER = slot('shell-footer')
 const SHEET = slot('sheet-content')
-const GRABBER = slot('sheet-grabber')
+const GRABBER = '[data-panel="grabber"]'
 
 const INSETS = { top: 47, left: 20, bottom: 34, right: 30 } as const
 
