@@ -56,17 +56,107 @@
       "kind": "renamed-prop",
       "from": "basalt-ui/page#PageBar.tabs.handle",
       "to": "tabs.state",
-      "note": "`tabs` is `{ state, label }`; `handle` stays a deprecated alias for one minor (also `Section tabs`)"
+      "note": "`tabs` is `{ state, label }`; the old name is gone in 3.0 (also `Section tabs`)"
     },
     {
       "profiles": ["parts", "app"],
-      "manual": true,
       "verify": "tsc",
       "id": "page-callout-tone",
       "kind": "renamed-prop",
       "from": "basalt-ui/page#Callout.kind",
       "to": "tone",
-      "note": "`Callout` takes `Alert`'s six tones (`neutral` and `accent` added to `info`, `good`, `warn`, `bad`); `kind` stays a deprecated alias for one minor"
+      "note": "`Callout` takes `Alert`'s six tones (`neutral` and `accent` added to `info`, `good`, `warn`, `bad`); the old name is gone in 3.0",
+      "codemod": "props"
+    },
+    {
+      "id": "page-favoritetoggle",
+      "kind": "renamed",
+      "from": "basalt-ui/page#FavouriteToggle",
+      "to": "basalt-ui/page#FavoriteToggle",
+      "profiles": ["parts", "app"],
+      "codemod": "imports",
+      "verify": "tsc",
+      "note": "American spelling in every identifier; the British spelling is gone in 3.0"
+    },
+    {
+      "id": "page-use-favorite",
+      "kind": "renamed",
+      "from": "basalt-ui/page#useFavourite",
+      "to": "basalt-ui/page#useFavorite",
+      "profiles": ["parts", "app"],
+      "codemod": "imports",
+      "verify": "tsc",
+      "note": "American spelling in every identifier; the British spelling is gone in 3.0"
+    },
+    {
+      "id": "page-favoritetoggleprops",
+      "kind": "renamed",
+      "from": "basalt-ui/page#FavouriteToggleProps",
+      "to": "basalt-ui/page#FavoriteToggleProps",
+      "profiles": ["parts", "app"],
+      "codemod": "imports",
+      "verify": "tsc",
+      "note": "American spelling in every identifier; the British spelling is gone in 3.0"
+    },
+    {
+      "id": "page-favoriteentry",
+      "kind": "renamed",
+      "from": "basalt-ui/page#FavouriteEntry",
+      "to": "basalt-ui/page#FavoriteEntry",
+      "profiles": ["parts", "app"],
+      "codemod": "imports",
+      "verify": "tsc",
+      "note": "American spelling in every identifier; the British spelling is gone in 3.0"
+    },
+    {
+      "id": "page-favoriteinput",
+      "kind": "renamed",
+      "from": "basalt-ui/page#FavouriteInput",
+      "to": "basalt-ui/page#FavoriteInput",
+      "profiles": ["parts", "app"],
+      "codemod": "imports",
+      "verify": "tsc",
+      "note": "American spelling in every identifier; the British spelling is gone in 3.0"
+    },
+    {
+      "id": "page-favoritesstore",
+      "kind": "renamed",
+      "from": "basalt-ui/page#FavouritesStore",
+      "to": "basalt-ui/page#FavoritesStore",
+      "profiles": ["parts", "app"],
+      "codemod": "imports",
+      "verify": "tsc",
+      "note": "American spelling in every identifier; the British spelling is gone in 3.0"
+    },
+    {
+      "id": "page-pagebar-favorite",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/page#PageBar.favourite",
+      "to": "favorite",
+      "profiles": ["parts", "app"],
+      "codemod": "props",
+      "verify": "tsc",
+      "note": "American spelling in every identifier; the British spelling is gone in 3.0"
+    },
+    {
+      "id": "page-peek-favorite",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/page#Peek.favourite",
+      "to": "favorite",
+      "profiles": ["parts", "app"],
+      "codemod": "props",
+      "verify": "tsc",
+      "note": "American spelling in every identifier; the British spelling is gone in 3.0"
+    },
+    {
+      "id": "page-dock-favorite",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/page#Dock.favourite",
+      "to": "favorite",
+      "profiles": ["parts", "app"],
+      "codemod": "props",
+      "verify": "tsc",
+      "note": "American spelling in every identifier; the British spelling is gone in 3.0"
     },
     {
       "id": "page-innernav-usehref",

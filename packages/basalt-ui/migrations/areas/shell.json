@@ -137,6 +137,16 @@
       "note": "shutterflow ~12, obsidian"
     },
     {
+      "id": "shell-appshell-favorites",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/shell#AppShell.favourites",
+      "to": "favorites",
+      "profiles": ["app"],
+      "codemod": "props",
+      "verify": "tsc",
+      "note": "American spelling in every identifier; the British spelling is gone in 3.0"
+    },
+    {
       "id": "shell-nav-defined",
       "kind": "replace",
       "from": "AppShell nav as a hand-written object, AppShellProps<Id>",
@@ -148,8 +158,27 @@
     }
   ],
   "tokens": { "renamed": [], "valueShifts": [] },
-  "storage": [],
+  "storage": [
+    {
+      "key": "basalt:<storageKey>-favourites",
+      "action": "renamed",
+      "to": "basalt:<storageKey>-favorites"
+    }
+  ],
   "urls": [],
-  "attrs": [],
+  "attrs": [
+    {
+      "from": "data-favourite",
+      "to": "data-favorite"
+    },
+    {
+      "from": "data-slot=\"shell-rail-favourites\"",
+      "to": "data-slot=\"shell-rail-favorites\""
+    },
+    {
+      "from": "data-slot=\"shell-favourite-remove\"",
+      "to": "data-slot=\"shell-favorite-remove\""
+    }
+  ],
   "rules": []
 }
