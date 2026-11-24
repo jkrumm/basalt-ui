@@ -121,6 +121,9 @@
   [data-slot='table-root']:not([data-full-at], [data-look='grid']) [data-slot='table-expand'] {
     display: inline-flex;
   }
+  [data-slot='table-root'][data-phone='cards'] [data-slot='table-expand'] > button:focus-visible {
+    outline-offset: -2px !important;
+  }
   /* a virtual table's spacer rows span every column, so a hidden `<col>` would leave that column auto and
      take half of the flexible one: the virtual list keeps it as a zero-width column instead */
   [data-slot='table-root']:not([data-full-at], [data-look='grid'])
