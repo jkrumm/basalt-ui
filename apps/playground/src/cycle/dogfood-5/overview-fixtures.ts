@@ -6,10 +6,10 @@
  * Paused, Not started, Shipped this week) and the trend counts `WORK_TREND_KEYS`
  * (`apps/console/src/lib/flow.ts`). The Issues are cycle 1's, moved onto the new words. Pure data.
  */
-import { FLOW_ISSUES, FLOW_NOW } from '../dogfood-1/flow-fixtures'
-import type { FlowIssue } from '../dogfood-1/flow-fixtures'
+import { FLOW_ISSUES, FLOW_NOW } from './flow-fixtures'
+import type { FlowIssue } from './flow-fixtures'
 
-export { FLOW_NOW, ORIGIN_LABELS, ORIGINS } from '../dogfood-1/flow-fixtures'
+export { FLOW_NOW, ORIGIN_LABELS, ORIGINS } from './flow-fixtures'
 
 /** `STATE_KEYS`: the five words, then what closed lately. */
 export const WORK_STATES = ['running', 'paused', 'ready', 'held', 'checking', 'closed'] as const
