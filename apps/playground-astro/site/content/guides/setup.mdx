@@ -1,0 +1,29 @@
+---
+title: Set up the site
+description: Install basalt-ui on an Astro site and render the first page.
+date: 2026-11-01
+order: 1
+---
+
+A content site renders static HTML. Nothing hydrates until you ask it to.
+
+## Install
+
+Add the packages, then run the integration once.
+
+```sh
+bun add basalt-ui astro @astrojs/react react react-dom tailwindcss @tailwindcss/vite
+./node_modules/.bin/basalt-ui init --profile site
+```
+
+<SiteCallout tone="info" title="One line of config">
+  `integrations: [react(), basaltAstro()]` wires the sheet, the fonts and the head scripts.
+</SiteCallout>
+
+## Check the build
+
+A page with no island ships no module script.
+
+### What to look for
+
+The built HTML has no `type="module"` script and no `astro-island` element.

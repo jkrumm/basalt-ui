@@ -242,6 +242,8 @@ astro-matrix-run:
 	@bun --filter @basalt-ui/playground-astro build
 	@$(call slot,astro-matrix) bun apps/playground-astro/scripts/measure.ts $(if $(ASTRO_PARTS),--parts $(ASTRO_PARTS))
 	@bun apps/playground-astro/scripts/matrix.ts $(if $(filter 1,$(UPDATE)),--update $(if $(REASON),--reason "$(REASON)"))
+	@bun --filter @basalt-ui/playground-astro build:site
+	@$(call slot,astro-matrix) bun apps/playground-astro/scripts/site-pages.ts
 
 # The Astro matrix for the parts the branch's changes reach (BASE=<ref>, default origin/master; scripts/matrix-select.ts
 # --astro, the quality matrix's rule over the parts' demo modules, up to 24 parts): the package's build config, a token

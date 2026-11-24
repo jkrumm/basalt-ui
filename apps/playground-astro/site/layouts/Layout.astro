@@ -1,0 +1,29 @@
+---
+import BasaltFonts from 'basalt-ui/astro/BasaltFonts.astro'
+import SiteHead from 'basalt-ui/astro/SiteHead.astro'
+import type { SiteHeadProps } from 'basalt-ui/astro'
+import { SiteFooter, SiteHeader, ThemeSwitch } from 'basalt-ui/static'
+import { FOOTER, LABELS, navFor } from '../lib/site'
+
+interface Props extends SiteHeadProps {}
+
+const head = Astro.props
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <SiteHead {...head} headline={head.headline} siteName="Basalt site pages" locale="en_US" />
+    <BasaltFonts />
+  </head>
+  <body class="flex min-h-dvh flex-col bg-background text-foreground antialiased">
+    <SiteHeader links={navFor(Astro.url.pathname)} navLabel={LABELS.nav} menuLabel={LABELS.menu}>
+      <a slot="brand" href="/">Basalt site pages</a>
+      <ThemeSwitch slot="actions" label={LABELS.scheme} labels={LABELS.schemes} />
+    </SiteHeader>
+    <main class="flex-1"><slot /></main>
+    <SiteFooter groups={FOOTER}>
+      <span>The four page types of the site profile</span>
+    </SiteFooter>
+  </body>
+</html>
