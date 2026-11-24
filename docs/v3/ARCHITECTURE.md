@@ -273,7 +273,7 @@ export function Button({ variant, size, className, ...p }: ButtonProps): ReactEl
   phase={phase}
   delta={{ value: 378, polarity: 'up-good' }}
   controls={filterSlot([rangeSpec])}
-  chart={(box) => <Sparkline series={s} height={box.height} ariaLabel="Shipped per day" />}
+  chart={(box) => <Sparkline points={s} height={box.height} label="Shipped per day" />}
   footer={[
     { label: 'Open', value: 12 },
     { label: 'Merged', value: 4 },
