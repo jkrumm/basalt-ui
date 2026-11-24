@@ -594,3 +594,24 @@ describe('zones and roots', () => {
     }
   }, 120_000)
 })
+
+describe('the site profile reads a bare basalt-ui/static import as a component', () => {
+  it('no-restyle fires on a class given to a static part', () => {
+    const dir = join(tmp, 'site-bare')
+    copyFileSync(
+      join(PKG, 'configs/oxlint-site.json'),
+      join(tmp, 'node_modules/basalt-ui/configs/oxlint-site.json'),
+    )
+    write(
+      join(dir, '.oxlintrc.json'),
+      JSON.stringify({ extends: [`../${extend('site').slice(2)}`] }),
+    )
+    write(
+      join(dir, 'src/static.tsx'),
+      `import { SiteHero } from 'basalt-ui/static'\nexport const a = <SiteHero className="p-4" />\n`,
+    )
+    expect(lint(dir).map((d) => `${d.code}@${d.filename}`)).toContain(
+      'shadcn(no-restyle)@src/static.tsx',
+    )
+  })
+})
