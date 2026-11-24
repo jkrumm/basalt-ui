@@ -368,11 +368,15 @@ function blanketDisables(dir: string, roots: readonly string[], config: Config |
     })
 }
 
-/** `.oxlintrc.json` files under the declared roots (below the install root) that do not extend the preset. */
-function nestedConfigsWithoutPreset(dir: string, roots: readonly string[]): string[] {
+/** `.oxlintrc.json` files under the declared roots (below the install root), sorted. */
+function nestedConfigFiles(dir: string, roots: readonly string[]): string[] {
   const files = new Set(roots.flatMap((root) => filesUnder(dir, root, /^\.oxlintrc\.json$/)))
-  return [...files].toSorted().filter((file) => {
-    if (file === OXLINTRC) return false
+  return [...files].toSorted().filter((file) => file !== OXLINTRC)
+}
+
+/** The nested config files that do not extend the preset. */
+function nestedConfigsWithoutPreset(dir: string, roots: readonly string[]): string[] {
+  return nestedConfigFiles(dir, roots).filter((file) => {
     try {
       const config = parseJsonc(readFileSync(resolve(dir, file), 'utf8'))
       return !asStrings(config?.['extends']).some((p) => basename(p) === PRESET_FILE)
@@ -382,6 +386,35 @@ function nestedConfigsWithoutPreset(dir: string, roots: readonly string[]): stri
   })
 }
 
+/** The managed ids a config's rules and overrides set; `file` names the config when it is nested. */
+function managedHits(config: Config, file: string | null): string[] {
+  const at = (table: string) => (file === null ? table : `${file} ${table}`)
+  const tables: [string, unknown][] = [[at('rules'), config['rules']]]
+  const overrides = config['overrides']
+  if (Array.isArray(overrides)) {
+    overrides.forEach((o, i) =>
+      tables.push([at(`overrides[${i}].rules`), isRecord(o) ? o['rules'] : undefined]),
+    )
+  }
+  return tables.flatMap(([where, rules]) =>
+    isRecord(rules)
+      ? Object.keys(rules)
+          .filter(isManagedRuleId)
+          .map((id) => `${id} in ${where}`)
+      : [],
+  )
+}
+
+/** The managed ids a nested config sets; a file that does not parse is reported by its own check. */
+function nestedManagedHits(dir: string, file: string): string[] {
+  try {
+    const config = parseJsonc(readFileSync(resolve(dir, file), 'utf8'))
+    return config === null ? [] : managedHits(config, file)
+  } catch {
+    return []
+  }
+}
+
 function managedIds(
   config: Config | string,
   dir: string,
@@ -389,20 +422,10 @@ function managedIds(
 ): WeakenedResult {
   const result = verdict(3, 'managed-ids')
   if (typeof config === 'string') return result('failed', config)
-  const tables: [string, unknown][] = [['rules', config['rules']]]
-  const overrides = config['overrides']
-  if (Array.isArray(overrides)) {
-    overrides.forEach((o, i) =>
-      tables.push([`overrides[${i}].rules`, isRecord(o) ? o['rules'] : undefined]),
-    )
-  }
-  const hits = tables.flatMap(([where, rules]) =>
-    isRecord(rules)
-      ? Object.keys(rules)
-          .filter(isManagedRuleId)
-          .map((id) => `${id} in ${where}`)
-      : [],
-  )
+  const hits = [
+    ...managedHits(config, null),
+    ...nestedConfigFiles(dir, roots).flatMap((file) => nestedManagedHits(dir, file)),
+  ]
   const blanket = blanketDisables(dir, roots, config)
   const nested = nestedConfigsWithoutPreset(dir, roots)
   const styleIgnored = styleSheetsIgnored(dir, roots)
