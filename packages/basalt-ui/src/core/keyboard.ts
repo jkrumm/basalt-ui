@@ -53,6 +53,8 @@ export function useKeyboardInset(target: RefObject<HTMLElement | null>): void {
   useEffect(() => {
     const el = target.current
     if (el === null) return undefined
+    // a test DOM without `matchMedia` (the jsdom lane) has no pointer to read
+    if (typeof window.matchMedia !== 'function') return undefined
     const coarse = window.matchMedia('(pointer: coarse)')
     const visual = window.visualViewport
     let timer: ReturnType<typeof setTimeout> | undefined
