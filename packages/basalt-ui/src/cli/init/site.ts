@@ -18,7 +18,7 @@ export const SITE_LAYOUT = 'src/layouts/Layout.astro'
 
 const BASALT_ASTRO_IMPORT = "import { basaltAstro } from 'basalt-ui/astro'"
 const REACT_IMPORT = "import react from '@astrojs/react'"
-/** A whole import statement, one line or wrapped: through its `from '…'` (or bare specifier) and `;`. */
+/** A whole import statement with a `from`, one line or wrapped: through its `from '…'` and `;`. */
 const IMPORT_STATEMENT = /^import\b(?:[^'"]*?\bfrom\s*)?['"][^'"\n]+['"];?[ \t]*\n/gm
 
 function withImport(text: string, line: string): string {

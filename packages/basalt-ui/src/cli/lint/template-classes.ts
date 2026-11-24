@@ -42,7 +42,7 @@ function classStrings(text: string): { value: string; at: number }[] {
 }
 
 /** A fenced code block, blanked line by line so the lines after it keep their numbers. */
-const FENCE = /^(```|~~~)[\s\S]*?^\1/gm
+const FENCE = /^ {0,3}(```|~~~)[\s\S]*?^ {0,3}\1/gm
 const withoutFences = (text: string): string =>
   text.replace(FENCE, (block) => block.replace(/[^\n]/g, ' '))
 
