@@ -54,9 +54,7 @@ describe('number-field module', () => {
   test('the text input spans the row border to border (24 px at sm, 44 px coarse), steppers too', () => {
     const { getByLabelText, container } = render(<NumberField aria-label="Qty" />)
     expect(getByLabelText('Qty').className).toMatch(/(^| )-my-px( |$)/)
-    expect(container.querySelector('[data-slot="number-field"]')?.className).toContain(
-      'pointer-coarse:min-h-11',
-    )
+    expect(container.querySelector('[data-slot="number-field"]')?.className).toContain('h-ctl')
     expect(getByLabelText('Increase').className).toContain('after:-inset-y-px')
   })
 
