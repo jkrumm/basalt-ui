@@ -5,7 +5,7 @@
  */
 import { act, cleanup, fireEvent, render } from '@testing-library/react'
 import type { Move } from 'basalt-ui/cards'
-import type { DragData, DragLike } from 'basalt-ui/core/ports'
+import type { DragData, DragLike } from 'basalt-ui'
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { createElement } from 'react'
 import type { Col } from './board'

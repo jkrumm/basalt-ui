@@ -3,7 +3,7 @@
  * buttons carry, and the real data the choice controls list. Prefixed `-`, so the router and the
  * quality matrix skip it.
  */
-import type { FieldLike } from 'basalt-ui/core/ports'
+import type { FieldLike } from 'basalt-ui'
 import { useState } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 

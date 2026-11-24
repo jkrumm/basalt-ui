@@ -5,7 +5,7 @@
  * mounted inside `AppShell` (`routes/__root.tsx`) lists these beside every `defineNav` item and
  * binds their chords. `Mod+K` and `Mod+B` are the shell's own.
  */
-import { setScheme } from 'basalt-ui/core/scheme'
+import { setScheme } from 'basalt-ui'
 import { defineCommands } from 'basalt-ui/shell'
 import { Hand, Monitor, Moon, Sun, Terminal, Timer } from 'lucide-react'
 
