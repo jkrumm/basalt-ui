@@ -78,7 +78,8 @@ export const rows: readonly RowDef[] = [
     // 161800 -> 169000 (Issue 3102): 168504 B measured; the palette draws its rows and group headers through the list engine.
     // 169000 -> 181000 (Issue 3205): 180751 B measured; the two phone nav trial variants and the palette's phone sheet, lazy chunks this row counts and an app loads only when a variant is picked.
     // 181000 -> 185000 (Issue 3206): 184567 B measured; the shell's keyboard inset, the More surface's Sheet with Base UI's VirtualKeyboardProvider, a grabber and snap points.
-    ceiling: 185000,
+    // 185000 -> 182700 (Issue 3246): 182572 B measured; the section bar with its short drawer is the default and its tray variant is gone, so the raises of Issue 3205 ratchet back to what remains.
+    ceiling: 182700,
     measure: () => measureSource(reExportAll({ shell: 'shell/index' })),
   },
   {
@@ -92,7 +93,8 @@ export const rows: readonly RowDef[] = [
     // 31500 -> 31700 (Issue 3106): 31514 B measured; the shell it is measured over grew.
     // 31700 -> 39200 (Issue 3102): 38670 B measured; the list engine's rows, group headers and state rows.
     // 39200 -> 43500 (Issue 3205): 43289 B measured; the palette opens as a bottom sheet on a phone under a trial nav, a lazy chunk this row counts (inline it cost 13 KB more in every page's palette island, astro-matrix.json).
-    ceiling: 43500,
+    // 43500 -> 43800 (Issue 3246): 43736 B measured; the shell it is measured over lost the tray variant, so the palette's phone sheet is a larger share of the difference.
+    ceiling: 43800,
     measure: async () =>
       (await measureSource(`${SHELL_WITHOUT_PALETTE}\n${PALETTE}`)) -
       (await measureSource(SHELL_WITHOUT_PALETTE)),
@@ -184,6 +186,13 @@ export const raises: Raises = {
     },
   ],
   'shell-palette-marginal': [
+    {
+      from: 43500,
+      to: 43800,
+      consumer:
+        'the phone nav default (Issue 3246): the section bar with its short drawer is what every app gets, the tray variant is deleted, and the command palette still opens as a bottom sheet on a phone; the shell the marginal is measured over is smaller by the tray, so the same palette sheet reads larger',
+      repo: 'basalt-ui',
+    },
     {
       from: 39200,
       to: 43500,

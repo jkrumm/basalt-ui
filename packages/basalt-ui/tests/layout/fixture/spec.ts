@@ -339,8 +339,11 @@ export type FixtureSpec = {
   colorScheme?: 'light' | 'dark'
   /** Filler height in px above the `[data-testid="content-end"]` sentinel. */
   bodyHeight?: number
-  /** A trial phone nav (Issue 3205): `data-phone-nav` on `<html>`. Omitted: the shipped tab bar. */
-  phoneNav?: 'tray' | 'drawer'
+  /**
+   * The phone nav: `drawer` sets `data-phone-nav="drawer"`, `default` leaves the attribute off (what an app
+   * gets, the section bar), `tabs` opts into the tab bar. Omitted: `tabs`, which the tab-bar specs rely on.
+   */
+  phoneNav?: 'default' | 'drawer' | 'tabs'
   /** `--shell-safe-bottom` on `<html>` in px: the home indicator a headless browser never has. */
   safeBottom?: number
   /** A text field (`data-testid="field"`) after the filler, for the keyboard checks. */

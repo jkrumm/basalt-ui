@@ -1,5 +1,5 @@
 /**
- * What both trial variants share: their props (the tab bar's plus the shell's brand and search, which
+ * What the section bar's parts share: their props (the tab bar's plus the shell's brand and search, which
  * the rail behind More draws), the projection input read from the runtime, and the link a one-item
  * section slot renders.
  */

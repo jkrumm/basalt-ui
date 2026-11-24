@@ -1,8 +1,8 @@
 /**
- * The trial phone nav seam (Issue 3205), through behaviour and DOM: no variant picked renders the
- * shipped tab bar; both variants render a bar of SECTIONS with summed badges, open a section's short
- * list (a tray in A, a drawer in B), make a one-item section a link, reveal the rail behind More and
- * step out of the keyboard's way. Geometry (44 px, the home indicator, the bottom half, the field)
+ * The phone nav seam, through behaviour and DOM: the default renders the section bar, `tabs` the tab
+ * bar; the section bar shows SECTIONS with summed badges, opens a section's short drawer, makes a
+ * one-item section a link, reveals the rail behind More (search pinned at its foot) and steps out of
+ * the keyboard's way. Geometry (44 px, the home indicator, the bottom half, the field)
  * is `tests/layout/shell-phone-nav.layout.test.ts`.
  */
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
@@ -22,8 +22,9 @@ import type { CoreNavConfig, CoreNavItem, CoreNavSection } from '../../core/type
 import { PhoneNav } from './phone-nav'
 import type { PhoneNavProps } from './phone-nav'
 import { PHONE_NAV_ATTRIBUTE, readPhoneNav } from './variant'
-import { raisesKeyboard } from './variants/chrome-state'
-import { barModel } from './variants/model'
+import { raisesKeyboard } from './section-nav/chrome-state'
+import { barModel } from './section-nav/model'
+import { drawerSizes } from './section-nav/snaps'
 
 function item(id: string, extra: Record<string, unknown> = {}): CoreNavItem {
   const label = id.slice(0, 1).toUpperCase() + id.slice(1)
@@ -67,7 +68,11 @@ const BADGES = {
   old: { count: 1 },
 } as const
 
+type Happy = { happyDOM: { setViewport(size: { width: number; height: number }): void } }
+
 async function mount(variant: PhoneNavProps['variant']): Promise<void> {
+  // A phone: the More sidebar is drawn only below 840 px, where the rail is not on screen.
+  ;(window as unknown as Happy).happyDOM.setViewport({ width: 390, height: 844 })
   const runtime = createNavRuntimeDouble(NAV, 'home')
   const rootRoute = createRootRoute({
     component: () => (
@@ -111,22 +116,54 @@ async function found(name: string): Promise<HTMLElement> {
 
 afterEach(() => {
   cleanup()
+  ;(window as unknown as Happy).happyDOM.setViewport({ width: 1024, height: 768 })
   document.documentElement.removeAttribute(PHONE_NAV_ATTRIBUTE)
 })
 
-describe('the variant pick', () => {
-  test('reads the attribute on <html>, and anything unknown is the shipped bar', () => {
+describe('the phone nav pick', () => {
+  test('the section bar is the default; only "tabs" on <html> opts into the tab bar', () => {
+    expect(readPhoneNav()).toBe('drawer')
+    document.documentElement.setAttribute(PHONE_NAV_ATTRIBUTE, 'tabs')
     expect(readPhoneNav()).toBe('tabs')
     document.documentElement.setAttribute(PHONE_NAV_ATTRIBUTE, 'tray')
-    expect(readPhoneNav()).toBe('tray')
-    document.documentElement.setAttribute(PHONE_NAV_ATTRIBUTE, 'dock')
-    expect(readPhoneNav()).toBe('tabs')
+    expect(readPhoneNav()).toBe('drawer')
   })
 
-  test('no variant renders the shipped tab bar and nothing of the variants', async () => {
+  test('the tab bar renders on its own, with nothing of the section bar', async () => {
     await mount('tabs')
     await found('shell-tab-bar')
     expect(slot('shell-phone-bar')).toBeNull()
+  })
+})
+
+describe('the drawer sizes', () => {
+  // A 390x844 phone: 99 px of bar (64 + seam + 34 home indicator), so 745 px above it.
+  const phone = { area: 745, bar: 99 }
+
+  test('a list that fits above the middle of the screen has one rest', () => {
+    const sizes = drawerSizes({ ...phone, natural: 240 })
+    expect(sizes).toMatchObject({ short: 240, tall: 240, snaps: false })
+  })
+
+  test('a longer list rests short at the middle of the screen and tall at 85 % of it', () => {
+    const sizes = drawerSizes({ ...phone, natural: 900 })
+    if (sizes === null) throw new Error('no sizes')
+    expect(sizes.snaps).toBe(true)
+    // The drawer's top at the short rest is at or below half of the 844 px screen.
+    expect(phone.area - sizes.short).toBeGreaterThanOrEqual(422)
+    // The tall rest is 85 % of the screen from its bottom edge, the bar included.
+    expect(sizes.tall + phone.bar).toBeLessThanOrEqual(0.85 * 844 + 1)
+    expect(sizes.popup).toBe(sizes.tall)
+  })
+
+  test('a list a few px over the short height rests whole, not clipped', () => {
+    const sizes = drawerSizes({ ...phone, natural: 330 })
+    expect(sizes).toMatchObject({ short: 330, tall: 330, snaps: false })
+  })
+
+  test('nothing is sized before the rows are measured', () => {
+    expect(drawerSizes({ ...phone, natural: 0 })).toBeNull()
+    expect(drawerSizes({ area: 0, bar: 0, natural: 300 })).toBeNull()
   })
 })
 
@@ -176,10 +213,7 @@ describe('the keyboard signal', () => {
   })
 })
 
-describe.each([
-  ['tray', 'shell-phone-tray'],
-  ['drawer', 'shell-phone-sheet'],
-] as const)('variant %s', (variant, list) => {
+describe.each([['drawer', 'shell-phone-sheet']] as const)('section bar (%s)', (variant, list) => {
   test('the bar carries the summed count, and the name says it', async () => {
     await mount(variant)
     const bar = await found('shell-phone-bar')
@@ -232,5 +266,20 @@ describe.each([
     act(() => field.blur())
     await waitFor(() => expect(host.hasAttribute('data-hidden')).toBe(false))
     field.remove()
+  })
+
+  test("another section cross-fades the drawer's rows in place", async () => {
+    await mount(variant)
+    await found('shell-phone-bar')
+    fireEvent.click(screen.getByRole('button', { name: 'Main, 6' }))
+    await waitFor(() => expect(slot(list)?.textContent ?? '').toContain('Reports'))
+    fireEvent.click(screen.getByRole('button', { name: 'Ops, new' }))
+    await waitFor(() => expect(slot(list)?.textContent ?? '').toContain('Alerts'))
+    // The rows that were there cross-fade out in an inert layer; the live rows are the new section's.
+    const ghost = slot(list)?.querySelector('[inert][aria-hidden="true"]')
+    expect(ghost?.textContent ?? '').toContain('Reports')
+    expect(ghost?.textContent ?? '').not.toContain('Alerts')
+    await waitFor(() => expect(slot(list)?.querySelector('[inert]') === null).toBe(true))
+    expect(slot(list)?.textContent).not.toContain('Reports')
   })
 })

@@ -67,12 +67,12 @@ afterEach(() => {
 })
 
 describe('AppShell on the server', () => {
-  test('renders the rail and the tab bar stubs, the skip link and one main', async () => {
+  test('renders the rail and the section bar, the skip link and one main', async () => {
     const router = makeRouter()
     await router.load()
     const html = renderToString(<RouterProvider router={router} />)
     expect(html).toContain('data-slot="shell-rail"')
-    expect(html).toContain('data-slot="shell-tab-bar"')
+    expect(html).toContain('data-slot="shell-phone-bar"')
     expect(html).toContain('data-slot="shell-skip"')
     expect(html.match(/<main/g)).toHaveLength(1)
     expect(html).toContain('data-rail="auto"')
@@ -170,7 +170,7 @@ describe('AppShell in the client', () => {
       'shell-main',
       'shell-aside',
       'shell-rail',
-      'shell-tab-bar',
+      'shell-phone-bar',
     ]) {
       expect(document.querySelector(`[data-slot="${name}"]`), name).not.toBeNull()
     }

@@ -23,7 +23,7 @@ import { defaultRank } from './rank'
 import type { PaletteItem, RankFn } from './rank'
 import { ShortcutOverlay } from './shortcut-overlay'
 
-/** The palette as a bottom sheet, loaded only when a trial phone nav opens it on a phone. */
+/** The palette as a bottom sheet, loaded only when the section bar opens it on a phone. */
 const LazyPaletteSheet = lazy(async () => ({
   default: (await import('./palette-sheet')).PaletteSheet,
 }))
@@ -212,7 +212,7 @@ export function CommandPalette({
     </div>
   )
 
-  // A trial phone nav (Issue 3205) opens search as a bottom sheet on a phone: the input sits at its
+  // The section bar opens search as a bottom sheet on a phone: the input sits at its
   // top, above the keyboard, and the rows scroll under it.
   if (phoneSheet) {
     return (
