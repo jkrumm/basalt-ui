@@ -35,6 +35,14 @@ export const PARTS: readonly PartEntry[] = [
     why: 'the scroll-spy marks the current section with JS',
   },
   {
+    id: 'site-header',
+    family: 'content',
+    module: 'content/site-header',
+    covers: ['SiteHeader'],
+    interaction: 'none',
+    why: 'the panels are native popovers placed by CSS and the bar is the whole static picture; no component script',
+  },
+  {
     id: 'callout',
     family: 'content',
     module: 'content/callout',
