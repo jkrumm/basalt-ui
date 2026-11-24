@@ -1,7 +1,7 @@
 /**
- * The fact count of a page's `.tsx` files: a TypeScript port of the shell pipeline in
- * `agent/skills/basalt-design/references/copy.md` (rg | perl | sed | perl | awk | sort), stage by stage,
- * so the same files give the same counts. `facts.test.ts` pins the output of the original pipeline.
+ * The fact count of a page's `.tsx` files: a TypeScript port, stage by stage, of the shell pipeline the
+ * design skill's copy reference used to carry (rg | perl | sed | perl | awk | sort), so the same files
+ * give the same counts. `facts.test.ts` pins the output that pipeline printed.
  *
  * A viewer string is JSX text, or a quoted or template string that holds a space or starts with a capital.
  * `${…}` is a `#` placeholder, a `${UPPER_CASE}` a use of that constant, and a `const` string read in
