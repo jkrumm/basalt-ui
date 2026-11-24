@@ -24,7 +24,7 @@ owns the `?dock=` address, the click that swaps its record and the pin from a `P
 ## Signature
 
 ```ts
-Dock({ title, tag, fullPage, favorite, onClose, icon, avatar, actions, records, footer, children, }: DockProps): ReactElement | null
+Dock({ title, tag, fullPage, favorite, onClose, icon, avatar, actions, records, footer, present, children, }: DockProps): ReactElement | null
   title: string  // The accessible name and the visible heading: what is shown (`Issue 12`)
   tag?: string  // A short mono tag before the title (`#12`), for what the heading does not say
   fullPage?: string | NavTarget  // The record's own page
@@ -35,6 +35,7 @@ Dock({ title, tag, fullPage, favorite, onClose, icon, avatar, actions, records, 
   actions?: PanelActions  // The record's own actions, data like `PageBar` actions: the first two in the header, the rest in its More menu (a third alone stays inline)
   records?: RecordSequence  // The opener's records: previous and next in the header, ArrowUp and ArrowDown on the panel
   footer?: ReactNode  // A band under the body for a form's actions
+  present?: OverlayPresent  // How the panel opens: `auto` is a bottom sheet that rests at half height and drags to full on a phone (compact width, coarse pointer), the side panel elsewhere; `popup` and `sheet` force one
   children?: ReactNode
 ```
 
