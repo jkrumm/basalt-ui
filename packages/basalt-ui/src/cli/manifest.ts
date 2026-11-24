@@ -2,6 +2,9 @@
  * The v3 consumer manifest, `.basalt/manifest.json` (docs/v3/ARCHITECTURE.md section 2): the one
  * reader and writer. A leaf module, so sync, init, doctor and eject can all depend on it.
  * `managed` is the E1 ledger: sha256 of the raw bytes `sync` last wrote per managed agent file.
+ * The file carries `format`: a file without one is format 0, a newer one is refused, and `sync`
+ * rewrites an older one through `MIGRATIONS` (one step per format, each a pure function of the raw
+ * object), so a later release can change a key's shape and every install follows on its next sync.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
@@ -40,10 +43,27 @@ export type Manifest = {
   rest: Record<string, unknown>
 }
 
-export type ManifestRead = { manifest: Manifest } | { error: string }
+/** The format this version writes. */
+export const MANIFEST_FORMAT = 1
+
+/** `MIGRATIONS[n]` lifts a raw format-n manifest to format n + 1. 0 -> 1 only adds the field. */
+const MIGRATIONS: readonly ((raw: Record<string, unknown>) => Record<string, unknown>)[] = [
+  (raw) => raw,
+]
+
+/** `format` is the one the file was written in; `manifest` is already lifted to the current one. */
+export type ManifestRead = { manifest: Manifest; format: number } | { error: string }
+
+/**
+ * The keys the CLI writes: `init`, `sync` and `eject` own them, and the pre-edit guard refuses a
+ * hand edit that changes one. Every other key is the consumer's to edit: `profile`, `roots`,
+ * `bespoke`, `deepRender`, `authoredContent`, `viewports`, `classPrefixes`, `tokens`, `extra`.
+ */
+export const CLI_OWNED_KEYS = ['format', 'version', 'managed', 'ejected', 'sibling'] as const
 
 const LISTS = ['deepRender', 'authoredContent', 'viewports', 'classPrefixes', 'bespoke'] as const
 const KNOWN = [
+  'format',
   'profile',
   'version',
   'roots',
@@ -79,13 +99,24 @@ const isTokenOutput = (v: unknown): v is TokenOutput =>
 /** Parses manifest text; an `error` names the first thing wrong. */
 export function parseManifest(text: string): ManifestRead {
   const bad = (why: string): ManifestRead => ({ error: `${MANIFEST_PATH}: ${why}` })
-  let raw: unknown
+  let parsed: unknown
   try {
-    raw = JSON.parse(text)
+    parsed = JSON.parse(text)
   } catch {
     return bad('not valid JSON')
   }
-  if (!isRecord(raw)) return bad('must be a JSON object')
+  if (!isRecord(parsed)) return bad('must be a JSON object')
+  let raw = parsed
+  const format = raw['format'] ?? 0
+  if (!Number.isInteger(format) || (format as number) < 0) {
+    return bad('`format` must be a non-negative integer')
+  }
+  if ((format as number) > MANIFEST_FORMAT) {
+    return bad(
+      `format ${String(format)} is newer than this basalt-ui reads (${MANIFEST_FORMAT}); upgrade basalt-ui`,
+    )
+  }
+  for (const step of MIGRATIONS.slice(format as number, MANIFEST_FORMAT)) raw = step(raw)
   const {
     profile,
     version = '',
@@ -132,6 +163,7 @@ export function parseManifest(text: string): ManifestRead {
   }
 
   return {
+    format: format as number,
     manifest: {
       profile,
       version,
@@ -159,6 +191,7 @@ export function serializeManifest(m: Manifest): string {
   const { profile, version, deepRender, authoredContent, viewports, tokens, extra, sibling, rest } =
     m
   const body = {
+    format: MANIFEST_FORMAT,
     profile,
     version,
     roots: sorted(m.roots),

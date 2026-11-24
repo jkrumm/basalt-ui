@@ -2,10 +2,15 @@
  * The consumer budget, `.basalt/budget.json` (docs/v3/ARCHITECTURE.md section 2, guardrails
  * section 9): the one schema, reader, writer and base-ref ratchet. `init` seeds it, `lint` and
  * `doctor` read and count it, the migration PR lands the counted waivers and escapes into it.
- * Nothing here is a verb. A ceiling only goes up through a raise row naming a consumer (G1):
- * `eject --raise` for `ejects` and `adopted`, `lint --raise <field> --consumer` for `waivers` and
- * `escapes` (`raiseCeiling`). `landBudget` never writes `ejects`, `adopted`, `raises` or `profileFloor`.
+ * Nothing here is a verb. `waivers` is a record that follows the count: a full `lint` writes it, so
+ * a new waiver shows in the diff of this file and the base-ref ratchet names the growth. `ejects`
+ * and `escapes` are ceilings that only go up through a raise row naming a consumer (G1):
+ * `eject --raise` for `ejects` and `adopted`, `lint --raise escapes --consumer` for `escapes`
+ * (`raiseCeiling`). `landBudget` never writes `ejects`, `adopted`, `raises` or `profileFloor`.
+ * The file carries `format`; an older format is rewritten by `sync`, and keys this version does
+ * not know are kept (`rest`), so a newer budget survives an older CLI.
  */
+import { spawnSync } from 'node:child_process'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 
@@ -14,8 +19,11 @@ import type { Profile } from '../manifest'
 
 export const BUDGET_PATH = '.basalt/budget.json'
 
-/** The ceilings `lint` fails above. `adopted` is a record, not a ceiling. */
-export const CEILINGS = ['ejects', 'waivers', 'escapes'] as const
+/** The format this version writes; a file without the field is format 0. */
+export const BUDGET_FORMAT = 1
+
+/** The ceilings `lint` fails above. `adopted` and `waivers` are records, not ceilings. */
+export const CEILINGS = ['ejects', 'escapes'] as const
 export type Ceiling = (typeof CEILINGS)[number]
 
 export type Budget = {
@@ -26,18 +34,20 @@ export type Budget = {
   profileFloor: Profile
   /** Written by `eject --raise` and `lint --raise` only (G1): `{ field, from, to, consumer }`. */
   raises: Record<string, unknown>[]
+  /** Fields this version does not know, kept so a newer budget survives an older CLI. */
+  rest?: Record<string, unknown>
 }
 
 /** What a lint or doctor run counted; a ceiling whose count is absent is not checked. */
-export type BudgetCounts = Partial<Record<Ceiling, number>>
+export type BudgetCounts = Partial<Record<Ceiling | 'waivers', number>>
 
 export type Breach = { name: Ceiling; count: number; ceiling: number }
 
-export type BudgetRead = { budget: Budget } | { error: string }
+export type BudgetRead = { budget: Budget; format?: number } | { error: string }
 
 const SEED = { ejects: 3, adopted: 0, waivers: 0, escapes: 3 } as const
 
-/** The section 2 defaults for a profile: three ejects and three escapes, no waivers. */
+/** The section 2 defaults for a profile: three ejects and three escapes, no waivers yet. */
 export function seedBudget(profile: Profile): Budget {
   return { ...SEED, profileFloor: profile, raises: [] }
 }
@@ -45,6 +55,8 @@ export function seedBudget(profile: Profile): Budget {
 const isRecord = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v)
 const isCount = (v: unknown): v is number => Number.isInteger(v) && (v as number) >= 0
+
+const KEYS = ['ejects', 'adopted', 'waivers', 'escapes', 'profileFloor', 'raises'] as const
 
 const bad = (why: string): BudgetRead => ({ error: `${BUDGET_PATH}: ${why}` })
 
@@ -57,6 +69,13 @@ export function parseBudget(text: string): BudgetRead {
     return bad('not valid JSON')
   }
   if (!isRecord(raw)) return bad('must be a JSON object')
+  const format = raw['format'] ?? 0
+  if (!isCount(format)) return bad('`format` must be a non-negative integer')
+  if (format > BUDGET_FORMAT) {
+    return bad(
+      `format ${format} is newer than this basalt-ui reads (${BUDGET_FORMAT}); upgrade basalt-ui`,
+    )
+  }
   for (const key of ['ejects', 'adopted', 'waivers', 'escapes'] as const) {
     if (!(key in raw)) return bad(`missing \`${key}\``)
     if (!isCount(raw[key])) return bad(`\`${key}\` must be a non-negative integer`)
@@ -68,7 +87,10 @@ export function parseBudget(text: string): BudgetRead {
   if (!Array.isArray(raises) || !raises.every(isRecord)) {
     return bad('`raises` must be an array of objects')
   }
+  const known = new Set(['format', ...KEYS])
+  const rest = Object.fromEntries(Object.entries(raw).filter(([key]) => !known.has(key)))
   return {
+    format,
     budget: {
       ejects: ejects as number,
       adopted: adopted as number,
@@ -76,14 +98,25 @@ export function parseBudget(text: string): BudgetRead {
       escapes: escapes as number,
       profileFloor: profileFloor as Profile,
       raises,
+      ...(Object.keys(rest).length > 0 ? { rest } : {}),
     },
   }
 }
 
-/** The canonical bytes: fixed key order, two-space indent, one trailing newline. */
+/** The canonical bytes: `format` first, fixed key order, unknown keys last, two-space indent, one trailing newline. */
 export function serializeBudget(b: Budget): string {
-  const { ejects, adopted, waivers, escapes, profileFloor, raises } = b
-  return `${JSON.stringify({ ejects, adopted, waivers, escapes, profileFloor, raises }, null, 2)}\n`
+  const { ejects, adopted, waivers, escapes, profileFloor, raises, rest } = b
+  const body = {
+    format: BUDGET_FORMAT,
+    ejects,
+    adopted,
+    waivers,
+    escapes,
+    profileFloor,
+    raises,
+    ...rest,
+  }
+  return `${JSON.stringify(body, null, 2)}\n`
 }
 
 /** `<dir>/.basalt/budget.json` parsed; a missing file is an error too, never a default. */
@@ -103,8 +136,8 @@ export function writeBudget(dir: string, budget: Budget): void {
   writeFileSync(path, serializeBudget(budget), 'utf8')
 }
 
-/** The ceilings `lint --raise` lifts; `ejects` has `eject --raise`, which counts what it ejects. */
-export const LINT_RAISABLE = ['waivers', 'escapes'] as const
+/** The ceiling `lint --raise` lifts; `ejects` has `eject --raise`, which counts what it ejects, and `waivers` follows the count. */
+export const LINT_RAISABLE = ['escapes'] as const
 export type LintRaisable = (typeof LINT_RAISABLE)[number]
 
 /** The command that lifts one ceiling: the text a breach message hands the reader. */
@@ -116,7 +149,7 @@ export function raiseCommand(field: string): string {
 
 /**
  * Lifts `field` to the counted figure and appends one `raises` row naming the consumer: the one way
- * `waivers` and `escapes` go up. Nothing is written when the count is within the ceiling or the
+ * `escapes` goes up. Nothing is written when the count is within the ceiling or the
  * consumer is not one non-empty line.
  */
 export function raiseCeiling({
@@ -171,18 +204,21 @@ export function countBreaches(budget: Budget, counts: BudgetCounts): Breach[] {
  */
 function readBase(dir: string, baseRef: string): string | null | { error: string } {
   const git = (...args: string[]) =>
-    Bun.spawnSync(['git', '-C', dir, ...args], { stderr: 'ignore' })
-  if (git('rev-parse', '--verify', '--quiet', `${baseRef}^{commit}`).exitCode !== 0) {
+    spawnSync('git', ['-C', dir, ...args], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    })
+  if (git('rev-parse', '--verify', '--quiet', `${baseRef}^{commit}`).status !== 0) {
     return { error: `${BUDGET_PATH}: base ref \`${baseRef}\` does not resolve; fetch it first` }
   }
   const shown = git('show', `${baseRef}:./${BUDGET_PATH}`)
-  return shown.exitCode === 0 ? shown.stdout.toString() : null
+  return shown.status === 0 ? shown.stdout : null
 }
 
 /**
- * Writes the counted `waivers` and `escapes` into `<dir>/.basalt/budget.json`. With no copy at
- * `baseRef` (the migration PR) any count lands; with one, a count above it is refused, the error
- * names `eject --raise`, and nothing is written.
+ * Writes the counted `waivers` and `escapes` into `<dir>/.basalt/budget.json`. `waivers` always
+ * lands: it follows the count. With no copy at `baseRef` (the migration PR) any escape count lands;
+ * with one, an escape count above it is refused, the error names the raise, and nothing is written.
  */
 export function landBudget({
   counts,
@@ -205,7 +241,7 @@ export function landBudget({
   if (baseText !== null) {
     const base = parseBudget(baseText)
     if ('error' in base) return { error: `${baseRef}: ${base.error}` }
-    const above = (['waivers', 'escapes'] as const).filter((k) => counts[k] > base.budget[k])
+    const above = (['escapes'] as const).filter((k) => counts[k] > base.budget[k])
     if (above.length > 0) {
       const lines = above.map((k) => `${k} ${counts[k]} > ${base.budget[k]} at ${baseRef}`)
       return {
@@ -217,4 +253,23 @@ export function landBudget({
   const budget = { ...current.budget, waivers, escapes }
   writeBudget(dir, budget)
   return { budget }
+}
+
+/**
+ * Records the counted waivers when they differ from the file: the ceiling follows the count, so the
+ * change shows in the diff. Null when nothing changed or there is no budget to write.
+ */
+export function followWaivers(dir: string, count: number): { from: number; to: number } | null {
+  const current = readBudget(dir)
+  if ('error' in current || current.budget.waivers === count) return null
+  writeBudget(dir, { ...current.budget, waivers: count })
+  return { from: current.budget.waivers, to: count }
+}
+
+/** Rewrites a budget of an older format in the current one; true when it wrote. */
+export function migrateBudget(dir: string): boolean {
+  const current = readBudget(dir)
+  if ('error' in current || (current.format ?? BUDGET_FORMAT) >= BUDGET_FORMAT) return false
+  writeBudget(dir, current.budget)
+  return true
 }

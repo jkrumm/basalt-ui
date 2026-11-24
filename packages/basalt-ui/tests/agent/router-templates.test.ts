@@ -19,7 +19,7 @@ import {
 } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
-import { managedFiles } from '../../src/cli'
+import { seedPlan } from '../../src/cli/init/router-seeds'
 import { cleanupTrees, makeTree, runCheck } from '../../src/cli/doctor/fixture.test'
 
 afterEach(cleanupTrees)
@@ -141,12 +141,8 @@ describe('router templates', () => {
   })
 
   test('init seeds every template to the destination the others import from', () => {
-    const seeds = new Map(managedFiles().map((f) => [f.source, f]))
-    for (const [tpl, dest] of Object.entries(SEEDS)) {
-      const file = seeds.get(`agent/templates/${tpl}`)
-      expect(file?.dest, tpl).toBe(dest)
-      expect(file?.mode, tpl).toBe('seed')
-    }
+    const seeds = new Map(seedPlan('', false).map(([, dest, tpl]) => [tpl, dest]))
+    for (const [tpl, dest] of Object.entries(SEEDS)) expect(seeds.get(tpl), tpl).toBe(dest)
   })
 
   test('the start page is the `/` route under the layout and is a Page', () => {

@@ -59,14 +59,17 @@ describe('check 11: budgets, ejects, weakened config, DESIGN.md', () => {
     expect((await runCheck(healthy(), 11)).status).toBe('pass')
   })
 
-  it('fails when a waiver count is above the budget', async () => {
+  it('fails when the counted waivers outgrow the record, naming lint, in either spelling', async () => {
     const dir = healthy('app', {
       'src/page.tsx':
-        '// oxlint-disable-next-line basalt/colour-literal -- why\nexport const a = 1\n',
+        '// oxlint-disable-next-line basalt/colour-literal -- why\nexport const a = 1\n' +
+        '// eslint-disable-next-line basalt/colour-literal -- why\nexport const b = 1\n',
     })
     const r = await runCheck(dir, 11)
     expect(r.status).toBe('fail')
-    expect(r.detail).toContain('1 waiver is above the ceiling 0')
+    expect(r.detail).toContain(
+      '2 waivers are counted, .basalt/budget.json records 0: run `basalt-ui lint`',
+    )
   })
 
   it('fails when escapes pass the ceiling', async () => {

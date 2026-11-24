@@ -13,6 +13,7 @@ import {
   BUDGET_PATH,
   countBreaches,
   countedFigure,
+  followWaivers,
   landBudget,
   LINT_RAISABLE,
   raiseCeiling,
@@ -21,6 +22,7 @@ import {
 } from '../budget'
 import type { LintRaisable } from '../budget'
 import { noteRelocation, resolveProjectDir } from '../index'
+import { installAllCommand } from '../package-manager'
 import { changedFiles, defaultBaseRef, inRoots, loadProject, rootFiles, scan } from './engine'
 import type { Finding, Project } from './engine'
 import { capFindings, HOOK_EVENTS, runHookEvent } from './hook'
@@ -39,7 +41,6 @@ export const LINT_OPTIONS = {
   hook: { type: 'string' },
 } as const
 
-const FIX = 'Run bun install, then basalt-ui doctor.'
 const plural = (n: number, word: string): string => `${n} ${word}${n === 1 ? '' : 's'}`
 
 /** True when argv asks for hook mode, in either spelling. */
@@ -48,7 +49,8 @@ export const isHookCall = (flags: readonly string[]): boolean =>
 
 /** The hook entry: every failure is exit 2 with a line naming the fix, never a pass. */
 function lintHook(flags: readonly string[], cwd: string): number {
-  const fail = (why: string): number => (console.error(`basalt hook: ${why}. ${FIX}`), 2)
+  const fix = `Run ${installAllCommand(cwd)}, then basalt-ui doctor.`
+  const fail = (why: string): number => (console.error(`basalt hook: ${why}. ${fix}`), 2)
   let event: string | undefined
   try {
     event = parseArgs({ args: [...flags], options: LINT_OPTIONS, strict: true }).values.hook
@@ -173,6 +175,12 @@ export function lint(flags: readonly string[], invocationCwd: string): number {
     if (values['write-budget'] === true) return writeBudget(project, stats.counts)
   }
   if (budget !== null && 'error' in budget) return fail(budget.error)
+  const followed = budget === null ? null : followWaivers(project.root, stats.counts.waivers)
+  if (followed !== null) {
+    say(
+      `${BUDGET_PATH}: waivers ${followed.from} -> ${followed.to}, recorded (the waiver count is a record: commit it, the diff shows the change)`,
+    )
+  }
   const breaches = budget === null ? [] : countBreaches(budget.budget, stats.counts)
   for (const b of breaches) {
     say(
@@ -204,6 +212,9 @@ function writeBudget(project: Project, counts: Counts): number {
 function raise(project: Project, field: string | undefined, consumer: string | undefined): number {
   const fail = (why: string): number => (console.error(`✖ basalt-ui lint: ${why}`), 1)
   if (field === 'ejects') return fail(`ejects go up with ${raiseCommand('ejects')}`)
+  if (field === 'waivers') {
+    return fail('waivers has no ceiling to raise: a full `basalt-ui lint` records the count')
+  }
   if (!(LINT_RAISABLE as readonly string[]).includes(field ?? '')) {
     return fail(`--raise takes ${LINT_RAISABLE.join(' or ')}, got "${field ?? ''}"`)
   }

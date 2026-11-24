@@ -400,7 +400,7 @@ describe('the manifest', () => {
     expect(after.viewports).toEqual(['1800x1200'])
     expect(after.rest).toEqual({ futureField: { a: 1 } })
     expect(Object.keys(after.managed)).toContain('.claude/rules/basalt-tokens.md')
-    expect(parseManifest(serializeManifest(after))).toEqual({ manifest: after })
+    expect(parseManifest(serializeManifest(after))).toEqual({ manifest: after, format: 1 })
   })
 
   it('records the digest of the raw bytes it wrote', () => {

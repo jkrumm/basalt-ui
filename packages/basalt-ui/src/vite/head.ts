@@ -7,6 +7,7 @@
  */
 import type { HtmlTagDescriptor, Plugin } from 'vite'
 
+import { addCommand } from '../cli/package-manager'
 import { themeScript } from '../css/theme-script'
 import type { ThemeScriptOptions } from '../css/theme-script'
 import { deriveV3 } from '../tokens/derive'
@@ -284,7 +285,7 @@ export async function serviceWorkerPlugins(
     // oxlint-disable-next-line no-console -- a build-time notice has no other channel
     console.warn(
       '[basalt-ui] serviceWorker needs the optional peer vite-plugin-pwa; skipping the service ' +
-        'worker. Run: bun add -D vite-plugin-pwa workbox-build workbox-window',
+        `worker. Run: ${addCommand(process.cwd(), ['vite-plugin-pwa', 'workbox-build', 'workbox-window']).join(' ')}`,
     )
     return false
   }

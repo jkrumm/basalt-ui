@@ -106,7 +106,7 @@ describe('check 2: installed against declared version', () => {
     editManifest(dir, (m) => void (m.version = '2.0.0'))
     const r = await runCheck(dir, 2)
     expect(r.status).toBe('fail')
-    expect(r.detail).toContain('bun install')
+    expect(r.detail).toContain('run `npm install`, then `basalt-ui sync`')
   })
 
   it('fails when basalt-ui is not installed', async () => {
@@ -178,7 +178,7 @@ describe('check 3: peers and ai-major-parity', () => {
     expect(bad.status).toBe('fail')
     expect(bad.detail).toContain('@tanstack/react-table 9.2.8')
     expect(bad.detail).toContain('9.3.1')
-    expect(bad.detail).toContain('bun add @tanstack/react-table@~9.3.1')
+    expect(bad.detail).toContain('npm install --save --save-exact @tanstack/react-table@~9.3.1')
     expect((await runCheck(makeTree('app', withTable('9.3.1')), 3)).status).toBe('pass')
   })
 
@@ -191,7 +191,7 @@ describe('check 3: peers and ai-major-parity', () => {
     )
     expect(r.status).toBe('fail')
     expect(r.detail).toContain('tailwindcss 4.9.0')
-    expect(r.detail).toContain('bun add tailwindcss@4.3.5')
+    expect(r.detail).toContain('npm install --save --save-exact tailwindcss@4.3.5')
   })
 
   it('fails when a declared peer is not installed', async () => {

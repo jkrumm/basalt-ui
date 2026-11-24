@@ -1,34 +1,21 @@
 /**
- * Checks 10-11: the committed token sheets and the guard budgets. Check 10 re-runs `tokens:css`
- * with each recorded flag set; check 11 counts ejects, waivers and escapes against
+ * Checks 10-11: the committed token sheets and the guard budgets. Check 10 renders each recorded
+ * flag set the way `sync` does and compares the bytes; check 11 counts ejects, waivers and escapes against
  * `.basalt/budget.json`, verifies the ejected files, runs the weakened-config check from the
  * guardrail concept and reads DESIGN.md.
  */
 import { checkWeakenedConfig, defaultBaseRef } from '../../lint/weakened'
 import type { WeakenedResult } from '../../lint/weakened'
 import { BUDGET_PATH, countBreaches, countedFigure, raiseCommand, readBudget } from '../budget'
-import { tokensCss } from '../tokens-css'
+import { rootFiles as lintFiles } from '../lint/engine'
+import { countSource } from '../lint/stats'
+import { readFrameworkVersion } from '../index'
+import { MANIFEST_PATH } from '../manifest'
+import { renderTokens } from '../tokens-css'
 import { ejectFindings } from './eject'
 import { OXLINT_PRESET } from './wiring'
-import { fail, lintRoots, need, pass, readJson, readText, rootFiles, verdictOf } from './types'
+import { fail, lintRoots, need, pass, readJson, readText, rootsOf, verdictOf } from './types'
 import type { Check, Ctx, Outcome } from './types'
-
-/** `tokensCss` with both streams captured: doctor prints its own line per check. */
-function quietTokens(argv: string[], cwd: string): { code: number; text: string } {
-  const saved = { log: console.log, error: console.error }
-  let text = ''
-  const sink = (...args: unknown[]): void => {
-    text += `${args.join(' ')}\n`
-  }
-  console.log = sink
-  console.error = sink
-  try {
-    return { code: tokensCss(argv, cwd), text: text.trim() }
-  } finally {
-    console.log = saved.log
-    console.error = saved.error
-  }
-}
 
 const check10 = (name: string): Check => ({
   id: 10,
@@ -40,16 +27,21 @@ const check10 = (name: string): Check => ({
         ? fail('profile tokens declares no `tokens` output in the manifest: nothing is checked')
         : pass('the manifest declares no committed token output')
     }
+    // The renderer `sync` writes the sheets from, so a drift this reports is one `sync` fixes.
+    const version = readFrameworkVersion(ctx.pkgRoot)
     const findings = manifest.tokens.flatMap((entry) => {
-      const { code, text } = quietTokens([...entry.flags, '--out', entry.out, '--check'], ctx.root)
-      return code === 0 ? [] : [`${entry.out}: ${text.split('\n')[0] || 'drifted'}`]
+      const emitted = renderTokens([...entry.flags, '--out', entry.out], ctx.root, version)
+      if ('error' in emitted)
+        return [`${entry.out}: ${emitted.error}; fix its flags in ${MANIFEST_PATH}`]
+      const files = 'files' in emitted ? emitted.files : []
+      return files
+        .filter(({ out, content }) => readText(ctx.root, out) !== content)
+        .map(({ out }) => `${out} is missing or out of date: run \`basalt-ui sync\``)
     })
     return verdictOf(findings, `${manifest.tokens.length} token output(s) match their flags`)
   },
 })
 
-const WAIVER = /oxlint-disable(?:-next-line)?\s+basalt\//g
-const ESCAPE = /\b(?:col|chart|field|filterSlot)\.custom\b/g
 const HEX_LITERAL = /#[0-9a-fA-F]{3,8}\b/
 const REASONED = /\s(?:—|--|because)\s|reason:/i
 const DESIGN_MAX_LINES = 150
@@ -121,13 +113,17 @@ const check11 = (name: string): Check => ({
     const manifest = need(ctx)
     const budget = readBudget(ctx.root)
     if ('error' in budget) return fail(budget.error)
-    const sources = rootFiles(ctx, manifest, /\.[cm]?[jt]sx?$/)
-    const text = sources.map((f) => readText(ctx.root, f) ?? '').join('\n')
+    // The one counter `lint --stats` uses, over the files a full `lint` scans.
+    const project = { root: ctx.root, manifest, roots: rootsOf(manifest) }
+    const counted = countSource(project, lintFiles(project))
+    const recorded = budget.budget.waivers
     const findings = [
-      ...countBreaches(budget.budget, {
-        waivers: (text.match(WAIVER) ?? []).length,
-        escapes: (text.match(ESCAPE) ?? []).length,
-      }).map(
+      ...(counted.waivers > recorded
+        ? [
+            `${countedFigure('waivers', counted.waivers)} counted, ${BUDGET_PATH} records ${recorded}: run \`basalt-ui lint\` to record the count and commit the file`,
+          ]
+        : []),
+      ...countBreaches(budget.budget, { escapes: counted.escapes }).map(
         (b) =>
           `${countedFigure(b.name, b.count)} above the ceiling ${b.ceiling} in ${BUDGET_PATH}: ${raiseCommand(b.name)}`,
       ),

@@ -9,6 +9,7 @@ import { readBudget } from '../budget'
 import { findBasaltInstall } from '../index'
 import { defaultBaseRef, rootFindings } from '../../lint/weakened'
 import type { Profile } from '../manifest'
+import { addCommand, installAllCommand } from '../package-manager'
 import { BUILD_PEERS, peerSpec, RUNTIME_PEERS, satisfiesRange } from '../peers'
 import {
   compareVersions,
@@ -28,10 +29,15 @@ import type { Check } from './types'
 /** The oldest `version` a manifest may record: below it the shape is not the v3 one. */
 export const VERSION_FLOOR = '2.29.0'
 
-/** The lowest profile each subpath needs (primitives-distribution L4): `ui/*` parts, `shell` app, `static` and `astro` site. */
-const SUBPATH_PROFILE: readonly (readonly [RegExp, Profile])[] = [
+/**
+ * The lowest profile each subpath needs (primitives-distribution L4): `ui/*` parts, `shell` app;
+ * `static` and `astro` site, and `charts`, `cards`, `table` and `page` site too, since a site draws
+ * them in islands. A `tokens` root imports none of them.
+ */
+export const SUBPATH_PROFILE: readonly (readonly [RegExp, Profile])[] = [
   [/^basalt-ui\/shell(?:\/|$)/, 'app'],
   [/^basalt-ui\/(?:static|astro)(?:\/|$)/, 'site'],
+  [/^basalt-ui\/(?:charts|cards|table|page)(?:\/|$)/, 'site'],
   [/^basalt-ui\/ui(?:\/|$)/, 'parts'],
 ]
 
@@ -92,13 +98,15 @@ const check2 = (name: string): Check => ({
   run: (ctx) => {
     const manifest = need(ctx)
     const install = findBasaltInstall(ctx.root)
-    if (install.dir === null) return fail('basalt-ui does not resolve from here: run `bun install`')
+    if (install.dir === null) {
+      return fail(`basalt-ui does not resolve from here: run \`${installAllCommand(ctx.root)}\``)
+    }
     if (install.version === null) return fail(`${install.dir}/package.json has no version`)
     return install.version === manifest.version
       ? pass(`installed ${install.version} at ${install.dir}`)
       : fail(
           `installed ${install.version}, manifest records ${manifest.version}: ` +
-            'run `bun install`, then `basalt-ui sync`',
+            `run \`${installAllCommand(ctx.root)}\`, then \`basalt-ui sync\``,
         )
   },
 })
@@ -198,6 +206,12 @@ const check3 = (name: string): Check => ({
       rootsOf(manifest).map(([r]) => r),
     )
     const findings: string[] = []
+    const add = (peer: string, range: string | undefined): string =>
+      addCommand(
+        ctx.root,
+        [peerSpec(peer, range)],
+        manifest.profile !== 'tokens' && BUILD_PEERS[manifest.profile].includes(peer),
+      ).join(' ')
 
     if (manifest.profile !== 'tokens') {
       const ranges = readJson(ctx.pkgRoot, 'package.json')?.['peerDependencies'] as
@@ -218,7 +232,7 @@ const check3 = (name: string): Check => ({
         const range = ranges?.[peer]
         if (declared === undefined) {
           findings.push(
-            `${peer} is not declared (needed by profile ${manifest.profile}): run bun add ${peerSpec(peer, range)}`,
+            `${peer} is not declared (needed by profile ${manifest.profile}): run ${add(peer, range)}`,
           )
           continue
         }
@@ -226,11 +240,13 @@ const check3 = (name: string): Check => ({
         if (installed === null) {
           // An optional peer the app declares is held to its range only once it is installed.
           if (required.includes(peer)) {
-            findings.push(`${peer} is declared but not installed: run bun install`)
+            findings.push(
+              `${peer} is declared but not installed: run ${installAllCommand(ctx.root)}`,
+            )
           }
         } else if (range !== undefined && !satisfiesRange(installed, range)) {
           findings.push(
-            `${peer} ${installed} is installed but basalt-ui declares ${range}: run bun add ${peerSpec(peer, range)}`,
+            `${peer} ${installed} is installed but basalt-ui declares ${range}: run ${add(peer, range)}`,
           )
         }
       }

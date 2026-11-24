@@ -3,7 +3,7 @@
  * does not, in deploy builds:
  *
  * - At build start it fails naming the exact command on a missing peer of an imported subpath
- *   (`bun add …`) and on an ejected file whose recorded seed digest differs from the installed
+ *   (the package manager's `add …`) and on an ejected file whose recorded seed digest differs from the installed
  *   seed (`basalt-ui sync`).
  * - With ejects in this app it aliases `basalt-ui/ui/<name>` to the local file, bundles basalt-ui
  *   for SSR (`ssr.noExternal`) and keeps the composite subpaths out of the dep optimizer; with none
@@ -20,6 +20,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join, relative, resolve } from 'node:path'
 import type { Plugin, PluginOption, UserConfig } from 'vite'
 
+import { addCommand } from '../cli/package-manager'
 import { peerSpec } from '../cli/peers'
 import { ALLOTMENT } from './allotment.gen'
 import { appEjects, staleEjects } from './ejects'
@@ -100,12 +101,20 @@ function ejectConfig(ejects: AppEjects): UserConfig | null {
 }
 
 /** The peer failure text: the imports that need each missing peer, then the one command. */
-function missingPeersMessage(missing: ReadonlyMap<string, string>, pkgRoot: string): string {
+function missingPeersMessage(
+  missing: ReadonlyMap<string, string>,
+  pkgRoot: string,
+  root: string,
+): string {
   const declared = declaredPeers(pkgRoot)
   const lines = [...missing].map(([peer, via]) => `  ${via} needs ${peer}`)
   return (
     `basalt-ui: an imported subpath's peer is not installed.\n${lines.join('\n')}\n` +
-    `Run: bun add ${[...missing.keys()].map((peer) => peerSpec(peer, declared[peer])).join(' ')}`
+    `Run: ${addCommand(
+      root,
+      [...missing.keys()].map((peer) => peerSpec(peer, declared[peer])),
+      false,
+    ).join(' ')}`
   )
 }
 
@@ -135,7 +144,7 @@ function staleSeedsMessage(stale: AppEjects['ejected'], where: string): string {
 }
 
 /**
- * The v3 Vite plugin: fails the build on a missing peer (`bun add …`) or a stale ejected seed
+ * The v3 Vite plugin: fails the build on a missing peer (an `add …` line) or a stale ejected seed
  * (`basalt-ui sync`), aliases ejected primitives, writes `.basalt/sources.css` and owns the head
  * (theme script, theme-color, manifest). A module that imports `basalt-ui/table` also gets
  * `basalt-ui/table.css`, the table tiers, so the app never imports it. Full contract: `docs/vite.md`.
@@ -176,7 +185,7 @@ export function basalt(options: BasaltOptions = {}): PluginOption[] {
       const missing = new Map(
         [...requiredPeers(closure)].filter(([peer]) => !hasPackage(root, peer)).toSorted(),
       )
-      if (missing.size > 0) this.error(missingPeersMessage(missing, pkgRoot))
+      if (missing.size > 0) this.error(missingPeersMessage(missing, pkgRoot, root))
 
       const stale = staleEjects(ejects.ejected, pkgRoot)
       if (stale.length > 0) {

@@ -1,5 +1,6 @@
 /**
- * What `lint --stats` counts and what the ceilings compare (guardrails section 9): reasoned waivers,
+ * What `lint --stats` and `doctor` count, the one counter (guardrails section 9): reasoned waivers
+ * (the `oxlint-` and `eslint-` spellings both),
  * the four `.custom` escapes and the ejects. A directive counts once, except a file-level one in a
  * `deepRender` file, which counts as the findings it suppresses: oxlint 1.93 has no switch to
  * ignore inline directives, so the directive is blanked in a sibling copy and the copy is re-linted.
@@ -12,7 +13,8 @@ import { countRows, rowsOfRoot } from '../eject/ledger'
 import { JS_FILE, runOxlint, STYLE_FILE } from './engine'
 import type { Finding, Project } from './engine'
 
-const DIRECTIVE = /(?:\/\/|\/\*)\s*(oxlint|stylelint)-disable(-next-line|-line)?(?=\s)([^\n]*)/g
+const DIRECTIVE =
+  /(?:\/\/|\/\*)\s*(oxlint|eslint|stylelint)-disable(-next-line|-line)?(?=\s)([^\n]*)/g
 const ESCAPE = /\b(?:col|chart|field|filterSlot)\.custom\b/g
 
 export type Counts = { waivers: number; escapes: number; ejects: number }
@@ -88,7 +90,8 @@ export function countSource(
     if (tool === null) continue
     for (const d of directivesOf(text)) {
       const ids = d.ids.filter((id) => (tool === 'oxlint' ? isManagedRuleId(id) : id !== ''))
-      if (d.tool !== tool || ids.length === 0) continue
+      // oxlint honours the `eslint-disable` spelling, so it is a waiver like its own.
+      if ((d.tool === 'eslint' ? 'oxlint' : d.tool) !== tool || ids.length === 0) continue
       const fileLevel = tool === 'oxlint' && d.kind === '' && deepRender.has(rel)
       const weight = fileLevel ? suppressedBy(project, rel, text, { ...d, ids }) : 1
       waivers += weight
@@ -125,8 +128,9 @@ export function formatStats(
   stats: Stats,
   ceilings: Partial<Record<keyof Counts, number>>,
 ): string[] {
+  // `waivers` follows the count: it has a record, not a ceiling, so it prints no `of`.
   const of = (key: keyof Counts): string =>
-    ceilings[key] === undefined ? '' : ` of ${ceilings[key]}`
+    key === 'waivers' || ceilings[key] === undefined ? '' : ` of ${ceilings[key]}`
   const detail = (tally: Tally): string =>
     Object.keys(tally).length === 0 ? '' : ` (${list(tally)})`
   return [

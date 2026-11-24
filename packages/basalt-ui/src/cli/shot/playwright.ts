@@ -5,10 +5,12 @@
 import { createRequire } from 'node:module'
 import { join } from 'node:path'
 
+import { playwrightInstall } from '../package-manager'
 import type { Scheme } from './types'
 
-export const INSTALL_LINE =
-  'basalt-ui shot needs Playwright: bun add -d playwright && bunx playwright install chromium'
+/** The line naming the install, for the package manager `dir` uses. */
+export const installLine = (dir: string): string =>
+  `basalt-ui shot needs Playwright: ${playwrightInstall(dir)}`
 
 /** A headless Chromium reports `(hover: none)`; these make its primary input a mouse so `@media (hover: hover)` applies. */
 export const POINTER_ARGS = [
@@ -125,7 +127,13 @@ export async function withBrowser<B extends PwBrowser, T>(
   {
     channels = [undefined, 'chrome'],
     stops,
-  }: { channels?: readonly (string | undefined)[]; stops?: (() => unknown)[] } = {},
+    install = installLine(process.cwd()),
+  }: {
+    channels?: readonly (string | undefined)[]
+    stops?: (() => unknown)[]
+    /** The install line a failed launch leads with. */
+    install?: string
+  } = {},
 ): Promise<T> {
   const chromiumSandbox = !process.env['CI']
   const failures: string[] = []
@@ -152,5 +160,5 @@ export async function withBrowser<B extends PwBrowser, T>(
       await killBounded(live)
     }
   }
-  throw new ShotError([INSTALL_LINE, ...failures].join('\n'))
+  throw new ShotError([install, ...failures].join('\n'))
 }

@@ -12,6 +12,7 @@ import { isManagedRuleId } from '../../lint/preset'
 import { readManifest } from '../manifest'
 import type { Manifest, Profile } from '../manifest'
 import { findManifestAbove } from '../install-root'
+import { installAllCommand } from '../package-manager'
 import { readPackageJson } from '../source-text'
 import { filesUnder, rootsOf } from '../doctor/types'
 import { findBin, STYLELINT_IGNORE_ARGS } from '../../lint/bin'
@@ -121,7 +122,8 @@ type OxlintDiagnostic = {
 export function runOxlint(project: Project, targets: readonly string[]): Finding[] {
   if (targets.length === 0) return []
   const bin = findBin(project, 'oxlint')
-  if (bin === null) throw new Error('oxlint does not resolve from here: run `bun install`')
+  if (bin === null)
+    throw new Error(`oxlint does not resolve from here: run \`${installAllCommand(project.root)}\``)
   const ignore = existsSync(resolve(project.root, '.oxlintignore'))
     ? ['--ignore-path', '.oxlintignore']
     : []
@@ -171,7 +173,10 @@ const narrowed = (rule: string, text: string): string =>
 export function runStylelint(project: Project, files: readonly string[]): Finding[] {
   if (files.length === 0 || !existsSync(resolve(project.root, STYLELINT_CONFIG))) return []
   const bin = findBin(project, 'stylelint')
-  if (bin === null) throw new Error('stylelint does not resolve from here: run `bun install`')
+  if (bin === null)
+    throw new Error(
+      `stylelint does not resolve from here: run \`${installAllCommand(project.root)}\``,
+    )
   const results = batches(files).flatMap((batch): StylelintResult[] => {
     const run = spawn(
       bin,

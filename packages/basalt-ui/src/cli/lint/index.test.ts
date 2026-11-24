@@ -173,43 +173,26 @@ describe('lint', () => {
     expect(out.log).toContain('scanned 0 files')
   })
 
-  it('exits 1 when counted waivers exceed the ceiling, and names the way up', async () => {
-    const out = await lint(repo({ 'src/w.tsx': waiver(2) }))
-    expect(out.code).toBe(1)
-    expect(out.log).toContain('2 waivers are above the ceiling 0 in .basalt/budget.json')
-    expect(out.log).toContain('basalt-ui lint --raise waivers --consumer "<named consumer>"')
-  })
-
-  it('--raise waivers lifts the ceiling with a raises row, and lint then exits 0', async () => {
+  it('records the counted waivers in the budget: the record follows the count, lint passes', async () => {
     const dir = repo({ 'src/w.tsx': waiver(2) })
-    expect((await lint(dir)).code).toBe(1)
-    const noWho = await lint(dir, '--raise', 'waivers')
-    expect(noWho.code).toBe(1)
-    expect(noWho.log).toContain('needs --consumer')
-    const blank = await lint(dir, '--raise', 'waivers', '--consumer', '  ')
-    expect(blank.code).toBe(1)
-    expect(budgetOf(dir).waivers).toBe(0)
-
-    const raised = await lint(dir, '--raise', 'waivers', '--consumer', 'probe consumer')
-    expect(raised.code).toBe(0)
-    const after = JSON.parse(readFileSync(join(dir, '.basalt/budget.json'), 'utf8')) as {
-      waivers: number
-      raises: unknown[]
-    }
-    expect(after.waivers).toBe(2)
-    expect(after.raises).toEqual([{ field: 'waivers', from: 0, to: 2, consumer: 'probe consumer' }])
+    const out = await lint(dir)
+    expect(out.code).toBe(0)
+    expect(out.log).toContain('.basalt/budget.json: waivers 0 -> 2, recorded')
+    expect(budgetOf(dir).waivers).toBe(2)
+    writeFileSync(join(dir, 'src/w.tsx'), waiver(1))
     expect((await lint(dir)).code).toBe(0)
-
-    const again = await lint(dir, '--raise', 'waivers', '--consumer', 'probe consumer')
-    expect(again.code).toBe(1)
-    expect(again.log).toContain('nothing to raise')
+    expect(budgetOf(dir).waivers).toBe(1)
+    expect((await lint(dir, '--file', 'src/w.tsx')).log).not.toContain('recorded')
   })
 
-  it('--raise takes waivers or escapes, and sends ejects to eject', async () => {
+  it('--raise takes escapes only: waivers have no ceiling, ejects go to eject', async () => {
     const dir = repo()
     const bad = await lint(dir, '--raise', 'bogus', '--consumer', 'x')
     expect(bad.code).toBe(1)
-    expect(bad.log).toContain('waivers or escapes')
+    expect(bad.log).toContain('--raise takes escapes')
+    const waivers = await lint(dir, '--raise', 'waivers', '--consumer', 'x')
+    expect(waivers.code).toBe(1)
+    expect(waivers.log).toContain('waivers has no ceiling to raise')
     const ejects = await lint(dir, '--raise', 'ejects', '--consumer', 'x')
     expect(ejects.code).toBe(1)
     expect(ejects.log).toContain('basalt-ui eject')
@@ -226,12 +209,12 @@ describe('lint', () => {
   it('--stats prints findings, waivers and escapes per rule against the ceilings', async () => {
     const out = await lint(repo({ 'src/w.tsx': waiver(1), 'src/a.tsx': FOO }), '--stats')
     expect(out.log).toContain('findings: 1 (basalt/no-foo 1)')
-    expect(out.log).toContain('waivers: 1 of 0 (basalt/no-foo 1)')
+    expect(out.log).toContain('waivers: 1 (basalt/no-foo 1)')
     expect(out.log).toContain('escapes: 0 of 3')
     expect(out.log).toContain('ejects: 0 of 3')
   })
 
-  it('a reasoned waiver of a core rule the preset runs counts against the ceiling (lint-7.2)', async () => {
+  it('a reasoned waiver of a core rule the preset runs is counted, in either spelling (lint-7.2)', async () => {
     const dir = repo()
     writeFileSync(
       join(dir, '.oxlintrc.basalt.json'),
@@ -250,12 +233,16 @@ describe('lint', () => {
         late(2, 'eslint/no-use-before-define'),
       ].join(''),
     )
-    const out = await lint(dir, '--stats')
-    expect(out.code).toBe(1)
-    expect(out.log).toContain('3 waivers are above the ceiling 0 in .basalt/budget.json')
-    expect(out.log).toContain(
-      'waivers: 3 of 0 (eslint/no-use-before-define 1, no-use-before-define 2)',
+    writeFileSync(
+      join(dir, 'src/v.tsx'),
+      "// eslint-disable-next-line basalt/no-foo -- the eslint spelling oxlint honours\nexport const v = 'foo'\n",
     )
+    const out = await lint(dir, '--stats')
+    expect(out.code).toBe(0)
+    expect(out.log).toContain(
+      'waivers: 4 (basalt/no-foo 1, eslint/no-use-before-define 1, no-use-before-define 2)',
+    )
+    expect(budgetOf(dir).waivers).toBe(4)
   })
 
   it('a file-level directive in a deepRender file counts as the findings it suppresses', async () => {
@@ -268,14 +255,14 @@ describe('lint', () => {
       JSON.stringify({ ...manifest, deepRender: ['src/deep.tsx'] }),
     )
     const out = await lint(dir, '--stats')
-    expect(out.log).toContain('waivers: 2 of 0 (basalt/no-foo 2)')
+    expect(out.log).toContain('waivers: 2 (basalt/no-foo 2)')
     expect(readFileSync(join(dir, 'src/deep.tsx'), 'utf8')).toContain('deep render')
     expect(
       spawnSync('git', ['status', '--porcelain'], { cwd: dir, encoding: 'utf8' }).stdout,
     ).not.toContain('basalt-recount')
   })
 
-  it('--stats --write-budget lands the counts through landBudget, and refuses to raise past the base', async () => {
+  it('--stats --write-budget lands the counts through landBudget: waivers follow, escapes ratchet', async () => {
     const dir = repo({ 'src/w.tsx': waiver(2) }, { commit: false })
     rmSync(join(dir, '.basalt/budget.json'))
     git(dir, 'add', '-A')
@@ -292,10 +279,13 @@ describe('lint', () => {
     git(dir, 'add', '-A')
     git(dir, 'commit', '-qm', 'land the budget')
     writeFileSync(join(dir, 'src/w.tsx'), waiver(3))
-    const raised = await lint(dir, '--stats', '--write-budget')
-    expect(raised.code).toBe(1)
-    expect(raised.log).toContain('lint --raise waivers --consumer')
-    expect(budgetOf(dir).waivers).toBe(2)
+    expect((await lint(dir, '--stats', '--write-budget')).code).toBe(0)
+    expect(budgetOf(dir).waivers).toBe(3)
+    writeFileSync(join(dir, 'src/e.tsx'), 'export const e = [col.custom]\n')
+    const escaped = await lint(dir, '--stats', '--write-budget')
+    expect(escaped.code).toBe(1)
+    expect(escaped.log).toContain('lint --raise escapes --consumer')
+    rmSync(join(dir, 'src/e.tsx'))
 
     writeFileSync(join(dir, 'src/w.tsx'), waiver(1))
     expect((await lint(dir, '--stats', '--write-budget')).code).toBe(0)

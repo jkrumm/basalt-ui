@@ -19,7 +19,7 @@ import {
 import type { CaptureInput } from './capture'
 import { manifestViewports, parseShotArgs, planOut, sanitizeBase, shot } from './index'
 import { finishMeasurement, measureAnchor, radiusReading } from './measure'
-import { INSTALL_LINE, ShotError, isPlaywright, withBrowser } from './playwright'
+import { installLine, ShotError, isPlaywright, withBrowser } from './playwright'
 import type { Playwright } from './playwright'
 import { seedScript } from './real-data'
 import { serveDist } from './serve'
@@ -875,7 +875,7 @@ describe('withBrowser', () => {
     )
     expect(error).toBeInstanceOf(ShotError)
     expect((error as Error).message.split('\n')).toEqual([
-      INSTALL_LINE,
+      installLine(process.cwd()),
       '  bundled chromium: bundled missing',
       '  chrome: chrome missing',
     ])
@@ -916,11 +916,16 @@ describe('shot()', () => {
   const FLAGS = ['/', '--base', 'http://x', '--out', 'shots-1']
 
   test('missing Playwright prints the install line and exits 1', async () => {
-    const { result, lines } = await errors(() => shot(FLAGS, tmp(), { resolve: () => null }))
+    const cwd = tmp()
+    const { result, lines } = await errors(() => shot(FLAGS, cwd, { resolve: () => null }))
     expect(result).toBe(1)
-    expect(lines).toEqual([INSTALL_LINE])
-    expect(INSTALL_LINE).toBe(
-      'basalt-ui shot needs Playwright: bun add -d playwright && bunx playwright install chromium',
+    expect(lines).toEqual([installLine(cwd)])
+    expect(installLine(cwd)).toBe(
+      'basalt-ui shot needs Playwright: npm install --save-dev --save-exact playwright && npx playwright install chromium',
+    )
+    writeFileSync(join(cwd, 'bun.lock'), '')
+    expect(installLine(cwd)).toBe(
+      'basalt-ui shot needs Playwright: bun add --dev --exact playwright && bunx playwright install chromium',
     )
   })
 
@@ -938,7 +943,7 @@ describe('shot()', () => {
       shot(FLAGS, cwd, { resolve: () => fakePw([undefined, 'chrome']) }),
     )
     expect(result).toBe(1)
-    expect(lines[0]?.split('\n')[0]).toBe(INSTALL_LINE)
+    expect(lines[0]?.split('\n')[0]).toBe(installLine(cwd))
     expect(existsSync(join(cwd, 'shots-1'))).toBe(false)
     expect(existsSync(join(cwd, '.basalt/last-shot.json'))).toBe(false)
   })
@@ -1727,7 +1732,7 @@ describe('real-data run', () => {
       const hang = Bun.serve({ port: 0, hostname: '127.0.0.1', fetch: () => new Promise(() => {}) })
       const up = (routes, headers, opts = {}) => {
         const proxy = apiProxy(routes, headers, { log: (l) => logs.push(l), ...opts })
-        return { proxy, server: serveDist(DIST, proxy.handle) }
+        return serveDist(DIST, proxy.handle).then((server) => ({ proxy, server }))
       }
       const result = {}
       ${body}
@@ -1744,7 +1749,7 @@ describe('real-data run', () => {
     const r = await inBun(
       dist(),
       `${HEAD}
-      const { server } = up([{ prefix: '/api', origin: base }], [['authorization', 'Bearer s3cret']])
+      const { server } = await up([{ prefix: '/api', origin: base }], [['authorization', 'Bearer s3cret']])
       result.page = await (await fetch(server.origin + '/dashboard')).text()
       result.kpi = await (await fetch(server.origin + '/api/kpi?range=7d', { headers: { authorization: 'page-token' } })).json()
       await fetch(server.origin + '/api/nav', { headers: { 'sec-fetch-mode': 'navigate' } })
@@ -1764,9 +1769,9 @@ describe('real-data run', () => {
     const r = await inBun(
       dist(),
       `${HEAD}
-      const ro = up([{ prefix: '/api', origin: base }], [])
+      const ro = await up([{ prefix: '/api', origin: base }], [])
       result.blocked = (await fetch(ro.server.origin + '/api/save', { method: 'POST', body: 'x=1' })).status
-      const rw = up([{ prefix: '/api', origin: base }], [], { allowWrites: true })
+      const rw = await up([{ prefix: '/api', origin: base }], [], { allowWrites: true })
       result.allowed = (await fetch(rw.server.origin + '/api/save', { method: 'POST', body: 'x=1' })).status`,
     )
     expect([r['blocked'], r['allowed']]).toEqual([405, 200])
@@ -1778,13 +1783,13 @@ describe('real-data run', () => {
     const r = await inBun(
       dist(),
       `${HEAD}
-      const a = up([{ prefix: '/api', origin: base }], [['authorization', 'Bearer s3cret']])
+      const a = await up([{ prefix: '/api', origin: base }], [['authorization', 'Bearer s3cret']])
       result.denied = (await fetch(a.server.origin + '/api/denied?token=q1')).status
       result.drained = a.proxy.drain()
       result.again = a.proxy.drain()
-      const dead = up([{ prefix: '/api', origin: 'http://127.0.0.1:' + closedPort }], [])
+      const dead = await up([{ prefix: '/api', origin: 'http://127.0.0.1:' + closedPort }], [])
       result.dead = (await fetch(dead.server.origin + '/api/x')).status
-      const slow = up([{ prefix: '/api', origin: 'http://127.0.0.1:' + hang.port }], [], { timeoutMs: 100 })
+      const slow = await up([{ prefix: '/api', origin: 'http://127.0.0.1:' + hang.port }], [], { timeoutMs: 100 })
       result.slow = (await fetch(slow.server.origin + '/api/x')).status
       result.slowDrained = slow.proxy.drain()`,
     )
@@ -1802,7 +1807,7 @@ describe('real-data run', () => {
     const r = await inBun(
       dist(),
       `${HEAD}
-      const a = up([{ prefix: '/api', origin: base }], [])
+      const a = await up([{ prefix: '/api', origin: base }], [])
       for (const p of ['/api/ok', '/api/moved', '/api/missing/9f8e7d', '/api/boom']) await fetch(a.server.origin + p)
       result.problems = a.proxy.drain()`,
     )
@@ -1814,7 +1819,7 @@ describe('real-data run', () => {
     const r = await inBun(
       dist(),
       `${HEAD}
-      const { server } = up([{ prefix: '/api', origin: base }], [])
+      const { server } = await up([{ prefix: '/api', origin: base }], [])
       result.own = (await fetch(server.origin + '/')).status
       result.origin = (await fetch(server.origin + '/api/x', { headers: { origin: 'http://evil.example' } })).status
       result.sameOrigin = (await fetch(server.origin + '/', { headers: { origin: server.origin } })).status
@@ -1825,7 +1830,7 @@ describe('real-data run', () => {
       result.crossSite = await h({ 'sec-fetch-mode': 'navigate', 'sec-fetch-site': 'cross-site' })
       result.stylesheet = await h({ 'sec-fetch-mode': 'no-cors', 'sec-fetch-site': 'same-origin' })
       result.navigate = await h({ 'sec-fetch-mode': 'navigate', 'sec-fetch-site': 'none' })
-      const plain = serveDist(DIST)
+      const plain = await serveDist(DIST)
       result.noProxy = (await fetch(plain.origin + '/', { headers: { origin: 'http://evil.example' } })).status`,
     )
     expect([r['own'], r['origin'], r['sameOrigin'], r['host'], r['noProxy']]).toEqual([

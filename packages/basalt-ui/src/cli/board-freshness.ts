@@ -5,6 +5,8 @@ import type { Dirent } from 'node:fs'
 import { createRequire } from 'node:module'
 import { join, resolve } from 'node:path'
 
+import { playwrightInstall } from './package-manager'
+
 const LAST_SHOT = join('.basalt', 'last-shot.json')
 const SKIPPED_DIRS = new Set(['node_modules', 'dist', '.git', '.basalt'])
 const UI_FILE = /\.(tsx|css)$/
@@ -13,7 +15,6 @@ const WALK_CAP = 5000
 
 export const BOARD_NOTICE =
   'UI changed since the last board — run basalt-ui shot <routes> and the basalt-design-reviewer (/basalt-design)'
-export const PLAYWRIGHT_INSTALL = 'bun add -d playwright && bunx playwright install chromium'
 
 /** `newest`: latest UI mtime in ms, null when none. `truncated`: the cap hit, so `newest` may be stale. */
 type Walk = { newest: number | null; truncated: boolean }
@@ -125,7 +126,7 @@ export function designLoopLines(
   const playwright = (probes.playwright ?? playwrightVersion)(cwd)
   lines.push(
     playwright === null
-      ? `  → playwright is not installed (optional, needed by basalt-ui shot): ${PLAYWRIGHT_INSTALL}`
+      ? `  → playwright is not installed (optional, needed by basalt-ui shot): ${playwrightInstall(cwd)}`
       : `  ✓ playwright resolves (${playwright === 'unknown' ? 'version unknown' : playwright}; optional: basalt-ui shot)`,
   )
   return lines

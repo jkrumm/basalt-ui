@@ -33,7 +33,13 @@ export const COMMAND_OPTIONS: Record<
     force: { type: 'boolean' },
     check: { type: 'boolean' },
   },
-  doctor: { from: { type: 'string' } },
+  doctor: {},
+  migrate: {
+    from: { type: 'string' },
+    profile: { type: 'string' },
+    json: { type: 'boolean' },
+    check: { type: 'boolean' },
+  },
   lint: {
     file: { type: 'string', multiple: true },
     agent: { type: 'boolean' },
@@ -100,8 +106,9 @@ export function unknownFlag(cmd: string, flags: readonly string[]): string | nul
 export const USAGE =
   'Usage: basalt-ui <--version | init --profile <tokens|site|bridge|parts|app> [--root <path>]… [--no-install] |\n' +
   '                  sync [--check] [--force] |\n' +
-  '                  doctor [--from <x.y.z>] | lint [--file <p>… | --changed | --stats | --raise <field> --consumer <who>] | tokens:css | fonts:css |\n' +
-  '                  eject <name | --all | --adopt <path>> --reason <why> | add <block>… [--dir <path>] | add --list |\n' +
+  '                  doctor | migrate --from <x.y.z> --profile <p> [--json] [--check] |\n' +
+  '                  lint [--file <p>… | --changed | --stats | --raise escapes --consumer <who>] | tokens:css | fonts:css |\n' +
+  '                  eject <name | --all | --adopt <path>> --reason <why> (experimental) | add <block>… [--dir <path>] | add --list |\n' +
   '                  shot <route…> | shot detect | help>\n\n' +
   'tokens:css [--accent <#hex>] [--neutral <zinc|neutral|stone|slate>] [--vibrancy <-4..5>]\n' +
   '           [--selector <:root[attr]> | --accents <name,…>] [--extra <file>] [--format <css|json>] [--out <path>] [--check]\n' +
@@ -118,7 +125,7 @@ export const USAGE =
   '  Emit the shipped --basalt-font-* stacks as plain CSS — the typeface half of the token layer,\n' +
   '  otherwise reachable only by importing styles.css.\n\n' +
   'shot <route…> (--base <url> | --dist <dir>) --out <dir> [--states <list>]\n' +
-  '  Render routes in Chromium (Playwright from YOUR project: bun add -d playwright) and write\n' +
+  '  Render routes in Chromium (Playwright from YOUR project, a dev dependency) and write\n' +
   '  board.html, metrics.json and png/* — every anchor × light/dark × the manifest viewports ×\n' +
   '  rest, hover, focus, keys, tooltip, empty, loading, error. `keys` focuses a chart or row host, presses its\n' +
   '  arrow key twice, shoots the frame and logs the live text and focus; a page error is a named defect. An anchor is a data-shot element, else the\n' +
@@ -163,23 +170,28 @@ export const USAGE =
   '  detect takes --out <dir>, never a positional.\n' +
   '  A component can declare a rest anchor absent in a URL state with data-shot-absent="empty error": that\n' +
   '  cell is recorded `absent`, not `error`.\n\n' +
-  'lint [--file <path>… | --changed | --stats [--write-budget] | --raise <field> --consumer "<who>"] [--agent]\n' +
+  'lint [--file <path>… | --changed | --stats [--write-budget] | --raise escapes --consumer "<who>"] [--agent]\n' +
   '  oxlint, stylelint and the --basalt-* name check over the declared roots, then the ceilings of\n' +
   '  .basalt/budget.json. A finding is "<file>:<line> <rule>: <message and fix>"; exit 1 on a finding or\n' +
-  '  a ceiling breach, and on a scan of zero files. --file lints the named files, --changed what git\n' +
+  '  a ceiling breach, and on a scan of zero files. A full scan records the waiver count in\n' +
+  '  .basalt/budget.json (waivers follow the count, so a new one shows in the diff). --file lints the named files, --changed what git\n' +
   '  reports changed (nothing changed is clean). --agent is terse and exits 2 on a finding so a hook\n' +
   '  blocks. --stats prints findings, waivers and escapes per rule against the ceilings;\n' +
   '  --stats --write-budget lands the counted waivers and escapes in .basalt/budget.json (never\n' +
-  '  above the base ref; consumers never hand-edit it). --raise waivers|escapes --consumer "<who>" lifts\n' +
+  '  above the base ref for escapes; consumers never hand-edit it). --raise escapes --consumer "<who>" lifts\n' +
   '  that ceiling to the counted figure and appends a raises row naming the consumer (ejects: eject --raise).\n' +
   '  --hook <post-edit|stop|pre-edit> reads the event\n' +
   '  JSON on stdin and is called only by .basalt/hook.mjs; it is exempt from the unknown-flag exit 1\n' +
   '  because every hook failure exits 2.\n\n' +
-  'doctor [--from <x.y.z>]\n' +
+  'doctor\n' +
   '  Twelve checks on THIS install: manifest, version drift, peers, presets, lint scan, AGENTS block,\n' +
   '  skills and rules, the hook (run from a subdirectory on a seeded offender), the formatter fence,\n' +
   '  token sheets, budgets and app wiring. Each is pass, fail or SKIPPED; SKIPPED exits non-zero.\n' +
-  '  --from <x.y.z> is accepted for the 2.x upgrade flow and only points at MIGRATING.md.\n\n' +
+  '  Every failure names the command that fixes it.\n\n' +
+  'migrate --from <x.y.z> --profile <tokens|site|bridge|parts|app> [--json] [--check]\n' +
+  "  The upgrade worklist: reads the app's imports and prints each migration row since --from that\n" +
+  '  touches them (renames, removals, token and storage keys), with file:line. Writes nothing. --check\n' +
+  '  exits 1 while a removed symbol is still imported; --json prints the report. Read MIGRATING.md beside it.\n\n' +
   'init --profile <tokens|site|bridge|parts|app> [--root <path>]… [--tokens-out <css>] [--tokens-json-out <json>]\n' +
   '     [--extra <file>] [--accent <#hex>] [--neutral <name>] [--vibrancy <n>] [--selector <sel>] [--no-install]\n' +
   '     [--start]\n' +
@@ -195,7 +207,8 @@ export const USAGE =
   '  A site (static pages on Astro) writes no router scaffold; it prints the basalt-ui/astro integration line.\n\n' +
   'sync [--check] [--force]\n' +
   '  Renders every managed file (.claude/{rules,skills,agents}/basalt-*, the AGENTS.md block, the\n' +
-  '  preset files) and compares bytes; it refreshes an EXISTING install and never creates one (that\n' +
+  '  preset files, the hook shim .basalt/hook.mjs and its entries in .claude/settings.json, every token\n' +
+  '  sheet the manifest records) and compares bytes; it rewrites a ledger file of an older format; it refreshes an EXISTING install and never creates one (that\n' +
   '  is init). --check writes nothing and exits 1 on any difference. A managed file you edited is\n' +
   '  left and reported; --force overwrites it. A retired file is deleted if untouched, else left.\n' +
   '  An ejected primitive is three-way merged with the new seed (adopted: base advanced, file kept);\n' +

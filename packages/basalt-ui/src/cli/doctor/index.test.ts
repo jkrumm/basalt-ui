@@ -32,7 +32,7 @@ describe('doctor and a missing Playwright', () => {
     const healthy = await capture(dir)
     expect(healthy.code).toBe(0)
     expect(healthy.log).toContain('playwright is not installed')
-    expect(healthy.log).toContain('bun add -d playwright && bunx playwright install chromium')
+    expect(healthy.log).toContain('playwright && npx playwright install chromium')
     expect(healthy.log).toContain('All 12 checks passed.')
     expect(
       healthy.log
@@ -86,15 +86,5 @@ describe('doctor reports what it could not check', () => {
     const dir = makeTree('app', { '.basalt/hook.mjs': null })
     const results = await runChecks(buildContext(dir, { ...HEALTHY, pkgRoot: '/nonexistent' }), [4])
     expect(results[0]?.status).toBe('skipped')
-  })
-})
-
-describe('doctor --from', () => {
-  it('only points at MIGRATING.md and still runs the checks', async () => {
-    const dir = makeTree('tokens')
-    commitTree(dir)
-    const { code, log } = await capture(dir, ['--from', '2.20.0'])
-    expect(log).toContain('MIGRATING.md')
-    expect(code).toBe(0)
   })
 })

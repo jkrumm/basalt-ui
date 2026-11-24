@@ -22,6 +22,7 @@ import { dirname, resolve } from 'node:path'
 
 import { DEFAULT_OFFENDER, SEEDED_FILE } from '../../lint/weakened'
 import { findBasaltInstall } from '../index'
+import { installAllCommand } from '../package-manager'
 import { renderManaged } from '../sync/render'
 import { siblingOf } from '../sync/sibling'
 import { OXLINT_PRESET, STYLELINT_PRESET } from './wiring'
@@ -56,7 +57,9 @@ function shimCommands(settings: Record<string, unknown>, event: string): string[
 /** The bin `package.json` declares, as a file that exists. */
 function binResolves(root: string): string | null {
   const install = findBasaltInstall(root)
-  if (install.dir === null) return 'basalt-ui does not resolve from here: run `bun install`'
+  if (install.dir === null) {
+    return `basalt-ui does not resolve from here: run \`${installAllCommand(root)}\``
+  }
   const bin = readJson(install.dir, 'package.json')?.['bin']
   const target =
     typeof bin === 'string'
@@ -66,7 +69,7 @@ function binResolves(root: string): string | null {
         : undefined
   return target !== undefined && existsSync(resolve(install.dir, target))
     ? null
-    : `the basalt-ui bin does not exist in ${install.dir}: run \`bun install\``
+    : `the basalt-ui bin does not exist in ${install.dir}: run \`${installAllCommand(root)}\``
 }
 
 const check8 = (name: string): Check => ({
@@ -89,8 +92,8 @@ const check8 = (name: string): Check => ({
       if (wrapped === undefined) {
         findings.push(
           commands.length === 0
-            ? `${event} registers no ${SHIM} ${arg} hook`
-            : `${event} registers the shim bare: it fails open when the shim does not run`,
+            ? `${event} registers no ${SHIM} ${arg} hook: run \`basalt-ui sync\``
+            : `${event} registers the shim bare, so it fails open when the shim does not run: run \`basalt-ui sync\``,
         )
       } else if (arg === 'post-edit') probe = wrapped
     }

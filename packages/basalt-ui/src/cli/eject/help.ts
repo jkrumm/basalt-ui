@@ -5,9 +5,12 @@ export const EJECT_HELP = `Usage: basalt-ui eject <name> --reason "<why>" [--app
        basalt-ui eject --adopt <path> --reason "<why>" [--raise "<named consumer>"]
        basalt-ui eject <name> --undo [--app <root>]
 
-Takes ownership of one primitive. The import specifier never changes: the v3 basalt() from
-basalt-ui/vite aliases basalt-ui/ui/<name> to the local file from the manifest, so npm composites
-follow it, and the paths row does the same for tsc. Until that basalt() ships, only tsc follows.
+Experimental in 3.x: what eject writes (the header line, the ejected["<root>#<name>"] row, the
+seed digest the build checks) may change in a minor release.
+
+Takes ownership of one primitive. The import specifier never changes: basalt() from basalt-ui/vite
+aliases basalt-ui/ui/<name> to the local file from the manifest, so npm composites follow it, and
+the paths row does the same for tsc.
 
 eject <name> writes:
   <root>/components/ui/<name>.tsx        the seed, line 1: // basalt:ejected <name>@<version> <why>
@@ -37,8 +40,9 @@ published specifier exports (each one is named); the app's vite.config has no ba
 tsconfig cannot be edited (the line to add is printed); --all has no --raise; --adopt names a
 file outside <root>/components/ui, a shipped name not on the merge base, or a new local file
 without --raise.
-The ejects count per root is printed against .basalt/budget.json (start 3); until 3.0.0 it is
-counted, not enforced. waivers and escapes go up with: lint --raise <field> --consumer "<who>".
+The ejects count per root is printed against .basalt/budget.json (start 3); lint fails above it,
+and --raise lifts it. escapes go up with: lint --raise escapes --consumer "<who>"; waivers follow
+the count.
 `
 
 export function renderEjectDoc(): string {

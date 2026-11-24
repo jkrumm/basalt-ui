@@ -159,6 +159,7 @@ describe('pre-edit', () => {
 
   it('denies .basalt/**, managed .claude paths and the presets', () => {
     denied('.basalt/budget.json', { content: '{}' })
+    denied('.basalt/hook.mjs', { content: '' })
     denied('.claude/rules/basalt-tokens.md', { content: '# x' })
     denied('.claude/skills/basalt-design/SKILL.md', { content: '# x' })
     denied('.oxlintrc.basalt.json', { content: '{}' })
@@ -202,6 +203,36 @@ describe('pre-edit', () => {
     expect(ok.code).toBe(0)
   })
 
+  it('lets an agent add a bespoke directory to the manifest and refuses an edit of managed', () => {
+    const tr = t()
+    const file = join(tr.root, '.basalt/manifest.json')
+    const manifest = JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>
+    const write = (next: Record<string, unknown>) =>
+      hook(tr, { event: 'pre-edit', input: edit(file, { content: JSON.stringify(next, null, 2) }) })
+    expect(write({ ...manifest, bespoke: ['src/table'] }).code).toBe(0)
+    expect(
+      write({ ...manifest, tokens: [{ out: 'src/t.css', format: 'css', flags: [] }] }).code,
+    ).toBe(0)
+    expect(write({ ...manifest, profile: 'parts' }).code).toBe(0)
+    const managed = write({ ...manifest, managed: {} })
+    expect(managed.code).toBe(2)
+    expect(managed.err).toContain('keys managed are written by basalt-ui')
+    for (const key of ['version', 'ejected', 'sibling', 'format']) {
+      expect(
+        write({ ...manifest, [key]: key === 'ejected' ? { x: {} } : 'basalt-v3-x' }).code,
+      ).toBe(2)
+    }
+    expect(write({ ...manifest, bespoke: ['*'] }).err).toContain('bespoke')
+    const partial = hook(tr, {
+      event: 'pre-edit',
+      input: edit(file, {
+        old_string: '"deepRender": []',
+        new_string: '"deepRender": ["src/stage.ts"]',
+      }),
+    })
+    expect(partial.code).toBe(0)
+  })
+
   it('allows an ordinary source edit', () => {
     const tr = t()
     const out = hook(tr, {
@@ -212,8 +243,9 @@ describe('pre-edit', () => {
   })
 })
 
-describe('every failure exits 2 with a line naming the fix', () => {
-  const fixed = /bun install|basalt-ui doctor/
+describe('a failure blocks what it guards, with a line naming the fix', () => {
+  const fixed =
+    /Install the dependencies, then run basalt-ui doctor|Run \w+ install, then basalt-ui doctor/
 
   it('a missing bin', () => {
     const t = tree('workspace')
@@ -241,15 +273,29 @@ describe('every failure exits 2 with a line naming the fix', () => {
     expect(out.err).toMatch(fixed)
   })
 
-  it('an event that is not JSON, and a missing manifest', () => {
+  it('an event that is not JSON, and a missing manifest under .basalt/ and .claude/', () => {
     const t = tree('single')
     const bad = hook(t, { event: 'post-edit', raw: 'not json' })
     expect(bad.code).toBe(2)
     expect(bad.err).toMatch(fixed)
     rmSync(join(t.root, '.basalt/manifest.json'))
-    const none = hook(t, { event: 'post-edit', input: edit(join(t.root, 'src/clean.tsx')) })
-    expect(none.code).toBe(2)
-    expect(none.err).toMatch(fixed)
+    for (const rel of ['.basalt/budget.json', '.claude/settings.json']) {
+      const none = hook(t, { event: 'pre-edit', input: edit(join(t.root, rel)) })
+      expect(none.code).toBe(2)
+      expect(none.err).toMatch(fixed)
+    }
+  })
+
+  it('passes a file outside the declared roots, and Stop, when the bin is missing (no Bun, no install)', () => {
+    const t = tree('single')
+    rmSync(t.bin)
+    const guarded = hook(t, { event: 'pre-edit', input: edit(join(t.root, 'src/a.tsx')) })
+    expect(guarded.code).toBe(2)
+    expect(guarded.err).toMatch(fixed)
+    const outside = hook(t, { event: 'pre-edit', input: edit(join(t.root, 'scripts/tool.ts')) })
+    expect(outside.code).toBe(0)
+    expect(outside.err).toMatch(fixed)
+    expect(hook(t, { event: 'stop', input: { session_id: 'e' } }).code).toBe(0)
   })
 
   it('an unknown flag under --hook exits 2, not 1', () => {
@@ -265,8 +311,9 @@ describe('every failure exits 2 with a line naming the fix', () => {
 })
 
 describe('the shim', () => {
-  it('is at most 40 lines and runs the local bin, never bunx', () => {
-    expect(SHIM.trimEnd().split('\n').length).toBeLessThanOrEqual(40)
+  it('is at most 50 lines and runs the local bin, never bunx', () => {
+    // It runs when nothing else can (no bin, no runtime), so it stays small enough to read whole.
+    expect(SHIM.trimEnd().split('\n').length).toBeLessThanOrEqual(50)
     expect(SHIM).toContain('node_modules/.bin/basalt-ui')
     expect(SHIM).not.toMatch(/\b(?:bunx|npx)\b/)
     expect(existsSync(OXLINT)).toBe(true)

@@ -1145,13 +1145,19 @@ describe('init: the session note', () => {
     const argv = ['--profile', 'app', '--root', 'src']
     const first = await runInit(argv, dir)
     expect(first.code).toBe(0)
-    expect(first.log.trimEnd().endsWith(SESSION_NOTE)).toBe(true)
     expect(first.log.split(SESSION_NOTE)).toHaveLength(2)
+    const note = first.log.slice(first.log.indexOf(SESSION_NOTE))
+    expect(note).toContain('.claude/skills/basalt-design/SKILL.md')
+    expect(note).toContain('basalt-ui lint --changed')
+    expect(note).toContain('.claude/agents/basalt-design-reviewer.md')
+    expect(note).not.toMatch(/continue in a new session|stop here|before you write/i)
     const second = await runInit(argv, dir)
     expect(second.log).not.toContain('Agent sessions:')
   })
 
   it('names no agent product or terminal', () => {
-    expect(SESSION_NOTE).not.toMatch(/claude|opencode|codex|cursor|tmux|herdr/i)
+    expect(SESSION_NOTE.replaceAll('.claude/', '')).not.toMatch(
+      /claude|opencode|codex|cursor|tmux|herdr/i,
+    )
   })
 })

@@ -2,13 +2,13 @@
  * The steps `init` runs, in order (docs/v3/concepts/skills-agent-layer.md section 4.1). Each takes
  * the one `Ctx`, does its part and returns; a step that cannot finish says so through `ctx.problems`
  * and the run goes on, so one failed install does not leave the files unplaced. A step is safe to
- * run twice: it writes only what differs. The hook step lives in `../lint/hook-step`.
+ * run twice: it writes only what differs. `sync` places the hook shim and its settings entries.
  */
 import { SOURCES_PATH } from '../../vite/sources'
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { basename, dirname, join, relative, resolve } from 'node:path'
 
-import { BUDGET_PATH, raiseCommand, seedBudget, writeBudget } from '../budget'
+import { BUDGET_PATH, seedBudget, writeBudget } from '../budget'
 import { readManifest, writeManifest } from '../manifest'
 import type { Manifest, Profile } from '../manifest'
 import {
@@ -17,6 +17,7 @@ import {
   readShippedPreset,
   STYLELINT_PRESET_FILE,
 } from '../presets'
+import { addCommand } from '../package-manager'
 import { BUILD_PEERS, RUNTIME_PEERS, satisfiesRange } from '../peers'
 import { INVOKERS, LINT_INVOCATION } from '../doctor/wiring'
 import { registersRouterPlugin } from '../router-wiring'
@@ -262,18 +263,8 @@ export function peerPlan(pkgRoot: string, profile: Profile, oxfmt: boolean): Pee
 }
 
 /** `add` (`--dev` for tools) with exact resolution, for the package manager the lockfile names (npm without one). */
-export function installCommand(root: string, specs: string[], dev = true): string[] {
-  const has = (file: string): boolean => existsSync(resolve(root, file))
-  if (has('bun.lock') || has('bun.lockb')) {
-    return ['bun', 'add', ...(dev ? ['--dev'] : []), '--exact', ...specs]
-  }
-  if (has('pnpm-lock.yaml')) {
-    const workspace = has('pnpm-workspace.yaml') ? ['-w'] : []
-    return ['pnpm', 'add', ...(dev ? ['--save-dev'] : []), '--save-exact', ...workspace, ...specs]
-  }
-  if (has('yarn.lock')) return ['yarn', 'add', ...(dev ? ['--dev'] : []), '--exact', ...specs]
-  return ['npm', 'install', ...(dev ? ['--save-dev'] : ['--save']), '--save-exact', ...specs]
-}
+export const installCommand = (root: string, specs: string[], dev = true): string[] =>
+  addCommand(root, specs, dev)
 
 export function installPeers(ctx: Ctx): void {
   const plan = peerPlan(ctx.pkgRoot, ctx.args.profile, !formatsWithPrettier(ctx.root))
@@ -337,12 +328,8 @@ export function placeManaged(ctx: Ctx): void {
 export function seedBudgetFile(ctx: Ctx): void {
   if (existsSync(resolve(ctx.root, BUDGET_PATH))) return
   writeBudget(ctx.root, seedBudget(ctx.args.profile))
-  say(
-    `wrote ${BUDGET_PATH} (waivers 0: the first reasoned waiver needs ${raiseCommand('waivers')})`,
-  )
+  say(`wrote ${BUDGET_PATH} (waivers follow the count; escapes and ejects are ceilings)`)
 }
-
-export { installHook } from '../lint/hook-step'
 
 /**
  * What a sibling install does not place below the repo root, said once each: the repo's own
