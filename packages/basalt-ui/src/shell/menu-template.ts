@@ -4,6 +4,7 @@
  * chord into the webview as a key event; `CommandPalette` then runs the command exactly as a typed
  * key would. The `accelerator` only displays, so the menu never owns a second key map.
  */
+import { RECORD_NEXT, RECORD_PREVIOUS } from './commands/define-commands'
 import type { CommandMap, CommandSet } from './commands/define-commands'
 
 export type MenuTemplateItem =
@@ -89,7 +90,7 @@ export function toMenuTemplate<T extends CommandMap>(
           entry.id !== 'shell.palette' &&
           entry.id !== 'shell.shortcuts' &&
           // The record steps live only while a record page is on screen: a native menu item would be dead.
-          !entry.id.startsWith('record.'),
+          !(entry.builtin && (entry.id === RECORD_PREVIOUS || entry.id === RECORD_NEXT)),
       )
       .map((entry) => entry.id)
   const items: MenuTemplateItem[] = []
