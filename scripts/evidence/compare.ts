@@ -449,7 +449,7 @@ async function main(): Promise<number> {
   if (!existsSync(join(distDir, 'index.html'))) throw new Error(`no index.html in ${distDir}`)
   await mkdir(outDir, { recursive: true })
 
-  const server = serveDist(distDir)
+  const server = await serveDist(distDir)
   let captured: Awaited<ReturnType<typeof captureAll>>
   try {
     captured = await captureAll({ baseUrl: server.origin, outDir, ids })
