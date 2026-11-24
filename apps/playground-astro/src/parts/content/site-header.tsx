@@ -39,7 +39,7 @@ export function Demo(): ReactElement {
           menu: [
             {
               entries: [
-                { href: '/colors', label: 'Colours', description: 'The derived palette' },
+                { href: '/colors', label: 'Colors', description: 'The derived palette' },
                 { href: '/spacing', label: 'Spacing', description: 'The ladder behind every gap' },
               ],
             },

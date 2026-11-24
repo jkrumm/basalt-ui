@@ -1,7 +1,7 @@
-// The app's series colours, authored once. Import-free: `basalt-ui tokens:css --extra` reads this file
+// The app's series colors, authored once. Import-free: `basalt-ui tokens:css --extra` reads this file
 // and writes `--basalt-<group>-<key>` for each pair (and the typed keys), so a chart takes the pair and
 // an HTML mark takes `groupTokens('<group>', tokens.series.<group>).<key>`. This is the one file that
-// writes raw colour; a pair is `{ light, dark }` (lighter on dark, deeper on light).
+// writes raw color; a pair is `{ light, dark }` (lighter on dark, deeper on light).
 //
 //   export default {
 //     series: {
