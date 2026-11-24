@@ -236,7 +236,8 @@ belongs here is the properties that are easy to break:
    finishes it, `--check` is red until it is applied.
 4. **Every invocation the CLI EMITS runs the resolved local bin**, never `bunx`. `bunx` does not
    re-resolve a cached package, which is how a consumer filed a P0 against a 1.20.0 cache while
-   pinned to 1.22.0. The bin runs under Node 22 or newer and under Bun (`engines.node`): `node:`
+   pinned to 1.22.0. The bin runs under Node 22.18 or newer (the first with type stripping on by default, which loading
+   `basalt.tokens.ts` needs) and under Bun (`engines.node`): `node:`
    built-ins only, no `Bun` global on any CLI path, because `init` installs with npm, pnpm or yarn
    and the edit hook runs the bin on every edit. A fix-it line renders its install command from the
    lockfile (`src/cli/package-manager.ts`).
