@@ -18,7 +18,7 @@ import { join, relative, resolve } from 'node:path'
 import type { Plugin, PluginOption, UserConfig } from 'vite'
 
 import { peerAddLine } from '../cli/peers'
-import { ALLOTMENT } from './allotment.gen'
+import { ALLOTMENT } from './allotment'
 import { appEjects, staleEjects } from './ejects'
 import type { AppEjects } from './ejects'
 import {

@@ -8,7 +8,7 @@ import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from 'n
 import { dirname, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { ALLOTMENT } from './allotment.gen'
+import { ALLOTMENT } from './allotment'
 
 /** `basalt-ui`, `basalt-ui/cards`, `basalt-ui/ui/button`, quoted after `from`, `import` or `import(`. */
 const SPECIFIER = /(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s+)(['"])(basalt-ui(?:\/[\w./*-]+)?)\1/g

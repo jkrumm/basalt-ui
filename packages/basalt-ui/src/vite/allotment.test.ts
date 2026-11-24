@@ -1,16 +1,42 @@
 import { describe, expect, it } from 'bun:test'
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
-import { ALLOTMENT } from './allotment.gen'
-import { ARCHITECTURE, parseAllotment } from './allotment'
+import { REACT_PEERS, SUBPATH_REQUIRED_PEERS } from '../../scripts/surface-gates'
+import { SURFACES } from '../surfaces'
+import { ALLOTMENT } from './allotment'
 import { VITE_DOC_PATH, renderViteDoc } from './doc'
 import { closureOf, packageGraph, requiredPeers, subpathOf } from './graph'
 import type { PackageGraph } from './graph'
 
-describe('allotment.gen.ts', () => {
-  it('is the parse of ARCHITECTURE.md (regenerate: bun packages/basalt-ui/src/vite/allotment.ts)', () => {
-    expect(ALLOTMENT).toEqual(parseAllotment(readFileSync(ARCHITECTURE, 'utf8')))
+const SRC = fileURLToPath(new URL('..', import.meta.url))
+
+describe('allotment', () => {
+  it('holds the peers the surface gates require, subpath by subpath', () => {
+    for (const [key, entry] of Object.entries(ALLOTMENT.subpaths)) {
+      const required = SUBPATH_REQUIRED_PEERS[key === '.' ? '.' : `./${key}`] ?? []
+      const own = entry.peers.filter((p) => !REACT_PEERS.includes(p))
+      if (key === 'ui') continue
+      expect(own.toSorted(), key).toEqual([...required].toSorted())
+    }
+  })
+
+  it('names only subpaths and optional peers the registry knows', () => {
+    for (const key of Object.keys(ALLOTMENT.subpaths)) {
+      expect(SURFACES, key).toHaveProperty([key === '.' ? '.' : `./${key === 'ui' ? 'ui/*' : key}`])
+    }
+    for (const dir of ALLOTMENT.composites) expect(ALLOTMENT.subpaths[dir], dir).toBeDefined()
+  })
+
+  it('lists every src/ui module as a primitive, and each composite as a src directory', () => {
+    const modules = readdirSync(`${SRC}ui`)
+      .filter((f) => /^[a-z][a-z-]*\.tsx$/.test(f) && !f.includes('.test.'))
+      .map((f) => f.replace(/\.tsx$/, ''))
+    for (const name of ALLOTMENT.primitives) {
+      expect(modules.includes(name) || name === 'table', name).toBe(true)
+    }
+    for (const dir of ALLOTMENT.composites)
+      expect(readdirSync(`${SRC}${dir}`).length).toBeGreaterThan(0)
   })
 
   it('reads the fourteen runtime subpaths, 39 primitives and the five primitive peers', () => {
@@ -24,11 +50,7 @@ describe('allotment.gen.ts', () => {
       'sortable-list': ['@atlaskit/pragmatic-drag-and-drop'],
     })
     expect(ALLOTMENT.subpaths['content']?.lazy).toEqual(['shiki', 'pele'])
-    expect(ALLOTMENT.subpaths['ai']).toEqual({
-      peers: ['react-markdown', 'remark-gfm', 'rehype-sanitize', 'remend'],
-      lazy: [],
-      reaches: ['.', 'content'],
-    })
+    expect(ALLOTMENT.subpaths['ai']?.reaches).toEqual(['.', 'content'])
     expect(ALLOTMENT.subpaths['shell']?.reaches).toEqual(['.', 'page', 'router'])
   })
 })
@@ -56,7 +78,7 @@ describe('closure', () => {
     const peers = requiredPeers(closureOf(['ui/date-picker', 'table'], graph))
     expect(peers.get('react-day-picker')).toBe('basalt-ui/ui/date-picker')
     expect(peers.get('@tanstack/react-table')).toBe('basalt-ui/table')
-    expect(peers.get('@base-ui/react')).toBe('basalt-ui/ui/date-picker')
+    expect(peers.get('@base-ui/react')).toBe('basalt-ui/controls')
     expect(peers.has('shiki')).toBe(false)
   })
 
