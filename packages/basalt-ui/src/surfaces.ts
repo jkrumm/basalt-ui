@@ -404,7 +404,7 @@ export const SURFACES = {
     kind: 'tooling',
     layer: 'ui',
     description:
-      'Content-site parts that render to static HTML with no client JavaScript: no provider, context, hook or router, every label a prop (Prose, SiteArticle, SitePager, SiteCallout, SiteCodeBlock, SiteTabs, SiteTab, SiteForm, SiteField, SiteSubmit, SiteDataTable, SiteHeader (links and menus), SiteFooter, ThemeSwitch, siteMdxComponents) and the landing blocks (SiteHero, SiteBento, SiteFeature, SiteComparison, SiteQuestionList, SiteCallToAction); the site profile',
+      'Content-site parts that render to static HTML with no client JavaScript: no provider, context, hook or router, every label a prop (Prose, SiteArticle, SitePager, SiteCallout, SiteCodeBlock, SiteTabs, SiteTab, SiteForm, SiteField, SiteSubmit, SiteDataTable, SiteHeader (links and menus), SiteFooter, ThemeSwitch, siteMdxComponents), the head scripts for a host outside Astro (themeScript, siteScript) and the landing blocks (SiteHero, SiteBento, SiteFeature, SiteComparison, SiteQuestionList, SiteCallToAction); the site profile',
     optionalPeers: ['react'],
     globs: { shipped: [], repo: ['packages/basalt-ui/src/static/**'] },
     forbiddenImports: [],
@@ -413,7 +413,7 @@ export const SURFACES = {
     kind: 'tooling',
     layer: 'build-tooling',
     description:
-      'basaltAstro() Astro integration — Tailwind 4, static.css on every page, the three faces through the Astro Fonts API and the head scripts; the site profile',
+      'basaltAstro() Astro integration — Tailwind 4, a generated sheet (static.css and the sources of every basalt directory the site imports) on every page, the three faces through the Astro Fonts API, the head scripts, and a build that fails on a part needing JavaScript outside an island (ASTRO_PARTS); the site profile',
     optionalPeers: ['@astrojs/react', '@tailwindcss/vite', 'astro', 'tailwindcss'],
     forbiddenImports: [],
   },

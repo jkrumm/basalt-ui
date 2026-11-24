@@ -17,10 +17,11 @@ The Astro integration of the `site` profile. Put it after `react()`; do not also
 ```ts
 basaltAstro(options?: BasaltAstroOptions): BasaltAstroIntegration
   scheme?: ThemeScriptOptions  // Scheme options (`basalt-ui/theme-script`): the boot script reads and the theme switch writes the same key, attribute and cookie
-  fonts?: boolean  // Register basalt's faces with the Astro Fonts API (Fontsource provider)
+  fonts?: boolean | BasaltFontsOptions  // Register basalt's faces with the Astro Fonts API (Fontsource provider)
+  sources?: boolean  // Write `.basalt/sources.css` and inject it on every page in place of `basalt-ui/static.css`
 ```
 
-`BasaltAstroIntegration`, `BasaltAstroOptions` import from `basalt-ui/astro`: `import type { BasaltAstroIntegration, BasaltAstroOptions } from 'basalt-ui/astro'`.
+`BasaltAstroIntegration`, `BasaltAstroOptions`, `BasaltFontsOptions` import from `basalt-ui/astro`: `import type { BasaltAstroIntegration, BasaltAstroOptions, BasaltFontsOptions } from 'basalt-ui/astro'`.
 
 `ThemeScriptOptions` import from `basalt-ui/theme-script`: `import type { ThemeScriptOptions } from 'basalt-ui/theme-script'`.
 
