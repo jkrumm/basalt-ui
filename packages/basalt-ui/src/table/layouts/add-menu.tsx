@@ -6,14 +6,14 @@ import type { ReactElement } from 'react'
 import { useMessages } from '../../core/messages/use-messages'
 import { table } from '../../core/messages/table'
 import { Menu, MenuContent, MenuItem } from '../../ui/menu'
-import type { TableLayout } from '../contract'
 import type { TableModel } from '../use-data-table'
 import { useLayoutOptions } from './toggle'
 
 export type AddViewMenuProps = {
   model: TableModel<unknown>
   anchor: HTMLElement
-  onPick: (layout: TableLayout) => void
+  /** The id of the picked layout. */
+  onPick: (layout: string) => void
   onClose: () => void
 }
 
@@ -39,7 +39,7 @@ export function AddViewMenu({ model, anchor, onPick, onClose }: AddViewMenuProps
             </span>
             <span className="flex min-w-0 flex-col">
               <span className="text-sm text-foreground">{label}</span>
-              <span className="text-xs text-muted-foreground">{hint}</span>
+              {hint !== undefined && <span className="text-xs text-muted-foreground">{hint}</span>}
             </span>
           </MenuItem>
         ))}

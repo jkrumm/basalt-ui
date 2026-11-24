@@ -17,7 +17,7 @@ import { cn } from '../../core/cn'
 import { FrameArmContext } from '../../core/frame-arm'
 import type { FrameArm } from '../../core/frame-arm'
 import { useRowsShown } from '../../core/rows-shown'
-import type { DataTableProps } from '../contract'
+import type { DataTableProps, TableLayoutSpec, TableLayoutView } from '../contract'
 import type { PlannedColumn } from '../core/plan'
 import { TableBody, TableCaption, Table } from '../../ui/table'
 import { bodyDensity, DataTableBody } from './body'
@@ -56,8 +56,40 @@ const LazyGallery = lazy(
 )
 
 /**
- * A ready board or gallery: the bulk bar, the layout, the pager and the detail host an activation
- * shows into, around the same model the table reads.
+ * An app's layout, drawn as a component of its own so the hooks its `render` calls belong to it; a
+ * switch to another layout unmounts it.
+ */
+function AppLayout<T>({
+  render,
+  view,
+}: {
+  render: TableLayoutSpec<T>['render']
+  view: TableLayoutView<T>
+}): ReactElement {
+  return <>{render(view)}</>
+}
+
+/** What an app's layout reads of the model: the shown rows and the table's own way to open one. */
+function layoutView<T>(
+  model: TableModel<T>,
+  table: DataTableProps<T>['table'],
+): TableLayoutView<T> {
+  return {
+    rows: model.rows.map((row) => row.original),
+    rowId: model.getRowId,
+    open: (row) => model.activate(model.getRowId(row)),
+    activeId: model.activeId,
+    table,
+  }
+}
+
+/** The render of the view's layout when it is an app's, else `undefined`. */
+const appRenderOf = <T,>(model: TableModel<T>): TableLayoutSpec<T>['render'] | undefined =>
+  model.layouts.find((layout) => layout.id === model.layout)?.render
+
+/**
+ * A ready board, gallery or app layout: the bulk bar, the layout, the pager and the detail host an
+ * activation shows into, around the same model the table reads.
  */
 function CardLayout<T>({
   table,
@@ -73,6 +105,7 @@ function CardLayout<T>({
   const model = modelOf(table)
   const sheet = useDetailHost(model, detail)
   const any = model as unknown as TableModel<unknown>
+  const render = appRenderOf(model)
   return (
     <div
       data-slot="table-root"
@@ -82,7 +115,9 @@ function CardLayout<T>({
     >
       <BulkBar table={table} />
       <Suspense fallback={null}>
-        {model.layout === 'board' ? (
+        {render !== undefined ? (
+          <AppLayout key={model.layout} render={render} view={layoutView(model, table)} />
+        ) : model.layout === 'board' ? (
           <LazyBoard model={any} drag={drag} virtual={virtual} />
         ) : (
           <LazyGallery model={any} />
@@ -299,8 +334,10 @@ export function DataTable<T, I = unknown>({
   const onBlur = clearOnBlur(link)
   const windowed = virtual !== undefined && (phase.tag === 'ready' || phase.tag === 'stale')
 
-  // A board and a gallery draw their own frames while they have no cards: never the table's head over its rows.
-  const cardLayout = model.layout === 'board' || model.layout === 'gallery'
+  // A board, a gallery and an app's layout draw their own frames while they have no cards: never the
+  // table's head over its rows.
+  const cardLayout =
+    model.layout === 'board' || model.layout === 'gallery' || appRenderOf(model) !== undefined
   if (cardLayout && (frame !== undefined || (phase.tag !== 'ready' && phase.tag !== 'stale')))
     return (
       <LayoutPhase
@@ -312,10 +349,7 @@ export function DataTable<T, I = unknown>({
   if (frame !== undefined)
     return <FramedArm table={table} frame={frame} windowed={virtual !== undefined} />
 
-  if (
-    (model.layout === 'board' || model.layout === 'gallery') &&
-    (phase.tag === 'ready' || phase.tag === 'stale')
-  )
+  if (cardLayout && (phase.tag === 'ready' || phase.tag === 'stale'))
     return <CardLayout table={table} detail={detail} drag={drag} virtual={virtual} />
 
   if (windowed) {

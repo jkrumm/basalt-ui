@@ -23,7 +23,7 @@ import type { ControlHandle, ControlsSlot } from '../../core/ports'
 import type { PageLayout, PageSearch, PageSettings } from '../../page/contract'
 import { Button } from '../../ui/button'
 import { Tabs, TabsList, TabsTrigger } from '../../ui/tabs'
-import type { DataTableInstance, TableLayout, TableState, View, ViewStore } from '../contract'
+import type { DataTableInstance, TableState, View, ViewStore } from '../contract'
 import type { AddViewMenuProps } from '../layouts/add-menu'
 import { LayoutToggle, layoutHandle, useLayoutLabel, useLayoutOptions } from '../layouts/toggle'
 import { SEARCH_DEBOUNCE_MS } from '../core/state'
@@ -275,7 +275,7 @@ export type ViewsController<T> = {
   close(): void
   apply(id: string | undefined): void
   /** Saves what is shown as a new view (in `layout` when given), applies it and opens the panel on its name. */
-  create(layout?: TableLayout): Promise<void>
+  create(layout?: string): Promise<void>
   save(): Promise<void>
   discard(): void
   rename(id: string, name: string): Promise<boolean>
@@ -625,7 +625,7 @@ export type TableViewsResult = {
   /** `PageBar settings`: Edit view, which opens the panel. */
   settings: PageSettings
   /** `PageBar layout`: the view's layout toggle; absent when the table offers one layout. */
-  layout: PageLayout<TableLayout> | undefined
+  layout: PageLayout<string> | undefined
   /** The manage-view panel; mount it once on the page, it renders nothing while closed. */
   panel: ReactElement
 }

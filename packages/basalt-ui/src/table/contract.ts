@@ -82,16 +82,60 @@ export type TableDisplay = {
   groupBy?: string | null
   /** The footer reduce a reader picked per column id, `'none'` for none; absent, the declared `footer`. */
   aggregates?: Readonly<Record<string, Aggregate | 'none'>>
-  /** How the rows are drawn; absent, or a layout the table does not offer, is `table`. */
-  layout?: TableLayout
+  /**
+   * The id of the layout the rows are drawn in; absent is `table`. An id the table does not offer
+   * (a saved view from an app that since dropped a layout) draws the table, with a dev warning.
+   */
+  layout?: string
 }
 
 /**
- * How a view draws its rows, all from the one model: `table`; `list`, one line per record from the
- * columns' card slots; `board`, columns by a `select` column whose `commit` a drop calls; `gallery`,
- * a grid of cards from the same slots.
+ * The layouts the kit draws itself, all from the one model: `table`; `list`, one line per record
+ * from the columns' card slots; `board`, columns by a `select` column whose `commit` a drop calls;
+ * `gallery`, a grid of cards from the same slots. Each is a layout spec the table resolves with its
+ * own label, hint and glyph; an app adds its own as a `TableLayoutSpec`.
  */
-export type TableLayout = 'table' | 'list' | 'board' | 'gallery'
+export type BuiltinLayout = 'table' | 'list' | 'board' | 'gallery'
+
+/**
+ * What an app's layout draws from: the rows the view shows (searched, filtered, sorted, the current
+ * page), in the order the table would draw them, and the table's own ways to open a row.
+ */
+export type TableLayoutView<T> = {
+  readonly rows: readonly T[]
+  /** The id `getRowId` gives the row. */
+  rowId(row: T): string
+  /** Opens the row as a click or Enter on a table row does: its `onRowActivate`, `detail` or derived sheet. */
+  open(row: T): void
+  /** The row whose detail is open, or that the page named (`activeRowId`). */
+  readonly activeId: string | undefined
+  /** The table, for the parts a layout may draw itself (`DataTableBody`, `BulkBar`, `TablePager`). */
+  readonly table: DataTableInstance<T>
+}
+
+/**
+ * A layout an app adds to the view row: the toggle, `+ View`'s menu and a saved view name it by
+ * `id`. `render` draws the ready rows; the table keeps the bulk bar, the pager, the detail host and
+ * the loading, empty and error frames around it, so a layout draws records and nothing else.
+ *
+ * @example
+ * const timeline: TableLayoutSpec<Deal> = {
+ *   id: 'timeline',
+ *   label: 'Timeline',
+ *   hint: 'Deals on their close date',
+ *   icon: CalendarRange,
+ *   render: (view) => <DealTimeline deals={view.rows} onOpen={view.open} />,
+ * }
+ */
+export type TableLayoutSpec<T> = {
+  /** Unique in the table, never a built-in's id: the value a saved view stores. */
+  id: string
+  label: string
+  /** The one line `+ View`'s menu prints under the label. */
+  hint?: string
+  icon: IconComponent
+  render(view: TableLayoutView<T>): ReactNode
+}
 
 /** A body row height, in the density words: the row of `dense`, `normal` or `comfortable` (`--basalt-row-h`). */
 export type RowHeight = 'dense' | 'normal' | 'comfortable'
@@ -465,13 +509,16 @@ export type UseDataTable<
   selection?: { bulk: BulkAction<T>[]; selectAll?: boolean }
   views?: { store?: ViewStore }
   /**
-   * The layouts a reader may pick in the view row, in toggle order; the view saves the pick. One
-   * layout draws no toggle. `board` needs a client table with a `c.select` column (its `commit` is
-   * the drop) and is left out with a dev warning otherwise.
+   * The layouts a reader may pick in the view row, in toggle order; the view saves the pick's id. A
+   * built-in is named by its id, an app's own layout is a `TableLayoutSpec`. One layout draws no
+   * toggle. `board` needs a client table with a `c.select` column (its `commit` is the drop) and is
+   * left out with a dev warning otherwise.
    *
    * @default ['table']
+   * @example
+   * layouts: ['table', 'board', timeline]
    */
-  layouts?: readonly TableLayout[]
+  layouts?: readonly (BuiltinLayout | TableLayoutSpec<T>)[]
 } & (
   | (DetailDoor<T> & { detail: (row: T, box: Box) => ReactNode })
   | (DetailDoor<T> & { detail?: never; detailById: NonNullable<DetailDoor<T>['detailById']> })
