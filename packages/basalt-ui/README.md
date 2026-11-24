@@ -29,7 +29,7 @@ That is the whole install. A create-vite React app already has `react`, `react-d
 (step 2) installs the rest of the `app` profile's peers (`tailwindcss`, `@tailwindcss/vite`,
 `@base-ui/react`, `@tanstack/react-router`, `@tanstack/react-query`, `@tanstack/router-plugin`) and the lint
 tools. Every peer has a range matched to how tightly basalt is coupled to it (the table in `MAINTAINING.md` §
-Peers: a caret for a stable package, a tilde for one whose internals basalt reads, an exact pin for 0.x tooling).
+Dependencies: a caret for a stable package, a tilde for one whose internals basalt reads, an exact pin for 0.x or alpha tooling).
 `@tanstack/router-plugin` is pinned at `1.168.40` but accepts any newer 1.x. An app already on a version inside the
 range keeps it, and a fresh install takes the newest one and saves it exactly. A
 dependency the app already had whose version falls outside the range or pin is changed, and `init` prints
