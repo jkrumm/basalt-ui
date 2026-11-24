@@ -5,12 +5,26 @@
  * the two inline head scripts: the scheme first, then the static parts' listeners. The faces still
  * need `<BasaltFonts />` from `basalt-ui/astro/BasaltFonts.astro` in the layout's head: Astro emits a
  * face only where its font component renders. The parts themselves are `basalt-ui/static`.
+ *
+ * It also writes `.basalt/sources.css` (the sheet with the `@source` lines of every basalt directory
+ * the site imports) and, when the build is done, fails it on a part that needs JavaScript rendered
+ * outside an island (`ASTRO_PARTS`, `interaction: 'required'`).
  */
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
-import { pathToFileURL } from 'node:url'
+import { dirname, join } from 'node:path'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { themeScript } from '../css/theme-script'
 import type { ThemeScriptOptions } from '../css/theme-script'
 import { siteScript } from '../static/site-script'
+import { installedPackage } from '../vite/graph'
+import { SOURCES_PATH } from '../vite/sources'
+import { deadIslandMessage, deadIslands } from './islands'
+import { importedDirs, renderSiteSources } from './sources'
+
+export { ASTRO_PARTS } from './parts'
+export type { AstroPart } from './parts'
+export type { IslandMessages } from './mdx/messages'
 
 /** The slice of Astro's `astro:config:setup` hook this integration calls; typed here so basalt needs no `astro` dependency. */
 export type AstroSetupHook = (options: {
@@ -19,10 +33,19 @@ export type AstroSetupHook = (options: {
   injectScript: (stage: 'head-inline' | 'page-ssr', content: string) => void
 }) => void | Promise<void>
 
+/** The slice of Astro's `astro:build:done` hook this integration reads: the output directory. */
+export type AstroBuildDoneHook = (options: { dir: URL }) => void | Promise<void>
+
 /** The integration object Astro reads from `integrations`. */
 export type BasaltAstroIntegration = {
   name: 'basalt-ui'
-  hooks: { 'astro:config:setup': AstroSetupHook }
+  hooks: { 'astro:config:setup': AstroSetupHook; 'astro:build:done': AstroBuildDoneHook }
+}
+
+/** The Fontsource subsets the faces load: `latin` and `latin-ext` unless the site names its own. */
+export type BasaltFontsOptions = {
+  /** Fontsource subset names, such as `['latin', 'cyrillic', 'greek']`. */
+  subsets: readonly string[]
 }
 
 export type BasaltAstroOptions = {
@@ -31,9 +54,46 @@ export type BasaltAstroOptions = {
   /**
    * Register basalt's faces with the Astro Fonts API (Fontsource provider). Default `true`; `false`
    * leaves fonts to the site, which then sets `--basalt-font-sans`, `--basalt-font-head` and
-   * `--basalt-font-mono` itself.
+   * `--basalt-font-mono` itself. `{ subsets }` loads the faces for the scripts the site writes in.
    */
-  fonts?: boolean
+  fonts?: boolean | BasaltFontsOptions
+  /**
+   * Write `.basalt/sources.css` and inject it on every page in place of `basalt-ui/static.css`.
+   * Default `true`; `false` for a site that imports `basalt-ui/static.css` and lists its sources itself.
+   */
+  sources?: boolean
+}
+
+/** The css token sheets the nearest `.basalt/manifest.json` at or above `root` records, absolute. */
+function tokenSheets(root: string): string[] {
+  for (let dir = root; ; dir = dirname(dir)) {
+    const path = join(dir, '.basalt/manifest.json')
+    if (existsSync(path)) {
+      const manifest = JSON.parse(readFileSync(path, 'utf8')) as {
+        tokens?: { out?: unknown; format?: unknown }[]
+      }
+      return (manifest.tokens ?? []).flatMap((row) =>
+        typeof row.out === 'string' && row.format === 'css' ? [join(dir, row.out)] : [],
+      )
+    }
+    if (existsSync(join(dir, '.git')) || dirname(dir) === dir) return []
+  }
+}
+
+/** Writes the site's sources sheet when its bytes change; returns its absolute path. */
+function writeSiteSources(root: string): string {
+  const outFile = join(root, SOURCES_PATH)
+  const css = renderSiteSources({
+    outFile,
+    pkgRoot: installedPackage(root),
+    dirs: importedDirs(join(root, 'src')),
+    tokenSheets: tokenSheets(root),
+  })
+  if (!existsSync(outFile) || readFileSync(outFile, 'utf8') !== css) {
+    mkdirSync(dirname(outFile), { recursive: true })
+    writeFileSync(outFile, css)
+  }
+  return outFile
 }
 
 /** The Fontsource families behind the three font tokens. Variable faces: one weight axis each. */
@@ -116,12 +176,23 @@ export function basaltAstro(options: BasaltAstroOptions = {}): BasaltAstroIntegr
             fallbacks: [...f.fallbacks],
             provider,
             styles: ['normal'],
-            subsets: ['latin', 'latin-ext'],
+            subsets:
+              typeof options.fonts === 'object'
+                ? [...options.fonts.subsets]
+                : ['latin', 'latin-ext'],
           }))
           updateConfig({ vite: { plugins }, fonts })
         }
-        injectScript('page-ssr', 'import "basalt-ui/static.css";')
+        const sheet =
+          options.sources === false
+            ? 'basalt-ui/static.css'
+            : writeSiteSources(fileURLToPath(config.root)).split('\\').join('/')
+        injectScript('page-ssr', `import ${JSON.stringify(sheet)};`)
         injectScript('head-inline', headScript(options))
+      },
+      'astro:build:done': ({ dir }) => {
+        const dead = deadIslands(fileURLToPath(dir))
+        if (dead.length > 0) throw new Error(deadIslandMessage(dead))
       },
     },
   }
