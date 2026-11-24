@@ -86,7 +86,7 @@ Columns: `No directive` is the static HTML: `clean`, `differs` from the client:o
 | overlay-host | OverlayHost | clean | client:visible | 137.4 kB | 66.2 kB | 35.3 kB | Needs the island to work: overlays open by key from JS; nothing is open at rest, so the host draws nothing. client:idle above the fold, client:visible below, up to 66.2 kB further. |
 | toast-host | ToastHost | clean | client:visible | 108.9 kB | 37.7 kB | 35.3 kB | Static picture first, the island adds behaviour: it drains notify() calls made after mount; the viewport is empty at rest. client:visible, up to 37.7 kB further (client:idle above the fold). |
 | app-shell | AppShell | fails | none works | 245.1 kB | 173.9 kB | 35.3 kB | fails on the server (Invalid value used as weak map key) and in the browser (Invalid value used as weak map key) |
-| command-palette | CommandPalette | clean | client:visible | 184.8 kB | 113.5 kB | 34.8 kB | Needs the island to work: the palette opens on a key or the search row; rendered closed, the trigger is the picture. client:idle above the fold, client:visible below, up to 113.5 kB further. |
+| command-palette | CommandPalette | clean | client:visible | 187.8 kB | 116.6 kB | 34.8 kB | Needs the island to work: the palette opens on a key or the search row; rendered closed, the trigger is the picture. client:idle above the fold, client:visible below, up to 116.6 kB further. |
 | controls | FilterSet, ViewTabs | fails | none works | 254.4 kB | 183.3 kB | 34.8 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
 | control-home | ControlHome, ControlView | fails | none works | 216.3 kB | 145.2 kB | 34.8 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
 | basalt-provider | BasaltProvider | clean | no directive | 83.4 kB | 12.2 kB | 34.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: the provider only sets locale and scheme; a Button inside it is the whole picture. |
@@ -120,7 +120,7 @@ Every part of a family on one page, each its own island, in one mode: the JavaSc
 | charts | 8 | 0 | 205.7 kB | 223.6 kB | 223.5 kB | 223.5 kB |
 | table | 4 | 0 | 338.9 kB | 352.6 kB | 352.5 kB | 352.5 kB |
 | content | 6 | 0 | 274.7 kB | 278.7 kB | 278.6 kB | 278.6 kB |
-| page | 19 | 0 | 202.7 kB | 290.5 kB | 290.4 kB | 377.6 kB |
+| page | 19 | 0 | 202.7 kB | 292.3 kB | 292.2 kB | 380.0 kB |
 | forms | 18 | 0 | 187.3 kB | 253.4 kB | 253.3 kB | 253.3 kB |
 
 ## Charts: is the static picture correct?
@@ -209,7 +209,7 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 - overlay-host: the mobile overlays (Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom sheet on a phone; the presenter hooks ship in every overlay island, and the Dock carries the sheet frame
 - toast-host: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
 - app-shell: the mobile overlays (Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom sheet on a phone; the sheet is one lazy chunk and the presenter hooks ship in every ui island
-- command-palette: the mobile overlays (Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom sheet on a phone; the presenter hooks ship in every overlay island, and the Dock carries the sheet frame
+- command-palette: ga-seams (Issue 3262): PageBar records (the record steps and their k/j registration) and CommandPalette sources (debounced abortable record search, recents per source, row actions)
 - controls: the mobile overlays (Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom sheet on a phone; the presenter hooks ship in every overlay island, and the Dock carries the sheet frame
 - control-home: the mobile overlays (Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom sheet on a phone; the presenter hooks ship in every overlay island, and the Dock carries the sheet frame
 - basalt-provider: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
@@ -235,7 +235,7 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 - family cards: phase.ts gains the settled-empty rule (settledEmpty, resolveFrame) every frame page imports; a few bytes on the form, cards and page families
 - family table: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
 - family content: the mobile overlays (Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom sheet on a phone; the sheet is one lazy chunk and the presenter hooks ship in every ui island
-- family page: the mobile overlays (Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom sheet on a phone; the sheet is one lazy chunk and the presenter hooks ship in every ui island
+- family page: ga-seams (Issue 3262): PageBar records (the record steps and their k/j registration) and CommandPalette sources (debounced abortable record search, recents per source, row actions)
 - family forms: the mobile overlays (Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom sheet on a phone; the sheet is one lazy chunk and the presenter hooks ship in every ui island
 
 ## Findings
