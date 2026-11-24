@@ -540,11 +540,13 @@ async function focusCrop(c: Ctx, name: string, path: string): Promise<void> {
   const anchor = anchorOf(c, name)
   const reachable =
     'a[href], button, input:not([type="hidden"]), select, textarea, summary, [tabindex]:not([tabindex^="-"])'
-  const target = (el: Element): boolean =>
-    [el, ...Array.from(el.querySelectorAll(reachable))].some(
-      (e) => e.matches(reachable) && !e.matches(':disabled') && e.checkVisibility(),
+  // Runs in the page: the selector travels as the argument, never as a closure over this scope.
+  const target = (el: Element, selector: string): boolean =>
+    [el, ...Array.from(el.querySelectorAll(selector))].some(
+      (e) => e.matches(selector) && !e.matches(':disabled') && e.checkVisibility(),
     )
-  if (!(await anchor.evaluate(target))) throw new NotDeclared('no focus target in the anchor')
+  if (!(await anchor.evaluate(target, reachable)))
+    throw new NotDeclared('no focus target in the anchor')
   await c.page.evaluate('document.activeElement?.blur(); window.scrollTo(0, 0)')
   const focusables = await c.page.evaluate<number>(
     `document.querySelectorAll(${JSON.stringify(reachable)}).length`,
