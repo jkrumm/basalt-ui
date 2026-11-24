@@ -7,7 +7,7 @@
  * face only where its font component renders. The parts themselves are `basalt-ui/static`.
  *
  * It also writes `.basalt/sources.css` (the sheet with the `@source` lines of the closure the site's
- * basalt imports reach, as `basalt()` computes it) and, when the build is done, fails it on a part that needs JavaScript rendered
+ * basalt imports reach, as the Vite plugin computes it) and, when the build is done, fails it on a part that needs JavaScript rendered
  * outside an island (`ASTRO_PARTS`, `interaction: 'required'`).
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
