@@ -221,12 +221,18 @@ export function yTickOpacity(opts: {
   /** The hover pins its y value beside this axis. */
   chip: boolean
   corner?: Corner | undefined
+  /** Where a label stands from its grid line, px: a label inside the plot is on the chip's row by its own place, not its line's. */
+  shift?: ((position: number) => number) | undefined
 }): (context: { value: ChartValue; position: number; focus: ReadoutFocus }) => number {
-  const { fontSize, chip, corner } = opts
+  const { fontSize, chip, corner, shift } = opts
   const reach = fontSize * LINE_BOX + READOUT_AIR
   return ({ value, position, focus }) => {
     if (focus === null) return 1
-    if (chip && Number.isFinite(focus.primary.y) && Math.abs(position - focus.primary.y) < reach)
+    if (
+      chip &&
+      Number.isFinite(focus.primary.y) &&
+      Math.abs(position + (shift?.(position) ?? 0) - focus.primary.y) < reach
+    )
       return 0
     return corner !== undefined &&
       corner.xChip?.() !== false &&

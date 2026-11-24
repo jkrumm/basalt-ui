@@ -64,3 +64,15 @@ describe('without a corner the ticks only follow their own chip', () => {
     expect(plain({ value: 0, position: 200, focus: focus(2, 120) })).toBe(1)
   })
 })
+
+describe('a label inside the plot is blanked by its own row, not its line', () => {
+  const inside = yTickOpacity({ fontSize: 11, chip: true, shift: () => 11 })
+  const f = focus(50, 100)
+  const row = f?.primary.y ?? 0
+  test('the chip 11 px below the line: the label under it is blanked', () => {
+    expect(inside({ value: 100, position: row - 11, focus: f })).toBe(0)
+  })
+  test('the line itself, whose label stands 11 px off the chip row: kept', () => {
+    expect(inside({ value: 100, position: row - 40, focus: f })).toBe(1)
+  })
+})

@@ -204,6 +204,10 @@ const INSIDE_TOP_PX = 14
 /** An inside label drawn under its line, px. */
 const INSIDE_BELOW = 11
 
+/** Where an inside label stands from its grid line at `position`, px: the top one under its line, the rest above theirs. */
+const insideShift = (position: number): number =>
+  position < INSIDE_TOP_PX ? INSIDE_BELOW : INSIDE_ABOVE
+
 /** The one tick-label size, at every container width: the caption size, so a card never mixes sizes. */
 const TICK_FONT = BASALT.text.micro
 
@@ -602,13 +606,17 @@ export function yGuide<T>(opts: {
         fontSize: TICK_FONT,
         opacity:
           readout || corner !== undefined
-            ? yTickOpacity({ fontSize: TICK_FONT, chip: readout, corner })
+            ? yTickOpacity({
+                fontSize: TICK_FONT,
+                chip: readout,
+                corner,
+                shift: inside === true ? insideShift : undefined,
+              })
             : 1,
         ...(inside === true && {
           anchor: 'start' as const,
           dx: INSIDE_DX,
-          dy: ({ position }: { position: number }) =>
-            position < INSIDE_TOP_PX ? INSIDE_BELOW : INSIDE_ABOVE,
+          dy: ({ position }: { position: number }) => insideShift(position),
         }),
       },
     },
