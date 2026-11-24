@@ -19,6 +19,7 @@ import { join } from 'node:path'
 import { SKILL_NAMES, SURFACES } from '../packages/basalt-ui/src/surfaces'
 import type { DoctrineSpec } from '../packages/basalt-ui/src/surfaces'
 import { checkCoverage, SHIPPED_RULES } from '../packages/basalt-ui/scripts/check-coverage'
+import { subpathFamilies } from '../packages/basalt-ui/scripts/export-keys'
 
 const root = join(import.meta.dir, '..')
 const pkgRoot = join(root, 'packages/basalt-ui')
@@ -33,7 +34,8 @@ function packageExports(): Set<string> {
   const pkg = JSON.parse(readFileSync(join(pkgRoot, 'package.json'), 'utf8')) as {
     exports?: Record<string, unknown>
   }
-  return new Set(Object.keys(pkg.exports ?? {}))
+  // The eject paths (`./core/<module>`) are the one `./core/*` family SURFACES names.
+  return new Set(subpathFamilies(pkg.exports ?? {}))
 }
 
 // ── gate: checkCoverage() must return 0 ─────────────────────────────────────
