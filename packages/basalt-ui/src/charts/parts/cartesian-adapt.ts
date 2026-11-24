@@ -149,20 +149,16 @@ export function toEngineTooltip<D>(t: ChartTooltipConfig<D>): EngineTooltip<D> {
   }
 }
 
-/**
- * `phase` and `empty` onto the three "nothing to draw" states the placeholders render; `fallback`
- * is what a part's deprecated `state` prop says when neither names one.
- */
+/** `phase` and `empty` onto the three "nothing to draw" states the placeholders render. */
 export function toChartState(
   phase: CartesianChartProps<unknown>['phase'],
   empty?: Empty | null,
-  fallback?: ChartState,
 ): ChartState | undefined {
   const resolved = resolvePhase({ phase, empty })
   if (resolved.tag === 'loading' || resolved.tag === 'offline') return { pending: true }
   if (resolved.tag === 'error') return { error: resolved.message ?? true }
   if (resolved.tag === 'empty') return { empty: resolved.empty.cause }
-  return fallback
+  return undefined
 }
 
 /** The engine-side props of one chart: everything the compiler reads that is not chrome. */

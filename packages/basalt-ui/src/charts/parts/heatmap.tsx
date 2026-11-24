@@ -364,7 +364,7 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
     focus,
     annotate,
   } = props
-  // `phase` and `empty` say pending, error, then the empty cause; the deprecated `state` fills in when they say nothing.
+  // `phase` and `empty` say pending, error, then the empty cause.
   const state = toChartState(phase, empty)
   const chartId = useId()
   const focused = focus?.datum ?? null
