@@ -20,12 +20,12 @@ Named exports only — **no default exports**. Files `kebab-case`, components `P
 
 | Subpath        | UI?          | Owns                                                                                                                                                                |
 | -------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.`            | ui           | the state seams (`persisted`, `notify`, `createChannel`, `externalField`, `useNow`, `createFormat`)                                                                 |
+| `.`            | ui           | the state seams (`persisted`, `notify`, `externalField`, `useNow`, `createFormat`); `createChannel` is in `./data`                                                  |
 | `./charts`     | **headless** | `CartesianChart` + the `Lines`/`Bars`/`Sparkline`/`Heatmap`/`BandStrip`/`IntervalTrack` kinds, `ChartCard`, `chartCursor` — no token, formatter or engine re-export |
 | `./tokens`     | **headless** | `BASALT`, `alpha`, `BP`/`p`, `buildPaletteCss`, `seriesTokens`, `groupTokens`                                                                                       |
 | `./controls`   | headless     | the control tier: `FilterSet` over `spec(...)`, `ViewTabs`, `ControlView`, `ControlHome`, `filterSlot` and the v3 forms                                             |
 | `./table`      | headless     | `col<Row>()` kind columns, `useDataTable`, `DataTable` and its parts, `tableCodec`                                                                                  |
-| `./content`    | ui           | `Prose`, `Markdown`, `CodeBlock`, `MermaidDiagram`, MDX map                                                                                                         |
+| `./content`    | ui           | `Markdown`, `CodeBlock`                                                                                                                                             |
 | `./vite`       | —            | `basalt()` (gates, sources.css, head/PWA)                                                                                                                           |
 | `./styles.css` | —            | `@layer basalt` base styles, the iOS input floor, the font stack — mandatory import                                                                                 |
 | `./configs/*`  | —            | raw toolchain presets (real paths — `extends` needs them)                                                                                                           |
@@ -98,7 +98,7 @@ props extend and `src/surfaces.ts` stays the SSOT for real subpaths.
 - `motion` is framework-agnostic, so `src/motion` is importable from both halves.
 - `src/core/list` is the one part of `src/core` on Base UI: the list engine `Select`, `Combobox` and the
   palette share imports `@base-ui/react`, cva and `ui/avatar`, because an ejected seed reaches
-  shared code only through `../core/<path>`. The exception is declared in `docs/v3/ARCHITECTURE.md`
+  shared code only through `../core/<path>`. The exception is declared in `docs/v3/CONTRACT.md`
   § 1; no other `src/core` module takes a peer but react.
 - `./controls` resolves with only its own peers: `check-dist-layering.mjs` walks the built graph and
   `pack-test.sh` renders one with every other peer absent.
@@ -253,7 +253,7 @@ Three tiers: **palette data** (pure data, zero React/DOM) → **`--basalt-*` CSS
 The 2.x shell (`BasaltShell`, `PageBar`, `PageAside`, `projectMobileNav`, the sidebar and
 mobile-nav modules) and the 2.x control tier (`FilterSet` children, `SettingsRow`, the `ctl` size
 slots) were deleted in 3.0; their invariants went with them. The v3 shell, homes and controls are
-specified in `../../docs/v3/ARCHITECTURE.md` and its concepts, and their maintainer-facing
+specified in `../../docs/v3/CONTRACT.md` and the concepts it names, and their maintainer-facing
 properties live in the JSDoc of `src/shell/index.ts`, `src/page` and `src/controls`, where the
 guards that hold them are named.
 
@@ -341,7 +341,7 @@ them: the 2.x aliases are gone in 3.0 (`cards.json` rows `cards-frame-types-*`).
 
 ## Deprecation lifecycle
 
-Returns with the first 2.x deprecation (the `DEPRECATED_EXPORTS` ledger, `basalt/deprecated-export` and `check-grace.ts`'s removal gate); 2.0.0 ships none.
+Returns with the first deprecation after 3.0.0 (the `DEPRECATED_EXPORTS` ledger, `basalt/deprecated-export` and `check-grace.ts`'s removal gate); 3.0.0 ships none.
 
 ## Shipping a rendering change — what a minor may move
 
@@ -378,8 +378,8 @@ Code cannot load rules or skills from `node_modules`, which is the only reason a
   sharing that `rule`), `--check` is the CI gate, and a block that DISAGREES is a hard failure. `not guarded`
   is printed even when empty, because a rule claiming full coverage is a claim someone can check.
 - **Say each thing once**: the identity and the waiver form (`// oxlint-disable-next-line basalt/<id> -- <why>`) live in `basalt-tokens.md`, the
-  precedence in `AGENTS-block.md.tpl`, the overlay mount in `basalt-ui.md`, the Eden footguns in
-  `basalt-batteries.md`. The guard-kind list lives nowhere — the generated headers carry it.
+  precedence in `AGENTS-block.md.tpl`, the overlay mount in `basalt-ui.md`, the data-layer footguns in
+  `basalt-state.md`. The guard-kind list lives nowhere — the generated headers carry it.
 - **No API reference, no version history, no incident narrative in a rule.** Those belong in JSDoc /
   `llms.txt`, and `CHANGELOG.md` / `MIGRATING.md`.
 - **No hex and no pixel constant in a rule.** The palette and the spacing scales are derived from a
