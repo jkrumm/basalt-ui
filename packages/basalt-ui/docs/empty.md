@@ -23,7 +23,7 @@ type Empty = {
 }
 ```
 
-`Empty`, `CardAction` import from `basalt-ui/cards`: `import type { Empty, CardAction } from 'basalt-ui/cards'`.
+`CardAction` import from `basalt-ui/cards`: `import type { CardAction } from 'basalt-ui/cards'`.
 
 ## Example
 

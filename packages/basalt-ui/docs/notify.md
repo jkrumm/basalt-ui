@@ -20,6 +20,8 @@ that key instead of stacking beside it.
 notify(kind: NotifyKind, payload: NotificationPayload): string
 ```
 
+`NotificationPayload` import from `basalt-ui`: `import type { NotificationPayload } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

@@ -24,6 +24,8 @@ SiteQuestionList({ title, description, questions, className, }: SiteQuestionList
   className?: string
 ```
 
+`SiteQuestion` import from `basalt-ui/static`: `import type { SiteQuestion } from 'basalt-ui/static'`.
+
 ## Example
 
 ```tsx

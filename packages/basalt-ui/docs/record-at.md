@@ -20,6 +20,8 @@ of what a link opens, from the one declaration the peek already uses.
 recordAt<const K extends PeekKinds>(kinds: K, href: string): PeekTarget<keyof K & string> | null
 ```
 
+`PeekKinds` import from `basalt-ui/router`: `import type { PeekKinds } from 'basalt-ui/router'`.
+
 ## Example
 
 ```tsx

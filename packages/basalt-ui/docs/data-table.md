@@ -26,6 +26,8 @@ DataTable<T, I = unknown>({ table, detail, height, virtual, focus, focusSeries, 
   drag?: DragLike  // The drag engine of the board layout: `drag` from `basalt-ui/ui/sortable-list`
 ```
 
+`DataTableInstance`, `DataTableProps`, `Scrollport` import from `basalt-ui/table`: `import type { DataTableInstance, DataTableProps, Scrollport } from 'basalt-ui/table'`.
+
 ## Example
 
 ```tsx

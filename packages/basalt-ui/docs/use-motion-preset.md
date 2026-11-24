@@ -18,6 +18,8 @@ A preset's `motion` props, collapsed when the user prefers reduced motion or an 
 useMotionPreset(name: MotionPresetName, options?: { readonly index?: number; }): MotionPresetProps
 ```
 
+`MotionPresetName`, `MotionPresetProps` import from `basalt-ui/motion`: `import type { MotionPresetName, MotionPresetProps } from 'basalt-ui/motion'`.
+
 ## Example
 
 ```tsx

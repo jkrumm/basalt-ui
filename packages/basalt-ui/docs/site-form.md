@@ -22,6 +22,8 @@ SiteForm({ action, method, children, className, }: SiteFormProps): ReactElement
   className?: string
 ```
 
+`SiteFormProps` import from `basalt-ui/static`: `import type { SiteFormProps } from 'basalt-ui/static'`.
+
 ## Example
 
 ```tsx

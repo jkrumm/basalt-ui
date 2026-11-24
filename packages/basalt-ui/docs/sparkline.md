@@ -34,6 +34,8 @@ Sparkline(props: SparklineProps): ReactElement
   label: string
 ```
 
+`SparklineProps`, `SparkPoint` import from `basalt-ui/charts`: `import type { SparklineProps, SparkPoint } from 'basalt-ui/charts'`.
+
 ## Example
 
 ```tsx

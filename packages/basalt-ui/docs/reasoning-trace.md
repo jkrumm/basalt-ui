@@ -21,6 +21,8 @@ ReasoningTrace({ steps, settled, toolRenderers, }: ReasoningTraceProps): ReactEl
   toolRenderers?: Record<string, (view: ToolView) => ReactNode>  // A tool's own row by tool name, as `partView`'s option of the same name
 ```
 
+`ToolView`, `TraceStep` import from `basalt-ui/ai`: `import type { ToolView, TraceStep } from 'basalt-ui/ai'`.
+
 ## Example
 
 ```tsx

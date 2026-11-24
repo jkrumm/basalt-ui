@@ -24,6 +24,8 @@ SiteDataTable({ label, columns, rows, locale, className, }: SiteDataTableProps):
   className?: string
 ```
 
+`SiteDataTableProps` import from `basalt-ui/static`: `import type { SiteDataTableProps } from 'basalt-ui/static'`.
+
 ## Example
 
 ```tsx

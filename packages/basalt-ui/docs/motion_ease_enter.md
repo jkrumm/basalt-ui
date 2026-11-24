@@ -16,3 +16,5 @@ Decelerate: an element arriving (`--basalt-ease-enter`, Tailwind `ease-enter`).
 ```ts
 MOTION_EASE_ENTER: MotionBezier
 ```
+
+`MotionBezier` import from `basalt-ui/tokens`: `import type { MotionBezier } from 'basalt-ui/tokens'`.

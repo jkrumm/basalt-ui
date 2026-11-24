@@ -18,6 +18,8 @@ and throwing on null data.
 unwrap<R extends Envelope | PromiseLike<Envelope>>(response: R): UnwrapResult<R>
 ```
 
+`Envelope` import from `basalt-ui`: `import type { Envelope } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

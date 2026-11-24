@@ -43,7 +43,7 @@ StatCard(props: StatCardProps): ReactElement
   menu?: CardMenu
 ```
 
-`Phase`, `QueryStateLike`, `Empty`, `CardMenu`, `Delta`, `Verdict`, `FootFacts` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike, Empty, CardMenu, Delta, Verdict, FootFacts } from 'basalt-ui/cards'`.
+`CardMenu`, `Delta`, `Empty`, `FootFacts`, `Phase`, `QueryStateLike`, `StatCardProps`, `Verdict` import from `basalt-ui/cards`: `import type { CardMenu, Delta, Empty, FootFacts, Phase, QueryStateLike, StatCardProps, Verdict } from 'basalt-ui/cards'`.
 
 ## Example
 

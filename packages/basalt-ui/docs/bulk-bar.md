@@ -25,6 +25,8 @@ BulkBar<T>(props: BulkBarProps<T>): ReactElement | null
   table?: DataTableInstance<T>
 ```
 
+`BulkBarAction`, `BulkBarProps`, `DataTableInstance` import from `basalt-ui/table`: `import type { BulkBarAction, BulkBarProps, DataTableInstance } from 'basalt-ui/table'`.
+
 ## Example
 
 ```tsx

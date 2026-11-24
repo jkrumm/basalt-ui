@@ -30,6 +30,8 @@ Composer<Value = unknown>({ "aria-label": label, onSend, status, onStop, placeho
   className?: string  // Layout only (`w-full`, `max-w-3xl`)
 ```
 
+`ComposerMessage`, `ComposerProps`, `ComposerStatus`, `ModelPickerProps` import from `basalt-ui/ai`: `import type { ComposerMessage, ComposerProps, ComposerStatus, ModelPickerProps } from 'basalt-ui/ai'`.
+
 ## Example
 
 ```tsx

@@ -30,6 +30,8 @@ then hand it to the provider (`<BasaltProvider live={live}>`): it starts once on
 bindInvalidation<F, R extends string>(client: QueryClient, channel: Channel<F>, o: BindInvalidationOptions<F, R>): { start(): () => void; }
 ```
 
+`Channel` import from `basalt-ui`: `import type { Channel } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

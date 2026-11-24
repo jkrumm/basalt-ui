@@ -22,6 +22,8 @@ SiteCallToAction({ title, description, actions, className, }: SiteCallToActionPr
   className?: string
 ```
 
+`SiteAction` import from `basalt-ui/static`: `import type { SiteAction } from 'basalt-ui/static'`.
+
 ## Example
 
 ```tsx

@@ -1,6 +1,6 @@
 ---
 name: remembered-values
-use-when: a page's filter (a time window) should reopen at the value the user last chose, which 2.x did with a `persist` mirror on a `createSearchStore` field
+use-when: a page's filter (a time window) should reopen at the value the user last chose
 ---
 
 A remembered value is a preference, and a link is not a preference: v3 has no URL-field `persist` and no redirect on entry.

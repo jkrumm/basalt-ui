@@ -24,6 +24,8 @@ StatGroup({ variant, label, children }: StatGroupProps): ReactElement | null
   children: StatCellElement | readonly StatCellElement[]
 ```
 
+`StatGroupProps` import from `basalt-ui/cards`: `import type { StatGroupProps } from 'basalt-ui/cards'`.
+
 ## Example
 
 ```tsx

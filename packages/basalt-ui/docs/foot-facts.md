@@ -17,7 +17,7 @@ Capped at 2; `null` or `undefined` drops one, so a conditional fact type-checks 
 type FootFacts = readonly [Fact | null | undefined, (Fact | null | undefined)?]
 ```
 
-`Fact`, `FootFacts` import from `basalt-ui/cards`: `import type { Fact, FootFacts } from 'basalt-ui/cards'`.
+`Fact` import from `basalt-ui/cards`: `import type { Fact } from 'basalt-ui/cards'`.
 
 ## Example
 

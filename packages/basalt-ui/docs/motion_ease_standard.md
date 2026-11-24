@@ -16,3 +16,5 @@ The standard curve for a change in place (`--basalt-ease`, Tailwind `ease-standa
 ```ts
 MOTION_EASE_STANDARD: MotionBezier
 ```
+
+`MotionBezier` import from `basalt-ui/tokens`: `import type { MotionBezier } from 'basalt-ui/tokens'`.

@@ -38,7 +38,7 @@ MailList({ label, items, now, weekStartsOn, open, onOpen, selected, onSelectedCh
   bulk?: ReactNode  // What the selection can do, drawn floating at the list's foot while any row is selected: a `BulkBar` from `basalt-ui/table` in its list form
 ```
 
-`Phase`, `QueryStateLike`, `Empty` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike, Empty } from 'basalt-ui/cards'`.
+`Empty`, `MailItem`, `MailListProps`, `Phase`, `QueryStateLike` import from `basalt-ui/cards`: `import type { Empty, MailItem, MailListProps, Phase, QueryStateLike } from 'basalt-ui/cards'`.
 
 ## Example
 

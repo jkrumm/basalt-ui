@@ -36,6 +36,8 @@ FlowCanvas({ label, flow, columns, edges, issues, zoom, }: FlowCanvasProps): Rea
   zoom?: { min: number; max: number; }  // The zoom range; default 0.5 to 1.25
 ```
 
+`FlowCanvasProps` import from `basalt-ui/cards`: `import type { FlowCanvasProps } from 'basalt-ui/cards'`.
+
 ## Example
 
 ```tsx

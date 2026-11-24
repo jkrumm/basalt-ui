@@ -23,6 +23,8 @@ ControlView({ spec, className }: ControlViewProps): ReactElement
   className?: string  // Layout only (`w-full`, `ml-auto`)
 ```
 
+`FilterSpec` import from `basalt-ui/controls`: `import type { FilterSpec } from 'basalt-ui/controls'`.
+
 ## Example
 
 ```tsx

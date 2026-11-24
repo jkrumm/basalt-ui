@@ -31,7 +31,7 @@ FormField<T>(props: FormFieldProps<T>): ReactElement
   children: ReactElement<unknown, string | JSXElementConstructor<any>>  // The bare control: an `Input`, a `Select`, a `Switch`, a `Checkbox`, a `NumberField`, a `Slider`
 ```
 
-`ControlHandle` import from `basalt-ui/router`: `import type { ControlHandle } from 'basalt-ui/router'`.
+`FormFieldLayout`, `FormFieldProps` import from `basalt-ui/controls`: `import type { FormFieldLayout, FormFieldProps } from 'basalt-ui/controls'`.
 
 ## Example
 

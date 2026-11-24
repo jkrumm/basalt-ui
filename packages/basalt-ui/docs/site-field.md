@@ -28,6 +28,8 @@ SiteField({ label, name, type, autoComplete, required, description, placeholder,
   className?: string
 ```
 
+`SiteFieldProps` import from `basalt-ui/static`: `import type { SiteFieldProps } from 'basalt-ui/static'`.
+
 ## Example
 
 ```tsx

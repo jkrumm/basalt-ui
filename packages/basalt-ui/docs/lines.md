@@ -36,6 +36,8 @@ Lines<D>(props: LinesProps<D>): ReactElement
 
 `Phase`, `QueryStateLike` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike } from 'basalt-ui/cards'`.
 
+`ChartFocus`, `ChartRefLine`, `ChartSelection`, `ChartTooltipConfig`, `ChartZone`, `CurveName`, `LinesProps`, `SeriesBase`, `XConfig`, `YConfig` import from `basalt-ui/charts`: `import type { ChartFocus, ChartRefLine, ChartSelection, ChartTooltipConfig, ChartZone, CurveName, LinesProps, SeriesBase, XConfig, YConfig } from 'basalt-ui/charts'`.
+
 ## Example
 
 ```tsx

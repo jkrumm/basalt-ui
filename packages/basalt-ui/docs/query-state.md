@@ -25,7 +25,7 @@ QueryState({ phase, empty, tier, skeleton, children, }: QueryStateProps): ReactE
   children?: ReactNode  // Rendered when there is data worth showing
 ```
 
-`Phase`, `QueryStateLike`, `Empty` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike, Empty } from 'basalt-ui/cards'`.
+`Empty`, `Phase`, `QueryStateLike` import from `basalt-ui/cards`: `import type { Empty, Phase, QueryStateLike } from 'basalt-ui/cards'`.
 
 ## Example
 

@@ -31,6 +31,8 @@ SiteArticle({ title, description, meta, toc, tocLabel, tocDepth, nav, navLabel, 
   className?: string
 ```
 
+`SiteArticleProps`, `TocEntry` import from `basalt-ui/static`: `import type { SiteArticleProps, TocEntry } from 'basalt-ui/static'`.
+
 ## Example
 
 ```tsx

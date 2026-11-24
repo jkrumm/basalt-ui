@@ -18,6 +18,8 @@ else English and UTC. Built on first use, not when the provider mounts.
 useFormat(): Format
 ```
 
+`Format` import from `basalt-ui`: `import type { Format } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

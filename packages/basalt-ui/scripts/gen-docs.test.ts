@@ -237,6 +237,40 @@ describe('the tree', () => {
   })
 })
 
+describe('the import line of a signature', () => {
+  test('names each published type it uses from its subpath, and no unexported or builtin one', () => {
+    const dir = copyFixture('ok')
+    const entry = join(dir, 'src', 'index.ts')
+    writeFileSync(
+      entry,
+      `${readFileSync(entry, 'utf8')}
+export type Reading = { value: number }
+
+type Hidden = { hidden: boolean }
+
+/**
+ * Reads a value once.
+ *
+ * @useWhen a caller needs the number behind a reading
+ * @neverWhen the reading is stored
+ */
+export function readOnce(reading: Reading, hidden: Hidden, others: Record<string, Reading>): number {
+  return reading.value + (hidden.hidden ? 1 : 0) + Object.keys(others).length
+}
+`,
+    )
+    const { docs, problems } = generate(fixtureRoots(dir))
+    expect(problems).toEqual([])
+    const doc = docs.get('read-once.md')!
+    expect(doc).toContain(
+      "\n`Reading` import from `fixture-ui`: `import type { Reading } from 'fixture-ui'`.\n",
+    )
+    expect(doc).not.toContain('import type { Hidden')
+    expect(doc).not.toContain('`Record` import')
+    expect(doc).not.toContain('`Hidden` import')
+  })
+})
+
 describe('the printed props', () => {
   test('a union splits at its top level only', () => {
     expect(unionMembers('"auto" | { a: 1 | 2; } | Foo<"x" | "y"> | (() => void)')).toEqual([

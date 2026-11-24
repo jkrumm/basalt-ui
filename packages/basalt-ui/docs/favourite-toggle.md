@@ -26,6 +26,8 @@ FavouriteToggle({ className, ...input }: FavouriteToggleProps): ReactElement | n
   className?: string  // Layout only
 ```
 
+`FavouriteToggleProps` import from `basalt-ui/page`: `import type { FavouriteToggleProps } from 'basalt-ui/page'`.
+
 ## Example
 
 ```tsx

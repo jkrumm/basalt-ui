@@ -24,6 +24,10 @@ basalt(options?: BasaltOptions): PluginOption[]
   sources?: boolean  // Write `.basalt/sources.css`
 ```
 
+`ThemeScriptOptions` import from `basalt-ui/theme-script`: `import type { ThemeScriptOptions } from 'basalt-ui/theme-script'`.
+
+`ColorPair` import from `basalt-ui/tokens`: `import type { ColorPair } from 'basalt-ui/tokens'`.
+
 ## Example
 
 ```tsx

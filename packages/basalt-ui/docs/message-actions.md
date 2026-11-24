@@ -20,6 +20,8 @@ MessageActions({ actions, reveal, }: MessageActionsProps): ReactElement | null
   reveal?: "always" | "hover"  // `hover` shows them on hover and focus of the message (default); `always` keeps them shown
 ```
 
+`MessageAction` import from `basalt-ui/ai`: `import type { MessageAction } from 'basalt-ui/ai'`.
+
 ## Example
 
 ```tsx

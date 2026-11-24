@@ -25,6 +25,8 @@ Stepper({ steps, current, onStepChange, "aria-label": ariaLabel, variant, classN
   className?: string  // Layout only (`w-full`, `max-w-3xl`)
 ```
 
+`StepperProps`, `StepperStep` import from `basalt-ui/controls`: `import type { StepperProps, StepperStep } from 'basalt-ui/controls'`.
+
 ## Example
 
 ```tsx

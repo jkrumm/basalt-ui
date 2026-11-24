@@ -18,6 +18,8 @@ still streaming; markdown there repairs its open tail and the tool rail stays op
 partView(parts: readonly MessagePart[], o?: PartViewOptions): ReactNode
 ```
 
+`MessagePart`, `PartViewOptions` import from `basalt-ui/ai`: `import type { MessagePart, PartViewOptions } from 'basalt-ui/ai'`.
+
 ## Example
 
 ```tsx

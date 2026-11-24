@@ -26,6 +26,8 @@ MailThread({ label, messages, defaultOpen, reply }: MailThreadProps): ReactEleme
   reply?: ReactNode  // The reply under the thread's card: the reply buttons, or an open composer
 ```
 
+`MailMessage`, `MailThreadProps` import from `basalt-ui/cards`: `import type { MailMessage, MailThreadProps } from 'basalt-ui/cards'`.
+
 ## Example
 
 ```tsx

@@ -21,6 +21,8 @@ SiteTab({ label, children, className }: SiteTabProps): ReactElement
   className?: string
 ```
 
+`SiteTabProps` import from `basalt-ui/static`: `import type { SiteTabProps } from 'basalt-ui/static'`.
+
 ## Example
 
 ```tsx

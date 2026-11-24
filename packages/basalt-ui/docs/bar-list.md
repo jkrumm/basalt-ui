@@ -39,7 +39,7 @@ BarList<I = unknown>(props: BarListProps<I>): ReactElement
   mono?: boolean  // Draw every label in the mono face with tabular figures: ids, hashes, paths
 ```
 
-`Phase`, `QueryStateLike`, `Empty` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike, Empty } from 'basalt-ui/cards'`.
+`BarListProps`, `Empty`, `LegendEntry`, `Phase`, `QueryStateLike` import from `basalt-ui/cards`: `import type { BarListProps, Empty, LegendEntry, Phase, QueryStateLike } from 'basalt-ui/cards'`.
 
 ## Example
 

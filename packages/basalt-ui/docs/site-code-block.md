@@ -25,6 +25,8 @@ SiteCodeBlock({ children, copyLabel, copiedLabel, caption, className, }: SiteCod
   className?: string
 ```
 
+`SiteCodeBlockProps` import from `basalt-ui/static`: `import type { SiteCodeBlockProps } from 'basalt-ui/static'`.
+
 ## Example
 
 ```tsx

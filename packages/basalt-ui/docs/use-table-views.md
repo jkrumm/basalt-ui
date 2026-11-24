@@ -22,6 +22,8 @@ useTableViews<T>(instance: DataTableInstance<T>, options?: TableViewsOptions): T
   table: TableEscape<T>
 ```
 
+`DataTableInstance`, `TableEscape`, `TableViewsOptions`, `TableViewsResult` import from `basalt-ui/table`: `import type { DataTableInstance, TableEscape, TableViewsOptions, TableViewsResult } from 'basalt-ui/table'`.
+
 ## Example
 
 ```tsx

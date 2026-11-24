@@ -22,6 +22,8 @@ TableToolbar<T>({ table: instance, view, views, onExport, }: { table: DataTableI
   onExport?: () => void  // Draws Export in the views' menu and panel; the app writes the file
 ```
 
+`DataTableInstance`, `ViewParam` import from `basalt-ui/table`: `import type { DataTableInstance, ViewParam } from 'basalt-ui/table'`.
+
 ## Example
 
 ```tsx

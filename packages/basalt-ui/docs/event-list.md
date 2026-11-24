@@ -34,7 +34,7 @@ EventList(props: EventListProps): ReactElement
   now?: number | Date  // The instant "Today" is measured from
 ```
 
-`Phase`, `QueryStateLike`, `Empty` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike, Empty } from 'basalt-ui/cards'`.
+`Empty`, `EventListProps`, `Phase`, `QueryStateLike` import from `basalt-ui/cards`: `import type { Empty, EventListProps, Phase, QueryStateLike } from 'basalt-ui/cards'`.
 
 ## Example
 

@@ -19,6 +19,8 @@ exit fades on the fast step. With `reduced` the element shows its end state at o
 motionPreset(name: MotionPresetName, options?: MotionPresetOptions): MotionPresetProps
 ```
 
+`MotionPresetName`, `MotionPresetOptions`, `MotionPresetProps` import from `basalt-ui/motion`: `import type { MotionPresetName, MotionPresetOptions, MotionPresetProps } from 'basalt-ui/motion'`.
+
 ## Example
 
 ```tsx

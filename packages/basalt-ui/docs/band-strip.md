@@ -38,3 +38,5 @@ BandStrip<T, X extends ChartX = ChartX, K extends string = string>(props: BandSt
   fold?: BandFold<T>
   absentState?: K  // The `states` key that means "not measured"
 ```
+
+`BandFold`, `BandSpan`, `BandStripProps`, `ChartTooltipConfig` import from `basalt-ui/charts`: `import type { BandFold, BandSpan, BandStripProps, ChartTooltipConfig } from 'basalt-ui/charts'`.

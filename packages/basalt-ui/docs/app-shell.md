@@ -47,6 +47,8 @@ AppShell<Id extends string = string>({ nav, brand, badges, blocks, globalControl
   children?: ReactNode
 ```
 
+`FavouritesStore` import from `basalt-ui/page`: `import type { FavouritesStore } from 'basalt-ui/page'`.
+
 ## Example
 
 ```tsx

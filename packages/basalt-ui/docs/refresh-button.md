@@ -29,6 +29,8 @@ RefreshButton({ syncing, lastCompletedAt, onSync, scope, label, error, className
   className?: string  // Layout only (`ml-auto`, `shrink-0`)
 ```
 
+`RefreshButtonProps` import from `basalt-ui/page`: `import type { RefreshButtonProps } from 'basalt-ui/page'`.
+
 ## Example
 
 ```tsx

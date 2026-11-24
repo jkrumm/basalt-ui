@@ -24,6 +24,8 @@ AppearanceSwitcher({ accents, rows, defaultFrame, className, }: AppearanceSwitch
   className?: string  // Layout only (`w-full`, `max-w-md`)
 ```
 
+`AppearanceSwitcherProps` import from `basalt-ui/controls`: `import type { AppearanceSwitcherProps } from 'basalt-ui/controls'`.
+
 ## Example
 
 ```tsx

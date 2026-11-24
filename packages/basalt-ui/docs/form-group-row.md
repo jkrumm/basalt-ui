@@ -29,6 +29,8 @@ FormGroupRow({ label, description, icon, id, summary, defaultOpen, className, ch
   children: ReactNode  // The rows revealed: `FormField`s (switches), one per line, divided by hairlines
 ```
 
+`FormGroupRowProps` import from `basalt-ui/controls`: `import type { FormGroupRowProps } from 'basalt-ui/controls'`.
+
 ## Example
 
 ```tsx

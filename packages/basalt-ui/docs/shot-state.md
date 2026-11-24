@@ -22,6 +22,26 @@ shotState<T extends QueryStateLike & { data?: unknown; }>(result: T, options?: S
 ## Example
 
 ```tsx
-const result = shotState(useQuery(runsQuery))
-return <DataTable phase={result} rows={result.data ?? []} />
+// @check
+import { queryOptions, useQuery } from '@tanstack/react-query'
+import { shotState } from 'basalt-ui/data'
+import { col, DataTable, useDataTable } from 'basalt-ui/table'
+
+type Run = { id: string; name: string; km: number }
+const runsQuery = queryOptions({ queryKey: ['runs'], queryFn: async (): Promise<Run[]> => [] })
+const c = col<Run>()
+
+export function Runs() {
+  const result = shotState(useQuery(runsQuery))
+  const t = useDataTable({
+    id: 'runs',
+    label: 'Runs',
+    columns: [c.entity('name'), c.number('km', { unit: 'km' })],
+    data: result.data,
+    phase: result,
+    getRowId: (run) => run.id,
+    mode: { kind: 'client' },
+  })
+  return <DataTable table={t} />
+}
 ```

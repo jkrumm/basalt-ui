@@ -23,6 +23,8 @@ Message({ from, children, actions, reveal, streaming, }: MessageProps): ReactEle
   streaming?: boolean  // True for the reply still streaming: `aria-busy`, and its actions wait until it settles
 ```
 
+`MessageAction` import from `basalt-ui/ai`: `import type { MessageAction } from 'basalt-ui/ai'`.
+
 ## Example
 
 ```tsx

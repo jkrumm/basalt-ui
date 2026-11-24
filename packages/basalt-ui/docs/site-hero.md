@@ -26,6 +26,8 @@ SiteHero({ title, eyebrow, description, actions, children, media, className, }: 
   className?: string
 ```
 
+`SiteAction` import from `basalt-ui/static`: `import type { SiteAction } from 'basalt-ui/static'`.
+
 ## Example
 
 ```tsx

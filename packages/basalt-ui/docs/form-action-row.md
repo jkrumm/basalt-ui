@@ -26,6 +26,8 @@ FormActionRow({ label, description, icon, id, tone, action, className, }: FormAc
   action: ReactNode  // The control at the end of the row: a `Button` (`variant="danger"` for a destructive one)
 ```
 
+`FormActionRowProps`, `SettingsRowTone` import from `basalt-ui/controls`: `import type { FormActionRowProps, SettingsRowTone } from 'basalt-ui/controls'`.
+
 ## Example
 
 ```tsx

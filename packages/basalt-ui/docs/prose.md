@@ -23,6 +23,8 @@ Prose({ density, measure, children, className, }: ProseProps): ReactElement
   className?: string  // Layout only (`mt-6`)
 ```
 
+`ProseProps` import from `basalt-ui/static`: `import type { ProseProps } from 'basalt-ui/static'`.
+
 ## Example
 
 ```tsx

@@ -37,6 +37,8 @@ Peek(props: PeekProps): ReactElement | null
   children?: ReactNode
 ```
 
+`FavouriteInput`, `PeekProps` import from `basalt-ui/page`: `import type { FavouriteInput, PeekProps } from 'basalt-ui/page'`.
+
 ## Example
 
 ```tsx

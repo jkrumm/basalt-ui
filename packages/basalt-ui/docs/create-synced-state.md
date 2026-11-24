@@ -34,6 +34,10 @@ createSyncedState<T extends object>(o: SyncedStateOptions<T>): SyncedState<T>
   debounceMs?: number
 ```
 
+`Freshness` import from `basalt-ui/data`: `import type { Freshness } from 'basalt-ui/data'`.
+
+`PersistedSchema`, `StorageLike` import from `basalt-ui`: `import type { PersistedSchema, StorageLike } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

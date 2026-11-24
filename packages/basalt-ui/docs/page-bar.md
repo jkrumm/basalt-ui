@@ -34,6 +34,8 @@ PageBar<K extends string = string, L extends string = string>({ title, identity,
   actions?: readonly [PageAction?, PageAction?, PageAction?, PageAction?, PageAction?]  // At most 5, at most one `primary`, none required
 ```
 
+`FavouriteInput` import from `basalt-ui/page`: `import type { FavouriteInput } from 'basalt-ui/page'`.
+
 ## Example
 
 ```tsx

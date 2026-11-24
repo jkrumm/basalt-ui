@@ -21,6 +21,8 @@ usePeek<const K extends PeekKinds>({ field, kinds, dockField, }: PeekOptions<K>)
   dockField?: PeekField  // A second URL field (`?dock=kind/id`) for the shell's `Dock`: the record kept open beside the screen
 ```
 
+`PeekKinds`, `PeekState` import from `basalt-ui/router`: `import type { PeekKinds, PeekState } from 'basalt-ui/router'`.
+
 ## Example
 
 ```tsx

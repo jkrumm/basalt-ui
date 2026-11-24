@@ -25,7 +25,7 @@ PageSummary(props: PageSummaryProps): ReactElement
   phase?: "ready" | Phase | QueryStateLike
 ```
 
-`Phase`, `QueryStateLike`, `Fact` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike, Fact } from 'basalt-ui/cards'`.
+`Fact`, `Phase`, `QueryStateLike` import from `basalt-ui/cards`: `import type { Fact, Phase, QueryStateLike } from 'basalt-ui/cards'`.
 
 ## Example
 

@@ -23,6 +23,8 @@ StepRail({ label, steps }: StepRailProps): ReactElement
   steps: readonly StepRailRow[]  // Steps in display order: the rail never re-sorts
 ```
 
+`StepRailProps`, `StepRailRow` import from `basalt-ui/cards`: `import type { StepRailProps, StepRailRow } from 'basalt-ui/cards'`.
+
 ## Example
 
 ```tsx
