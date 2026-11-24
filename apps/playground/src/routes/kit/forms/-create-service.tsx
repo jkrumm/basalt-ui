@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { FormRow, toSubmitErrors } from 'basalt-ui/controls'
 import { useAppForm } from 'basalt-ui/form'
 import { Section } from 'basalt-ui/page'
@@ -17,6 +18,7 @@ import { Select } from 'basalt-ui/ui/select'
 import { useState } from 'react'
 import type { ReactElement } from 'react'
 import { z } from 'zod'
+import { fixtureKey, useFixture } from '../../../demo/fixture'
 import { LABELS, Link, Plus, TEAMS, TIME_ZONES, later } from './-specimen'
 
 export type Service = {
@@ -188,6 +190,8 @@ function CreateServiceForm({
   )
 }
 
+const SERVICES_KEY = ['kit-forms', 'services'] as const
+
 const c = col<Service>()
 const columns = [
   c.entity('name', { header: 'Service', sub: (s) => s.repo, subMono: true }),
@@ -204,13 +208,16 @@ const columns = [
 
 /** A record created in a dialog: the table of services and the New service dialog over it. */
 export function CreateService(): ReactElement {
-  const [services, setServices] = useState<readonly Service[]>(SEED)
+  // The services list is the endpoint's answer; a created service is written into the same query.
+  const services = useFixture(SERVICES_KEY, SEED)
+  const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
   const table = useDataTable({
     id: 'kit-forms-services',
     label: 'Services',
     columns,
-    data: services,
+    data: services.data,
+    phase: services,
     getRowId: (s) => s.id,
     mode: { kind: 'client' },
   })
@@ -231,9 +238,12 @@ export function CreateService(): ReactElement {
             size="lg"
           >
             <CreateServiceForm
-              taken={new Set(services.map((s) => s.name))}
+              taken={new Set((services.data ?? []).map((s) => s.name))}
               onCreated={(values) => {
-                setServices((prev) => [{ id: `s-${String(prev.length + 1)}`, ...values }, ...prev])
+                queryClient.setQueryData<readonly Service[]>(
+                  fixtureKey(SERVICES_KEY),
+                  (prev = []) => [{ id: `s-${String(prev.length + 1)}`, ...values }, ...prev],
+                )
                 setOpen(false)
               }}
               onCancel={() => {
