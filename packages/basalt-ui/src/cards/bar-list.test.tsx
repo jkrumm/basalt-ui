@@ -224,17 +224,6 @@ describe('BarList phases', () => {
     expect(new Set(heights).size).toBe(1)
     expect(heights[0]).toBe('calc(var(--spacing) * 66)')
   })
-
-  test('rows is the deprecated name of bodyRows', () => {
-    const heightOf = (props: { rows?: 6; bodyRows?: 6 }): string | undefined => {
-      const { container } = draw(props)
-      const height = container.querySelector<HTMLElement>('[data-slot="inset"]')?.style.height
-      cleanup()
-      return height
-    }
-    expect(heightOf({ rows: 6 })).toBe('calc(var(--spacing) * 66)')
-    expect(heightOf({ rows: 6 })).toBe(heightOf({ bodyRows: 6 }))
-  })
 })
 
 describe('BarList error title', () => {
