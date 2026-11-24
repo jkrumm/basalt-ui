@@ -47,25 +47,11 @@ const entity = '&#x1F600;'
 // @valid
 import tokens from '#ff8800'
 
-// @valid
-const SERIES = defineSeries({
-  sessions: { light: '#2871c7', dark: '#5190f7' },
-  churn: { light: 'oklch(0.6 0.2 25)', dark: '#e46360' },
-})
-
-// @valid
-export const traceColors = groupTokens(
-  'trace',
-  tokens.defineSeries({
-    model: { light: '#2871c7', dark: '#5190f7' },
-  }),
-)
-
 // @invalid
+// A call named defineSeries is no exemption: the series file is the one place a pair is written.
 const SERIES = defineSeries({ sessions: { light: '#2871c7', dark: '#5190f7' } })
 const other = { light: '#ff8800', dark: '#112233' }
-const warn = '#ff8800'
-// @errors colour-literal,colour-literal,colour-literal
+// @errors colour-literal,colour-literal,colour-literal,colour-literal
 
 // @valid
 // @filename src/basalt.tokens.ts
