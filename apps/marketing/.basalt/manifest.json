@@ -8,7 +8,7 @@
   "ejected": {},
   "managed": {
     ".claude/agents/basalt-design-reviewer.md": "79c027fbd3abf41be294714b4707cac28aacfa1c5e3b794be094ee1a584320f4",
-    "repo:.claude/rules/basalt-v3-charts.md": "7ff28adf17b5709964bdb9fb8e308d5daf3b14d92bb0329daac361b193b40539",
+    "repo:.claude/rules/basalt-v3-charts.md": "58ff30feed715566ac9a2b4a52c0e19306d4ee09872765de74a8eced9814a618",
     "repo:.claude/rules/basalt-v3-page.md": "448ba73d0a7d65eb5a0f8d330e3cff04b92123aa99855589b7225feded143f31",
     "repo:.claude/rules/basalt-v3-state.md": "2a515feebbcb1aa524b302abc412b67f74aea4c5a5bff837ae5bad6f85a34bb8",
     "repo:.claude/rules/basalt-v3-tokens.md": "ca80f50f34809060daeaffc6f723ee15c178b790f9423e129aec0f67a07b7fe9",
