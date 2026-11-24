@@ -174,7 +174,7 @@ Four attributes on `<html>` carry the reader's choice, each written by one sette
   ships the ones it offers with `tokens:css --accents` (a `tokens` output of `.basalt/manifest.json`), one
   `:root[data-accent]` block each, so an app that offers none pays no byte. It sits on `<html>` only, because the Tailwind bridge resolves at `:root`.
 
-`setAppearance` (basalt-ui/core/appearance) writes the last three and stores them under `basalt:appearance`;
+`setAppearance` (basalt-ui) writes the last three and stores them under `basalt:appearance`;
 `AppearanceSwitcher` (basalt-ui/controls) is the one part that offers all four. There is no runtime derive and no
 custom accent: a colour outside the set is a retune of the app's base (`tokens:css --accent`).
 
