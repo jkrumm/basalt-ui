@@ -1,22 +1,17 @@
 // J.2 apps/playground/src/register-augments-all.type-guard.ts
-import type { SeriesKey } from 'basalt-ui' // resolves to the `<group>-<key>` names the generated basalt.tokens.css.d.ts registers
-const SYM: unique symbol = Symbol()
-export function f2(k: SeriesKey) {
-  const ok: SeriesKey[] = [
-    'demo-sessions',
-    'calendar-meeting',
-    'bar-tide',
-    'served-atlasLarge',
-    'fleet6-failed',
-    k,
-  ]
-  // @ts-expect-error a bare key without its group is not registered: the union does not widen to string.
-  const loose: SeriesKey = 'sessions'
-  // @ts-expect-error a symbol VALUE is NOT in SeriesKey (Extract<keyof,string> dropped symbol keys).
-  // CRITIC-FIX: assign a REAL symbol value, NEVER `Symbol() as never` — `never` is assignable to
-  // everything, so that cast makes the directive UNUSED (TS2578) and the fixture theatre.
-  // (critic-verified on TS 6.0.3: `Symbol() as never` → EXIT 2; this `unique symbol` form → EXIT 0.)
-  const bad: SeriesKey = SYM
-  return [ok, loose, bad]
+// A REAL augmentation resolved through the package name: the `notifications` slot, the one slot
+// basalt reads today (`notify`'s kinds). The series slot is gone: a chart `key` is the data's id.
+import type { notify } from 'basalt-ui'
+
+declare module 'basalt-ui' {
+  interface BasaltRegister {
+    notifications: { deploy: true }
+  }
 }
-// PROVES: an augmented slot resolves to exact `<group>-<key>` literals + Extract<,string> keeps symbol keys out.
+
+type Kind = Parameters<typeof notify>[0]
+export const registered: Kind = 'deploy'
+export const shipped: Kind = 'error'
+// @ts-expect-error a kind nobody registered is not a notify kind: the slot widens exactly
+export const typo: Kind = 'deplyo'
+// PROVES: an augmented slot adds its exact literal keys and nothing else.
