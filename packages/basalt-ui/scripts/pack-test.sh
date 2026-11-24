@@ -391,7 +391,7 @@ if (typeof tokens.buildPaletteCss() !== 'string') throw new Error('buildPaletteC
 const data = [{ at: '2024-01-01', v: 10 }, { at: '2024-01-02', v: 20 }, { at: '2024-01-03', v: 15 }]
 const html = renderToStaticMarkup(
   createElement(charts.Bars, {
-    ariaLabel: 'Value',
+    label: 'Value',
     data,
     x: { value: (d) => new Date(`${d.at}T00:00:00Z`) },
     series: [
