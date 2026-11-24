@@ -63,6 +63,7 @@ export const rows: readonly RowDef[] = [
   // 13272 -> 13285 (init-sibling-oxfmt): a sibling app's new `.oxfmtrc.json` copies the repo root's formatter settings, so oxfmt does not read a file holding only ignorePatterns (cli/init/steps.ts +13).
   // 13285 -> 13308 (init-layout-seeds, Issue 3171): `init` seeds no `_app` layout or nav beside a root route the app keeps or a page that already serves `/`, and names the skip as a to-do (cli/init/router-seeds.ts +23). Consumer: the playground, moved onto init by Issue 3164, which kept its own `__root.tsx` and could not build.
   // 13308 -> 13311 (Issue 3162): `shot` names a DataTable's `table-root` the `data-table` anchor its help promises (capture.ts +2, types.ts +1).
+  // 13311 -> 13338 (Issue 3164): `init --profile app` installs the two peers `basalt-ui/shell` imports (cli/peers.ts +2), and the peer fix line of the `basalt()` gate and doctor check 3 adds a pin exactly and a declared range as the range (cli/peers.ts `peerAddLine` +19, cli/package-manager.ts `exact` +6). Consumer: a create-vite `app` whose build failed in the gate after `init`, on a line that put `--exact` beside a caret.
   {
     id: 'cli-lines',
     order: 110,
