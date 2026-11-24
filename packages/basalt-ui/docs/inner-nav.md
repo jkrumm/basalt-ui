@@ -3,15 +3,15 @@ name: InnerNav
 use when: 'a page has named sections or panes the URL should remember (settings, the sections of a record)'
 never when: 'the state is a `replace` field (it is a type error) or the choices are views of one dataset (use `ViewTabs`) or an inspector for a row (use `PageAside`)'
 subpath: basalt-ui/page
-peers: ['@base-ui/react', '@tanstack/react-router']
+peers: ['@base-ui/react']
 slots: [inner-nav, inner-nav-filter]
 ---
 
 # InnerNav
 
 A page's inner sidebar: groups of section links on a `push` field, so each section is a history
-entry and Back walks them. Every item is a real `<a href>` built from the handle's `link()` (a `defineControls` push field
-under the router, or a structural `{ href, onClick }`), with `aria-current` on the active one, so
+entry and Back walks them. Every item is a real `<a href>` built from the handle's `useHref()` (a
+`defineControls` push field builds it through the router), with `aria-current` on the active one, so
 middle-click, copy-link and the status bar all work; a plain click writes the field. One DOM
 at every width: a standalone nav is a vertical list from the `wide` container tier and a
 horizontally scrolling link strip below it (never a `Select`, which would lose the hrefs); inside

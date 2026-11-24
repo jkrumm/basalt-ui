@@ -3,7 +3,7 @@ name: defineOverlays
 use when: 'a dialog or sheet opens from anywhere (a row action, a command) and its keys and payloads should be checked at compile time'
 never when: 'the overlay is route-addressable or one trigger owns its open state (use `Dialog` or `Sheet` with a trigger)'
 subpath: basalt-ui/page
-peers: ['@base-ui/react', '@tanstack/react-router']
+peers: ['@base-ui/react']
 slots: []
 ---
 

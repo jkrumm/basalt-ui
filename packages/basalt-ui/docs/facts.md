@@ -3,7 +3,7 @@ name: Facts
 use when: 'the properties of one record are listed as label and value, such as the body of an inspector in a `PageAside`'
 never when: 'the values are numbers to compare at a glance (use `StatGroup`) or the rows are records of their own (use `DataTable`)'
 subpath: basalt-ui/page
-peers: ['@base-ui/react', '@tanstack/react-router']
+peers: ['@base-ui/react']
 slots: [facts, facts-row]
 ---
 

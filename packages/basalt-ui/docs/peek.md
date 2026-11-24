@@ -3,7 +3,7 @@ name: Peek
 use when: 'a plain click on a record link or a table row should show the record beside a list or a graph without leaving it (master-detail with the list kept live)'
 never when: 'the choice is a yes or no (a `Dialog`), a form edited beside the page that should block it (a `Sheet`), or a page''s own inspector docked beside its content (`PageAside`)'
 subpath: basalt-ui/page
-peers: ['@base-ui/react', '@tanstack/react-router']
+peers: ['@base-ui/react']
 slots: []
 ---
 

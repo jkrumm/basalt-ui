@@ -114,6 +114,12 @@ export type FieldHandle<
   readonly bounds?: NumberBounds | undefined
   link(value: V): LinkWrite<S>
   /**
+   * A hook: the href of each value's `link`, built by the router from the current location (the
+   * app's search middlewares apply). What `InnerNav` draws its anchors from, so `basalt-ui/page`
+   * imports no router. Off the router the returned function throws.
+   */
+  useHref(): (value: V) => string
+  /**
    * Writes what a click on `link(value)` writes: a push enum keeps its fallback in the URL
    * (`?section=general`, read by `useIsSet()`), where `use()`'s setter unsets it (a view tab back on
    * its default). What `InnerNav` calls.
@@ -229,6 +235,7 @@ type LooseRoute = { id: string; options: { validateSearch?: unknown } }
 /** The router surface the store reads; typed loosely because a store serves every router. */
 export type LooseRouter = {
   navigate: Navigate
+  buildLocation(options: { to: '.'; search: (prev: Raw) => Raw }): { href: string }
   state: { matches: readonly { routeId: string }[]; location: { search: unknown } }
   routesById: Record<string, LooseRoute | undefined>
 }
@@ -241,6 +248,10 @@ type SelectSearch = <T>(options: {
 
 const useSelectedSearch = useSearch as unknown as SelectSearch
 const useLooseRouter = useRouter as unknown as () => LooseRouter
+/** The router or none, without the warning: `useHref` throws its own error when a link is built. */
+const useOptionalRouter = useRouter as unknown as (options: {
+  warn: false
+}) => LooseRouter | undefined
 
 const ROOT_ROUTE_ID = '__root__'
 
@@ -644,6 +655,19 @@ export function defineControls<
         replace: history !== 'push',
         resetScroll: false,
       }),
+      useHref: () => {
+        const router = useOptionalRouter({ warn: false })
+        return (value) => {
+          if (router === undefined) {
+            throw new Error(
+              `basalt-ui: controls "${id}": the href of field "${name}" is built by the router; ` +
+                'render it inside a `RouterProvider`',
+            )
+          }
+          const patch = encodeWrite(value)
+          return router.buildLocation({ to: '.', search: (prev) => ({ ...prev, ...patch }) }).href
+        }
+      },
     }
     if (spec.kind === 'range') {
       handle.toWindow = toWindowFor(

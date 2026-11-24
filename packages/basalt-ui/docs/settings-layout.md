@@ -3,7 +3,7 @@ name: SettingsLayout
 use when: 'a page is settings: sections of rows under one title, with rows a link can point at'
 never when: 'the page is a record or a dashboard (Page and Section), or one short form (FormField alone)'
 subpath: basalt-ui/page
-peers: ['@base-ui/react', '@tanstack/react-router']
+peers: ['@base-ui/react']
 slots: [settings-layout, settings-layout-header]
 ---
 

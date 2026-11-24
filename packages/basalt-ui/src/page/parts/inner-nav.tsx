@@ -1,4 +1,3 @@
-import { useRouter } from '@tanstack/react-router'
 import { useContext, useEffect, useId, useRef } from 'react'
 import type { MouseEvent, MouseEventHandler, ReactElement } from 'react'
 import { scrollParentOf } from '../../common/scroll-parent'
@@ -14,73 +13,48 @@ import { Skeleton } from '../../ui/skeleton'
 import type { InnerNavGroup, InnerNavItem, InnerNavProps, PushField } from '../contract'
 import { SplitListContext } from './split-page'
 
-/** An anchor's own props: what a structural handle's `link(value)` returns. */
+/** An anchor's own props. */
 type AnchorLink = { href: string; onClick?: MouseEventHandler<HTMLAnchorElement> }
 
-/** What a `defineControls` field's `link(value)` returns: the search patch the field writes. */
-type SearchLink = { readonly search: unknown }
-
 /**
- * What `InnerNav` reads off its `state` beyond the frozen `PushField`: the props of one item's
- * link. A `defineControls` push field's `link(value)` (the search patch) is drawn into an anchor
- * under the router; a structural handle that returns `{ href, onClick }` itself is used as it is.
- * A handle with no `link` raises a plain error instead of rendering links that go nowhere.
+ * What `InnerNav` reads off its `state` beyond the frozen `PushField`: `useHref()`, a hook that
+ * returns each value's href. A `defineControls` push field (`basalt-ui/router`) builds it through
+ * the router, so this file imports none; a handle without it raises a plain error instead of
+ * rendering links that go nowhere.
  */
 export type InnerNavHandle<K extends string> = PushField<K> & {
-  link(value: K): AnchorLink | SearchLink
+  useHref(): (value: K) => string
   /** A `defineControls` field's choice write: it keeps the fallback pane in the URL, where `use()`'s setter unsets it. */
   choose?(value: K): void
 }
 
 function handleOf<K extends string>(state: PushField<K>): InnerNavHandle<K> {
   const handle = state as Partial<InnerNavHandle<K>>
-  if (typeof handle.link !== 'function') {
+  if (typeof handle.useHref !== 'function') {
     throw new Error(
-      'basalt-ui: `InnerNav state` must be a push field whose handle has `link(value)`; ' +
-        'a handle without it cannot render real links',
+      'basalt-ui: `InnerNav state` must be a push field whose handle has `useHref()` ' +
+        '(a `defineControls` field); a handle without it cannot render real links',
     )
   }
   return state as InnerNavHandle<K>
-}
-
-/** The slice of the router that turns a search patch into an href. */
-type HrefRouter = {
-  buildLocation(options: {
-    to: '.'
-    search: (prev: Record<string, unknown>) => Record<string, unknown>
-  }): { href: string }
 }
 
 /** A plain left click writes the field; a modified one (new tab, download) is the browser's. */
 const isPlainClick = (event: MouseEvent<HTMLAnchorElement>): boolean =>
   event.button === 0 && !(event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
 
-/**
- * One item's anchor props. The href comes from the router's `buildLocation` with the field's search
- * patch (so the app's search middlewares apply and a default stays out of the URL); the click writes
- * through the field's own setter, which carries its `history`.
- */
+/** One item's anchor props: the handle's href, and a plain click writes through the field. */
 function anchorOf<K extends string>(
-  handle: InnerNavHandle<K>,
-  router: HrefRouter | undefined,
-  set: (value: K) => void,
+  href: (value: K) => string,
+  pick: (value: K) => void,
   value: K,
 ): AnchorLink {
-  const link = handle.link(value)
-  if ('href' in link) return link
-  if (router === undefined) {
-    throw new Error(
-      "basalt-ui: `InnerNav` draws a `defineControls` field's links through the router; " +
-        'render it inside a `RouterProvider`',
-    )
-  }
-  const patch = link.search as Record<string, unknown>
   return {
-    href: router.buildLocation({ to: '.', search: (prev) => ({ ...prev, ...patch }) }).href,
+    href: href(value),
     onClick: (event) => {
       if (!isPlainClick(event)) return
       event.preventDefault()
-      set(value)
+      pick(value)
     },
   }
 }
@@ -217,8 +191,8 @@ function Group<K extends string>({
 
 /**
  * A page's inner sidebar: groups of section links on a `push` field, so each section is a history
- * entry and Back walks them. Every item is a real `<a href>` built from the handle's `link()` (a `defineControls` push field
- * under the router, or a structural `{ href, onClick }`), with `aria-current` on the active one, so
+ * entry and Back walks them. Every item is a real `<a href>` built from the handle's `useHref()` (a
+ * `defineControls` push field builds it through the router), with `aria-current` on the active one, so
  * middle-click, copy-link and the status bar all work; a plain click writes the field. One DOM
  * at every width: a standalone nav is a vertical list from the `wide` container tier and a
  * horizontally scrolling link strip below it (never a `Select`, which would lose the hrefs); inside
@@ -252,9 +226,9 @@ export function InnerNav<K extends string = string>({
   const loading = resolvePhase({ phase }).tag === 'loading'
   const handle = handleOf(state)
   const [active, set] = state.use()
-  const router = useRouter({ warn: false }) as unknown as HrefRouter | undefined
+  const href = handle.useHref()
   const pick = (value: K): void => (handle.choose === undefined ? set(value) : handle.choose(value))
-  const anchor = (value: K): AnchorLink => anchorOf(handle, router, pick, value)
+  const anchor = (value: K): AnchorLink => anchorOf(href, pick, value)
   const inSplit = useContext(SplitListContext)
   const strip = !inSplit
   const nav = useRef<HTMLElement>(null)

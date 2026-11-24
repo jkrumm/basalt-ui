@@ -3,7 +3,7 @@ name: ToastHost
 use when: 'the app calls `notify`'
 never when: 'the app has no toasts: leaving it out keeps Base UI Toast out of the bundle'
 subpath: basalt-ui/page
-peers: ['@base-ui/react', '@tanstack/react-router']
+peers: ['@base-ui/react']
 slots: []
 ---
 

@@ -114,14 +114,14 @@ describe('InnerNav links', () => {
     expect(state.writes).toEqual(['billing', 'team', 'general'])
   })
 
-  test('a handle without link() fails loudly instead of rendering dead links', () => {
-    const bare = { ...pushField<Section>(SECTIONS, 'general', 'section'), link: undefined }
+  test('a handle without useHref() fails loudly instead of rendering dead links', () => {
+    const bare = { ...pushField<Section>(SECTIONS, 'general', 'section'), useHref: undefined }
     const spy = spyOn(console, 'error').mockImplementation(() => {})
     expect(() =>
       render(
         <InnerNav label="Settings" state={bare as unknown as PushField<Section>} groups={GROUPS} />,
       ),
-    ).toThrow(/push field whose handle has `link/)
+    ).toThrow(/push field whose handle has `useHref/)
     spy.mockRestore()
   })
 })

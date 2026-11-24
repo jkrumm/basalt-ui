@@ -1,28 +1,22 @@
 /**
  * `InnerNav` over a real `defineControls` push field (concept 4.4): every item is an `<a href>` that
  * names the section it opens, the active one carries `aria-current`, a click pushes one history entry
- * and Back walks the sections. The handle's `link()` speaks the router's `Link` props
- * (`{ search, replace }`); `InnerNav` wants `{ href, onClick }`, so the suite binds the two with the
- * `bindPush` adapter below, the shape the controls layer hands a page.
+ * and Back walks the sections. The handle is the store's own field: its `useHref()` builds each href
+ * through the router, so `InnerNav` itself imports none.
  */
 import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
-import type { MouseEvent } from 'react'
-import type { InnerNavHandle } from '../page/parts/inner-nav'
 import { InnerNav } from '../page/parts/inner-nav'
-import type { InnerNavGroup, PushField } from '../page/contract'
+import type { InnerNavGroup } from '../page/contract'
 import { defineControls, resetControlsOwnersForTests } from '../router/controls/define'
 import { field } from '../router/controls/field'
 import { mountApp } from './view-tabs.test-support'
-import type { TestRouter } from './view-tabs.test-support'
 
 afterEach(() => {
   cleanup()
   resetControlsOwnersForTests()
 })
 beforeEach(resetControlsOwnersForTests)
-
-type Section = 'general' | 'billing' | 'team'
 
 const GROUPS: readonly InnerNavGroup[] = [
   {
@@ -43,37 +37,14 @@ const store = () =>
     fields: { section: field.enum(['general', 'billing', 'team'], 'general', { history: 'push' }) },
   })
 
-/** A router push field as `InnerNav` reads it: `link()` as `href` + `onClick`. */
-function bindPush(
-  handle: ReturnType<typeof store>['field']['section'],
-  router: TestRouter,
-): InnerNavHandle<Section> {
-  const to = (value: string): { search: (prev: object) => object; replace: boolean } => ({
-    ...handle.link(value as never),
-    search: (prev) => ({ ...prev, ...handle.link(value as never).search }),
-  })
-  return Object.create(handle, {
-    link: {
-      value: (value: Section) => ({
-        href: router.buildLocation({ to: '.', ...to(value) }).href,
-        onClick: (event: MouseEvent<HTMLAnchorElement>) => {
-          event.preventDefault()
-          void router.navigate({ to: '.', ...to(value) })
-        },
-      }),
-    },
-  }) as InnerNavHandle<Section>
-}
-
 async function mountNav(url: string) {
   const settings = store()
-  let state!: InnerNavHandle<Section>
+  const state = settings.field.section
   const mounted = await mountApp({
     url,
     store: settings,
-    page: () => <InnerNav label="Settings" state={state as PushField<Section>} groups={GROUPS} />,
+    page: () => <InnerNav label="Settings" state={state} groups={GROUPS} />,
   })
-  state = bindPush(settings.field.section, mounted.router)
   return { ...mounted, state }
 }
 

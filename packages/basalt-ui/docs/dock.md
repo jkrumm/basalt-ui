@@ -3,7 +3,7 @@ name: Dock
 use when: 'a record chosen from a list should stay open beside the screen while the reader keeps working in it, on any page'
 never when: 'the record is a page''s own inspector (`PageAside`), the choice is a quick look that should vanish (`Peek`), or the form must block the page (`Sheet`)'
 subpath: basalt-ui/page
-peers: ['@base-ui/react', '@tanstack/react-router']
+peers: ['@base-ui/react']
 slots: [dock]
 ---
 

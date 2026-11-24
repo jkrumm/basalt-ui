@@ -3,7 +3,7 @@ name: PropertyList
 use when: 'a record''s own properties are listed as label and value and the reader changes them where they are read: a supplier''s contact, lead time and terms'
 never when: 'nothing on the list is editable (use Facts) or the change is a multi-field form with one Save (use a form)'
 subpath: basalt-ui/page
-peers: ['@base-ui/react', '@tanstack/react-router']
+peers: ['@base-ui/react']
 slots: [property-list]
 ---
 

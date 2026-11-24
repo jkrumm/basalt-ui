@@ -3,7 +3,7 @@ name: CardGrid
 use when: 'cards of one kind sit side by side and the column count should follow the space they get'
 never when: 'the layout needs a fixed column count or an asymmetric split (compose the page with `Section`s)'
 subpath: basalt-ui/page
-peers: ['@base-ui/react', '@tanstack/react-router']
+peers: ['@base-ui/react']
 slots: [card-grid]
 ---
 

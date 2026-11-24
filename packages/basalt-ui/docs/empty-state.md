@@ -3,7 +3,7 @@ name: EmptyState
 use when: 'a settled query or a filter left a page or region with nothing to list'
 never when: 'the data failed to load or is still loading (use `QueryState`, or a frame `phase`)'
 subpath: basalt-ui/page
-peers: ['@base-ui/react', '@tanstack/react-router']
+peers: ['@base-ui/react']
 slots: [empty-state, empty-state-action, empty-state-icon, empty-state-title, empty-state-why]
 ---
 
