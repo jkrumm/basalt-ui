@@ -8,7 +8,8 @@
  * the package's `exports` map to the built file and from there to its source: the build is unbundled and mirrors
  * `src/` under `dist/` (tsup.config.ts), so `dist/ui/button.js` is `src/ui/button.tsx`. Any other bare import is a
  * dependency and ends the walk. An import of `basalt-ui/table` also reaches `table.css`, which `basalt()` appends to
- * it. A relative import or a `basalt-ui` subpath that resolves to no file is kept in
+ * it. `.basalt/sources.css` is the `@source` list `basalt()` writes at build time (gitignored, so absent on a fresh
+ * checkout); it imports no module and ends the walk. A relative import or a `basalt-ui` subpath that resolves to no file is kept in
  * `unresolved`: a test holds it empty on the real tree, so a resolver gap cannot make a page look as if it reached
  * nothing.
  */
@@ -85,6 +86,7 @@ export function createImportGraph(root: string): ImportGraph {
     const specifier = raw.replace(/\?[\w-]+$/, '')
     let abs: string | null = null
     if (specifier.startsWith('.')) {
+      if (specifier.endsWith('.basalt/sources.css')) return null
       // a relative import into the built package (`../packages/basalt-ui/dist/charts/parts/cartesian`) is its source
       const target = resolve(root, dirname(importer), specifier)
       const dist = join(root, PACKAGE_DIR, 'dist') + '/'
