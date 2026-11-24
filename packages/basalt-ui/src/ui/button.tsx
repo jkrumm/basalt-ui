@@ -36,7 +36,7 @@ export const buttonVariants = cva(
     compoundVariants: [
       { size: 'md', shape: 'default', class: 'h-ctl px-3' },
       { size: 'sm', shape: 'default', class: 'h-6 px-2' },
-      { size: 'md', shape: 'icon', class: 'size-ctl' },
+      { size: 'md', shape: 'icon', class: 'size-ctl pointer-coarse:min-w-(--basalt-ctl-h)' },
       {
         size: 'sm',
         shape: 'icon',
