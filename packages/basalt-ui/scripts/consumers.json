@@ -46,7 +46,7 @@
   "expectCatalog": "epos:schema.contract.test.ts gains the sample, limit and hostile-URL checks (docs/v3/concepts/ai-mdx.md section 6, stage 3)",
   "expectShellInvariants": "shutterflow:e2e/desktop/visual/invariants.spec.ts",
   "externalField": "argo:apps/dashboard/src/features/strength-tracker/components/timer-card.tsx",
-  "Facts": "basalt-ui:apps/playground/src/cycle/dogfood-1/FlowOverview.tsx",
+  "Facts": "basalt-ui:apps/playground/src/routes/kit/peek.tsx (the record panel of the photos table)",
   "FavoriteToggle": "basalt-ui:apps/playground/src/demo/peek-layer.tsx (the peek and dock headers take `favorite`; `FavoriteToggle` is what they draw)",
   "PropertyList": "basalt-ui:packages/basalt-ui/blocks/record-page/RecordPage.tsx",
   "field": "argo:apps/dashboard/src/lib/window-stores.ts",

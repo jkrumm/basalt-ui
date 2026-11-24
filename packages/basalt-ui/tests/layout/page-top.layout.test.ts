@@ -4,7 +4,7 @@
  *
  * - under `AppShell` a page with tabs or controls shows one rule between chrome and content: the
  *   header's rule gives way over main and the band's closes the bar;
- * - content starts one page gutter under the chrome's last rule, with a band (Tickets, Fleet
+ * - content starts one page gutter under the chrome's last rule, with a band (Parts, Fleet
  *   overview) and without one (the title-only expression scenarios c12, n02, n27), so the distance
  *   is the same token on every page.
  *
@@ -26,7 +26,7 @@ const APPS: readonly App[] = ['playground', 'expression']
 const dist = (app: App): string => resolve(import.meta.dir, '../../../../apps', app, 'dist')
 const DESKTOP_1800: Viewport = { name: 'wide desktop', width: 1800, height: 1200 }
 
-const BANDED = ['/cycle/state-2', '/cycle/shell-5'] as const
+const BANDED = ['/ref/parts', '/cycle/shell-6'] as const
 const BANDLESS = ['/scenarios/expr-c12', '/scenarios/expr-n02', '/scenarios/expr-n27'] as const
 
 const servers = new Map<App, ReturnType<typeof Bun.serve>>()

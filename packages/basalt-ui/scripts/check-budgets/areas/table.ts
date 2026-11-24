@@ -320,7 +320,7 @@ export const raises: Raises = {
       from: 123000,
       to: 123100,
       consumer:
-        "`detailById`: a table's `detailState` field that names a record the filters exclude opens it instead of clearing, the state cycle 3 orders page (apps/playground/src/cycle/state-3/OrdersPage.tsx) takes it in the next cycle, and any app whose notification or share link names a record (Issue 1543)",
+        "`detailById`: a table's `detailState` field that names a record the filters exclude opens it instead of clearing, the state cycle 3 orders page took it in the next cycle, and any app whose notification or share link names a record (Issue 1543)",
       repo: 'basalt-ui',
     },
     {
@@ -334,7 +334,7 @@ export const raises: Raises = {
       from: 123900,
       to: 124200,
       consumer:
-        "`useDataTable filters`: dogfood cycle 2's flow overview (apps/playground/src/cycle/dogfood-2/FlowOverview.tsx) filters its table by three page fields in 11 lines and writes Clear filters in 5, the same code as cycle/state-3/OrdersPage.tsx (dogfood-2.5)",
+        "`useDataTable filters`: dogfood cycle 2's flow overview filtered its table by three page fields in 11 lines and wrote Clear filters in 5, the same code as the state cycle 3 orders page (dogfood-2.5)",
       repo: 'basalt-ui',
     },
     {
