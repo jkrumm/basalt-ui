@@ -113,6 +113,11 @@ export async function mount(spec: FixtureSpec, container: HTMLElement): Promise<
   root?.unmount()
   if (!RESET.isConnected) document.head.append(RESET)
   localStorage.clear()
+  const html = document.documentElement
+  if (spec.phoneNav === undefined) html.removeAttribute('data-phone-nav')
+  else html.setAttribute('data-phone-nav', spec.phoneNav)
+  if (spec.safeBottom === undefined) html.style.removeProperty('--shell-safe-bottom')
+  else html.style.setProperty('--shell-safe-bottom', `${spec.safeBottom}px`)
   const step = densityStep(spec.density)
   if (step === undefined) delete document.documentElement.dataset['density']
   else document.documentElement.dataset['density'] = step
@@ -140,7 +145,12 @@ export async function mount(spec: FixtureSpec, container: HTMLElement): Promise<
 
   const rootRoute = createRootRoute({
     component: () => (
-      <AppShell nav={nav} brand={{ name: 'Basalt' }} badges={badges}>
+      <AppShell
+        nav={nav}
+        brand={{ name: 'Basalt' }}
+        badges={badges}
+        {...(spec.search === true && { search: { onOpen: () => {} } })}
+      >
         <ScrollportHandle />
         <Outlet />
       </AppShell>
@@ -150,6 +160,9 @@ export async function mount(spec: FixtureSpec, container: HTMLElement): Promise<
     <Page area="mobile">
       <h1 className="sr-only">Overview</h1>
       <div style={{ height: spec.bodyHeight ?? 0 }} />
+      {spec.field === true && (
+        <input data-testid="field" aria-label="Field" autoComplete="off" style={{ height: 44 }} />
+      )}
       <div data-testid="content-end">end of content</div>
     </Page>
   )

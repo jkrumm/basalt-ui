@@ -17,6 +17,10 @@ export const shellMobileScenario: Scenario = {
     'shell-sheet-rows',
     'shell-sheet-body',
     'shell-menu',
+    'shell-phone-bar',
+    'shell-phone-tray',
+    'shell-phone-sheet',
+    'shell-phone-sidebar',
   ],
   // Last in the registry: a spec an earlier scenario owns never reaches this one.
   matches: (spec) => spec.sections.length > 0,
