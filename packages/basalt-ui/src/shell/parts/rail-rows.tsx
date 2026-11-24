@@ -21,7 +21,6 @@ import { isLit } from '../core/badges'
 import type { RailRow } from '../core/projector'
 import type { NavBadge } from '../core/types'
 import { navAnchor } from '../../router/nav/anchor'
-import type { AnyNavItem } from '../../router/nav/types'
 import { useRailControl } from './grid'
 import { monogramOf, rowName } from './rail-text'
 
@@ -134,7 +133,7 @@ function RowBody({
     )
   }
   return createElement(
-    navAnchor(row.item as AnyNavItem),
+    navAnchor(row.item),
     {
       ...common,
       ...(row.active && { 'aria-current': 'page' as const }),
