@@ -1,8 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { CardGrid, Page, Section } from 'basalt-ui/page'
 import { CartesianChart, ChartCard } from 'basalt-ui/charts'
-import type { Series } from 'basalt-ui/charts'
+import type { ChartFigure, Series } from 'basalt-ui/charts'
 import type { ReactElement } from 'react'
+import { useFixture } from '../demo/fixture'
 
 type Day = {
   t: Date
@@ -37,10 +38,17 @@ const pair = (n: number): { light: string; dark: string } => ({
 const x = { value: (d: Day): Date => d.t }
 const kg = (v: number): string => `${v.toFixed(1)} kg`
 
-/** The last reading the month has, for the headline. */
-const lastWeight = DATA.findLast((d) => d.weight !== null)?.weight ?? null
-const firstWeight = DATA.find((d) => d.weight !== null)?.weight ?? null
-const weightDelta = lastWeight === null || firstWeight === null ? null : lastWeight - firstWeight
+/** The headline: the month's last reading and its change since the first, from the rows the card draws. */
+function weightFigure(days: readonly Day[]): ChartFigure | undefined {
+  const last = days.findLast((d) => d.weight !== null)?.weight
+  const first = days.find((d) => d.weight !== null)?.weight
+  if (last == null || first == null) return undefined
+  const delta = last - first
+  return {
+    value: kg(last),
+    delta: { value: `${delta.toFixed(1)} kg`, polarity: 'up-bad', label: 'since Oct 1' },
+  }
+}
 
 // #region weight-chart
 const weightSeries: Series<Day>[] = [
@@ -70,10 +78,10 @@ const weightSeries: Series<Day>[] = [
   },
 ]
 
-const weightChart = (height: number | 'fill'): ReactElement => (
+const weightChart = (data: readonly Day[], height: number | 'fill'): ReactElement => (
   <CartesianChart
     label="Body weight with its 7-day mean"
-    data={DATA}
+    data={data}
     x={x}
     height={height}
     series={weightSeries}
@@ -83,10 +91,10 @@ const weightChart = (height: number | 'fill'): ReactElement => (
 // #endregion
 
 // #region domain-chart
-const loadChart = (height: number | 'fill'): ReactElement => (
+const loadChart = (data: readonly Day[], height: number | 'fill'): ReactElement => (
   <CartesianChart
     label="Training load with the top set on the right axis"
-    data={DATA}
+    data={data}
     x={x}
     height={height}
     series={[
@@ -114,8 +122,6 @@ const loadChart = (height: number | 'fill'): ReactElement => (
 )
 // #endregion
 
-const shortWindow = DATA.slice(0, 14)
-
 // #region shared-x
 /** Two windows of one month on one x domain: the same day sits in the same pixel column in both. */
 const sharedX = (data: readonly Day[], height: number | 'fill'): ReactElement => (
@@ -130,10 +136,10 @@ const sharedX = (data: readonly Day[], height: number | 'fill'): ReactElement =>
 )
 // #endregion
 
-const bars = (height: number | 'fill'): ReactElement => (
+const bars = (data: readonly Day[], height: number | 'fill'): ReactElement => (
   <CartesianChart
     label="Spikes per day, older bars fade"
-    data={DATA}
+    data={data}
     x={x}
     height={height}
     series={[
@@ -149,10 +155,10 @@ const bars = (height: number | 'fill'): ReactElement => (
   />
 )
 
-const lone = (height: number | 'fill'): ReactElement => (
+const lone = (data: readonly Day[], height: number | 'fill'): ReactElement => (
   <CartesianChart
     label="A lift logged on three days, one of them alone"
-    data={DATA}
+    data={data}
     x={x}
     height={height}
     series={[{ mark: 'line', key: 'lift', label: 'Top set', color: pair(3), y: (d) => d.lift }]}
@@ -164,55 +170,59 @@ const lone = (height: number | 'fill'): ReactElement => (
  * and gaps, a second axis, two windows on one x domain, faded bars and a lone point.
  */
 function ChartsRoute(): ReactElement {
+  const days = useFixture(['charts', 'days'], DATA)
+  const rows = days.data
+  const empty = rows?.length === 0 ? { cause: 'No readings this month yet.' } : null
+  const card = { phase: days, empty }
   return (
     <Page area="charts">
       <ChartCard
+        {...card}
         title="Body weight"
         subtitle="daily, October"
         info="A day with no weigh-in is bridged; the dashed line is the 7-day mean."
-        figure={{
-          value: lastWeight === null ? '–' : kg(lastWeight),
-          delta:
-            weightDelta === null
-              ? undefined
-              : { value: `${weightDelta.toFixed(1)} kg`, polarity: 'up-bad', label: 'since Oct 1' },
-        }}
+        figure={rows === undefined ? undefined : weightFigure(rows)}
         height="tall"
-        chart={(box) => weightChart(box.height)}
+        chart={(box) => (rows === undefined ? null : weightChart(rows, box.height))}
       />
       <CardGrid min="regular">
         <ChartCard
+          {...card}
           title="Training load"
           subtitle="per day, top set on the right axis"
-          chart={(box) => loadChart(box.height)}
+          chart={(box) => (rows === undefined ? null : loadChart(rows, box.height))}
         />
         <ChartCard
+          {...card}
           title="Spikes"
           subtitle="per day, older days fade"
-          chart={(box) => bars(box.height)}
+          chart={(box) => (rows === undefined ? null : bars(rows, box.height))}
         />
       </CardGrid>
       <Section title="One x domain">
         <CardGrid min="regular">
           <ChartCard
+            {...card}
             title="First two weeks"
             subtitle="on the month's axis"
             height="short"
-            chart={(box) => sharedX(shortWindow, box.height)}
+            chart={(box) => (rows === undefined ? null : sharedX(rows.slice(0, 14), box.height))}
           />
           <ChartCard
+            {...card}
             title="Whole month"
             subtitle="the same days line up"
             height="short"
-            chart={(box) => sharedX(DATA, box.height)}
+            chart={(box) => (rows === undefined ? null : sharedX(rows, box.height))}
           />
         </CardGrid>
       </Section>
       <ChartCard
+        {...card}
         title="Top set"
         subtitle="three sessions, one alone"
         height="short"
-        chart={(box) => lone(box.height)}
+        chart={(box) => (rows === undefined ? null : lone(rows, box.height))}
       />
     </Page>
   )

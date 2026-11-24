@@ -15,6 +15,7 @@ import { Rocket } from 'lucide-react'
 import type { ReactElement } from 'react'
 import { DEPLOY_STATES, DEPLOYS, DEPLOYS_NOW, stepsOf } from '../../demo/deploys'
 import type { Deploy } from '../../demo/deploys'
+import { useFixture } from '../../demo/fixture'
 import { OVERLAYS } from '../../demo/overlays'
 
 const store = defineControls({
@@ -37,6 +38,9 @@ const FORCED: Record<'loading' | 'error', Phase> = {
   loading: 'loading',
   error: { tag: 'error', message: 'The deploy service answered 502 Bad Gateway.' },
 }
+
+/** No incident is open: the panel shows its empty state at rest. */
+const NO_INCIDENTS: readonly { id: string; title: string }[] = []
 
 const TONES = { Live: 'good', Failed: 'bad', 'Rolled back': 'warn' } as const
 
@@ -72,6 +76,7 @@ const LAST_DEPLOY_MENU: CardMenu = [
 function StatesRoute(): ReactElement {
   const result = shotState(useQuery(deploysQuery))
   const [phase] = store.field.phase.use()
+  const incidents = useFixture(['kit-states', 'incidents'], NO_INCIDENTS)
   const connection = useConnection()
   const freshness = useFreshness([deploysQuery.queryKey])
   const rows = phase === 'empty' ? [] : result.data
@@ -122,17 +127,34 @@ function StatesRoute(): ReactElement {
         <DataPanel
           {...LAST_DEPLOY}
           menu={LAST_DEPLOY_MENU}
-          bodySize={{ height: 200 }}
-          body={() => <StepRail label="Steps of the last deploy" steps={stepsOf(latest)} />}
+          phase={result}
+          empty={
+            result.data?.length === 0
+              ? { cause: 'Nothing deployed yet: a merge to main starts one.' }
+              : null
+          }
+          bodySize={{ height: 264 }}
+          body={() => {
+            const last = result.data?.[0]
+            return last === undefined ? null : (
+              <StepRail label="Steps of the last deploy" steps={stepsOf(last)} />
+            )
+          }}
         />
         <DataPanel
           title="Open incidents"
           subtitle="last 30 days"
-          bodySize={{ height: 200 }}
-          empty={{
-            cause: 'An incident opens when a probe fails twice; the last one closed 3 days ago.',
-            action: { label: 'Open the incident log', href: '/kit/states' },
-          }}
+          phase={incidents}
+          bodySize={{ height: 264 }}
+          empty={
+            incidents.data?.length === 0
+              ? {
+                  cause:
+                    'An incident opens when a probe fails twice; the last one closed 3 days ago.',
+                  action: { label: 'Open the incident log', href: '/kit/states' },
+                }
+              : null
+          }
           body={() => null}
         />
       </CardGrid>

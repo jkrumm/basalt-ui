@@ -1,11 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { CardGrid, Page, PageBar } from 'basalt-ui/page'
-import { BarList, DataPanel, EventList, StatCard, StatCell, StatGroup } from 'basalt-ui/cards'
+import { BarList, EventList, StatCard, StatCell, StatGroup } from 'basalt-ui/cards'
+import type { QueryStateLike } from 'basalt-ui/cards'
 import { ChartCard, Lines } from 'basalt-ui/charts'
 import { FilterSet, ViewTabs, filterSlot, spec } from 'basalt-ui/controls'
 import { defineControls, field } from 'basalt-ui/router'
 import type { ComponentProps, ReactElement } from 'react'
 import { BASALT } from 'basalt-ui/tokens'
+import { useFixture } from '../demo/fixture'
 
 const globals = defineControls({
   id: 'overview-globals',
@@ -61,10 +63,18 @@ const EVENTS = [
   { id: 'e3', at: NOW - 40_000_000, title: 'deploy to production finished' },
 ]
 
+type Overview = { days: readonly Day[]; projects: typeof PROJECTS; events: typeof EVENTS }
+
+const OVERVIEW: Overview = { days: DAYS, projects: PROJECTS, events: EVENTS }
+const NO_OVERVIEW: Overview = { days: [], projects: [], events: [] }
+
+type Frame = { phase: QueryStateLike }
+
 // #region stat-group
-const health = (
+const health = ({ phase }: Frame) => (
   <StatGroup variant="strip" label="Service health">
     <StatCell
+      phase={phase}
       title="Uptime"
       subtitle="30 days"
       value="99.98"
@@ -72,19 +82,26 @@ const health = (
       status={{ tone: 'good', label: 'Above the 99.9 % target' }}
     />
     <StatCell
+      phase={phase}
       title="p95"
       value={182}
       unit="ms"
       delta={{ value: '-4%', polarity: 'up-bad', label: 'vs prior 7 days' }}
     />
-    <StatCell title="Open incidents" value={0} status={{ tone: 'good', label: 'None open' }} />
+    <StatCell
+      phase={phase}
+      title="Open incidents"
+      value={0}
+      status={{ tone: 'good', label: 'None open' }}
+    />
   </StatGroup>
 )
 // #endregion
 
 // #region stat-card
-const requests = (
+const requests = ({ phase }: Frame) => (
   <StatCard
+    phase={phase}
     title="Requests"
     subtitle="follows the page range"
     value={12840}
@@ -92,8 +109,9 @@ const requests = (
     controls={filterSlot([spec(overview.widget.requests.range, 'Range')])}
   />
 )
-const errors = (
+const errors = ({ phase }: Frame) => (
   <StatCard
+    phase={phase}
     title="Errors"
     subtitle="own range"
     value={212}
@@ -104,41 +122,61 @@ const errors = (
 // #endregion
 
 // #region chart-card
-const trend = (
+const trend = ({ phase }: Frame, days: readonly Day[] | undefined) => (
   <ChartCard
+    phase={phase}
+    empty={days?.length === 0 ? { cause: 'No requests served in the last 30 days.' } : null}
     title="Requests"
-    subtitle="per day"
+    subtitle="per day, last 30 days"
     info="Requests served per day."
-    figure={{ value: '12,840' }}
-    chart={() => (
-      <Lines
-        label="Requests per day, 30 days"
-        data={DAYS}
-        x={{ value: (d) => d.day }}
-        series={[
-          { mark: 'line', key: 'requests', label: 'Requests', color: ACCENT, y: (d) => d.requests },
-        ]}
-      />
-    )}
+    figure={
+      days === undefined || days.length === 0
+        ? undefined
+        : {
+            value: `${Math.round(days.reduce((sum, d) => sum + d.requests, 0) / days.length)} / day`,
+          }
+    }
+    chart={() =>
+      days === undefined ? null : (
+        <Lines
+          label="Requests per day, 30 days"
+          data={days}
+          x={{ value: (d) => d.day }}
+          series={[
+            {
+              mark: 'line',
+              key: 'requests',
+              label: 'Requests',
+              color: ACCENT,
+              y: (d) => d.requests,
+            },
+          ]}
+        />
+      )
+    }
   />
 )
 // #endregion
 
 // #region bar-list
-const projects = <BarList title="Top projects" items={PROJECTS} />
+const projects = ({ phase }: Frame, items: Overview['projects'] | undefined) => (
+  <BarList
+    title="Top projects"
+    phase={phase}
+    empty={items?.length === 0 ? { cause: 'No project served a request yet.' } : null}
+    items={items ?? []}
+  />
+)
 // #endregion
 
 // #region data-panel
-const breakdown = (
-  <DataPanel
-    title="Breakdown"
-    bodySize={{ rows: 5 }}
-    body={() => (
-      <div className="flex flex-col gap-4">
-        {projects}
-        <EventList title="Activity" now={NOW} items={EVENTS} />
-      </div>
-    )}
+const activity = ({ phase }: Frame, items: Overview['events'] | undefined) => (
+  <EventList
+    title="Activity"
+    now={NOW}
+    phase={phase}
+    empty={items?.length === 0 ? { cause: 'Nothing happened in the last 7 days.' } : null}
+    items={items ?? []}
   />
 )
 // #endregion
@@ -161,21 +199,26 @@ const tabs: NonNullable<ComponentProps<typeof PageBar>['tabs']> = {
 
 function OverviewRoute(): ReactElement {
   const [tab] = overview.field.tab.use()
+  const query = useFixture(['overview'], OVERVIEW, NO_OVERVIEW)
+  const frame: Frame = { phase: query }
   return (
     <Page area="overview">
       <PageBar tabs={tabs} controls={filterSlot([spec(globals.field.range, 'Range')])} />
       <div data-testid="ov-filters">{filters}</div>
       {tab === 'overview' ? (
         <>
-          {health}
+          {health(frame)}
           <CardGrid min="regular">
-            <div data-testid="ov-bound">{requests}</div>
-            <div data-testid="ov-override">{errors}</div>
+            <div data-testid="ov-bound">{requests(frame)}</div>
+            <div data-testid="ov-override">{errors(frame)}</div>
           </CardGrid>
-          {trend}
+          {trend(frame, query.data?.days)}
         </>
       ) : null}
-      <CardGrid min="regular">{breakdown}</CardGrid>
+      <CardGrid min="regular">
+        {projects(frame, query.data?.projects)}
+        {activity(frame, query.data?.events)}
+      </CardGrid>
     </Page>
   )
 }

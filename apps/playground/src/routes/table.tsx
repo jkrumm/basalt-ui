@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import type { ReactElement } from 'react'
+import { useFixture } from '../demo/fixture'
 
 /** One glyph per booking state, drawn in its tone where the dot was. */
 const STATE_ICONS: Record<string, IconComponent> = {
@@ -251,6 +252,13 @@ function Finances(): ReactElement {
   const [look] = exemplar.field.look.use()
   const [done, setDone] = useState('')
   const page = serve(state.request, month)
+  // The endpoint's answer as a query, keyed by the request: a shot forces it loading, empty or failed.
+  const served = useFixture(['table', 'bookings', state.request, month], page, {
+    ...page,
+    rows: [],
+    total: 0,
+    sum: 0,
+  })
   const t = useDataTable({
     id: 'bookings',
     label: 'Bookings',
@@ -284,13 +292,14 @@ function Finances(): ReactElement {
       }),
       book.actions([{ id: 'rule', label: 'Make rule', onClick: () => setDone('Rule created') }]),
     ],
-    data: page.rows,
+    data: served.data?.rows,
+    phase: served,
     getRowId: (row) => row.id,
     mode: {
       kind: 'server',
-      rowCount: page.total,
+      rowCount: served.data?.total ?? 0,
       facets: page.facets,
-      totals: { amount: page.sum },
+      totals: { amount: served.data?.sum ?? 0 },
     },
     state: exemplar.field.table,
     resetOn: [month],
@@ -323,10 +332,11 @@ function Finances(): ReactElement {
 function Large(): ReactElement {
   const [picked, setPicked] = useState<Record<string, string>>({})
   const [opened, setOpened] = useState('')
+  const entries = useFixture(['table', 'entries'], ENTRIES)
   const rows =
-    Object.keys(picked).length === 0
-      ? ENTRIES
-      : ENTRIES.map((e) => ({ ...e, category: picked[e.id] ?? e.category }))
+    entries.data === undefined || Object.keys(picked).length === 0
+      ? entries.data
+      : entries.data.map((e) => ({ ...e, category: picked[e.id] ?? e.category }))
   const t = useDataTable({
     id: 'entries',
     label: 'Entries',
@@ -351,6 +361,7 @@ function Large(): ReactElement {
       entry.date('at', { header: 'Booked', priority: 3, filter: 'range', picker: DateRangePicker }),
     ],
     data: rows,
+    phase: entries,
     getRowId: (row) => row.id,
     mode: { kind: 'client' },
     state: exemplar.field.large,
@@ -459,6 +470,7 @@ const NOTE_ROWS: readonly Note[] = [
 const note = col<Note>()
 
 function Notes(): ReactElement {
+  const notes = useFixture(['table', 'notes'], NOTE_ROWS)
   const t = useDataTable({
     id: 'notes',
     label: 'Notes',
@@ -479,19 +491,20 @@ function Notes(): ReactElement {
         header: 'Company',
         ref: (row) => row.ref,
         filter: 'text',
-        priority: 3,
+        priority: 2,
       }),
-      note.people('team', { header: 'Known by', priority: 3 }),
+      note.people('team', { header: 'Known by', priority: 2 }),
       note.tags('tags', {
         header: 'Tags',
         filter: 'multi',
         tone: (tag) => (tag === 'legal' ? 'warn' : tag === 'priority' ? 'accent' : 'neutral'),
-        priority: 3,
+        priority: 2,
       }),
       note.countdown('due', { header: 'Due', warn: 7, priority: 2 }),
-      note.link('site', { header: 'Site', priority: 3 }),
+      note.link('site', { header: 'Site', priority: 2 }),
     ],
-    data: NOTE_ROWS,
+    data: notes.data,
+    phase: notes,
     getRowId: (row) => row.id,
     mode: { kind: 'client' },
     now: NOTES_NOW,
@@ -507,6 +520,7 @@ function Notes(): ReactElement {
 // ---- Section 3: grouped ---------------------------------------------------------------------
 
 function Grouped(): ReactElement {
+  const roomRows = useFixture(['table', 'rooms'], ROOMS)
   const t = useDataTable({
     id: 'rooms',
     label: 'Rooms',
@@ -522,7 +536,8 @@ function Grouped(): ReactElement {
       rooms.number('tasks', { header: 'Open tasks', footer: 'sum' }),
       rooms.text('floor', { header: 'Floor', priority: 3 }),
     ],
-    data: ROOMS,
+    data: roomRows.data,
+    phase: roomRows,
     getRowId: (row) => row.id,
     mode: { kind: 'client' },
     state: exemplar.field.grouped,
