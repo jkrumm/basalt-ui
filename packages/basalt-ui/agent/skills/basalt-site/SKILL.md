@@ -14,12 +14,11 @@ Procedure only. The law is `.claude/rules/basalt-site.md` and `.claude/rules/bas
 
 ## Pick the page type
 
-| Page                           | Build it from                                                                                                                                  |
-| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| Landing                        | `SiteHeader`, `SiteHero`, `SiteBento`, `SiteComparison`, `SiteQuestionList`, `SiteCallToAction`, `SiteFooter`                                  |
-| Guide, article, blog post      | an MDX file rendered in `SiteArticle`, with `siteMdxComponents(labels)` as its components and `SitePager` for the previous and next links      |
-| Docs with a sidebar and search | Starlight, themed by `basalt-ui/starlight.css` (`docs/astro.md`, section Starlight)                                                            |
-| A table or chart inside MDX    | the tags `basalt-ui/astro/mdx/DataTable.astro` and `basalt-ui/astro/mdx/Chart.astro`, which choose their directive by `load` and take `locale` |
+- **Landing**: `SiteHeader`, `SiteHero`, `SiteBento`, `SiteComparison`, `SiteQuestionList`, `SiteCallToAction`, `SiteFooter`.
+- **Guide**: an MDX file in a `guides` collection and one `[...slug].astro`: `SiteArticle`, `SiteNav` as its `nav`, `siteMdxComponents(labels)`, `SitePager` from the collection order.
+- **Article, blog post**: a `posts` collection in `SiteArticle`; the list is `SitePostList`. **Changelog**: `SiteChangelog` over release rows.
+- **Docs with a sidebar and search**: Starlight through `basalt-ui/starlight.css` (`docs/astro.md`, section Starlight).
+- **A table or chart inside MDX**: the tags `basalt-ui/astro/mdx/DataTable.astro` and `Chart.astro`; they choose their directive by `load` and take `locale`.
 
 Keep every label in one file of the site's words (`src/lib/site.ts`) and pass it as props. Pass a node to a part as a named slot (`<Fragment slot="meta">`), never as JSX inside an object prop: the build fails on that.
 
@@ -34,7 +33,7 @@ Keep every label in one file of the site's words (`src/lib/site.ts`) and pass it
 
 ## The head
 
-The layout `init` writes holds `<BasaltFonts />` and `lang`; set `dir="rtl"` there for a right-to-left site. Give every page a title and a description; build the canonical URL and the social tags from `Astro.site` in the layout. Structured data comes from the page's own data (`docs/astro.md`, section Landing blocks).
+The layout `init` writes holds `<BasaltFonts />` and `lang`; set `dir="rtl"` there for a right-to-left site. Put `<SiteHead title description />` from `basalt-ui/astro/SiteHead.astro` in the head: it writes the canonical URL (from `site` in `astro.config`), Open Graph, the Twitter card and, with `type="article"`, the article's JSON-LD. Code in fenced blocks follows the scheme through `markdown.shikiConfig: basaltShiki` (`docs/astro.md`, sections Page types and Code colors).
 
 ## Verify
 

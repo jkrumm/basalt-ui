@@ -302,6 +302,7 @@
       "default": "./dist/astro/index.js"
     },
     "./astro/BasaltFonts.astro": "./dist/astro/BasaltFonts.astro",
+    "./astro/SiteHead.astro": "./dist/astro/SiteHead.astro",
     "./astro/mdx/Chart.astro": "./dist/astro/mdx/Chart.astro",
     "./astro/mdx/DataTable.astro": "./dist/astro/mdx/DataTable.astro",
     "./styles.css": "./dist/styles.css",

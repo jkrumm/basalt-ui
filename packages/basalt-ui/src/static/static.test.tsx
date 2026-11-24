@@ -38,6 +38,9 @@ import {
   SiteTab,
   SiteTabs,
   SiteQuestionList,
+  SiteChangelog,
+  SiteNav,
+  SitePostList,
   ThemeSwitch,
 } from './index'
 import { siteScript } from './site-script'
@@ -272,6 +275,47 @@ const PARTS: Record<string, ReactElement> = {
       rows={[{ name: S('row'), size: 71500 }]}
     />
   ),
+  SiteNav: (
+    <SiteNav
+      groups={[
+        {
+          title: S('group'),
+          links: [
+            { href: '/a', label: S('first'), current: true },
+            { label: S('parent'), items: [{ href: '/b', label: S('child') }] },
+          ],
+        },
+      ]}
+    />
+  ),
+  SitePostList: (
+    <SitePostList
+      label={S('posts')}
+      posts={[
+        {
+          href: '/a',
+          title: S('title'),
+          description: S('line'),
+          date: '2026-11-20',
+          meta: S('byline'),
+          tags: [S('tag')],
+        },
+      ]}
+    />
+  ),
+  SiteChangelog: (
+    <SiteChangelog
+      releases={[
+        {
+          version: '3.1.0',
+          date: '2026-12-01',
+          href: '/tag',
+          summary: S('summary'),
+          groups: [{ label: S('added'), items: [S('item')] }],
+        },
+      ]}
+    />
+  ),
   'mdx Tabs': Mdx('Tabs', {
     label: S('tabs'),
     tabs: [S('one')],
@@ -287,6 +331,8 @@ function words(html: string): string[] {
   host.innerHTML = html
   const out: string[] = []
   const walk = (n: Node): void => {
+    // A day is formatted by Intl in the page's locale: data, not a word the part brings.
+    if ((n as Element).tagName === 'TIME') return
     if (n.nodeType === 3) out.push(n.textContent ?? '')
     for (const c of Array.from(n.childNodes)) walk(c)
   }
