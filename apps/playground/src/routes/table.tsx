@@ -480,7 +480,6 @@ function Notes(): ReactElement {
         type: (row) => row.kind,
         icons: { note: FileText, call: Phone },
       }),
-      note.text('preview', { header: 'Preview', quiet: true, priority: 3 }),
       note.person('author', {
         header: 'Author',
         role: (row) => row.role,
@@ -493,7 +492,6 @@ function Notes(): ReactElement {
         filter: 'text',
         priority: 2,
       }),
-      note.people('team', { header: 'Known by', priority: 2 }),
       note.tags('tags', {
         header: 'Tags',
         filter: 'multi',
@@ -501,7 +499,6 @@ function Notes(): ReactElement {
         priority: 2,
       }),
       note.countdown('due', { header: 'Due', warn: 7, priority: 2 }),
-      note.link('site', { header: 'Site', priority: 2 }),
     ],
     data: notes.data,
     phase: notes,
