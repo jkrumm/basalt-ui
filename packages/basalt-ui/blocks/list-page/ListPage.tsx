@@ -134,7 +134,8 @@ export function ListPage({
     columns: [
       c.entity('name', {
         header: 'Part',
-        ref: (p) => p.sku,
+        sub: (p) => p.sku,
+        subMono: true,
       }),
       c.status('stock', {
         header: 'Stock',
