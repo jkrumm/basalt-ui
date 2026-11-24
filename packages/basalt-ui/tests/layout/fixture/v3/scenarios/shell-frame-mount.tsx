@@ -194,6 +194,7 @@ function DockHarness({ mode }: { mode: true | 'toggle' }): ReactElement {
         <Dock
           title="Issue 12"
           tag="#12"
+          present="popup"
           fullPage="/runs"
           onClose={() => {
             setOpen(false)

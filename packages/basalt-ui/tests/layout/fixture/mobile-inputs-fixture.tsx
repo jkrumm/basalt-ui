@@ -35,7 +35,7 @@ function Fixture() {
           <SelectItem value="a">Alpha</SelectItem>
         </SelectContent>
       </Select>
-      <Combobox items={CITIES}>
+      <Combobox items={CITIES} present="popup">
         <ComboboxInput aria-label="City" data-testid="m-combobox" />
         <ComboboxContent empty="No results">
           {CITIES.map((c) => (
