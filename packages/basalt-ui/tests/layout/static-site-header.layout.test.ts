@@ -236,6 +236,26 @@ layout('site header menus', () => {
     expect(parseFloat(await leaving('basalt-site-menu-p2'))).toBeGreaterThan(0)
   })
 
+  test('in a right-to-left page the panel opens under its item and stays on screen', async () => {
+    const html = withScript.replace('<html lang="en">', '<html lang="ar" dir="rtl">')
+    const page = await openDocument(html, DESKTOP_1440, DESKTOP)
+    await page.settle()
+    await page.raw.click(trigger('Product'))
+    await waitOpen(page, 'basalt-site-menu-p1')
+    const box = await page.raw.evaluate(() => {
+      const t = document.querySelector('button[data-basalt-top]')?.getBoundingClientRect()
+      const p = document.getElementById('basalt-site-menu-p1')?.getBoundingClientRect()
+      return t && p
+        ? { tr: t.right, tb: t.bottom, pr: p.right, pl: p.left, pt: p.top, vw: innerWidth }
+        : null
+    })
+    expect(box).not.toBeNull()
+    if (!box) return
+    expect(Math.abs(box.pr - box.tr)).toBeLessThan(2)
+    expect(box.pl).toBeGreaterThanOrEqual(0)
+    expect(box.pt - box.tb).toBeLessThan(16)
+  })
+
   test('with no script a click and Enter open a panel and Escape closes it', async () => {
     const page = await openDocument(withoutScript, DESKTOP_1440, DESKTOP)
     await page.settle()
