@@ -152,8 +152,9 @@ const STATIC_SOURCES = [
 function tailwindCss(variant: 'app' | 'static' = 'app'): string {
   const imports =
     variant === 'app'
-      ? "@import './fonts.css';\n"
-      : "@import './prose.css';\n" + STATIC_SOURCES.map((s) => `@source '${s}';\n`).join('')
+      ? "@import './fonts.css';\n@import './touch.css' layer(basalt);\n"
+      : "@import './prose.css';\n@import './touch.css' layer(basalt);\n" +
+        STATIC_SOURCES.map((s) => `@source '${s}';\n`).join('')
   const entries = bridgeEntries()
   const colours = entries.filter((e) => e.tw.startsWith('--color-'))
   const others = entries.filter((e) => !e.tw.startsWith('--color-'))
@@ -188,7 +189,6 @@ function tailwindCss(variant: 'app' | 'static' = 'app'): string {
     '    -webkit-text-fill-color: var(--basalt-ink);\n' +
     '    caret-color: var(--basalt-ink);\n' +
     '  }\n' +
-    '  @media (pointer: coarse) {\n    input,\n    select,\n    textarea {\n      font-size: max(16px, 1em) !important;\n    }\n  }\n' +
     chartMarkRules +
     articleProgressRules +
     indent(ENTER_KEYFRAMES) +

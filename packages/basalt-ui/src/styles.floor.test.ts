@@ -1,5 +1,5 @@
 /**
- * Regression test for the iOS input-zoom FLOOR itself (styles.css).
+ * Regression test for the iOS input-zoom FLOOR itself (css/touch.css, imported by styles.css and tailwind.css).
  *
  * This rule is load-bearing for accessibility (Safari zooms the viewport on focus below 16px and
  * never zooms back out) — it must never be silently softened (dropping `!important`, so an inline
@@ -12,10 +12,30 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'bun:test'
 
-const STYLES_CSS_PATH = resolve(dirname(fileURLToPath(import.meta.url)), 'styles.css')
+const SRC = dirname(fileURLToPath(import.meta.url))
+const TOUCH_CSS_PATH = resolve(SRC, 'css/touch.css')
 
-describe('styles.css — iOS input floor', () => {
-  const css = readFileSync(STYLES_CSS_PATH, 'utf8')
+describe('touch.css — iOS input floor', () => {
+  const css = readFileSync(TOUCH_CSS_PATH, 'utf8')
+
+  it('holds on a coarse pointer only', () => {
+    expect(css).toMatch(/@media \(pointer: coarse\) \{\s*input,/)
+  })
+
+  it('is imported by styles.css and by both generated sheets, in the basalt layer', () => {
+    expect(readFileSync(resolve(SRC, 'styles.css'), 'utf8')).toContain(
+      "@import './css/touch.css' layer(basalt);",
+    )
+    for (const sheet of ['tailwind.css', 'static.css']) {
+      expect(readFileSync(resolve(SRC, 'css', sheet), 'utf8')).toContain(
+        "@import './touch.css' layer(basalt);",
+      )
+    }
+  })
+
+  it('has no maximum-scale or user-scalable anywhere in the sheets', () => {
+    expect(css.replace(/\/\*[\s\S]*?\*\//g, '')).not.toMatch(/maximum-scale|user-scalable/)
+  })
 
   it('declares the floor rule on input, select, textarea', () => {
     expect(css).toMatch(/input\s*,\s*\n?\s*select\s*,\s*\n?\s*textarea\s*\{/)

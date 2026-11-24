@@ -61,11 +61,12 @@ describe('emitTokensCss', () => {
     expect(decls(':root:not([data-theme]) {')).toEqual(attribute)
   })
 
-  test('coarse pointers raise the row floor but never touch `comfortable` (48 stays 48)', () => {
+  test('coarse pointers raise the control height at every density and the row floor but for `comfortable` (48 stays 48)', () => {
     const coarse = css.slice(css.indexOf('@media (pointer: coarse)'))
     expect(coarse).toContain("[data-density='normal']")
     expect(coarse).toContain(':root:not([data-density])')
-    expect(coarse).not.toContain('comfortable')
+    expect(coarse).toContain("[data-density='comfortable'] {\n    --basalt-ctl-h: 2.75rem;\n  }")
+    expect(coarse).not.toMatch(/comfortable'\] \{[^}]*row-h/)
     expect(coarse).not.toMatch(/(^|\n) {2}:root,/)
     expect(css).not.toContain('any-pointer')
   })

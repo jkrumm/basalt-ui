@@ -34,6 +34,6 @@ export const noNewProp: [NewProps] extends ['size'] ? true : false = true
 describe('textarea guard', () => {
   test('every called prop is accepted and the table resolves', () => {
     expect(requires({ rows: 4, name: 'note' })).toEqual({ rows: 4, name: 'note' })
-    expect(textareaVariants()).toContain('pointer-coarse:min-h-[max(2.75rem,')
+    expect(textareaVariants()).toContain('min-h-[max(var(--basalt-ctl-h),')
   })
 })

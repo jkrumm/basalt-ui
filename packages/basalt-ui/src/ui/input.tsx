@@ -15,12 +15,12 @@ import type { IconComponent } from '../core/ports'
  * inputVariants({ size: 'sm' })
  */
 export const inputVariants = cva(
-  'w-full min-w-0 rounded-ctrl border border-input bg-background text-foreground placeholder:text-faint focus-ring transition-colors [&[readonly]]:cursor-default [&[readonly]]:border-transparent [&[readonly]]:bg-inset aria-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base',
+  'w-full min-w-0 rounded-ctrl border border-input bg-background text-foreground placeholder:text-faint focus-ring transition-colors [&[readonly]]:cursor-default [&[readonly]]:border-transparent [&[readonly]]:bg-inset aria-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50',
   {
     variants: {
       size: {
         md: 'h-ctl px-3 text-sm',
-        sm: 'h-6 px-2 text-xs',
+        sm: 'h-6 px-2 text-xs pointer-coarse:h-ctl',
       },
     },
     defaultVariants: { size: 'md' },

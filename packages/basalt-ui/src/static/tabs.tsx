@@ -63,7 +63,7 @@ export function SiteTabs({ label, tabs, children, className }: SiteTabsProps): R
             data-tab={tab}
             aria-selected={index === 0}
             tabIndex={index === 0 ? 0 : -1}
-            className="relative -mb-px inline-flex h-ctl shrink-0 cursor-pointer items-center gap-1.5 border-b-2 border-transparent px-3 font-medium whitespace-nowrap text-muted-foreground select-none focus-ring transition-colors hover:text-foreground focus-visible:-outline-offset-2 aria-selected:border-brand aria-selected:text-foreground pointer-coarse:min-h-11 motion-reduce:transition-none"
+            className="relative -mb-px inline-flex h-ctl shrink-0 cursor-pointer items-center gap-1.5 border-b-2 border-transparent px-3 font-medium whitespace-nowrap text-muted-foreground select-none focus-ring transition-colors hover:text-foreground focus-visible:-outline-offset-2 aria-selected:border-brand aria-selected:text-foreground motion-reduce:transition-none"
           >
             {tab}
           </button>

@@ -23,9 +23,7 @@ export const toolbarVariants = cva('flex min-h-ctl flex-wrap items-center gap-2'
  * @example
  * toolbarGroupVariants()
  */
-export const toolbarGroupVariants = cva(
-  'inline-flex h-ctl items-center gap-1 pointer-coarse:min-h-11',
-)
+export const toolbarGroupVariants = cva('inline-flex h-ctl items-center gap-1')
 
 /**
  * The `ToolbarSeparator` cva table: a vertical hairline between groups, shorter than the row.

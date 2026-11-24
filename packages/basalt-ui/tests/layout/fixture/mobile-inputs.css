@@ -1,0 +1,13 @@
+/*
+ * The `mobile-inputs` fixture's Tailwind v4 entry: the sheet an app loads (`tailwind.css`, which
+ * carries `touch.css`) compiled with the primitives under test. `mobile-inputs.layout.test.ts`
+ * compiles it into a temp directory; nothing generated lands in the repo.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './mobile-inputs-fixture.tsx';
+@source '../../../src/ui/input.tsx';
+@source '../../../src/ui/textarea.tsx';
+@source '../../../src/ui/select.tsx';
+@source '../../../src/ui/combobox.tsx';
+@source '../../../src/ui/date-picker.tsx';
+@source '../../../src/ui/calendar.tsx';

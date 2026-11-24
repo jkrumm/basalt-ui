@@ -29,12 +29,12 @@ export type { CalendarDate } from '../core/format'
  * datePickerVariants({ size: 'sm' }) // class string for a hand-built trigger
  */
 export const datePickerVariants = cva(
-  'flex w-full min-w-0 cursor-pointer items-center justify-between gap-2 rounded-ctrl border border-input bg-background text-left text-foreground tabular-nums focus-ring transition-colors aria-invalid:border-bad data-placeholder:text-faint data-disabled:cursor-not-allowed data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base',
+  'flex w-full min-w-0 cursor-pointer items-center justify-between gap-2 rounded-ctrl border border-input bg-background text-left text-foreground tabular-nums focus-ring transition-colors aria-invalid:border-bad data-placeholder:text-faint data-disabled:cursor-not-allowed data-disabled:opacity-50 pointer-coarse:text-base',
   {
     variants: {
       size: {
         md: 'h-ctl px-3 text-sm',
-        sm: 'h-6 px-2 text-xs',
+        sm: 'h-6 px-2 text-xs pointer-coarse:h-ctl',
       },
     },
     defaultVariants: { size: 'md' },
