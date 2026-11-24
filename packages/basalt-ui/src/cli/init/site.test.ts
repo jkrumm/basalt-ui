@@ -133,7 +133,8 @@ describe('init --profile site', () => {
 
 describe('templateClassFindings', () => {
   it('skips a class in fenced code, an example, and keeps the line numbers after it', () => {
-    const text = '# Guide\n\n```astro\n<div class="ml-4" />\n```\n\n<p class="mr-2">x</p>\n'
+    const text =
+      '# Guide\n\n```astro\n<div class="ml-4" />\n```\n\n<p class="mr-2">x</p>\n\n- Step\n\n   ```astro\n   <div class="pl-2" />\n   ```\n'
     expect(templateClassFindings(text, new Set(['logical-properties'])).map((f) => f.line)).toEqual(
       [7],
     )
