@@ -7,10 +7,10 @@ import type { BasaltMessages } from './index'
  * button, given the chip's text; `combobox.create` is the row a creatable combobox adds for the
  * typed text. `select.loading`, `select.empty` and `select.error` are the state rows of every
  * option list; the error takes the loader's own message, empty when it gave none. `select.search`
- * is the placeholder of a searchable Select's search field.
+ * is the placeholder of a searchable Select's search field; `combobox.search` is the same for the Combobox's phone sheet.
  */
 export type SelectMessages = Record<
-  'combobox.dismiss' | 'select.loading' | 'select.empty' | 'select.search',
+  'combobox.dismiss' | 'combobox.search' | 'select.loading' | 'select.empty' | 'select.search',
   string
 > &
   Record<
@@ -20,6 +20,7 @@ export type SelectMessages = Record<
 
 export const select = {
   'combobox.dismiss': 'Dismiss',
+  'combobox.search': 'Search',
   'combobox.remove': (_f, label) => `Remove ${label}`,
   'combobox.create': (_f, text) => `Create "${text}"`,
   'select.loading': 'Loading…',

@@ -644,7 +644,7 @@ function SearchSheet({
     <ListSheet
       height="tall"
       portal={BaseCombobox.Portal}
-      name={{ 'aria-label': label ?? t('select.search') }}
+      name={{ 'aria-label': label ?? t('combobox.search') }}
     >
       <BaseCombobox.Positioner
         style={SHEET_POSITIONER}
@@ -652,14 +652,14 @@ function SearchSheet({
         ref={dismiss}
       >
         <BaseCombobox.Popup
-          aria-label={label ?? t('select.search')}
+          aria-label={label ?? t('combobox.search')}
           data-slot="combobox-content"
           className={cn(SHEET_LIST_CLASS, className)}
         >
           <BaseCombobox.Input
-            aria-label={label ?? t('select.search')}
+            aria-label={label ?? t('combobox.search')}
             data-slot="select-search"
-            placeholder={t('select.search')}
+            placeholder={t('combobox.search')}
             className="mb-1 h-ctl w-full shrink-0 rounded-chip border border-input bg-background px-2 text-sm text-foreground focus-ring placeholder:text-faint pointer-coarse:min-h-11"
           />
           {children}
