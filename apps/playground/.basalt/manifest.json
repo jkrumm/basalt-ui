@@ -1,4 +1,5 @@
 {
+  "format": 1,
   "profile": "app",
   "version": "2.29.0",
   "roots": {
@@ -13,11 +14,11 @@
     "repo:.claude/rules/basalt-v3-playground-tokens.md": "89668e3372b0a60e52ee80b83fb804725fc4ae5a6f23877cb664ea9a00acf610",
     "repo:.claude/rules/basalt-v3-playground-ui.md": "b66acade231909317aefa2e186d5d7ec02964f40c0d7953503de91fc7c45c825",
     "repo:.claude/skills/basalt-v3-playground-app/references/live.md": "85f282a1d9c2d29d652e24e36583f1807aa0284fc563172defca9611350e843b",
-    "repo:.claude/skills/basalt-v3-playground-app/references/migrate.md": "1005cf12362a8118819a0e14d38003b5e18a0880c66f36f990489fac723b7acb",
+    "repo:.claude/skills/basalt-v3-playground-app/references/migrate.md": "e070bfc279a5eae7ce7e5a96a3b176e869dc74ff1490683c3d72ae4e9f7007ba",
     "repo:.claude/skills/basalt-v3-playground-app/references/performance.md": "e6930ff6a2b7c389d152b80a417012fa7b7703db64ffa07356b57b15a83aeade",
     "repo:.claude/skills/basalt-v3-playground-app/references/recipes.md": "53ba8db735b229c6a34b81ac528c90a35f8b95a213fc99ad449b6df64b91979b",
     "repo:.claude/skills/basalt-v3-playground-app/references/testing.md": "925ac4088d6b8ba8d853059d27aba543aade7f807d55d3d923ca230d1158a8e4",
-    "repo:.claude/skills/basalt-v3-playground-app/SKILL.md": "8807cc84b68a4e955fa726df0d253e08c7b66afbeed9144f690da23a43da07d3",
+    "repo:.claude/skills/basalt-v3-playground-app/SKILL.md": "8b4a1a598b3070ea1ac7423f64b4c09fd75993133449e954f8b3ea70aef3842a",
     "repo:.claude/skills/basalt-v3-playground-charts/references/custom-marks.md": "fafffb087b550d328b43eea4435156e36a8a32684e82e652ab24018e48c4ed14",
     "repo:.claude/skills/basalt-v3-playground-charts/references/linked-parts.md": "7140ddb57402e58b9084c35ed7ffb653a2bdbdbed9f721c161a7d7c44f2e9cc8",
     "repo:.claude/skills/basalt-v3-playground-charts/SKILL.md": "3004e8f5469c9021b42e74625a6be58a066cf6f023ece7d9302e5988f8fcc0fc",
