@@ -48,6 +48,7 @@ function Fixture() {
         <span id="us-select-label">Select</span>
         <Select
           aria-labelledby="us-select-label"
+          present="popup"
           options={OPTIONS}
           defaultValue="Option 03"
           className="w-40"
@@ -69,7 +70,7 @@ function Fixture() {
       </div>
       <div className={ROW} data-testid="us-combobox">
         <span>Combobox</span>
-        <Combobox items={NAMES}>
+        <Combobox items={NAMES} present="popup">
           <ComboboxInput aria-label="Combobox" placeholder="Search" />
           <ComboboxContent empty="No results">{item}</ComboboxContent>
         </Combobox>
