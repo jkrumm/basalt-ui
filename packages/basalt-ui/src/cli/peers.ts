@@ -4,6 +4,7 @@
  * `devDependencies`. `react` and `react-dom` are the app's own and `init` never installs them.
  */
 import type { Profile } from './manifest'
+import { addCommand } from './package-manager'
 
 const FRAME = ['tailwindcss', '@base-ui/react'] as const
 const APP_RUNTIME = ['@tanstack/react-query', '@tanstack/react-router'] as const
@@ -91,4 +92,22 @@ export function peerSpec(name: string, range: string | undefined): string {
   if (range === undefined) return name
   const spec = `${name}@${range}`
   return /[\s|<>]/.test(spec) ? `'${spec}'` : spec
+}
+
+const pinned = (range: string | undefined): boolean =>
+  range === undefined || /^\d+\.\d+\.\d+(?:-[\w.]+)?$/.test(range)
+
+/** The fix line that adds peers at their declared spec: a pin (or a bare name) saved exactly, a range saved as the range. */
+export function peerAddLine(
+  dir: string,
+  peers: readonly (readonly [string, string | undefined])[],
+  dev: boolean,
+): string {
+  const line = (exact: boolean): string[] => {
+    const group = peers
+      .filter(([, range]) => pinned(range) === exact)
+      .map(([n, r]) => peerSpec(n, r))
+    return group.length === 0 ? [] : [addCommand(dir, group, dev, exact).join(' ')]
+  }
+  return [...line(true), ...line(false)].join(' && ')
 }

@@ -9,8 +9,8 @@ import { readBudget } from '../budget'
 import { findBasaltInstall } from '../index'
 import { defaultBaseRef, rootFindings } from '../../lint/weakened'
 import type { Profile } from '../manifest'
-import { addCommand, installAllCommand } from '../package-manager'
-import { BUILD_PEERS, peerSpec, RUNTIME_PEERS, satisfiesRange } from '../peers'
+import { installAllCommand } from '../package-manager'
+import { BUILD_PEERS, peerAddLine, RUNTIME_PEERS, satisfiesRange } from '../peers'
 import {
   compareVersions,
   fail,
@@ -207,11 +207,11 @@ const check3 = (name: string): Check => ({
     )
     const findings: string[] = []
     const add = (peer: string, range: string | undefined): string =>
-      addCommand(
+      peerAddLine(
         ctx.root,
-        [peerSpec(peer, range)],
+        [[peer, range]],
         manifest.profile !== 'tokens' && BUILD_PEERS[manifest.profile].includes(peer),
-      ).join(' ')
+      )
 
     if (manifest.profile !== 'tokens') {
       const ranges = readJson(ctx.pkgRoot, 'package.json')?.['peerDependencies'] as

@@ -17,8 +17,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join, relative, resolve } from 'node:path'
 import type { Plugin, PluginOption, UserConfig } from 'vite'
 
-import { addCommand } from '../cli/package-manager'
-import { peerSpec } from '../cli/peers'
+import { peerAddLine } from '../cli/peers'
 import { ALLOTMENT } from './allotment.gen'
 import { appEjects, staleEjects } from './ejects'
 import type { AppEjects } from './ejects'
@@ -93,11 +92,11 @@ function missingPeersMessage(
   const lines = [...missing].map(([peer, via]) => `  ${via} needs ${peer}`)
   return (
     `basalt-ui: an imported subpath's peer is not installed.\n${lines.join('\n')}\n` +
-    `Run: ${addCommand(
+    `Run: ${peerAddLine(
       root,
-      [...missing.keys()].map((peer) => peerSpec(peer, declared[peer])),
+      [...missing.keys()].map((peer) => [peer, declared[peer]] as const),
       false,
-    ).join(' ')}`
+    )}`
   )
 }
 
