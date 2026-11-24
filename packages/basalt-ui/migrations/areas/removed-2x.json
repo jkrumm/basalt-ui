@@ -282,7 +282,7 @@
       "id": "removed-2x-commands",
       "kind": "removed",
       "from": "basalt-ui/commands",
-      "note": "the 2.x runtime is deleted in 3.0; instead: defineCommands and CommandPalette from basalt-ui/shell; notify from basalt-ui; setScheme from basalt-ui/core/scheme"
+      "note": "the 2.x runtime is deleted in 3.0; instead: defineCommands and CommandPalette from basalt-ui/shell; notify from basalt-ui; setScheme from basalt-ui"
     },
     {
       "id": "removed-2x-forms",
@@ -312,7 +312,7 @@
       "id": "removed-2x-root-ThemeToggle",
       "kind": "removed",
       "from": "basalt-ui#ThemeToggle",
-      "note": "the 2.x theme is deleted in 3.0; instead: a Button or Segmented from basalt-ui/ui calling setScheme from basalt-ui/core/scheme"
+      "note": "the 2.x theme is deleted in 3.0; instead: a Button or Segmented from basalt-ui/ui calling setScheme from basalt-ui"
     },
     {
       "id": "removed-2x-root-scrollParentOf",
