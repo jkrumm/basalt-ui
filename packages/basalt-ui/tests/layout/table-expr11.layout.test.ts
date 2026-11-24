@@ -85,17 +85,14 @@ async function open(): Promise<LayoutPage> {
 }
 
 /**
- * The title column stops at 40ch (`CONTENT_MAX_CH`; 80ch with a sub line) and the width above it goes
- * to the filler cell at the table's end, so the figures sit beside their title. The bound a reader can
- * defend: the title-to-figure gap is at most a quarter of the table (about 440 px of 1770). It was
- * 72% in n50. It is the cap (344 px) less the shortest title's text, plus the figure's own slack
- * (n46's Download column is 200 px wide, its number right-aligned in it).
+ * Issue 3162 replaces the cap: the text-like columns of a reading table share the free width, so the table
+ * ends at its container's edge and a figure column keeps its fitted width at the end (the gap between the
+ * title and a figure used to be bounded at a quarter of the table by a 40ch cap, n50 had 72%).
  */
-const GAP_SHARE = 0.25
 
 for (const id of ['expr11-n50', 'expr11-n46']) {
-  layout(`${id}: a full-width table keeps its figures beside the title`, () => {
-    test('the first column content and the next column content stay within a quarter of the table, the row hairline and head still span it', async () => {
+  layout(`${id}: a full-width table fills its container`, () => {
+    test('the last column ends at the table edge, the row hairline and head span it', async () => {
       const page = await open()
       const probe = await page.raw.evaluate((testid) => {
         const root = document.querySelector<HTMLElement>(
@@ -139,14 +136,13 @@ for (const id of ['expr11-n50', 'expr11-n46']) {
       }, id)
       expect(probe.width).toBeGreaterThan(1500)
       expect(probe.gap).toBeGreaterThan(0)
-      expect(probe.gap).toBeLessThanOrEqual(probe.width * GAP_SHARE)
       expect(probe.filler).toBe(true)
       // The head row and the rows still span the card; the filler cell paints the head surface and the hairline.
       expect(Math.abs(probe.rowWidth - probe.width)).toBeLessThanOrEqual(2)
       expect(probe.headFiller[0]).toBe('table-cell')
       expect(probe.headFiller[1]).not.toBe('rgba(0, 0, 0, 0)')
       expect(probe.hairline).toEqual(['table-cell', '1px'])
-      expect(probe.lastRight).toBeLessThan(probe.width)
+      expect(Math.abs(probe.lastRight - probe.width)).toBeLessThanOrEqual(1)
     })
   })
 }

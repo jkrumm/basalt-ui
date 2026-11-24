@@ -157,7 +157,7 @@ layout('DataTable header controls', () => {
         ]).toEqual([])
       })
 
-      test('at rest the Amount header is its icon and its label in one button that opens its menu', async () => {
+      test('at rest the Amount header is its label in one button, no icon, and opens its menu', async () => {
         const page = await open(viewport)
         const amount = headCell(page, /^Amount \(EUR\)$/)
         const rest = await amount.evaluate((cell) => {
@@ -171,7 +171,7 @@ layout('DataTable header controls', () => {
             glyphs: shown.filter((el) => el.tagName === 'svg').length,
           }
         })
-        expect(rest).toEqual({ buttons: 1, icons: 1, glyphs: 1 })
+        expect(rest).toEqual({ buttons: 1, icons: 0, glyphs: 0 })
         await amount.getByRole('button', { name: 'Amount (EUR)', exact: true }).click()
         const menu = page.raw.getByRole('menu')
         await menu.waitFor()
