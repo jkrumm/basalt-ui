@@ -1,43 +1,30 @@
 /**
- * The phone nav trial (Issue 3205): the two variants the owner compares on his phone, each running
- * on every page of this playground over the same `defineNav`. The switch here and in the header
- * picks one and the device remembers it; `?nav=a|b|default` on any address does the same. The
- * field below raises the keyboard; the cards below it give the page enough length to scroll.
+ * The phone nav on a phone: the section bar with its short drawer runs on every page of this
+ * playground over one `defineNav`. Tap a section to raise its drawer, drag it up for the tall snap
+ * (the list scrolls inside) or down to close, tap More for the sidebar. The field below raises the
+ * keyboard; the cards below it give the page enough length to scroll.
  */
 import { createFileRoute } from '@tanstack/react-router'
 import { Page, Section } from 'basalt-ui/page'
 import { Card } from 'basalt-ui/ui/card'
 import { Input } from 'basalt-ui/ui/input'
 import type { ReactElement } from 'react'
-import { PHONE_NAV_PICKS, PhoneNavSwitch, phoneNav } from '../../lib/phone-nav'
 
-const WHAT: Record<(typeof PHONE_NAV_PICKS)[number]['value'], string> = {
-  default:
-    'The shipped tab bar: five fixed slots with 11 px labels, a dot for a badge, More as a sheet.',
-  a: 'One slot per section, its badge the sum of its pages. A tap grows the section’s pages out of the bar, from the icon you tapped. More slides the app aside and shows the sidebar.',
-  b: 'The same section bar. A tap raises a short drawer with a grabber over the bar, holding the section’s pages. More slides the app aside and shows the sidebar.',
-}
-
-/** Filler for the scroll checks: hide on scroll (B), shrink on scroll (C). */
+/** Filler for the scroll check. */
 const FILLER = Array.from({ length: 8 }, (_, index) => index + 1)
 
 function MobileNavRoute(): ReactElement {
-  const [pick] = phoneNav.use()
-  const current = PHONE_NAV_PICKS.find((entry) => entry.value === pick) ?? PHONE_NAV_PICKS[0]
   return (
     <Page area="kit-mobile-nav">
-      <Section title="Phone navigation" summary={`Running: ${current.name}`}>
-        <PhoneNavSwitch fill />
-        <div className="grid gap-2">
-          {PHONE_NAV_PICKS.map((entry) => (
-            <Card key={entry.value}>
-              <p className="text-sm font-medium text-foreground">
-                {entry.label === 'Now' ? entry.name : `${entry.label} · ${entry.name}`}
-              </p>
-              <p className="text-sm text-muted-foreground">{WHAT[entry.value]}</p>
-            </Card>
-          ))}
-        </div>
+      <Section
+        title="Phone navigation"
+        summary="One slot per section, its badge the sum of its pages. A tap raises a short drawer over the bar; a drag up grows it, a drag down shrinks and closes it. More slides the app aside and shows the sidebar."
+      >
+        <Card>
+          <p className="text-sm text-muted-foreground">
+            An app that wants the tab bar sets data-phone-nav="tabs" on the document element.
+          </p>
+        </Card>
       </Section>
       <Section
         title="Keyboard"
