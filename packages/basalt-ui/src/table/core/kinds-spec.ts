@@ -31,6 +31,7 @@ export type KindName =
   | 'status'
   | 'delta'
   | 'meter'
+  | 'progress'
   | 'boolean'
   | 'spark'
   | 'select'
@@ -129,6 +130,11 @@ export type KindSpec<T> = {
    * never reads.
    */
   search?: (row: T, format: Format, now: number) => string
+  /**
+   * `custom` with `filter: 'text'`: the text the column filter matches (its `search`). The column's
+   * accessor holds it, so the sort reads `value` beside it.
+   */
+  filterText?: (row: T) => string
   /** `null` for `actions`: never hidden by a tier. */
   priority: Priority | null
   pin: 'start' | 'end' | null
@@ -344,6 +350,19 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     capCh: null,
   },
   meter: {
+    align: 'start',
+    numerals: 'proportional',
+    wrap: false,
+    width: { ch: 14, flex: false },
+    sort: 'basic',
+    card: ['meta'],
+    priority: 3,
+    groupable: false,
+    minCh: 8,
+    gridCh: 18,
+    capCh: null,
+  },
+  progress: {
     align: 'start',
     numerals: 'proportional',
     wrap: false,

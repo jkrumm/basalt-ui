@@ -3,7 +3,7 @@
  * no cell (the parts render `spec.render`). `useDataTable` maps each kind column through it, keyed
  * on id and kind; per-render closures stay on the spec, read through a latest-ref by the parts.
  */
-import { createColumnHelper } from '@tanstack/react-table'
+import { createColumnHelper, sortFn_basic } from '@tanstack/react-table'
 import type { ColumnDef, RowData } from '@tanstack/react-table'
 import type { TableEngineFeatures } from './features'
 import { isAbsent } from './kinds-cells'
@@ -14,22 +14,33 @@ export type EngineColumn<T extends RowData> = ColumnDef<TableEngineFeatures, T, 
 /** Absent is `undefined` for the engine, so `sortUndefined: 'last'` applies to `null` too. */
 const normalise = (value: unknown): unknown => (isAbsent(value) ? undefined : value)
 
+type SortRow<T> = { original: T; getValue(id: string): unknown }
+
 export function engineColumn<T extends RowData>(spec: KindSpec<T>): EngineColumn<T> {
   const helper = createColumnHelper<TableEngineFeatures, T>()
   const sort = spec.sort
+  const text = spec.filterText
+  // A column with `filterText` holds its search text in the accessor, the one value its filter reads,
+  // so its sort reads the value off the row instead.
+  const sortedOn = (row: SortRow<T>, id: string): unknown =>
+    text === undefined ? row.getValue(id) : normalise(spec.value(row.original))
+  const valueRow = (row: SortRow<T>) => ({ getValue: () => sortedOn(row, spec.id) })
   const sortFn =
     sort === null
       ? {}
       : 'compare' in sort
         ? {
-            sortFn: (
-              a: { getValue(id: string): unknown },
-              b: { getValue(id: string): unknown },
-              id: string,
-            ) => sort.compare(a.getValue(id), b.getValue(id)),
+            sortFn: (a: SortRow<T>, b: SortRow<T>, id: string) =>
+              sort.compare(sortedOn(a, id), sortedOn(b, id)),
           }
-        : { sortFn: sort.fn }
-  return helper.accessor((row) => normalise(spec.value(row)), {
+        : text === undefined
+          ? { sortFn: sort.fn }
+          : {
+              // `custom` is the only kind with `filterText`, and it declares `basic`
+              sortFn: (a: SortRow<T>, b: SortRow<T>, id: string) =>
+                sortFn_basic(valueRow(a) as never, valueRow(b) as never, id),
+            }
+  return helper.accessor((row) => normalise(text === undefined ? spec.value(row) : text(row)), {
     id: spec.id,
     header: spec.header,
     enableSorting: sort !== null,

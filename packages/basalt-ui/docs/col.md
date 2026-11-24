@@ -36,6 +36,7 @@ col<T>(): Col<T>
     status<const O extends string>(key: KeysOf<T, string>, o: StatusOptions<O, T>): KindColumn<T>
     delta(key: KeysOf<T, number>, o: DeltaOptions): KindColumn<T>
     meter(key: KeysOf<T, number>, o?: MeterOptions<T> | undefined): KindColumn<T>
+    progress(key: KeysOf<T, number>, o?: ProgressOptions<T> | undefined): KindColumn<T>
     boolean(key: KeysOf<T, boolean>, o?: BooleanOptions<T> | undefined): KindColumn<T>
     spark(id: string, o: SparkOptions<T>): KindColumn<T>
     select(key: KeysOf<T, string>, o: SelectOptions<T>): KindColumn<T>
@@ -116,6 +117,7 @@ col<T>(): Col<T>
     help?: string  // What the column answers, one or two sentences: one mark after the header label opens it as a hint
     labels?: Readonly<Record<string, string>>  // The text of a stored tag; the tag itself without an entry
     tone?: (tag: string) => Tone  // The chip's tone, from the status tone map
+    icon?: (tag: string) => IconComponent  // An icon drawn before the chip's text, per tag
     filter?: "multi"  // `'multi'` filters by a checklist of the tags the rows hold; a row passes on any of its tags
 
   CountdownOptions:
@@ -264,6 +266,18 @@ col<T>(): Col<T>
     fraction?: boolean
     filter?: "range"
 
+  ProgressOptions<T>:
+    header?: string  // Header text
+    id?: string  // Column id when it differs from the key (two columns over one field)
+    priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
+    card?: CardSlot  // First choice of card slot; the kind's own order follows
+    sortable?: false  // `false` turns sorting off for this column
+    headerIcon?: false | IconComponent  // The icon drawn before the header text (any component with the `IconComponent` shape), where header icons are on (the grid look, or `headerIcons: true`)
+    help?: string  // What the column answers, one or two sentences: one mark after the header label opens it as a hint
+    footer?: Aggregate
+    tone?: (value: number, row: T) => Tone  // The bar's fill tone for one row's share (0 to 1)
+    filter?: "range"
+
   BooleanOptions<T>:
     header?: string  // Header text
     id?: string  // Column id when it differs from the key (two columns over one field)
@@ -300,6 +314,7 @@ col<T>(): Col<T>
     filter?: "multi"
 
   CustomOptions<T>:
+    // either search or neither
     header?: string
     headerIcon?: IconComponent  // An icon drawn before the header text
     help?: string  // What the column answers: one mark after the header label opens it as a hint
@@ -309,6 +324,8 @@ col<T>(): Col<T>
     priority: Priority  // Required: what survives a narrow tier
     width?: number  // Width in `ch`
     align?: Align
+    search?: (row: T) => string | null
+    filter?: "text"  [with search]  // A text filter over `search`
 
   CodecOptions:
     defaults?: Partial<TableRequest>

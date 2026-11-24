@@ -345,12 +345,15 @@ export function MeterCell({
   value,
   max,
   write,
+  tone,
 }: {
   label: string
   value: number
   max: number
   /** How the readout writes the value: a fraction column writes `455/472`. */
   write?: ((value: number) => string) | undefined
+  /** The fill's tone; the meter's neutral when absent. */
+  tone?: Tone | undefined
 }): ReactNode {
   // A table cell holds one text line: the bar and its value sit side by side on that line, not stacked.
   // A written readout (a fraction) keeps one width down the column, so every track ends at one x.
@@ -360,6 +363,7 @@ export function MeterCell({
       value={value}
       max={max}
       {...(write !== undefined && { format: write })}
+      {...(tone !== undefined && { tone })}
       className={cn(
         'flex-row items-center gap-2 [&>div:first-child]:min-w-6 [&>div:first-child]:flex-1 [&_[data-readout]]:contents [&_[data-readout]>span:empty]:hidden [&_[data-readout]>span:last-child]:shrink-0 [&_[data-readout]>span:last-child]:whitespace-nowrap',
         write !== undefined && '[&_[data-readout]>span:last-child]:min-w-12',
@@ -462,17 +466,29 @@ const TAG_TONE: Readonly<Record<Tone, string>> = {
   info: 'bg-info-tint text-info',
 }
 
-function TagChip({ tone, hidden, text }: { tone: Tone; hidden: boolean; text: string }): ReactNode {
+function TagChip({
+  tone,
+  hidden,
+  text,
+  icon: Icon,
+}: {
+  tone: Tone
+  hidden: boolean
+  text: string
+  icon?: IconComponent | undefined
+}): ReactNode {
   return (
     <span
       data-slot="table-tag"
       aria-hidden={hidden ? 'true' : undefined}
       className={cn(
         'inline-flex h-5 shrink-0 items-center rounded-chip px-1.5 text-xs font-medium whitespace-nowrap',
+        Icon !== undefined && 'gap-1',
         TAG_TONE[tone],
         hidden && 'invisible',
       )}
     >
+      {Icon !== undefined && <Icon aria-hidden="true" size={16} className="size-icon shrink-0" />}
       {text}
     </span>
   )
@@ -490,10 +506,12 @@ export function TagsCell({
   tags,
   labels,
   tone,
+  icon,
 }: {
   tags: readonly string[]
   labels: Readonly<Record<string, string>> | undefined
   tone: ((tag: string) => Tone) | undefined
+  icon: ((tag: string) => IconComponent | undefined) | undefined
 }): ReactNode {
   const outer = useRef<HTMLSpanElement>(null)
   const row = useRef<HTMLSpanElement>(null)
@@ -536,6 +554,7 @@ export function TagsCell({
             tone={tone?.(tag) ?? 'neutral'}
             hidden={i >= fit}
             text={labels?.[tag] ?? tag}
+            icon={icon?.(tag)}
           />
         ))}
       </span>

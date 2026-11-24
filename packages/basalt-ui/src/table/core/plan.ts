@@ -209,7 +209,7 @@ function identityIndex(inputs: readonly PlanInput[]): number {
 }
 
 /** The kinds that answer with a drawn mark, not a plain value: they keep a card slot first. */
-const MARKED_KINDS: ReadonlySet<KindName> = new Set(['meter', 'delta', 'status'])
+const MARKED_KINDS: ReadonlySet<KindName> = new Set(['meter', 'progress', 'delta', 'status'])
 const marked = (input: PlanInput): boolean => MARKED_KINDS.has(input.kind)
 
 function placeCards(

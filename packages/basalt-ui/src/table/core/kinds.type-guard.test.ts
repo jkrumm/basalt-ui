@@ -16,6 +16,15 @@ export const ok: readonly KindColumn<Row>[] = [
   c.relativeTime('at'),
   c.boolean('active'),
   c.custom('score', { render: () => null, sortValue: (r) => r.amount, card: 'meta', priority: 3 }),
+  c.progress('amount'),
+  c.custom('label', {
+    render: () => null,
+    sortValue: (r) => r.amount,
+    search: (r) => r.name,
+    filter: 'text',
+    card: 'meta',
+    priority: 3,
+  }),
 ]
 
 export const raw: readonly KindColumn<Row>[] = [
@@ -48,6 +57,20 @@ export const noSortValue = () => c.custom('x', { render: () => null, card: 'meta
 
 // @ts-expect-error custom must declare card and priority
 export const noCard = () => c.custom('x', { render: () => null, sortValue: () => 0 })
+
+// @ts-expect-error progress takes a number key; `name` is a string
+export const progressOnString = () => c.progress('name')
+
+const TEXT_NO_SEARCH = {
+  render: () => null,
+  sortValue: () => 0,
+  card: 'meta',
+  priority: 3,
+  filter: 'text',
+} as const
+
+// @ts-expect-error filter "text" needs the search it matches
+export const textFilterNoSearch = () => c.custom('x', TEXT_NO_SEARCH)
 
 // @ts-expect-error a codec names kinds only, never options or closures
 export const codecClosure = () => c.codec({ amount: { kind: 'money' } })
@@ -87,6 +110,6 @@ export const noDataWhilePending: UseDataTable<Row> = {
 
 describe('col<T>() (type-guard)', () => {
   test('is a compile-time fixture: see the @ts-expect-error directives above', () => {
-    expect(ok).toHaveLength(5)
+    expect(ok).toHaveLength(7)
   })
 })
