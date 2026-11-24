@@ -299,6 +299,21 @@ export const ASTRO_PARTS: readonly AstroPart[] = [
     interaction: 'none',
     best: 'static',
   },
+  { id: 'site-nav', family: 'content', covers: ['SiteNav'], interaction: 'none', best: 'static' },
+  {
+    id: 'site-post-list',
+    family: 'content',
+    covers: ['SitePostList'],
+    interaction: 'none',
+    best: 'static',
+  },
+  {
+    id: 'site-changelog',
+    family: 'content',
+    covers: ['SiteChangelog'],
+    interaction: 'none',
+    best: 'static',
+  },
   { id: 'callout', family: 'content', covers: ['Callout'], interaction: 'none', best: 'static' },
   { id: 'prose', family: 'page', covers: ['Prose'], interaction: 'none', best: 'static' },
   {

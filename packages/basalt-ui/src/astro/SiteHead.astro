@@ -1,0 +1,20 @@
+---
+// The document head of a content page: title, description, canonical, Open Graph, Twitter card and,
+// for `type="article"`, its JSON-LD. The tags are computed by `siteHeadTags` (head.ts), which a test reads.
+// Fonts stay with `BasaltFonts.astro`; the favicon and an analytics tag stay with the layout.
+import { jsonLdText, siteHeadTags } from './head.js'
+import type { SiteHeadProps } from './head.js'
+
+interface Props extends SiteHeadProps {}
+
+const tags = siteHeadTags(Astro.props, { site: Astro.site, pathname: Astro.url.pathname })
+---
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<title>{tags.title}</title>
+{tags.canonical && <link rel="canonical" href={tags.canonical} />}
+{tags.meta.map((m) => <meta name={m.name} property={m.property} content={m.content} />)}
+{tags.jsonLd && <script type="application/ld+json" set:html={jsonLdText(tags.jsonLd)} />}
+<slot />

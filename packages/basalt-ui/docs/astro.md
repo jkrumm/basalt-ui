@@ -73,6 +73,9 @@ part in it, for its islands.
 | `Prose` | the article typography; styles raw Markdown and MDX output by element | nothing |
 | `SiteArticle` | title block, body, a table of contents and an optional docs nav | `<details>` below 64rem |
 | `SitePager` | previous and next links | nothing |
+| `SiteNav` | a section navigation: titled groups of links, nested, the current page marked; the `nav` of `SiteArticle` | nothing |
+| `SitePostList` | posts or guides as rows: a day, a linked title, a description, a byline, tags | nothing |
+| `SiteChangelog` | releases, newest first: an anchored version, its day and changes grouped under your words | nothing |
 | `SiteCallout` | a tinted note with a tone | nothing |
 | `SiteCodeBlock` | wraps your toolchain's `<pre>` with a copy button | the integration's head script |
 | `SiteHeader` | brand, links and menus (panels of link rows and tiles), actions; a full-height sheet below the `wide` size | the `popover` attribute and `interestfor`; the head script adds hover where `interestfor` is missing and the arrow keys |
@@ -94,8 +97,8 @@ part in it, for its islands.
 | `SiteCallToAction` | the closing band: heading, line, actions | nothing |
 
 Actions are data, `{ href, label, primary? }`, at most one `primary` in a row. A slot takes an island
-too: an island inside a static block's slot hydrates on its own. basalt emits no structured data; the
-question list's array is the source for your own:
+too: an island inside a static block's slot hydrates on its own. `SiteHead` writes an article's structured data and
+nothing else does; the question list's array is the source for your own:
 
 ```astro
 ---
@@ -149,7 +152,7 @@ object prop: Astro hands that over as an Astro template and the build fails. Lab
 | the React runtime the first island brings, gzip | 72,000 B |
 | a further island's cost (the chart island on `/charts`), gzip | 129,250 B |
 | the two MDX islands together (`/guides/islands-in-mdx`), gzip | 340,250 B |
-| CSS per page, gzip | 40,750 B |
+| CSS per page, gzip | 41,000 B |
 | LCP, landing, article and docs page, 390 px, local | 1,000 ms |
 | CLS, the same three pages | 0.05 |
 
@@ -214,6 +217,58 @@ ceiling every CI build is held to, and a test holds the two together.
   `.basalt/sources.css`.
 - **Words.** Both tags take `locale` (numbers and dates) and `messages`, the string entries of the
   message catalog (`IslandMessages` from `basalt-ui/astro`): a function entry cannot cross into an island.
+
+## Page types
+
+Each page type is a recipe on shipped parts. The working copy of each is `apps/playground-astro/site/`
+(built by `bun run build:site`, checked by `scripts/site-pages.ts`: no module script, axe, both schemes at 1440
+and 390 px), and `apps/marketing` runs the same recipes. Copy a recipe and change its words.
+
+| Page | Built from | Where |
+|-|-|-|
+| Guide | one `guides` collection (a glob over `*.mdx`, `title`, `description`, `date`, `order`) and one `[...slug].astro`: `SiteArticle` with `SiteNav` as its `nav`, the headings as `toc`, `SitePager` from the neighbours in `order` | `pages/guides/[...slug].astro` |
+| Article | a `posts` collection (`author`, `tags`, `updated`) in `SiteArticle` with the article head | `pages/posts/[...slug].astro` |
+| Post list | `SitePostList` over the collection, sorted | `pages/posts/index.astro` |
+| Changelog | `SiteChangelog` over release rows from your data or a parsed CHANGELOG | `pages/changelog.astro` |
+
+Adding a guide is adding one MDX file: its date, reading time, sidebar entry and pager follow from the
+collection. Reading time is `words / 200` of `entry.body`; the day is formatted in UTC so the build host's
+zone never moves it. A node a part takes (the `meta` line, `nav`, `footer`) is a named slot, as above.
+
+### The head
+
+`SiteHead.astro` is the document head: charset, viewport, `color-scheme`, title, description, canonical, Open
+Graph, the Twitter card and, with `type="article"`, the article tags and a JSON-LD `Article`. Every value is a prop.
+
+```astro
+---
+import SiteHead from 'basalt-ui/astro/SiteHead.astro'
+import BasaltFonts from 'basalt-ui/astro/BasaltFonts.astro'
+---
+<head>
+  <SiteHead title="Setup | Docs" headline="Setup" description="Install it." type="article"
+    published={date} authors={['Ada']} tags={['astro']} siteName="Docs" image="/og.png" />
+  <BasaltFonts />
+</head>
+```
+
+The canonical URL is the page's path on `site` in `astro.config` (none without one); `canonical` overrides it.
+A `<slot />` takes tags of your own (the icon, an analytics script). The favicon, fonts and analytics stay
+with the layout.
+
+### Code colors
+
+Astro highlights fences with Shiki. `basaltShiki` from `basalt-ui/astro` is its `markdown.shikiConfig`: a light
+and a dark theme written as `--shiki-light` and `--shiki-dark` on every token, no color of its own. `prose.css`
+(in `static.css`) picks one: the dark one under `[data-theme='dark']` and under the system scheme when the
+attribute is absent. No script, no repaint.
+
+```js
+import { basaltShiki } from 'basalt-ui/astro'
+export default defineConfig({ markdown: { shikiConfig: basaltShiki } })
+```
+
+A site on Starlight does not use this: its expressive-code colors the blocks (`themeCssSelector`, below).
 
 ## Starlight
 

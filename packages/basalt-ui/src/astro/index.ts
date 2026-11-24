@@ -23,6 +23,9 @@ import { deadIslandMessage, deadIslands } from './islands'
 import { renderSiteSources, siteImports } from './sources'
 
 export { ASTRO_PARTS } from './parts'
+export { basaltShiki } from './shiki'
+export type { BasaltShikiConfig } from './shiki'
+export type { SiteHeadAuthor, SiteHeadProps } from './head'
 export type { AstroPart } from './parts'
 export type { IslandMessages } from './mdx/messages'
 
