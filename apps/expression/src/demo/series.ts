@@ -1,5 +1,5 @@
 /**
- * The expression scenarios' series colours: each scenario's group is read from `../basalt.tokens`, the
+ * The expression scenarios' series colors: each scenario's group is read from `../basalt.tokens`, the
  * one file that writes the pairs, and keeps its `*_SERIES` name here for the scenarios that import it.
  * `BAR_SERIES` and `SERVED_SERIES` are also in the playground's own series file: the two apps share no module.
  */

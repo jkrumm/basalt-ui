@@ -4,7 +4,7 @@
 
 Placed by `basalt-ui init`, refreshed by `basalt-ui sync` (`--check` gates drift in CI); edit `DESIGN.md`, not this block.
 
-**Stack** (profile `app`): `tokens` is CSS only; `site` is `basalt-ui/static` parts rendered to static HTML with no client JavaScript, wired by `basalt-ui/astro`, with the lint preset and these rules; `bridge` adds Tailwind 4, `cn`, the lint preset and these rules; `parts` adds `basalt-ui/ui/*` and the page, card, control, table, chart and content composites; `app` adds `basalt-ui/shell` and the router. Colour is a `BASALT.*` token or a series colour, never a literal.
+**Stack** (profile `app`): `tokens` is CSS only; `site` is `basalt-ui/static` parts rendered to static HTML with no client JavaScript, wired by `basalt-ui/astro`, with the lint preset and these rules; `bridge` adds Tailwind 4, `cn`, the lint preset and these rules; `parts` adds `basalt-ui/ui/*` and the page, card, control, table, chart and content composites; `app` adds `basalt-ui/shell` and the router. Color is a `BASALT.*` token or a series color, never a literal.
 
 **Precedence** (highest wins): consumer `DESIGN.md` > the five `basalt-v3-playground-*` rules in `.claude/rules/` > the `basalt-v3-playground-*` skills > the shadcn skill > global skills (`frontend-design`, `dataviz`). Each rule bullet ends in the lint id or type that holds it, or sits under `not guarded:`; skills are procedure, not law.
 
