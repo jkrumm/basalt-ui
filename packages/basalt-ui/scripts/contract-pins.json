@@ -9,14 +9,14 @@
   "packages/basalt-ui/scripts/export-surface/table.json": "52ace5f46478e6b0c00039eeec9ca027630006da844a4a555b1c0a3323eb1b73",
   "packages/basalt-ui/src/ai/contract.ts": "0b5edbbf9cefa4ac9e6f88ae72df3ed75a1af1e7ce19fc4e7460100f639d669c",
   "packages/basalt-ui/src/cards/contract.ts": "11617e06469b18fde2c0a9448f432080977782055e0cfb8dda2ae8686671912b",
-  "packages/basalt-ui/src/charts/contract.ts": "3aca36ee0a0f17290b7605c6f9c929cc0cff07cd00127ba9560c8d7c547a9932",
+  "packages/basalt-ui/src/charts/contract.ts": "6243d8512bbb4ae70bb47b112b0dbb3527f3ab3a27c23c4b710a99b0edfcd0f4",
   "packages/basalt-ui/src/content/contract.ts": "aac81048f2298c66dae01500513764ca0307d959bb3f0e94039fb11c663a32c8",
   "packages/basalt-ui/src/controls/contract.ts": "6cd587010a2de6bca25c7fabaed38f1c326c3f0531ecc5c529753ef4de261017",
   "packages/basalt-ui/src/core/ports.ts": "5e5e71ea31021b2f29e15e22720a8748d6794c0d2c4472b7e8fc05240b0e7857",
-  "packages/basalt-ui/src/page/contract.ts": "87b3cf011fa40f4ac34038e0705b47a3608f02f15e4d9a74f3f77804550dbf44",
+  "packages/basalt-ui/src/page/contract.ts": "088d3466ca823d092749222d1aebf9be16f27c126eed374b07878992838ca937",
   "packages/basalt-ui/src/router/index.ts": "43aeb6e85c7f4011c5fd072d86a107a88b904302c0b4782e42b065ae71d0ef6d",
   "packages/basalt-ui/src/shell/contract.ts": "49f46c40c23aac702cb232d478ca0591f7b37961e8e1d1bc507c152400bacfc6",
-  "packages/basalt-ui/src/shell/index.ts": "1ba3569f094c611aa3911a8e5d6db0113acdc481bf1edb5efd394b21bb6bfbdb",
-  "packages/basalt-ui/src/table/contract.ts": "ac4c80bf1bd95dbac166f2dbd3fdb41ec8155b1b4e5050a08bfd5ebd6183da5e",
+  "packages/basalt-ui/src/shell/index.ts": "18cb439b67428712534a8bc9e78979d0fde280b0682d3af4f343fd9bd8fca2d7",
+  "packages/basalt-ui/src/table/contract.ts": "1b3d72010f335192eba254687782299a9ce667e36d3e61214856a45f2e509173",
   "packages/basalt-ui/src/ui/slots.ts": "8aa0251722e566d0e54233205183cceb375207468e573caba02903093f0bb42f"
 }
