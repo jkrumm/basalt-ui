@@ -13,7 +13,7 @@ import { Outlet, createRootRouteWithContext, useNavigate } from '@tanstack/react
 import type { QueryClient } from '@tanstack/react-query'
 import { AppearanceSwitcher } from 'basalt-ui/controls'
 import { AppShell, CommandPalette } from 'basalt-ui/shell'
-import { Building2, Globe, Palette, Rocket } from 'lucide-react'
+import { Building2, Globe, Palette, Rocket, Smartphone } from 'lucide-react'
 import { useState } from 'react'
 import type { ComponentProps } from 'react'
 import { COMMANDS } from '../demo/commands'
@@ -21,6 +21,7 @@ import { globals } from '../demo/globals'
 import { NAV } from '../demo/nav-model'
 import { PeekLayer } from '../demo/peek-layer'
 import { ACCENTS } from '../lib/accents'
+import { PhoneNavSwitch } from '../lib/phone-nav'
 
 type ShellProps = ComponentProps<typeof AppShell>
 type Blocks = NonNullable<ShellProps['blocks']>
@@ -45,6 +46,15 @@ const GLOBAL_ACTIONS: NonNullable<ShellProps['globalActions']> = [
     icon: Palette,
     mobile: 'more',
     content: () => <AppearanceSwitcher accents={ACCENTS} className="w-80" />,
+  },
+  // The phone nav trial (Issue 3205): on the phone's own header, so a variant is one tap from any page.
+  {
+    id: 'phone-nav',
+    kind: 'popover',
+    label: 'Phone navigation',
+    icon: Smartphone,
+    mobile: 'bar',
+    content: () => <PhoneNavSwitch />,
   },
 ]
 

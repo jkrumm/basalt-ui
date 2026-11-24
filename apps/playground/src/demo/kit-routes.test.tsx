@@ -90,6 +90,7 @@ describe('the Kit nav', () => {
       '/kit/library',
       '/kit/motion',
       '/kit/avatars',
+      '/kit/mobile-nav',
     ])
     expect(navPaths('kit-forms')).toEqual([
       '/kit/forms/inputs',
