@@ -7,6 +7,7 @@
 import type { FootFacts, FrameHead, FrameState, CardMenu, LegendEntry } from '../core/phase'
 import type { BoxSlot, ControlsSlot, Delta, Phase, QueryStateLike, Verdict } from '../core/ports'
 import type { KeyboardEvent, PointerEvent, ReactElement } from 'react'
+import type { ChartMarks } from './types'
 
 // ---- Frame types ---------------------------------------------------------------------------
 
@@ -314,11 +315,17 @@ export type ChartPlot<D> = {
   focused: D | null
 }
 
-// minimal; concept elides it. `CartesianChart.custom` is the only way to build it; `lint --stats` counts it.
+/**
+ * Engine marks drawn after the series' own. `CartesianChart.custom` is the only way to build it;
+ * `lint --stats` counts it. `build` returns the engine's mark type (a type-only import, erased in
+ * the build), so a value that is no mark fails to compile instead of at draw time.
+ */
 export type CustomMarks<D> = {
   readonly kind: 'custom-marks'
-  readonly build: (plot: ChartPlot<D>) => readonly unknown[]
+  readonly build: (plot: ChartPlot<D>) => ChartMarks
 }
+
+export type { ChartMarks }
 
 /** The accessible name of a chart, required: `label`. */
 export type ChartName = { label: string }
