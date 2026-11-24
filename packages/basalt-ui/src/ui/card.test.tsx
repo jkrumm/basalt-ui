@@ -41,7 +41,7 @@ describe('card module', () => {
         <Card flush>flush</Card>
       </>,
     )
-    expect(getByText('padded').className).toContain('p-4')
+    expect(getByText('padded').className).toContain('p-(--card-edge)')
     expect(getByText('flush').className).toContain('p-0')
   })
 
