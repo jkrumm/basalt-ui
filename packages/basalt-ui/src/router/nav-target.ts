@@ -13,8 +13,19 @@ import { Link, useRouter } from '@tanstack/react-router'
 import type { AnyRouter, RegisteredRouter, ValidateLinkOptions } from '@tanstack/react-router'
 import type { LinkComponent, NavTarget } from '../core/ports'
 import { isInAppPath } from '../core/url'
+import type { RegisteredOr } from './nav/types'
 
 export type { NavTarget }
+
+/**
+ * What `navTarget` accepts: link options checked against the registered route tree. Without the
+ * `Register` augmentation every `to` would widen to `string`, so the type is the fix-it literal
+ * `defineNav` uses. Parametric over the tree so the un-registered state is testable.
+ */
+export type NavTargetOptions<TOptions, Tree = RegisteredRouter['routeTree']> = RegisteredOr<
+  ValidateLinkOptions<RegisteredRouter, TOptions>,
+  Tree
+>
 
 /** `declare` keeps the brand type-only: an instance is a `NavTarget` with no field and no cast. */
 class OpaqueTarget {
@@ -34,11 +45,10 @@ const opened = new WeakMap<object, object>()
  * @example
  * <PageBar title="Run 12" parent={{ label: 'Runs', href: navTarget(linkOptions({ to: '/runs' })) }} />
  */
-export function navTarget<const TOptions>(
-  options: ValidateLinkOptions<RegisteredRouter, TOptions>,
-): NavTarget {
+export function navTarget<const TOptions>(options: NavTargetOptions<TOptions>): NavTarget {
   const target = new OpaqueTarget()
-  opened.set(target, options)
+  // The options are an object whenever the call type-checked; the guard's fix-it string never reaches here.
+  opened.set(target, options as unknown as object)
   return target
 }
 

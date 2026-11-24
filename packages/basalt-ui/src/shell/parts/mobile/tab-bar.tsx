@@ -22,7 +22,6 @@ import type { AnyNavItem } from '../../../router/nav/types'
 import type {
   Account,
   GlobalAction,
-  ShellBadges,
   SettingsConfig,
   SidebarBlock,
   WorkspaceSwitcher,
@@ -50,7 +49,7 @@ import { retap } from './retap'
  */
 export type TabBarProps = {
   runtime: NavRuntime
-  badges: ShellBadges | undefined
+  badges: BadgeMap | undefined
   blocks: readonly SidebarBlock[]
   globalActions: readonly GlobalAction[]
   settings: SettingsConfig | undefined

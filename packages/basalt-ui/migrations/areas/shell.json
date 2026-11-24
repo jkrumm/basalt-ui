@@ -135,6 +135,16 @@
       "profiles": ["parts", "app"],
       "manual": true,
       "note": "shutterflow ~12, obsidian"
+    },
+    {
+      "id": "shell-nav-defined",
+      "kind": "replace",
+      "from": "AppShell nav as a hand-written object, AppShellProps<Id>",
+      "to": "AppShell nav={defineNav(...)}, AppShellProps<typeof NAV>",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "`nav` takes only a `defineNav` result (a type-only brand) and `badges` is keyed by its item ids, so a typo in either fails tsc; a dot badge carries no `attention`",
+      "verify": "tsc"
     }
   ],
   "tokens": { "renamed": [], "valueShifts": [] },

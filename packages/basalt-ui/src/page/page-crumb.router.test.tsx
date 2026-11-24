@@ -18,7 +18,7 @@ import { BasaltProvider } from '../core/provider'
 import { defineControls, resetControlsOwnersForTests } from '../router/controls/define'
 import { field } from '../router/controls/field'
 import { routerDefaults } from '../router/defaults'
-import { navTarget } from '../router/nav-target'
+import { navTarget } from '../../tests/support/router-nav'
 import { PageCrumb } from './page-bar'
 
 beforeEach(resetControlsOwnersForTests)

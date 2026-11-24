@@ -2,16 +2,17 @@
  * The read shapes of the shell core. TYPE-ONLY: never add a value export here.
  *
  * Structural on purpose. The core reads a nav declaration through these shapes and imports nothing
- * from `src/router`: the `defineNav` result (`AnyNavConfig`) and the `ShellNav` of
- * `src/shell/contract.ts` both satisfy them, which `types.type-guard.test.ts` pins. A row the core
+ * from `src/router`: the `defineNav` result (`AnyNavConfig`) satisfies them, which
+ * `types.type-guard.test.ts` pins. A row the core
  * projects always holds the ORIGINAL item object in `item`, never a copy, because anchor identity
  * keys on that object (concept section 4, invariant 25): a copied item remounts its link.
  */
 import type { IconComponent } from '../../core/ports'
-import type { ShellBadges } from '../contract'
-
-/** A count (optionally attention-tinted) or a dot. `count: 0` is not lit and renders nothing. */
-export type NavBadge = NonNullable<ShellBadges[string]>
+/**
+ * A count (optionally attention-tinted) or a dot. Wider than the badge an app passes: a rollup's dot
+ * carries the attention of the rows it sums. `count: 0` is not lit and renders nothing.
+ */
+export type NavBadge = { count: number; attention?: boolean } | { dot: true; attention?: boolean }
 
 /** The badges an `AppShell` receives, keyed by nav item id. */
 export type BadgeMap = Readonly<Partial<Record<string, NavBadge>>>

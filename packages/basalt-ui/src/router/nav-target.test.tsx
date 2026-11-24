@@ -13,7 +13,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { LinkComponent } from '../core/ports'
 import { routerDefaults } from './defaults'
-import { navTarget } from './nav-target'
+import { navTarget } from '../../tests/support/router-nav'
 
 afterEach(cleanup)
 

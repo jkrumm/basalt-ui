@@ -32,11 +32,10 @@ import type {
   Account,
   AppShellProps,
   GlobalAction,
-  NavItem,
   SettingsConfig,
-  ShellBadges,
-  ShellNav,
 } from '../../../../../src/shell/contract'
+import type { AnyNavItem, AnyNavSection, NavBadges } from '../../../../../src/router/nav/types'
+import { defineNav } from '../../../../support/router-nav'
 import type { FixtureSpec, ItemSpec, SectionSpec } from '../../spec'
 import type { ShellChromeSpec } from './shell-chrome'
 
@@ -70,7 +69,7 @@ const slug = (label: string, index: number): string =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '') || `section-${index}`
 
-function toItem(item: ItemSpec, icons: boolean): NavItem {
+function toItem(item: ItemSpec, icons: boolean): AnyNavItem {
   return {
     id: item.key,
     label: item.label,
@@ -88,15 +87,14 @@ function toItem(item: ItemSpec, icons: boolean): NavItem {
   }
 }
 
-function toSection(section: SectionSpec, index: number, icons: boolean): ShellNav['sections'][0] {
+function toSection(section: SectionSpec, index: number, icons: boolean): AnyNavSection {
   return {
     id: slug(section.label, index),
     label: section.label,
     items: section.items.map((item) => toItem(item, icons)),
-    // The core reads these two off the declaration; the frozen `NavSection` type omits them.
     ...(section.collapsible === true && { collapsible: true }),
     ...(section.defaultCollapsed === true && { defaultCollapsed: true }),
-  } as ShellNav['sections'][0]
+  }
 }
 
 function flatItems(sections: readonly SectionSpec[]): ItemSpec[] {
@@ -270,9 +268,9 @@ export async function mount(spec: FixtureSpec, container: HTMLElement): Promise<
   }
 
   const icons = spec.icons !== false
-  const nav: ShellNav = { sections: spec.sections.map((s, i) => toSection(s, i, icons)) }
+  const nav = defineNav({ sections: spec.sections.map((s, i) => toSection(s, i, icons)) })
   const items = flatItems(spec.sections)
-  const badges: ShellBadges = Object.fromEntries(
+  const badges: NavBadges<typeof nav> = Object.fromEntries(
     items.flatMap((item) => (item.count === undefined ? [] : [[item.key, { count: item.count }]])),
   )
   const active = items.find((item) => item.active === true) ?? items[0]
@@ -287,7 +285,7 @@ export async function mount(spec: FixtureSpec, container: HTMLElement): Promise<
             onClick: noop,
           })),
         }
-  const props: AppShellProps = {
+  const props: AppShellProps<typeof nav> = {
     nav,
     brand: { name: 'Basalt' },
     badges,
