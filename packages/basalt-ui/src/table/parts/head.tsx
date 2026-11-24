@@ -368,9 +368,9 @@ function HeaderContent<T>({
         })}
         {...(rankable && { onOrder: () => setPanel('order') })}
         className={cn(
-          'group/sort inline-flex min-h-6 max-w-full min-w-0 items-center gap-1 rounded-sm',
+          'group/sort inline-flex min-h-6 max-w-full min-w-6 items-center gap-1 rounded-sm',
           'hover:text-foreground data-popup-open:text-foreground',
-          numeric && 'flex-row-reverse',
+          numeric && 'flex-row-reverse justify-start',
         )}
       >
         <HeaderLabel spec={spec} icons={model.headerIcons} />
@@ -378,13 +378,14 @@ function HeaderContent<T>({
         {active !== undefined && <FilterMark />}
       </ColumnActionsMenu>
       {spec.help !== undefined && (
-        // Over a figure's slots the mark sits after the label, in the inset; else a figure's mark leads it.
+        // The mark follows the label in both alignments. Over a figure's slots it sits in the inset; a right-aligned
+        // label otherwise keeps its edge on the figures' edge, so the mark hangs past it (its box takes no width).
         // Its ring is inset: the head's row has no room for an offset ring at the scroller's top edge.
         <InfoHint
           label={spec.header}
           className={cn(
             '-my-1 focus-visible:-outline-offset-2',
-            numeric && spec.trail === undefined && '-order-1',
+            numeric && spec.trail === undefined && '-me-6',
           )}
         >
           {spec.help}

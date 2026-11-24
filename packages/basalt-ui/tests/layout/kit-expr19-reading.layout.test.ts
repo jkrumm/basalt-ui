@@ -70,14 +70,19 @@ layout('a reading table in a padded container', () => {
       const cell = root.querySelector(
         `tbody tr:first-child [data-slot="table-cell"]:nth-child(${index + 1})`,
       )!
+      const hint = heads[index]!.querySelectorAll('button')[1]
       return {
         label: textRight(label),
         figure: textRight(cell),
         icon: !!label.querySelector('svg'),
+        hint: hint ? hint.getBoundingClientRect().left : null,
+        labelBox: label.getBoundingClientRect().right,
       }
     })
     expect(m.icon, 'the reading look draws no header icon').toBe(false)
     expect(Math.abs(m.label - m.figure)).toBeLessThanOrEqual(1)
+    expect(m.hint, 'the help mark follows the label').not.toBeNull()
+    expect(m.hint!).toBeGreaterThanOrEqual(m.labelBox - 1)
   })
 })
 
