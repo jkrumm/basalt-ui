@@ -96,7 +96,7 @@ Legend. Verdict: **adopt**, **holds**, **reject** with the reason: _base-ui_ (Ba
 | individual-transform-properties  | `translate`, `rotate`, `scale` apart             | Tailwind `translate-*` in `ui/sheet.tsx`                                            | holds                                        |          |
 | overflow-clipping-control        | `overflow-clip-margin`                           | not needed                                                                          | reject: need                                 |          |
 | reduce-style-repetition          | CSS `@function`                                  | not used; tokens and Tailwind variants                                              | reject: need                                 |          |
-| responsive-design                | Container queries, `dvh`, aspect ratio           | `@container` in `table/`, `cards/`; `72dvh` in `ui/sheet.tsx`                       | holds                                        | ✓        |
+| responsive-design                | Container queries, `dvh`, aspect ratio           | `@container` in `table/`, `cards/`; `90dvh` in `ui/sheet.tsx`                       | holds                                        | ✓        |
 | selector-atrule-combinations     | `@media` inside a selector                       | Tailwind variants                                                                   | reject: known                                |          |
 | size-aware-styling               | Container queries                                | `lint:viewport-keyed`                                                               | holds                                        |          |
 | style-parent-with-has            | `:has(:user-invalid)` on a label                 | Base UI `data-invalid` on `Field` root                                              | holds                                        |          |
@@ -302,11 +302,11 @@ Legend. Verdict: **adopt**, **holds**, **reject** with the reason: _base-ui_ (Ba
 
 ### user-experience
 
-| id                            | upstream says                  | basalt today                                                        | verdict | web rule |
-| ----------------------------- | ------------------------------ | ------------------------------------------------------------------- | ------- | -------- |
-| content-first-noise-reduction | Fewer popups, compact chrome   | restraint law, one lit badge per page                               | holds   |          |
-| form-factor-adaptation        | Touch targets, fit, safe areas | `pointer-coarse:min-h-11`, size classes, `safe-area` in the sidebar | holds   | ✓        |
-| natural-interactions          | Hover, focus, press feedback   | `focus-ring`, Base UI states                                        | holds   |          |
+| id                            | upstream says                  | basalt today                                                                    | verdict | web rule |
+| ----------------------------- | ------------------------------ | ------------------------------------------------------------------------------- | ------- | -------- |
+| content-first-noise-reduction | Fewer popups, compact chrome   | restraint law, one lit badge per page                                           | holds   |          |
+| form-factor-adaptation        | Touch targets, fit, safe areas | `--basalt-ctl-h` on coarse, size classes, `env(safe-area-inset-*)` on the shell | holds   | ✓        |
+| natural-interactions          | Hover, focus, press feedback   | `focus-ring`, Base UI states                                                    | holds   |          |
 
 ### visual-design
 

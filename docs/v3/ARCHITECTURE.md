@@ -242,19 +242,16 @@ One concept, one word; the rejected synonym does not exist as an export. No `Bas
 
 ```tsx
 // src/ui/button.tsx. Polymorphism only via Base UI `render`, never asChild.
-const button = cva(
-  'inline-flex h-ctl items-center gap-1.5 rounded-ctrl text-sm font-medium pointer-coarse:min-h-11',
-  {
-    variants: {
-      variant: {
-        primary: 'bg-primary text-primary-foreground',
-        secondary: 'bg-secondary shadow-raised',
-        ghost: '',
-      },
-      size: { md: '', icon: 'size-ctl' },
+const button = cva('inline-flex h-ctl items-center gap-1.5 rounded-ctrl text-sm font-medium', {
+  variants: {
+    variant: {
+      primary: 'bg-primary text-primary-foreground',
+      secondary: 'bg-secondary shadow-raised',
+      ghost: '',
     },
+    size: { md: '', icon: 'size-ctl' },
   },
-)
+})
 export function Button({ variant, size, className, ...p }: ButtonProps): ReactElement {
   return (
     <BaseButton data-slot="button" className={cn(button({ variant, size }), className)} {...p} />
