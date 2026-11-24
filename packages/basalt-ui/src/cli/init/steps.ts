@@ -271,7 +271,7 @@ export function installPeers(ctx: Ctx): void {
   const own = readPackage(ctx.root)
   const have = { ...own?.dependencies, ...own?.devDependencies }
   // Installed only where no declared version (or range floor) meets the range; a scaffold dependency
-  // and a declaration that names no version (a tag, a workspace link) are the app's own and kept.
+  // is the app's own and kept, and so is a ranged peer whose declaration names no version (a tag).
   const met = (name: string, spec: string): boolean => {
     const declared = have[name]
     if (declared === undefined) return false
