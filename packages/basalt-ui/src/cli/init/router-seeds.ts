@@ -114,7 +114,7 @@ function routeServesRoot(ctx: Ctx, appRel: string): boolean {
   return routePatterns(files.map((f) => `${routes}/${f}`)).some((p) => p.length === 0)
 }
 
-/** The `_app` layout, its parts and the nav it imports: none is seeded beside a kept root route or a route that already serves `/`. */
+/** The `_app` layout, its index page and the nav it imports: none is seeded beside a kept root route or a route that already serves `/`. */
 const LAYOUT_SEEDS: ReadonlySet<string> = new Set(['nav', 'app', 'appIndex'])
 
 /** Why the `_app` layout family is not seeded, or null: the app keeps its own root route, or a route already serves `/`. */
