@@ -16,6 +16,7 @@
     "apps/playground-astro/src/parts/**",
     "apps/playground-astro/src/lib/probe.ts",
     "apps/playground/src/cycle/*/known.ts",
+    "apps/expression/src/cycle/*/known.ts",
     "apps/playground/src/recipes/**",
     "apps/playground/src/**/*.type-guard.ts"
   ],
