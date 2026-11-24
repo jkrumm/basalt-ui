@@ -16,8 +16,10 @@ The root `apps/marketing/AGENTS.md` points here. Read this before changing a pag
 ## How it is wired
 
 - `astro.config.mjs`: `integrations: [react(), basaltAstro(), starlight(...)]`. `basaltAstro()` from
-  `basalt-ui/astro` adds `@tailwindcss/vite`, injects `basalt-ui/static.css` on every page, registers
-  the three faces with the Astro Fonts API and inlines the scheme script and the parts' listeners in the head.
+  `basalt-ui/astro` adds `@tailwindcss/vite`, injects its generated `.basalt/sources.css` (`basalt-ui/static.css`
+  and the `@source` lines of what the site's basalt imports reach) on every page, registers the three faces
+  with the Astro Fonts API, inlines the scheme script and the parts' listeners in the head, and fails the
+  build on a part that needs JavaScript rendered outside an island.
   Never add `tailwindcss()` to `vite.plugins` by hand: the integration adds it once.
 - `src/layouts/Layout.astro` is the one layout for non-docs pages: `<BasaltFonts />` in the head,
   `SiteHeader`, `SiteFooter`, `ThemeSwitch`. Links and every visible word live in `src/lib/site.ts`;
@@ -31,8 +33,8 @@ The root `apps/marketing/AGENTS.md` points here. Read this before changing a pag
 - `/` is built from the landing blocks (`SiteHero`, `SiteBento`, `SiteComparison`, `SiteQuestionList`,
   `SiteCallToAction`); its words and data live in `src/lib/landing.ts`. `src/components/` holds React
   compositions of basalt parts that render with no directive (the hero's stat cards).
-- `/charts` holds the site's one hand-written island (`src/islands/`). `src/styles/site.css` adds the
-  `@source` lines for the chart, card and table classes the islands use.
+- `/charts` holds the site's one hand-written island (`src/islands/`). Its chart, card and table
+  classes reach the sheet through `basaltAstro()`'s generated sources, never a hand-written `@source` line.
 - MDX pages take `Tabs`, `Tab`, `Form`, `Field` and `SubmitButton` from `siteMdxComponents(...)`, which render
   with no JavaScript; `DataTable` and `Chart` are the package's `basalt-ui/astro/mdx/*.astro` tags, added to
   `components` by the page. `/guides/interactive-content` is held at zero module JavaScript (it is not in
