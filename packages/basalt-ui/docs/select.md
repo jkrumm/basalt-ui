@@ -26,6 +26,7 @@ Select<Value = string>(props: SelectProps<Value>): ReactElement
   // either aria-label + options, aria-labelledby + options or children
   className?: string  // Layout only (`w-full`, `w-40`, `flex-1`)
   size?: "sm" | "md" | null
+  present?: OverlayPresent  // How the list opens: `auto` is a bottom sheet on a phone (compact width, coarse pointer) and the anchored popup elsewhere; `popup` and `sheet` force one
   aria-label: string
   options?: ListSource<Value>  [with aria-label | aria-labelledby]  // Options and groups (`{ label, options }`)
   placeholder?: string  [with aria-label | aria-labelledby]  // Shown in the trigger while no value is selected

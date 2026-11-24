@@ -26,7 +26,7 @@ export function PaletteSheet({
         initialFocus={() =>
           document.querySelector<HTMLElement>('[data-slot="command-palette"] input')
         }
-        className="h-[min(85dvh,640px)] max-h-[min(85dvh,640px)] pb-[max(env(safe-area-inset-bottom),var(--shell-safe-bottom,0px))]"
+        className="h-[90dvh] pb-[max(env(safe-area-inset-bottom),var(--shell-safe-bottom,0px))]"
       >
         {children}
       </SheetContent>

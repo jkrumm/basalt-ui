@@ -1,8 +1,20 @@
 import { Popover as BasePopover } from '@base-ui/react/popover'
 import { cva } from 'class-variance-authority'
+import { useState } from 'react'
 import type { ReactElement } from 'react'
 import { cn } from '../core/cn'
 import { ControlScopeProvider } from '../core/control-scope'
+import { ListSheet } from './list-sheet'
+import {
+  OverlayProvider,
+  SHEET_LIST_CLASS,
+  SHEET_POSITIONER,
+  SHEET_POSITIONER_CLASS,
+  useOverlay,
+  useOverlayRoot,
+  useSheetPresent,
+} from './overlay-presenter'
+import type { OverlayPresent } from './overlay-presenter'
 
 /**
  * The `PopoverContent` cva table: a floating panel on the popup surface, 288 px wide unless a width
@@ -33,7 +45,13 @@ export type PopoverPlacement = Pick<
   'anchor' | 'side' | 'align' | 'sideOffset' | 'alignOffset'
 >
 
-export type PopoverProps = BasePopover.Root.Props
+export type PopoverProps = BasePopover.Root.Props & {
+  /**
+   * How the panel opens: `auto` keeps it anchored, and on a phone (compact width, coarse pointer)
+   * lifts it into a bottom sheet only when it would not fit the viewport; `popup` and `sheet` force one.
+   */
+  present?: OverlayPresent
+}
 export type PopoverTriggerProps = Layout<BasePopover.Trigger.Props>
 export type PopoverContentProps = Layout<BasePopover.Popup.Props> &
   PopoverPlacement &
@@ -60,8 +78,50 @@ export type PopoverContentProps = Layout<BasePopover.Popup.Props> &
  *   <PopoverContent aria-label="Filters">...</PopoverContent>
  * </Popover>
  */
-export function Popover(props: PopoverProps): ReactElement {
-  return <BasePopover.Root {...props} />
+export function Popover({
+  present = 'auto',
+  open,
+  defaultOpen,
+  onOpenChange,
+  ...props
+}: PopoverProps): ReactElement {
+  const phone = useSheetPresent('auto')
+  // `auto` on a phone starts anchored and escalates when the panel does not fit; it resets on close.
+  const [grown, setGrown] = useState(false)
+  const presenter = useOverlayRoot<
+    Parameters<NonNullable<BasePopover.Root.Props['onOpenChange']>>[1]
+  >({
+    present: present === 'auto' ? (phone && grown ? 'sheet' : 'popup') : present,
+    open,
+    defaultOpen,
+    onOpenChange,
+  })
+  const isOpen = presenter.overlay.open
+  if (!isOpen && grown) setGrown(false)
+  const overlay = {
+    ...presenter.overlay,
+    ...(present === 'auto' && phone && !grown && { escalate: () => setGrown(true) }),
+  }
+  return (
+    <OverlayProvider value={overlay}>
+      <BasePopover.Root {...props} {...presenter.root} />
+    </OverlayProvider>
+  )
+}
+
+/**
+ * On a phone a panel that scrolls inside its anchored room asks for a sheet: its content is taller
+ * than the viewport leaves it. Measured once the popup is positioned.
+ */
+function escalateWhenClipped(escalate: (() => void) | undefined): (el: HTMLElement | null) => void {
+  return (el) => {
+    if (el === null || escalate === undefined) return
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        if (el.scrollHeight > el.clientHeight + 1) escalate()
+      }),
+    )
+  }
 }
 
 /**
@@ -80,6 +140,11 @@ export function PopoverTrigger({ className, ...props }: PopoverTriggerProps): Re
     />
   )
 }
+
+const nameOf = (props: PopoverName): { 'aria-label': string } | { 'aria-labelledby': string } =>
+  'aria-label' in props
+    ? { 'aria-label': props['aria-label'] }
+    : { 'aria-labelledby': props['aria-labelledby'] }
 
 /**
  * The panel, portalled and positioned by Base UI. It must be named: pass `aria-label` or
@@ -100,6 +165,22 @@ export function PopoverContent({
   children,
   ...props
 }: PopoverContentProps): ReactElement {
+  const overlay = useOverlay()
+  if (overlay?.sheet === true) {
+    return (
+      <ListSheet name={nameOf(props)} portal={BasePopover.Portal}>
+        <BasePopover.Positioner style={SHEET_POSITIONER} className={SHEET_POSITIONER_CLASS}>
+          <BasePopover.Popup
+            {...props}
+            data-slot="popover-content"
+            className={cn(SHEET_LIST_CLASS, 'p-3 text-sm')}
+          >
+            {children}
+          </BasePopover.Popup>
+        </BasePopover.Positioner>
+      </ListSheet>
+    )
+  }
   return (
     <ControlScopeProvider value={null}>
       <BasePopover.Portal {...(container !== undefined && { container })}>
@@ -113,6 +194,7 @@ export function PopoverContent({
         >
           <BasePopover.Popup
             {...props}
+            ref={escalateWhenClipped(overlay?.escalate)}
             data-slot="popover-content"
             className={cn(popoverContentVariants(), className)}
           >

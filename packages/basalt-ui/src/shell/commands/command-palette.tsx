@@ -7,6 +7,8 @@ import { navFor } from '../../router/nav/registry'
 import { Autocomplete, AutocompleteInput } from '../../ui/combobox'
 import { useSizeClass } from '../../page/use-size-class'
 import { Dialog, DialogContent } from '../../ui/dialog'
+import { useSheetPresent } from '../../ui/overlay-presenter'
+import type { OverlayPresent } from '../../ui/overlay-presenter'
 import { OptionListBody, useListHighlight, useOptionList } from '../../core/list/engine'
 import type { ListGroup, ListItems, ListOption } from '../../core/list/options'
 import { PopupFrame } from '../../core/list/popup'
@@ -36,6 +38,11 @@ export type CommandPaletteProps = {
   open?: boolean
   onOpenChange?: (open: boolean) => void
   placeholder?: string
+  /**
+   * How it opens: `auto` is a full-height sheet with the field on top on a phone (compact width,
+   * coarse pointer) and the centred dialog elsewhere; `popup` and `sheet` force one.
+   */
+  present?: OverlayPresent
 }
 
 /**
@@ -71,6 +78,7 @@ export function CommandPalette({
   open: openProp,
   onOpenChange,
   placeholder = 'Type a command or a page',
+  present,
 }: CommandPaletteProps): ReactElement {
   const router = useRouter()
   const rail = useContext(RailControlProvider)
@@ -164,7 +172,8 @@ export function CommandPalette({
   const highlight = useListHighlight()
   const phoneNav = usePhoneNav()
   const sizeClass = useSizeClass()
-  const phoneSheet = phoneNav !== 'tabs' && sizeClass === 'compact'
+  const sheetPresent = useSheetPresent(present)
+  const phoneSheet = sheetPresent || (phoneNav !== 'tabs' && sizeClass === 'compact')
 
   const body = (
     <div data-slot="command-palette">

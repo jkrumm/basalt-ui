@@ -22,7 +22,8 @@ outside click close it, focus moves in and returns, and it is always portalled a
 Open state stays with the caller (`open`/`onOpenChange`) or the trigger. Works with no provider.
 
 ```ts
-Popover(props: PopoverProps): ReactElement
+Popover({ present, open, defaultOpen, onOpenChange, ...props }: PopoverProps): ReactElement
+  present?: OverlayPresent  // How the panel opens: `auto` keeps it anchored, and on a phone (compact width, coarse pointer) lifts it into a bottom sheet only when it would not fit the viewport; `popup` and `sheet` force one
 ```
 
 ### `PopoverTrigger`

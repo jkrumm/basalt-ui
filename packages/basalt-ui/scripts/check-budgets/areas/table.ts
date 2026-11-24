@@ -118,13 +118,21 @@ export const rows: readonly RowDef[] = [
     // 222400 -> 222600 (Issue 3141, bench-inbox-mail): 222412 B measured; `BulkBar` gains its list form (a count and typed actions, no table).
     // 222600 -> 226200 (Issue 3206): 225987 B measured; the detail Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points.
     // 226200 -> 226500 (Issue 3211): +286 B gz for the phone list row: the plan's answering column and the two meta places the stylesheet reads.
-    ceiling: 226500,
+    // 226500 -> 232700 (Issue 3207): 232644 B measured; the table closure carries Select and Menu, which present as a sheet on a phone.
+    ceiling: 232700,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
 
 export const raises: Raises = {
   'table-own': [
+    {
+      from: 226500,
+      to: 232700,
+      consumer:
+        'the mobile overlays (owner direction 2026-11-24, Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom Sheet on a phone through one presenter; the sheet is a lazy chunk this row counts and an app loads only on the first phone open',
+      repo: 'basalt-ui',
+    },
     {
       from: 222600,
       to: 226200,

@@ -11,6 +11,16 @@ import { useMessages } from '../core/messages/use-messages'
 import { OptionListBody, useListRoot } from '../core/list/engine'
 import { AnchorContext, PopupFrame, useDismissRef } from '../core/list/popup'
 import { CheckMark, CreateRowText } from '../core/list/option-row'
+import { ListSheet } from './list-sheet'
+import {
+  OverlayProvider,
+  SHEET_LIST_CLASS,
+  SHEET_POSITIONER,
+  SHEET_POSITIONER_CLASS,
+  useOverlay,
+  useOverlayRoot,
+} from './overlay-presenter'
+import type { OverlayPresent } from './overlay-presenter'
 import type { ListVirtual } from '../core/list/engine'
 import type { ListOption, ListSource } from '../core/list/options'
 import { defaultRank } from '../core/list/rank'
@@ -227,6 +237,7 @@ export type ComboboxPartsProps<Value = string, Multiple extends boolean | undefi
   Layout & {
     options?: never
     children?: ReactNode
+    present?: OverlayPresent
     /**
      * Makes the combobox creatable. When the trimmed text typed matches no item's label (ignoring
      * case), the popup ends with a `Create "<text>"` row; choosing it calls `onCreate(text)`, adds the
@@ -266,6 +277,13 @@ export type ComboboxOptionsProps<
      * preselected value shows as the value itself, not its label.
      */
     options: ListSource<Value>
+    /**
+     * How the list opens: `auto` is a bottom sheet on a phone (compact width, coarse pointer)
+     * with the search field at its top, and the anchored popup elsewhere; `popup` and `sheet`
+     * force one. A `multiple` combobox keeps the popup: its chips are the field a person types in.
+     * (Also on the parts form.)
+     */
+    present?: OverlayPresent
     /** Names the input. */
     'aria-label': string
     placeholder?: string | undefined
@@ -442,31 +460,59 @@ function CreatableRoot({
 export function Combobox<Value = string, Multiple extends boolean | undefined = false>(
   props: ComboboxProps<Value, Multiple>,
 ): ReactElement {
+  const { present, open, defaultOpen, onOpenChange } = props
+  const presenter = useOverlayRoot<
+    Parameters<
+      NonNullable<BaseCombobox.Root.Props<unknown, boolean | undefined>['onOpenChange']>
+    >[1]
+  >({
+    present: props.multiple === true ? 'popup' : present,
+    open,
+    defaultOpen,
+    onOpenChange: onOpenChange as never,
+  })
+  // the presenter owns the open state: it is the root's `open` from here on
+  const opened = { ...presenter.root } as { open: boolean; onOpenChange: never }
   if (props.options !== undefined) {
-    const { className, ...rest } = props
+    const { className, present: _present, defaultOpen: _default, ...rest } = props
     return (
       <Field slot="combobox" table={comboboxVariants()} className={className}>
-        <OptionsCombobox
-          {...(rest as unknown as OptionsComboboxProps)}
-          options={props.options as ListSource<unknown>}
-        />
+        <OverlayProvider value={presenter.overlay}>
+          <OptionsCombobox
+            {...(rest as unknown as OptionsComboboxProps)}
+            {...opened}
+            options={props.options as ListSource<unknown>}
+          />
+        </OverlayProvider>
       </Field>
     )
   }
-  const { className, children, onCreate, ...parts } = props
+  const {
+    className,
+    children,
+    onCreate,
+    present: _present,
+    defaultOpen: _default,
+    ...parts
+  } = props
   return (
     <Field slot="combobox" table={comboboxVariants()} className={className}>
-      {onCreate !== undefined && isFlat(parts.items) ? (
-        <CreatableRoot
-          {...(parts as unknown as Omit<CreatableRootProps, 'items' | 'onCreate' | 'children'>)}
-          items={parts.items}
-          onCreate={onCreate}
-        >
-          {children}
-        </CreatableRoot>
-      ) : (
-        <BaseCombobox.Root<Value, Multiple> {...parts}>{children}</BaseCombobox.Root>
-      )}
+      <OverlayProvider value={presenter.overlay}>
+        {onCreate !== undefined && isFlat(parts.items) ? (
+          <CreatableRoot
+            {...(parts as unknown as Omit<CreatableRootProps, 'items' | 'onCreate' | 'children'>)}
+            {...opened}
+            items={parts.items}
+            onCreate={onCreate}
+          >
+            {children}
+          </CreatableRoot>
+        ) : (
+          <BaseCombobox.Root<Value, Multiple> {...parts} {...opened}>
+            {children}
+          </BaseCombobox.Root>
+        )}
+      </OverlayProvider>
     </Field>
   )
 }
@@ -522,6 +568,18 @@ function OptionsCombobox({
     onItemHighlighted,
     virtual: port,
   })
+  const sheet = useOverlay()
+  const rows = (
+    <OptionListBody
+      list={list}
+      size={size ?? scope?.size ?? 'md'}
+      kind="combobox"
+      highlight={highlight}
+      virtual={virtual}
+      empty={empty}
+      selectedIndex={selectedIndex}
+    />
+  )
   return (
     <BaseCombobox.Root<unknown, boolean | undefined>
       {...(rest as Omit<BaseCombobox.Root.Props<unknown, boolean | undefined>, 'items'>)}
@@ -542,27 +600,72 @@ function OptionsCombobox({
           {...(placeholder !== undefined && { placeholder })}
         />
       )}
-      <PopupFrame
-        kind="combobox"
-        slot="combobox-content"
-        className={cn(
-          comboboxContentVariants(),
-          'relative',
-          virtual !== undefined && 'overflow-hidden',
-        )}
-        container={container}
-      >
-        <OptionListBody
-          list={list}
-          size={size ?? scope?.size ?? 'md'}
+      {sheet?.sheet === true ? (
+        <SearchSheet
+          label={label}
+          className={cn('relative', virtual !== undefined && 'overflow-hidden')}
+        >
+          {rows}
+        </SearchSheet>
+      ) : (
+        <PopupFrame
           kind="combobox"
-          highlight={highlight}
-          virtual={virtual}
-          empty={empty}
-          selectedIndex={selectedIndex}
-        />
-      </PopupFrame>
+          slot="combobox-content"
+          className={cn(
+            comboboxContentVariants(),
+            'relative',
+            virtual !== undefined && 'overflow-hidden',
+          )}
+          container={container}
+        >
+          {rows}
+        </PopupFrame>
+      )}
     </BaseCombobox.Root>
+  )
+}
+
+/**
+ * The sheet a phone opens a single-value combobox in: the search field at the top, the list
+ * scrolling under it. The field on the page is only the button that opens it.
+ */
+function SearchSheet({
+  label,
+  className,
+  children,
+}: {
+  label?: string | undefined
+  className?: string
+  children: ReactNode
+}): ReactElement {
+  const t = useMessages(select)
+  const dismiss = useDismissRef()
+  return (
+    <ListSheet
+      height="tall"
+      portal={BaseCombobox.Portal}
+      name={{ 'aria-label': label ?? t('select.search') }}
+    >
+      <BaseCombobox.Positioner
+        style={SHEET_POSITIONER}
+        className={SHEET_POSITIONER_CLASS}
+        ref={dismiss}
+      >
+        <BaseCombobox.Popup
+          aria-label={label ?? t('select.search')}
+          data-slot="combobox-content"
+          className={cn(SHEET_LIST_CLASS, className)}
+        >
+          <BaseCombobox.Input
+            aria-label={label ?? t('select.search')}
+            data-slot="select-search"
+            placeholder={t('select.search')}
+            className="mb-1 h-ctl w-full shrink-0 rounded-chip border border-input bg-background px-2 text-sm text-foreground focus-ring placeholder:text-faint pointer-coarse:min-h-11"
+          />
+          {children}
+        </BaseCombobox.Popup>
+      </BaseCombobox.Positioner>
+    </ListSheet>
   )
 }
 
@@ -578,6 +681,40 @@ export type ComboboxInputProps = Omit<BaseCombobox.Input.Props, 'className' | 's
  */
 export function ComboboxInput({ size, className, ...props }: ComboboxInputProps): ReactElement {
   const scope = useControlScope()
+  const overlay = useOverlay()
+  if (overlay?.sheet === true) {
+    // on a phone the field is a button that opens the sheet; the search field lives in the sheet
+    const { 'aria-label': label, placeholder } = props
+    return (
+      <BaseCombobox.Trigger
+        data-slot="combobox-input"
+        aria-label={label}
+        className={cn(
+          comboboxInputVariants({ size: size ?? scope?.size }),
+          'cursor-pointer justify-between text-left focus-ring data-placeholder:text-faint',
+          className,
+        )}
+      >
+        <span className="min-w-0 flex-1 truncate">
+          <BaseCombobox.Value {...(placeholder !== undefined && { placeholder })} />
+        </span>
+        <svg
+          viewBox="0 0 16 16"
+          className="size-icon shrink-0 text-muted-foreground"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M4 6l4 4 4-4"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </BaseCombobox.Trigger>
+    )
+  }
   return (
     <BaseCombobox.InputGroup
       data-slot="combobox-input"
@@ -630,6 +767,19 @@ export function ComboboxContent({
         {createRow}
       </>
     )
+  const overlay = useOverlay()
+  if (overlay?.sheet === true) {
+    return (
+      <SearchSheet label={props['aria-label']}>
+        {empty !== undefined && (
+          <BaseCombobox.Empty className="px-2 py-1.5 text-sm text-muted-foreground empty:hidden">
+            {empty}
+          </BaseCombobox.Empty>
+        )}
+        <BaseCombobox.List>{list as ReactNode}</BaseCombobox.List>
+      </SearchSheet>
+    )
+  }
   return (
     <PopupFrame
       kind="combobox"

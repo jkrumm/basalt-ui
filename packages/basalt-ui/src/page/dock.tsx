@@ -3,6 +3,9 @@ import type { CSSProperties, KeyboardEvent, ReactElement, ReactNode } from 'reac
 import { createPortal } from 'react-dom'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { PANEL_MAX, PanelHandle, usePanelWidth } from '../core/panel'
+import { useSheetPresent } from '../ui/overlay-presenter'
+import type { OverlayPresent } from '../ui/overlay-presenter'
+import { Sheet, SheetContent } from '../ui/sheet'
 import { cn } from '../core/cn'
 import type { IconComponent, NavTarget, RecordSequence } from '../core/ports'
 import type { AvatarEntry } from '../ui/avatar'
@@ -11,9 +14,12 @@ import type { FavoriteInput } from './contract'
 import { widthStore } from './core/panel-store'
 import { PageHostContext, ShellDockContext } from './page'
 import {
+  FullPageLink,
+  PanelActionBar,
   PanelBody,
   PanelFooter,
   PanelHeader,
+  PanelSteps,
   panelKeys,
   useFocusIn,
   usePanelLabels,
@@ -45,10 +51,60 @@ export type DockProps = {
   records?: RecordSequence
   /** A band under the body for a form's actions. */
   footer?: ReactNode
+  /**
+   * How the panel opens: `auto` is a bottom sheet that rests at half height and drags to full on a
+   * phone (compact width, coarse pointer), the side panel elsewhere; `popup` and `sheet` force one.
+   */
+  present?: OverlayPresent
   children?: ReactNode
 }
 
 type DockStyle = CSSProperties & { '--dock-w': string }
+
+type DockSheetProps = Pick<DockProps, 'title' | 'onClose' | 'children'> & {
+  [K in 'tag' | 'fullPage' | 'actions' | 'records' | 'footer']?: DockProps[K] | undefined
+}
+
+/** The phone's presentation: a sheet at half height that drags to full; closing it is the dock's close. */
+function DockSheet({
+  title,
+  tag,
+  fullPage,
+  onClose,
+  actions,
+  records,
+  footer,
+  children,
+}: DockSheetProps): ReactElement {
+  return (
+    <Sheet
+      open
+      placement="bottom"
+      snapPoints={['half', 'full']}
+      onOpenChange={(open) => {
+        if (!open) onClose()
+      }}
+    >
+      <SheetContent
+        title={title}
+        tag={tag}
+        footer={footer}
+        data-present="sheet"
+        actions={
+          records === undefined && fullPage === undefined && actions === undefined ? undefined : (
+            <>
+              {records !== undefined && <PanelSteps records={records} />}
+              {actions !== undefined && <PanelActionBar actions={actions} />}
+              {fullPage !== undefined && <FullPageLink href={fullPage} />}
+            </>
+          )
+        }
+      >
+        {children}
+      </SheetContent>
+    </Sheet>
+  )
+}
 
 /**
  * A record panel that belongs to the shell, not to a page: it sits at the end edge beside main
@@ -85,8 +141,10 @@ export function Dock({
   actions,
   records,
   footer,
+  present,
   children,
 }: DockProps): ReactElement | null {
+  const sheet = useSheetPresent(present)
   const labels = usePanelLabels()
   const host = useContext(PageHostContext)
   const dock = useContext(ShellDockContext)
@@ -104,6 +162,13 @@ export function Dock({
   useIsomorphicLayoutEffect(() => claim?.(id), [claim, id])
   useIsomorphicLayoutEffect(() => setWidth?.(px), [setWidth, px])
   useFocusIn(panel, ready)
+  if (sheet) {
+    return (
+      <DockSheet {...{ title, tag, fullPage, onClose, actions, records, footer }}>
+        {children}
+      </DockSheet>
+    )
+  }
   if (!ready) return null
   const docked = dock?.docked === true
   const compact = sizeClass === 'compact'

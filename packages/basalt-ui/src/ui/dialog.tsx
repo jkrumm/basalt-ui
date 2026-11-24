@@ -9,6 +9,8 @@ import { dialogs } from '../core/messages/dialogs'
 import { useMessages } from '../core/messages/use-messages'
 import type { IconComponent } from '../core/ports'
 import { Button, buttonVariants } from './button'
+import { useSheetPresent } from './overlay-presenter'
+import type { OverlayPresent } from './overlay-presenter'
 
 /**
  * The `DialogContent` cva table: a centered panel on the popup surface, always above the page
@@ -66,6 +68,11 @@ const WASH = `${BACKDROP_BASE} bg-scrim-wash`
 const SCRIM = `${BACKDROP_BASE} bg-scrim`
 const VIEWPORT =
   'fixed inset-0 z-50 grid place-items-center overflow-hidden p-4 data-ending-style:pointer-events-none'
+/** The phone's form: the panel rises from the bottom edge, nearly the full height. */
+const SHEET_VIEWPORT =
+  'fixed inset-0 z-50 flex items-end overflow-hidden data-ending-style:pointer-events-none'
+const SHEET_POPUP =
+  'relative flex h-[calc(100dvh-env(safe-area-inset-top)-0.5rem)] w-full max-w-none flex-col gap-4 overflow-y-auto rounded-t-card bg-popover p-4 pr-[calc(1rem+env(safe-area-inset-right))] pb-[calc(1rem+env(safe-area-inset-bottom))] pl-[calc(1rem+env(safe-area-inset-left))] text-foreground shadow-overlay outline-none transition-transform duration-slow ease-standard data-ending-style:translate-y-full data-starting-style:translate-y-full motion-reduce:transition-none'
 
 type Layout<P> = Omit<P, 'className'> & {
   /** Layout only (`w-full`, `mt-2`). Display and height belong to the part. */
@@ -100,6 +107,14 @@ export type DialogContentProps = Layout<Omit<BaseDialog.Popup.Props, 'title'>> &
     meta?: ReactNode
     /** Icon actions between the title and the close, at most four. Not rendered at `size="split"`. */
     actions?: readonly DialogAction[]
+    /**
+     * The panel holds a form (or, at `size="split"`, the wizard): on a phone (compact width,
+     * coarse pointer) it opens as a full-height sheet from the bottom instead of centred. A confirm
+     * stays centred. `present` overrides.
+     */
+    form?: boolean
+    /** Forces the presentation: `popup` centred, `sheet` full height from the bottom, `auto` by `form` and the viewport. */
+    present?: OverlayPresent
   }
 export type DialogTitleProps = Layout<BaseDialog.Title.Props>
 export type DialogDescriptionProps = Layout<BaseDialog.Description.Props>
@@ -161,20 +176,29 @@ export function DialogContent({
   meta,
   actions,
   size,
+  form,
+  present,
   className,
   children,
   ...props
 }: DialogContentProps): ReactElement {
   const split = size === 'split'
+  const sheet = useSheetPresent(present ?? (form === true || split ? 'auto' : 'popup'))
   return (
     <ControlScopeProvider value={null}>
       <BaseDialog.Portal>
         <BaseDialog.Backdrop forceRender className={WASH} />
-        <BaseDialog.Viewport className={VIEWPORT}>
+        <BaseDialog.Viewport className={sheet ? SHEET_VIEWPORT : VIEWPORT}>
           <BaseDialog.Popup
             {...props}
             data-slot="dialog-content"
-            className={cn(dialogContentVariants({ size }), className)}
+            {...(sheet && { 'data-present': 'sheet' })}
+            className={cn(
+              sheet
+                ? cn(SHEET_POPUP, split && 'gap-0 overflow-hidden p-0')
+                : dialogContentVariants({ size }),
+              className,
+            )}
           >
             {split ? (
               <>

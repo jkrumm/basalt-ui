@@ -15,6 +15,16 @@ import type { ListVirtual } from '../core/list/engine'
 import type { ListItems, ListOption, ListSource } from '../core/list/options'
 import { defaultRank } from '../core/list/rank'
 import type { RankFn } from '../core/list/rank'
+import { ListSheet } from './list-sheet'
+import {
+  OverlayProvider,
+  SHEET_LIST_CLASS,
+  SHEET_POSITIONER,
+  SHEET_POSITIONER_CLASS,
+  useOverlay,
+  useOverlayRoot,
+} from './overlay-presenter'
+import type { OverlayPresent } from './overlay-presenter'
 
 export type {
   ListAvatar,
@@ -140,9 +150,17 @@ type SelectRootProps<Value> = Omit<
   'children' | 'items' | 'multiple'
 >
 
+type OpenDetails = Parameters<NonNullable<BaseSelect.Root.Props<unknown, false>['onOpenChange']>>[1]
+
 type SelectShared<Value> = SelectRootProps<Value> &
   Layout &
-  VariantProps<typeof selectTriggerVariants>
+  VariantProps<typeof selectTriggerVariants> & {
+    /**
+     * How the list opens: `auto` is a bottom sheet on a phone (compact width, coarse pointer) and
+     * the anchored popup elsewhere; `popup` and `sheet` force one.
+     */
+    present?: OverlayPresent
+  }
 
 /**
  * `Select` takes its choices as `options` (the trigger is built for you and must be named) or as
@@ -277,16 +295,27 @@ export function Select<Value = string>(props: SelectProps<Value>): ReactElement 
     rank,
     empty,
     virtual,
+    present,
     ...rest
   } = props
   const scope = useControlScope()
   const {
     'aria-label': label,
     'aria-labelledby': labelledBy,
+    open: openProp,
+    defaultOpen,
+    onOpenChange,
     ...root
   } = rest as SelectRootProps<Value> & Partial<{ 'aria-label': string; 'aria-labelledby': string }>
   const name =
     label !== undefined ? { 'aria-label': label } : { 'aria-labelledby': labelledBy ?? '' }
+  const presenter = useOverlayRoot<OpenDetails>({
+    present,
+    open: openProp,
+    defaultOpen,
+    onOpenChange,
+    name,
+  })
   const rowSize: RowSize = size ?? scope?.size ?? 'md'
   const searches =
     options !== undefined &&
@@ -299,6 +328,8 @@ export function Select<Value = string>(props: SelectProps<Value>): ReactElement 
       <div data-slot="select" className={cn(selectVariants(), scopeClass(scope), className)}>
         <SearchableSelect
           {...(root as SearchRootProps)}
+          {...presenter.root}
+          sheet={presenter.overlay}
           naming={name}
           options={options as ListSource<unknown>}
           rank={(rank ?? defaultRank) as RankFn<ListOption<unknown>>}
@@ -314,39 +345,42 @@ export function Select<Value = string>(props: SelectProps<Value>): ReactElement 
   const flat = options === undefined ? undefined : flatOptions(options as ListItems<Value>)
   return (
     <div data-slot="select" className={cn(selectVariants(), scopeClass(scope), className)}>
-      <BaseSelect.Root<Value, false>
-        {...root}
-        items={flat === undefined ? items : flat.map(triggerItem)}
-      >
-        {options === undefined || typeof options === 'function' ? (
-          children
-        ) : (
-          <>
-            <SelectTrigger size={size} {...name}>
-              <SelectValue {...(placeholder !== undefined && { placeholder })} />
-            </SelectTrigger>
-            <SelectContent>
-              {options.map((entry, at) =>
-                isGroup(entry) ? (
-                  <BaseSelect.Group key={`group:${at}`} data-slot="option-group">
-                    <BaseSelect.GroupLabel
-                      data-slot="option-group-label"
-                      className={groupLabelVariants({ size: rowSize })}
-                    >
-                      {entry.label}
-                    </BaseSelect.GroupLabel>
-                    {entry.options.map((option) => (
-                      <SelectRow key={String(option.value)} option={option} size={rowSize} />
-                    ))}
-                  </BaseSelect.Group>
-                ) : (
-                  <SelectRow key={String(entry.value)} option={entry} size={rowSize} />
-                ),
-              )}
-            </SelectContent>
-          </>
-        )}
-      </BaseSelect.Root>
+      <OverlayProvider value={presenter.overlay}>
+        <BaseSelect.Root<Value, false>
+          {...root}
+          {...presenter.root}
+          items={flat === undefined ? items : flat.map(triggerItem)}
+        >
+          {options === undefined || typeof options === 'function' ? (
+            children
+          ) : (
+            <>
+              <SelectTrigger size={size} {...name}>
+                <SelectValue {...(placeholder !== undefined && { placeholder })} />
+              </SelectTrigger>
+              <SelectContent>
+                {options.map((entry, at) =>
+                  isGroup(entry) ? (
+                    <BaseSelect.Group key={`group:${at}`} data-slot="option-group">
+                      <BaseSelect.GroupLabel
+                        data-slot="option-group-label"
+                        className={groupLabelVariants({ size: rowSize })}
+                      >
+                        {entry.label}
+                      </BaseSelect.GroupLabel>
+                      {entry.options.map((option) => (
+                        <SelectRow key={String(option.value)} option={option} size={rowSize} />
+                      ))}
+                    </BaseSelect.Group>
+                  ) : (
+                    <SelectRow key={String(entry.value)} option={entry} size={rowSize} />
+                  ),
+                )}
+              </SelectContent>
+            </>
+          )}
+        </BaseSelect.Root>
+      </OverlayProvider>
     </div>
   )
 }
@@ -387,8 +421,10 @@ function SearchableSelect({
   open,
   defaultOpen,
   onOpenChange,
+  sheet,
   ...root
 }: SearchRootProps & {
+  sheet: ReturnType<typeof useOverlayRoot<OpenDetails>>['overlay']
   port: ListVirtual | undefined
   naming: { 'aria-label': string } | { 'aria-labelledby': string }
   options: ListSource<unknown>
@@ -418,65 +454,89 @@ function SearchableSelect({
     virtual: port,
   })
   const inputName = 'aria-label' in label ? label['aria-label'] : undefined
+  const searchField = (
+    <BaseCombobox.Input
+      {...(inputName !== undefined
+        ? { 'aria-label': inputName }
+        : {
+            'aria-labelledby': (label as { 'aria-labelledby': string })['aria-labelledby'],
+          })}
+      data-slot="select-search"
+      placeholder={t('select.search')}
+      className="mb-1 h-ctl w-full shrink-0 rounded-chip border border-input bg-background px-2 text-sm text-foreground focus-ring placeholder:text-faint pointer-coarse:min-h-11"
+    />
+  )
+  const rows = (
+    <OptionListBody
+      list={list}
+      size={rowSize}
+      kind="combobox"
+      highlight={highlight}
+      virtual={virtual}
+      empty={empty}
+      selectedIndex={selectedIndex}
+    />
+  )
   return (
-    <BaseCombobox.Root<unknown, false>
-      {...(root as Omit<BaseCombobox.Root.Props<unknown, false>, 'items'>)}
-      {...(engine as Omit<typeof engine, 'multiple'>)}
-      autoHighlight
-    >
-      <BaseCombobox.Trigger
-        {...label}
-        data-slot="select-trigger"
-        className={selectTriggerVariants({ size })}
+    <OverlayProvider value={sheet}>
+      <BaseCombobox.Root<unknown, false>
+        {...(root as Omit<BaseCombobox.Root.Props<unknown, false>, 'items'>)}
+        {...(engine as Omit<typeof engine, 'multiple'>)}
+        autoHighlight
       >
-        <BaseCombobox.Value>
-          {(selected: unknown) =>
-            selected === null || selected === undefined ? (
-              <span className="truncate text-faint">{placeholder}</span>
-            ) : (
-              <TriggerLabel option={list.find(selected) ?? { label: list.textOf(selected) }} />
-            )
-          }
-        </BaseCombobox.Value>
-        <Chevron />
-      </BaseCombobox.Trigger>
-      <ControlScopeProvider value={null}>
-        <BaseCombobox.Portal>
-          <BaseCombobox.Positioner sideOffset={4} className="z-50 outline-none">
-            <BaseCombobox.Popup
-              data-slot="select-content"
-              className={cn(
-                selectContentVariants(),
-                'relative',
-                virtual !== undefined && 'overflow-hidden',
-              )}
-            >
-              <BaseCombobox.Input
-                {...(inputName !== undefined
-                  ? { 'aria-label': inputName }
-                  : {
-                      'aria-labelledby': (label as { 'aria-labelledby': string })[
-                        'aria-labelledby'
-                      ],
-                    })}
-                data-slot="select-search"
-                placeholder={t('select.search')}
-                className="mb-1 h-ctl w-full rounded-chip border border-input bg-background px-2 text-sm text-foreground focus-ring placeholder:text-faint"
-              />
-              <OptionListBody
-                list={list}
-                size={rowSize}
-                kind="combobox"
-                highlight={highlight}
-                virtual={virtual}
-                empty={empty}
-                selectedIndex={selectedIndex}
-              />
-            </BaseCombobox.Popup>
-          </BaseCombobox.Positioner>
-        </BaseCombobox.Portal>
-      </ControlScopeProvider>
-    </BaseCombobox.Root>
+        <BaseCombobox.Trigger
+          {...label}
+          data-slot="select-trigger"
+          className={selectTriggerVariants({ size })}
+        >
+          <BaseCombobox.Value>
+            {(selected: unknown) =>
+              selected === null || selected === undefined ? (
+                <span className="truncate text-faint">{placeholder}</span>
+              ) : (
+                <TriggerLabel option={list.find(selected) ?? { label: list.textOf(selected) }} />
+              )
+            }
+          </BaseCombobox.Value>
+          <Chevron />
+        </BaseCombobox.Trigger>
+        {sheet.sheet ? (
+          <ListSheet height="tall" portal={BaseCombobox.Portal}>
+            <BaseCombobox.Positioner style={SHEET_POSITIONER} className={SHEET_POSITIONER_CLASS}>
+              <BaseCombobox.Popup
+                data-slot="select-content"
+                className={cn(
+                  SHEET_LIST_CLASS,
+                  'relative',
+                  virtual !== undefined && 'overflow-hidden',
+                )}
+              >
+                {searchField}
+                {rows}
+              </BaseCombobox.Popup>
+            </BaseCombobox.Positioner>
+          </ListSheet>
+        ) : (
+          <ControlScopeProvider value={null}>
+            <BaseCombobox.Portal>
+              <BaseCombobox.Positioner sideOffset={4} className="z-50 outline-none">
+                <BaseCombobox.Popup
+                  data-slot="select-content"
+                  className={cn(
+                    selectContentVariants(),
+                    'relative',
+                    virtual !== undefined && 'overflow-hidden',
+                  )}
+                >
+                  {searchField}
+                  {rows}
+                </BaseCombobox.Popup>
+              </BaseCombobox.Positioner>
+            </BaseCombobox.Portal>
+          </ControlScopeProvider>
+        )}
+      </BaseCombobox.Root>
+    </OverlayProvider>
   )
 }
 
@@ -546,6 +606,24 @@ export function SelectContent({
   children,
   ...props
 }: SelectContentProps): ReactElement {
+  const overlay = useOverlay()
+  if (overlay?.sheet === true) {
+    return (
+      <ListSheet
+        {...(props['aria-label'] !== undefined && { name: { 'aria-label': props['aria-label'] } })}
+      >
+        <BaseSelect.Positioner
+          alignItemWithTrigger={false}
+          style={SHEET_POSITIONER}
+          className={SHEET_POSITIONER_CLASS}
+        >
+          <BaseSelect.Popup {...props} data-slot="select-content" className={SHEET_LIST_CLASS}>
+            <BaseSelect.List>{children}</BaseSelect.List>
+          </BaseSelect.Popup>
+        </BaseSelect.Positioner>
+      </ListSheet>
+    )
+  }
   return (
     <ControlScopeProvider value={null}>
       <BaseSelect.Portal {...(container !== undefined && { container })}>
