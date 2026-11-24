@@ -216,6 +216,21 @@ describe('checkWeakenedConfig', () => {
     expect(results[2]?.detail).toContain('basalt/primitive-bypass')
   })
 
+  it('a nested config that extends the preset and switches a managed rule off fails check 3', async () => {
+    const dir = fixture('healthy')
+    mkdirSync(join(dir, 'src', 'x'))
+    writeFileSync(
+      join(dir, 'src', 'x', '.oxlintrc.json'),
+      JSON.stringify({
+        extends: ['../../.oxlintrc.basalt.json'],
+        rules: { 'basalt/primitive-bypass': 'off' },
+      }),
+    )
+    const results = await run(dir)
+    expect(status(results, 3)).toBe('failed')
+    expect(results[2]?.detail).toContain('basalt/primitive-bypass in src/x/.oxlintrc.json rules')
+  })
+
   it.each([
     ['off', 'no-use-before-define'],
     ['warn', 'no-use-before-define'],
