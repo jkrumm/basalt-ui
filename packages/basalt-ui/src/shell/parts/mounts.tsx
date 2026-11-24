@@ -23,5 +23,6 @@ export function TabBarMount(props: PhoneNavProps): ReactElement {
   return (
     <div className={cn('[grid-area:footer] in-data-keyboard:hidden md:hidden', PRINT_OFF)}>
       <PhoneNav {...props} />
-    </div>  )
+    </div>
+  )
 }
