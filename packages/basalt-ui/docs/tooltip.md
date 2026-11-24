@@ -1,6 +1,6 @@
 ---
 name: Tooltip
-use when: 'an icon or a clipped value needs a one-line name on hover and focus'
+use when: 'an icon or a clipped value needs a one-line name on hover, focus or a long press'
 never when: 'the content is interactive, longer than a line, or the only place a fact lives (use `Popover`)'
 subpath: basalt-ui/ui/tooltip
 peers: ['@base-ui/react']
@@ -24,7 +24,7 @@ string and a visual aid only: it is not the trigger's accessible name, so an ico
 keeps its own `aria-label`. Works with no provider.
 
 ```ts
-Tooltip({ label, children, delay, closeDelay, side, align, sideOffset, className, ...root }: TooltipProps): ReactElement
+Tooltip({ label, children, delay, closeDelay, side, align, sideOffset, className, open: controlled, onOpenChange, ...root }: TooltipProps): ReactElement
   label: string  // The text
   children: ReactElement<unknown, string | React.JSXElementConstructor<any>>  // The element the label names; it receives the hover and focus handlers
   delay?: number  // Milliseconds of hover before it opens
