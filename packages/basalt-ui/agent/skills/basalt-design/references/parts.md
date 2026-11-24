@@ -14,6 +14,10 @@ Every shipped part, grouped by the question it answers; open `node_modules/basal
 - `basalt-ui add record-page`: A supplier record: identity band, tabs with counts, editable properties, related tables and an activity feed.
 - `basalt-ui add settings-page`: Inventory settings: an inner nav of panes, each a column of bordered sections with forms and a danger zone.
 
+## Wire the app root: the provider and its defaults
+
+- `IntlScope` (`basalt-ui`): one region (a preview, a print view, a fixed-locale page) must format differently from the app
+
 ## Frame the app: header, rail and navigation
 
 - `AppShell` (`basalt-ui/shell`): an app has more than one destination and wants one rail, header and tab bar from a single `defineNav`
