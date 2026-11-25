@@ -20,9 +20,9 @@ type Tone = 'good' | 'bad' | 'neutral'
 /** Measured ratios, to three decimals. */
 const MEASURED: Record<Scheme, Record<Surface, Record<Tone, number>>> = {
   light: {
-    canvas: { good: 4.527, bad: 4.501, neutral: 11.782 },
-    inset: { good: 5.004, bad: 4.979, neutral: 13.123 },
-    card: { good: 4.831, bad: 4.806, neutral: 12.568 },
+    canvas: { good: 4.541, bad: 4.549, neutral: 11.462 },
+    inset: { good: 4.584, bad: 4.593, neutral: 11.571 },
+    card: { good: 4.804, bad: 4.819, neutral: 12.123 },
   },
   dark: {
     canvas: { good: 5.643, bad: 5.608, neutral: 9.302 },
