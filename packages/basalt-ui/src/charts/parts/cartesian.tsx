@@ -27,6 +27,7 @@ import {
   zoneLegendSeries,
 } from '../core/compile'
 import type { CartesianDefinition } from '../core/compile'
+import { isRich, markRich } from '../core/rich-tooltip'
 import { labelTieMarks } from '../core/label-ties'
 import { samePlots } from '../core/plot-context'
 import type { PlotSizes } from '../core/plot-context'
@@ -557,7 +558,10 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions<D>)
       }),
     } as Parameters<typeof compileCartesian<D, ChartX>>[0])
     // Selection is part of the definition, not of any mark; the server never runs its handlers.
-    return controller === undefined ? compiled : { ...compiled, selection: controller }
+    if (controller === undefined) return compiled
+    // The rich-tooltip flag is keyed on the definition object: the selected copy carries it on.
+    const selected = { ...compiled, selection: controller }
+    return isRich(compiled) ? markRich(selected) : selected
   }, [
     spec,
     marks,

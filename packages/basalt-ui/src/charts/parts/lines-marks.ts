@@ -138,7 +138,7 @@ export function extremeMarks<D>(plot: PlotContext<D, ChartX>, s: ChartSeries<D>)
   const yScale = yScaleOf(plot, s)
   const format = (r: PlotRow<D, ChartX>): string => {
     const v = s.getValue(r.datum) ?? (r.y as number)
-    return s.formatValue ? s.formatValue(v, r.datum) : defaultNumberFormat(v)
+    return s.formatValue ? s.formatValue(v, r.datum) : defaultNumberFormat(v, plot.locale)
   }
   // Where a point sits down the plot, 0 at the top: a caption level with a point at an edge would cross
   // the axis or leave the plot, so it moves inside, under a top point and over a bottom one.
