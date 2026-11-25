@@ -56,3 +56,7 @@ apps/expression/src/basalt.tokens.css.d.ts
 # CONTRACT.md holds blocks written by packages/basalt-ui/scripts/gen-contract.ts; gen-contract.test.ts
 # pins them byte for byte, so oxfmt must not re-pad their tables.
 docs/v3/CONTRACT.md
+
+# The dashboard's committed data snapshot, written compact by apps/playground/scripts/cbbi-snapshot.ts;
+# formatting it would spread two thousand readings per series over as many lines.
+apps/playground/src/demo/cbbi.snapshot.json
