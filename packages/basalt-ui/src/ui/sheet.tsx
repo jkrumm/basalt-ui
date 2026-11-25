@@ -1,6 +1,6 @@
 import { Drawer as BaseDrawer } from '@base-ui/react/drawer'
 import { cva } from 'class-variance-authority'
-import { createContext, useContext, useRef, useSyncExternalStore } from 'react'
+import { createContext, useContext, useRef, useState, useSyncExternalStore } from 'react'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import {
   PANEL_BODY,
@@ -12,6 +12,7 @@ import {
   PanelHandle,
   usePanelWidth,
 } from '../core/panel'
+import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { cn } from '../core/cn'
 import { ControlScopeProvider } from '../core/control-scope'
 import { dialogs } from '../core/messages/dialogs'
@@ -24,21 +25,40 @@ type Placement = 'bottom' | 'right' | 'auto'
 type Swipe = 'down' | 'right'
 
 /**
- * A height a bottom sheet rests at besides its content height: `half` is 50 % of the viewport,
- * `full` is 90 % (the sheet never covers the status bar).
+ * A height a bottom sheet rests at besides its content height: `third` is a third of the viewport
+ * (a record drawer), `half` is 50 %, `full` is 90 % (the sheet never covers the status bar).
  */
-export type SheetSnap = 'half' | 'full'
+export type SheetSnap = 'third' | 'half' | 'full'
 
 /** The viewport fractions Base UI's `snapPoints` takes (a number below 1 is a fraction of the height). */
-const SNAP_FRACTION: Record<SheetSnap, number> = { half: 0.5, full: 0.9 }
+const SNAP_FRACTION: Record<SheetSnap, number> = { third: 1 / 3, half: 0.5, full: 0.9 }
 
 /** The `auto` flip: bottom below this width, right from it (the `md` breakpoint, 840 px; pinned to `SIZE_CLASSES.medium` by sheet.test.tsx). */
 const WIDE = '(min-width: 840px)'
 
-/** What the content part reads from `Sheet`: the resolved edge and whether it rests at snap points. */
-type SheetFrame = { placement: Placement; snapped: boolean }
+/** Whether a sheet that asks for snap points has content taller than its first one: unknown until measured. */
+type Fit = 'unknown' | 'fits' | 'taller'
 
-const FrameContext = createContext<SheetFrame>({ placement: 'auto', snapped: false })
+/**
+ * What the content part reads from `Sheet`: the resolved edge, whether it rests at snap points now,
+ * the first snap's viewport fraction when it asked for them (`null` otherwise), whether it leaves the
+ * page live, and where the content reports whether it is taller than that first snap.
+ */
+type SheetFrame = {
+  placement: Placement
+  snapped: boolean
+  first: number | null
+  modeless: boolean
+  report: (fit: Fit) => void
+}
+
+const FrameContext = createContext<SheetFrame>({
+  placement: 'auto',
+  snapped: false,
+  first: null,
+  modeless: false,
+  report: () => {},
+})
 
 /** The narrowest a right sheet goes: a form's label and field side by side. */
 const SHEET_MIN = 320
@@ -66,8 +86,12 @@ const BOTTOM_INSET =
 const RIGHT_INSET =
   'pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)]'
 
-/** A bottom sheet hugs its content up to 90 % of the viewport; with `snapPoints` it is that tall and rests lower. */
-const BOTTOM = `mt-auto max-h-[90dvh] w-full rounded-t-card ${BOTTOM_INSET} translate-y-[var(--drawer-swipe-movement-y,0px)] data-starting-style:translate-y-full data-ending-style:translate-y-full`
+/**
+ * A bottom sheet hugs its content up to 90 % of the viewport; with `snapPoints` and content taller
+ * than the first one it is that tall and rests lower. While it leaves it keeps the height it had
+ * (`--sheet-rest-h`, written by `PopupWatch`), so a list that unmounts first never shrinks it mid-slide.
+ */
+const BOTTOM = `mt-auto max-h-[90dvh] w-full rounded-t-card ${BOTTOM_INSET} translate-y-[var(--drawer-swipe-movement-y,0px)] data-starting-style:translate-y-full data-ending-style:h-(--sheet-rest-h,auto) data-ending-style:translate-y-full`
 
 /**
  * The `SheetContent` cva table: a panel that slides in from an edge, its header, body and footer
@@ -121,10 +145,17 @@ type SheetBase = Omit<
   placement?: Placement
   /**
    * Where a bottom sheet rests besides its content height, smallest first: `['half', 'full']` opens
-   * at half the viewport and drags to 90 %; a drag down from the lowest point dismisses. Unset, the
-   * sheet has one rest, at its content height capped at 90dvh. A right sheet ignores it.
+   * at half the viewport and drags to 90 %; a drag down from the lowest point dismisses. Content that
+   * fits the first point opens at its own height with no drag stops; the points apply only to content
+   * taller than the first. Unset, the sheet has one rest, at its content height capped at 90dvh. A
+   * right sheet ignores it.
    */
   snapPoints?: readonly SheetSnap[]
+  /**
+   * A drawer over a page that stays live: no scrim, nothing inert, a tap on the page behind passes
+   * through, and only Escape or the close button dismisses it. A record drawer under a table.
+   */
+  modeless?: boolean
 }
 
 /** A boolean handle is open while `true`; a string handle (a URL field naming a record) while non-empty. */
@@ -225,17 +256,46 @@ function BoundSheet({
   )
 }
 
-function PlainSheet({ placement = 'auto', snapPoints, ...props }: SheetBase): ReactElement {
+/**
+ * Base UI plays the open transition when `open` turns true on a root that is already mounted; a root
+ * that mounts open shows at rest, with no motion at all. A sheet mounted open (a record panel, a list
+ * sheet whose chunk loaded after the tap) mounts closed and opens in the layout pass, before paint.
+ */
+function useOpensFromClosed(open: boolean | undefined): boolean | undefined {
+  const [armed, setArmed] = useState(open !== true)
+  useIsomorphicLayoutEffect(() => setArmed(true), [])
+  return armed ? open : false
+}
+
+function PlainSheet({
+  placement = 'auto',
+  snapPoints,
+  modeless = false,
+  open,
+  ...props
+}: SheetBase): ReactElement {
   const wide = useSyncExternalStore(subscribeWide, readWide, serverWide)
   const resolved: Placement = placement === 'auto' ? (wide ? 'right' : 'bottom') : placement
   const swipe: Swipe = resolved === 'right' ? 'right' : 'down'
-  const snapped = resolved !== 'right' && snapPoints !== undefined && snapPoints.length > 0
-  const frame: SheetFrame = { placement: resolved, snapped }
+  const wanted = resolved !== 'right' && snapPoints !== undefined && snapPoints.length > 0
+  const shown = useOpensFromClosed(open)
+  const [fit, report] = useState<Fit>('unknown')
+  // Snap points come only with content taller than the first one: content that fits opens at its own height.
+  const snapped = wanted && fit === 'taller'
+  const frame: SheetFrame = {
+    placement: resolved,
+    snapped,
+    first: wanted ? SNAP_FRACTION[snapPoints[0]!] : null,
+    modeless,
+    report,
+  }
   return (
     <FrameContext value={frame}>
       <BaseDrawer.Root
         {...props}
+        open={shown}
         swipeDirection={swipe}
+        {...(modeless && { modal: false, disablePointerDismissal: true })}
         {...(snapped && {
           snapPoints: snapPoints.map((snap) => SNAP_FRACTION[snap]),
           defaultSnapPoint: SNAP_FRACTION[snapPoints[0]!],
@@ -243,6 +303,44 @@ function PlainSheet({ placement = 'auto', snapPoints, ...props }: SheetBase): Re
       />
     </FrameContext>
   )
+}
+
+/**
+ * Sits in the popup and watches it, before paint. It keeps the height the popup rests at
+ * (`--sheet-rest-h`), frozen once the popup starts to leave, and, for a sheet that asked for snap
+ * points, reports whether the content is taller than the first one. It measures the popup hugging its
+ * content, so a fit decided here costs no second resize after the sheet is on screen; a sheet that
+ * snapped stays snapped until it closes.
+ */
+function PopupWatch({
+  first,
+  snapped,
+  report,
+}: {
+  first: number | null
+  snapped: boolean
+  report: (fit: Fit) => void
+}): ReactElement {
+  const mark = useRef<HTMLSpanElement | null>(null)
+  useIsomorphicLayoutEffect(() => {
+    const popup = mark.current?.closest<HTMLElement>('[data-slot="sheet-content"]')
+    if (popup === null || popup === undefined) return undefined
+    const note = (): void => {
+      if (popup.hasAttribute('data-ending-style')) return
+      popup.style.setProperty('--sheet-rest-h', `${popup.offsetHeight}px`)
+      if (first === null || snapped) return
+      const room = popup.parentElement?.clientHeight ?? 0
+      report(popup.offsetHeight > first * room + 1 ? 'taller' : 'fits')
+    }
+    note()
+    if (typeof ResizeObserver === 'undefined') return undefined
+    const observer = new ResizeObserver(note)
+    observer.observe(popup)
+    return () => observer.disconnect()
+  }, [first, snapped, report])
+  // A closed sheet forgets it: the next open measures its content again.
+  useIsomorphicLayoutEffect(() => () => report('unknown'), [report])
+  return <span ref={mark} hidden />
 }
 
 /**
@@ -274,17 +372,25 @@ function SheetFrame({
   children,
   ...props
 }: SheetFrameProps): ReactElement {
-  const { placement, snapped } = useContext(FrameContext)
+  const { placement, snapped, first, modeless, report } = useContext(FrameContext)
   const right = placement === 'right'
   return (
     <ControlScopeProvider value={null}>
       <BaseDrawer.VirtualKeyboardProvider>
         <BaseDrawer.Portal>
-          <BaseDrawer.Backdrop
-            forceRender
-            className="fixed inset-0 z-50 bg-scrim transition-opacity duration-slow data-starting-style:opacity-0 data-ending-style:opacity-0 motion-reduce:transition-none"
-          />
-          <BaseDrawer.Viewport className="fixed inset-0 z-50 flex overflow-hidden data-ending-style:pointer-events-none">
+          {!modeless && (
+            <BaseDrawer.Backdrop
+              forceRender
+              className="fixed inset-0 z-50 bg-scrim transition-opacity duration-slow data-starting-style:opacity-0 data-ending-style:opacity-0 motion-reduce:transition-none"
+            />
+          )}
+          <BaseDrawer.Viewport
+            className={cn(
+              'fixed inset-0 z-50 flex overflow-hidden data-ending-style:pointer-events-none',
+              // A drawer that leaves the page live lets the taps outside its popup through.
+              modeless && 'pointer-events-none',
+            )}
+          >
             <BaseDrawer.Popup
               {...props}
               ref={ref}
@@ -294,9 +400,11 @@ function SheetFrame({
                 sheetContentVariants({ placement }),
                 snapped &&
                   'h-[90dvh] max-h-none pb-[calc(env(safe-area-inset-bottom)+var(--drawer-snap-point-offset,0px))] translate-y-[calc(var(--drawer-snap-point-offset,0px)+var(--drawer-swipe-movement-y,0px))]',
+                modeless && 'pointer-events-auto',
                 className,
               )}
             >
+              {!right && <PopupWatch first={first} snapped={snapped} report={report} />}
               {!right && GRABBER}
               {handle}
               {children}

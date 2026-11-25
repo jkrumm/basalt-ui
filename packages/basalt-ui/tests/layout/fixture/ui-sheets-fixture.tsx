@@ -59,14 +59,23 @@ function Controlled(): ReactElement {
   )
 }
 
-function DockProbe(): ReactElement {
+function DockProbe({
+  lines = 1,
+  label = 'Open dock',
+}: {
+  lines?: number
+  label?: string
+}): ReactElement {
   const [open, setOpen] = useState(false)
   return (
     <>
-      <Button onClick={() => setOpen(true)}>Open dock</Button>
+      <Button onClick={() => setOpen(true)}>{label}</Button>
       {open && (
         <Dock title="Issue 12" onClose={() => setOpen(false)}>
-          <p>Record body</p>
+          <Button variant="ghost">Action</Button>
+          {Array.from({ length: lines }, (_, i) => (
+            <p key={i}>Record body {i + 1}</p>
+          ))}
         </Dock>
       )}
     </>
@@ -166,6 +175,9 @@ function Fixture(): ReactElement {
       </div>
       <div className={ROW} data-testid="us-dock">
         <DockProbe />
+      </div>
+      <div className={ROW} data-testid="us-dock-tall">
+        <DockProbe lines={60} label="Open tall dock" />
       </div>
       <div className={ROW} data-testid="us-nested">
         <Sheet>
