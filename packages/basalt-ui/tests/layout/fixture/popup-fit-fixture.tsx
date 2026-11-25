@@ -216,6 +216,17 @@ function Case({ kind }: { kind: string }): ReactElement {
           </Button>
         </Tooltip>
       )
+    case 'tooltip-unbroken':
+      return (
+        <Tooltip
+          label={'/a/very/long/unbroken/path/that/has/no/space/to/wrap/at/all/'.repeat(2)}
+          delay={0}
+        >
+          <Button data-testid="pf-trigger" className="size-full">
+            Tip
+          </Button>
+        </Tooltip>
+      )
     case 'preview-card':
       return (
         <PreviewCard>

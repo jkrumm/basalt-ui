@@ -49,7 +49,7 @@ const POSITIONS = [
 ] as const
 
 type Open = 'click' | 'focus' | 'hover' | 'type'
-type Kind = { name: string; open: Open; sub?: string; minWidth?: number }
+type Kind = { name: string; open: Open; sub?: string; minWidth?: number; gutter?: number }
 const KINDS: Kind[] = [
   { name: 'popover', open: 'click' },
   { name: 'appearance', open: 'click' },
@@ -59,13 +59,15 @@ const KINDS: Kind[] = [
   { name: 'menu', open: 'click' },
   { name: 'menu-sub', open: 'click', sub: '[data-slot="menu-sub"]' },
   { name: 'context-menu', open: 'click' },
-  { name: 'select', open: 'click' },
+  // A Select popup is item-aligned over its trigger, which Base UI keeps 5 px from the edge.
+  { name: 'select', open: 'click', gutter: 5 },
   { name: 'select-search', open: 'click' },
   { name: 'combobox', open: 'click' },
   { name: 'autocomplete', open: 'type' },
   { name: 'date-picker', open: 'click' },
   { name: 'model-picker', open: 'click' },
   { name: 'tooltip', open: 'focus' },
+  { name: 'tooltip-unbroken', open: 'focus' },
   { name: 'preview-card', open: 'hover' },
   { name: 'info-hint', open: 'click' },
 ]
@@ -136,8 +138,8 @@ async function openPopup(page: LayoutPage, kind: Kind, pos: string): Promise<voi
 }
 
 /** What is wrong with every open popup: outside the window, a sideways scroll, a scroll past the window. */
-async function offenders(page: LayoutPage): Promise<string[]> {
-  return page.raw.evaluate(() => {
+async function offenders(page: LayoutPage, gutter = 8): Promise<string[]> {
+  return page.raw.evaluate((gutter) => {
     const problems: string[] = []
     const vw = window.innerWidth
     const vh = window.innerHeight
@@ -152,6 +154,14 @@ async function offenders(page: LayoutPage): Promise<string[]> {
       const box = `[${Math.round(r.left)}, ${Math.round(r.top)}, ${Math.round(r.right)}, ${Math.round(r.bottom)}] in ${vw}x${vh}`
       if (r.left < -0.5 || r.right > vw + 0.5 || r.top < -0.5 || r.bottom > vh + 0.5)
         problems.push(`${name} leaves the window ${box}`)
+      // The shared positioner keeps an 8 px gutter to every edge (core/popup-position).
+      else if (
+        r.left < gutter - 0.5 ||
+        r.right > vw - gutter + 0.5 ||
+        r.top < gutter - 0.5 ||
+        r.bottom > vh - gutter + 0.5
+      )
+        problems.push(`${name} is closer than ${gutter} px to the window edge ${box}`)
       if (el.scrollWidth > el.clientWidth + 1)
         problems.push(`${name} scrolls sideways (${el.scrollWidth} > ${el.clientWidth})`)
     }
@@ -164,7 +174,7 @@ async function offenders(page: LayoutPage): Promise<string[]> {
       problems.push(`the page scrolls sideways (${doc.scrollWidth} > ${vw}): ${wide.join(', ')}`)
     }
     return problems
-  })
+  }, gutter)
 }
 
 layout('every popup fits the window', () => {
@@ -177,7 +187,8 @@ layout('every popup fits the window', () => {
           for (const pos of POSITIONS) {
             try {
               await openPopup(page, kind, pos)
-              for (const problem of await offenders(page)) failures.push(`${pos}: ${problem}`)
+              for (const problem of await offenders(page, kind.gutter))
+                failures.push(`${pos}: ${problem}`)
             } catch (error) {
               failures.push(`${pos}: ${String(error)}`)
             }
