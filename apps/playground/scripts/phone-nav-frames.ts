@@ -87,7 +87,7 @@ async function openSection(page: Page, index: number): Promise<void> {
 }
 
 async function shoot(page: Page, state: State, origin: string): Promise<void> {
-  await page.goto(`${origin}${state === 'keyboard' ? '/kit/mobile-nav' : '/'}`)
+  await page.goto(`${origin}${state === 'keyboard' ? '/kit/forms/inputs' : '/'}`)
   await page.waitForSelector('[data-slot="shell-main"]')
   await settle(page)
   if (state === 'short' || state === 'switch') await openSection(page, 0)
@@ -113,7 +113,7 @@ async function shoot(page: Page, state: State, origin: string): Promise<void> {
     await settle(page)
   }
   if (state === 'keyboard') {
-    const field = page.locator('input[aria-label="Try the keyboard"]')
+    const field = page.locator('input[autocomplete="email"]').first()
     await field.scrollIntoViewIfNeeded()
     await field.focus()
     const size = page.viewportSize()

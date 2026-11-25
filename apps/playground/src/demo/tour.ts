@@ -49,8 +49,4 @@ export const TOUR: Readonly<Record<string, TourStop>> = {
     line: 'One list loading, empty and failed; the connection and the age of the data; overlays.',
     parts: 'shotState, EmptyState, ConnectionIndicator, RefreshButton, OverlayHost, StepRail',
   },
-  phone: {
-    line: 'Every stop at 390 wide: one slot per nav section, a short drawer per tap, More for the sidebar.',
-    parts: 'the section bar, its drawer, More, the keyboard inset',
-  },
 }

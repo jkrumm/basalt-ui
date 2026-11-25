@@ -10,7 +10,8 @@
  * Destinations: the Tour first (the landing page and its stops, in order; `demo/tour.ts` holds each stop's line),
  * then the Reference pages, the Kit (one page per capability), its Forms group and the routed recipes,
  * each folded until opened. Trial builds and test fixtures have no entry (apps/playground/AGENTS.md);
- * /kit/avatars has none either, to hold the 40-entry cap, and is reached by URL.
+ * /kit/avatars has none either, to hold the 40-entry cap, and is reached by URL. /sign-in and /register
+ * are drawn outside the shell (`auth/stub.ts` lists them) and are linked from the landing page.
  * Settings is the shell's `settings` menu, not a nav item.
  */
 import { linkOptions } from '@tanstack/react-router'
@@ -18,7 +19,6 @@ import { defineNav } from 'basalt-ui/router'
 import {
   Boxes,
   CalendarDays,
-  ChartColumn as Chart,
   ChartLine,
   Compass,
   Factory,
@@ -33,7 +33,6 @@ import {
   PanelLeft as Layout,
   PanelRight as Panel,
   SlidersHorizontal as Sliders,
-  Smartphone,
   Table,
   TextCursorInput as Form,
   Workflow,
@@ -129,13 +128,6 @@ export const NAV = defineNav({
           icon: Layers,
           mobile: 'more',
           link: linkOptions({ to: '/kit/states' }),
-        },
-        {
-          id: 'phone',
-          label: 'Phone',
-          icon: Smartphone,
-          mobile: 'more',
-          link: linkOptions({ to: '/kit/mobile-nav' }),
         },
       ],
     },
@@ -354,13 +346,6 @@ export const NAV = defineNav({
           icon: Table,
           mobile: 'more',
           link: linkOptions({ to: '/recipes/saved-views' }),
-        },
-        {
-          id: 'recipe-two-pane',
-          label: 'Two panes',
-          icon: Chart,
-          mobile: 'more',
-          link: linkOptions({ to: '/recipes/two-pane' }),
         },
       ],
     },

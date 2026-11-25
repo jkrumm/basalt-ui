@@ -87,7 +87,6 @@ describe('the nav', () => {
       '/charts',
       '/kit/content',
       '/kit/states',
-      '/kit/mobile-nav',
     ])
     expect(NAV.sections.map((s) => s.id)).toEqual([
       'tour',
@@ -126,11 +125,7 @@ describe('the nav', () => {
       '/kit/forms/dates',
       '/kit/forms/buttons',
     ])
-    expect(navPaths('recipes')).toEqual([
-      '/recipes/view-switch',
-      '/recipes/saved-views',
-      '/recipes/two-pane',
-    ])
+    expect(navPaths('recipes')).toEqual(['/recipes/view-switch', '/recipes/saved-views'])
   })
 })
 
@@ -255,12 +250,6 @@ describe('the routed recipes', () => {
   test('saved views', async () => {
     mount('/recipes/saved-views')
     expect(await screen.findByText(run)).toBeDefined()
-  })
-
-  test('two panes', async () => {
-    mount('/recipes/two-pane')
-    expect(await screen.findByRole('img', { name: 'Price' })).toBeDefined()
-    expect(screen.getByRole('img', { name: 'Momentum' })).toBeDefined()
   })
 })
 
