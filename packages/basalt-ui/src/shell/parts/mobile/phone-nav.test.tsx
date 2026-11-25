@@ -70,6 +70,9 @@ const BADGES = {
 
 type Happy = { happyDOM: { setViewport(size: { width: number; height: number }): void } }
 
+/** The router of the last mount: what a tap navigated to is read off it. */
+let mounted: { state: { location: { pathname: string } } } | null = null
+
 async function mount(variant: PhoneNavProps['variant']): Promise<void> {
   // A phone: the More sidebar is drawn only below 840 px, where the rail is not on screen.
   ;(window as unknown as Happy).happyDOM.setViewport({ width: 390, height: 844 })
@@ -98,6 +101,7 @@ async function mount(variant: PhoneNavProps['variant']): Promise<void> {
     routeTree: rootRoute.addChildren([index, splat]),
     history: createMemoryHistory({ initialEntries: ['/home'] }),
   })
+  mounted = router
   render(<RouterProvider router={router} />)
   await waitFor(() => expect(router.state.status).toBe('idle'))
 }
@@ -254,6 +258,40 @@ describe.each([['drawer', 'shell-phone-sheet']] as const)('section bar (%s)', (v
     fireEvent.keyDown(document, { key: 'Escape' })
     await waitFor(() => expect(sidebar.hasAttribute('inert')).toBe(true))
     expect(slot('shell')?.hasAttribute('data-phone-sidebar')).toBe(false)
+  })
+
+  test('a tap on a link in More navigates and closes it, the current route included', async () => {
+    await mount(variant)
+    await found('shell-phone-bar')
+    const sidebar = await found('shell-phone-sidebar')
+    const more = await found('shell-phone-more')
+    const isOpen = (): boolean => !sidebar.hasAttribute('inert')
+    const link = (): HTMLAnchorElement => {
+      const el = sidebar.querySelector<HTMLAnchorElement>('a[href="/older"]')
+      if (el === null) throw new Error('no link to /older in More')
+      return el
+    }
+    fireEvent.click(more)
+    await waitFor(() => expect(isOpen()).toBe(true))
+    fireEvent.click(link())
+    await waitFor(() => expect(isOpen()).toBe(false))
+    await waitFor(() => expect(mounted?.state.location.pathname).toBe('/older'))
+    fireEvent.click(more)
+    await waitFor(() => expect(isOpen()).toBe(true))
+    fireEvent.click(link())
+    await waitFor(() => expect(isOpen()).toBe(false))
+  })
+
+  test('the back gesture closes More', async () => {
+    await mount(variant)
+    await found('shell-phone-bar')
+    const sidebar = await found('shell-phone-sidebar')
+    fireEvent.click(await found('shell-phone-more'))
+    await waitFor(() => expect(sidebar.hasAttribute('inert')).toBe(false))
+    act(() => {
+      window.dispatchEvent(new PopStateEvent('popstate'))
+    })
+    await waitFor(() => expect(sidebar.hasAttribute('inert')).toBe(true))
   })
 
   test('a focused text field moves the bar out of the way, and blur brings it back', async () => {

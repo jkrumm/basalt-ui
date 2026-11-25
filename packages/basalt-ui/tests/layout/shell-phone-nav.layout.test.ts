@@ -3,7 +3,8 @@
  * ones happy-dom cannot see: every target a thumb can hit is at least 44x44, the drawer rests at a
  * short snap in the bottom half of the screen and a tall one at most 85 % of it, a drag moves it
  * between them and closes it, its list scrolls at the tall snap and hands the gesture back at the top,
- * nothing a reader must reach sits under a home indicator, More's sidebar holds the same floors, search
+ * nothing a reader must reach sits under a home indicator, More's sidebar uses the desktop rail's row
+ * height and a tap on any of its links navigates and closes it, search
  * is in thumb reach and a focused text field is never under the bar. Each at 390x844 and 430x932.
  *
  * The home indicator is `--shell-safe-bottom: 34px` on `<html>` (the fixture's `safeBottom`): the
@@ -257,7 +258,7 @@ for (const viewport of [PHONE, PHONE_430] as const) {
       expect(rail).toBe(false)
     })
 
-    test("More: the app slides aside, the sidebar's targets are 44 px and clear the indicator", async () => {
+    test("More: the app slides aside, the sidebar's rows are the desktop rail's and clear the indicator", async () => {
       const p = await openFixture(spec('drawer'), viewport)
       await p.waitFor(MORE)
       await p.tap(MORE)
@@ -267,11 +268,42 @@ for (const viewport of [PHONE, PHONE_430] as const) {
       expect(shell.box.left).toBeGreaterThanOrEqual(sidebar.box.right - 0.5)
       const found = await targets(p, slot('shell-phone-sidebar'))
       expect(found.length).toBeGreaterThan(10)
-      expect(small(found)).toEqual([])
+      // The rail's own row height (32 px), not the touch floor; the search at its foot keeps the floor.
+      const rows = found.filter((t) => t.name !== 'Search')
+      expect(rows.filter((t) => t.height > 36)).toEqual([])
+      expect(small(found.filter((t) => t.name === 'Search'))).toEqual([])
       // The rail ends (its footer of settings and account last) above the indicator; what is
       // past its scroll viewport's fold is scrolled to, not covered.
       const rail = await p.box('rail', `${slot('shell-phone-sidebar')} ${slot('shell-rail')}`)
       expect(rail.box.bottom).toBeLessThanOrEqual(viewport.height - INSET + 0.5)
+    })
+
+    test('a tap on a link in More navigates and closes it, the current route included', async () => {
+      const p = await openFixture(spec('drawer'), viewport)
+      const sidebar = slot('shell-phone-sidebar')
+      const isOpen = (): Promise<boolean> =>
+        p.raw.evaluate(
+          (sel) =>
+            document.querySelector(sel)?.hasAttribute('inert') === false &&
+            document.querySelector('[data-slot="shell"]')?.hasAttribute('data-phone-sidebar') ===
+              true,
+          sidebar,
+        )
+      await p.waitFor(MORE)
+      await p.tap(MORE)
+      await p.settle()
+      expect(await isOpen()).toBe(true)
+      await p.tap(`${sidebar} a[href$="/cards"]`)
+      await p.raw.waitForTimeout(800)
+      expect((await p.navigations()).at(-1)).toBe('/cards')
+      expect(await isOpen()).toBe(false)
+
+      await p.tap(MORE)
+      await p.settle()
+      expect(await isOpen()).toBe(true)
+      await p.tap(`${sidebar} a[href$="/cards"]`)
+      await p.raw.waitForTimeout(800)
+      expect(await isOpen()).toBe(false)
     })
 
     test('a focused text field is never under the bar', async () => {

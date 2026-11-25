@@ -6,7 +6,9 @@
  * mid-motion reverses it from where it is. The shifted app is one target: a tap returns it, and a
  * drag to the left follows the finger and returns it once it passes a quarter of the rail's width.
  *
- * The rail is the desktop part itself, its rows raised to the 44 px touch floor by this wrapper.
+ * The rail is the desktop part itself, at the desktop's row height and paddings. A tap on any link in
+ * it navigates and returns the app in the same motion, one on the current route included; Escape and
+ * the back gesture (a `popstate`) return it too.
  */
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import type { PointerEvent, ReactElement } from 'react'
@@ -90,6 +92,26 @@ export function PhoneSidebar({
     return () => document.removeEventListener('keydown', onKey)
   }, [open, onOpenChange])
 
+  // The back gesture steps the history back: More goes with it rather than staying over the old page.
+  useEffect(() => {
+    if (!open) return undefined
+    const onBack = (): void => onOpenChange(false)
+    window.addEventListener('popstate', onBack)
+    return () => window.removeEventListener('popstate', onBack)
+  }, [open, onOpenChange])
+
+  // A link in the rail navigates through its own router anchor; this only returns the app, so the
+  // current route's own link closes More too. On the document, like Escape: the panel is a landmark.
+  useEffect(() => {
+    if (!open) return undefined
+    const onClick = (event: MouseEvent): void => {
+      const link = event.target instanceof Element ? event.target.closest('a[href]') : null
+      if (link !== null && panel.current?.contains(link) === true) onOpenChange(false)
+    }
+    document.addEventListener('click', onClick)
+    return () => document.removeEventListener('click', onClick)
+  }, [open, onOpenChange])
+
   const width = (): number => panel.current?.offsetWidth ?? 0
   const onPointerDown = (event: PointerEvent<HTMLDivElement>): void => {
     drag.current = { x: event.clientX, dx: 0 }
@@ -145,8 +167,6 @@ export function PhoneSidebar({
             SAFE,
             'fixed inset-y-0 start-0 z-0 flex w-[min(85vw,20rem)] flex-col gap-1 bg-background md:hidden',
             'pt-(--phone-safe-t) pb-(--phone-safe-b) ps-(--phone-safe-l)',
-            // The rail's rows are 32 px for a pointer; a thumb gets the 44 px floor.
-            '[&_a]:min-h-11 [&_button]:min-h-11 [&_button]:min-w-11',
           )}
         >
           {drawn && (
