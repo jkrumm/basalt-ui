@@ -217,7 +217,16 @@ async function guideShift(routes: readonly string[]): Promise<Record<string, num
           );
           (window as unknown as { __from: number }).__from = performance.now();
         });
-        await page.waitForTimeout(3100);
+        // The gate reads 0 only once every island has arrived: a held island still on its way proves nothing.
+        await page.waitForFunction(
+          () =>
+            document.querySelectorAll("astro-island[ssr]").length === 0 &&
+            document.querySelectorAll('[data-slot="chart-card"][data-phase="loading"]').length ===
+              0,
+          undefined,
+          { timeout: 60_000 },
+        );
+        await page.waitForTimeout(1000);
         const measured = await page.evaluate(() => (window as unknown as { __cls: number }).__cls);
         worst = Math.max(worst, measured < NOISE ? 0 : measured);
         await page.close();
