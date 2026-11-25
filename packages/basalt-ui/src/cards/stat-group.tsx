@@ -321,7 +321,7 @@ function FlushGroup({ label, message, children }: BodyProps): ReactElement {
     <div
       data-slot="stat-group"
       data-variant="flush"
-      className="@container min-w-0 overflow-clip border-b border-border [--card-edge:--spacing(5)] @max-regular:[--card-edge:--spacing(3)]"
+      className="@container min-w-0 overflow-clip border-b border-border [--card-edge:var(--page-gutter,--spacing(4))]"
     >
       {/* The explicit role is deliberate: a `fieldset` carries form semantics and a UA border. */}
       {/* oxlint-disable-next-line jsx-a11y/prefer-tag-over-role */}

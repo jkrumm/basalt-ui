@@ -49,6 +49,13 @@ export type BoardProps<C extends string, T extends { id: string; title: string }
 /** The gap between cards, px: the step a virtual row adds under its card. */
 const GAP = 10
 
+/**
+ * What every child of a column's body shares: room for a classic scrollbar on both edges (none for an
+ * overlay bar), so the header, the cards and the empty state start and end on one edge whether or not
+ * the list scrolls.
+ */
+const BODY = '[scrollbar-gutter:stable_both-edges]'
+
 /** What a column passes `VirtualList` beyond the port; a stub ignores it. */
 type ListHost = ComponentType<Parameters<VirtualLike>[0] & { className?: string }>
 
@@ -267,7 +274,12 @@ export function Board<C extends string, T extends { id: string; title: string }>
                 if (cards.length === 0) return null
                 if (virtual === undefined)
                   return (
-                    <ol className="m-0 flex list-none flex-col gap-2.5 p-0">
+                    <ol
+                      className={cn(
+                        'm-0 flex list-none flex-col gap-2.5 overflow-hidden p-0',
+                        BODY,
+                      )}
+                    >
                       {cards.map((item, index) => (
                         <li key={item.id}>{renderAt(index)}</li>
                       ))}
@@ -280,7 +292,7 @@ export function Board<C extends string, T extends { id: string; title: string }>
                 } as CSSProperties
                 return (
                   <List
-                    className="max-h-160"
+                    className={cn('max-h-160', BODY)}
                     count={cards.length}
                     estimateSize={() => virtual.cardHeight + GAP}
                     getItemKey={(i) => cards[i]!.id}
@@ -343,7 +355,9 @@ function BoardColumn<C extends string>({
       data-shown={shown ? '' : undefined}
       className="hidden w-full min-w-0 shrink-0 flex-col gap-2.5 rounded-card border border-transparent bg-secondary p-2.5 transition-colors duration-fast data-over:border-brand data-over:bg-accent data-shown:flex @regular:flex @regular:w-72"
     >
-      <header className="flex h-9 min-w-0 items-center justify-between gap-2 px-1">
+      <header
+        className={cn('flex h-9 min-w-0 items-center justify-between gap-2 overflow-hidden', BODY)}
+      >
         <span className="flex min-w-0 items-center gap-2">
           <h3
             className={cn(
@@ -362,12 +376,14 @@ function BoardColumn<C extends string>({
         )}
       </header>
       {count === 0 ? (
-        <p
-          data-slot="board-empty"
-          className="m-0 flex h-24 items-center justify-center rounded-inset border border-dashed border-line text-xs text-muted-foreground"
-        >
-          {empty}
-        </p>
+        <div className={cn('overflow-hidden', BODY)}>
+          <p
+            data-slot="board-empty"
+            className="m-0 flex h-24 items-center justify-center rounded-inset border border-dashed border-line text-xs text-muted-foreground"
+          >
+            {empty}
+          </p>
+        </div>
       ) : (
         children
       )}

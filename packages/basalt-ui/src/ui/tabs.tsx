@@ -104,7 +104,7 @@ export function TabsList({ className, ...props }: TabsListProps): ReactElement {
         look === 'segment' && 'gap-0.5 rounded-ctrl bg-accent p-0.5 [scrollbar-width:none]',
         look === 'pill' && 'gap-1 [scrollbar-width:none]',
         look === 'line' &&
-          'gap-1 border-b border-border data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-stretch data-[orientation=vertical]:overflow-x-visible data-[orientation=vertical]:border-r data-[orientation=vertical]:border-b-0',
+          'gap-1 shadow-[inset_0_-1px_0_var(--basalt-hairline)] data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-stretch data-[orientation=vertical]:overflow-x-visible data-[orientation=vertical]:border-r data-[orientation=vertical]:shadow-none',
         className,
       )}
     />
@@ -160,7 +160,7 @@ export function TabsTrigger({
         look === 'pill' &&
           'h-(--tabs-h) justify-center rounded-ctrl border border-transparent px-2.5 text-sm hover:bg-accent data-active:border-border data-active:bg-accent forced-colors:data-active:border-current',
         look === 'line' &&
-          'h-(--tabs-h) -mb-px border-b-2 border-transparent data-active:border-brand data-[orientation=vertical]:mb-0 data-[orientation=vertical]:justify-start data-[orientation=vertical]:rounded-ctrl data-[orientation=vertical]:border-b-0 data-[orientation=vertical]:data-active:bg-selected',
+          'h-(--tabs-h) border-b-2 border-transparent data-active:border-brand data-[orientation=vertical]:justify-start data-[orientation=vertical]:rounded-ctrl data-[orientation=vertical]:border-b-0 data-[orientation=vertical]:data-active:bg-selected',
         className,
       )}
     >

@@ -6,7 +6,9 @@ import { cn } from '../core/cn'
 
 /**
  * The `ScrollArea` cva table: a native scroller with a thin scrollbar in the line token. `orientation`
- * is the axis it scrolls on; the other axis is clipped. It is focusable only while it scrolls (see
+ * is the axis it scrolls on; the other axis is clipped. A vertical bar has its room reserved
+ * (`scrollbar-gutter: stable`), so content keeps one width whether or not the bar shows; content inset from
+ * its host takes `[scrollbar-gutter:stable_both-edges]` in `className`, so the left and right inset match. It is focusable only while it scrolls (see
  * `ScrollArea`).
  *
  * @example
@@ -17,9 +19,9 @@ export const scrollAreaVariants = cva(
   {
     variants: {
       orientation: {
-        vertical: 'overflow-x-hidden overflow-y-auto',
+        vertical: 'overflow-x-hidden overflow-y-auto [scrollbar-gutter:stable]',
         horizontal: 'overflow-x-auto overflow-y-hidden',
-        both: 'overflow-auto',
+        both: 'overflow-auto [scrollbar-gutter:stable]',
       },
     },
     defaultVariants: { orientation: 'vertical' },
