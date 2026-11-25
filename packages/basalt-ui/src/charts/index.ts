@@ -1,7 +1,7 @@
 /**
  * `basalt-ui/charts` — the chart layer on TanStack Charts (`docs/v3/concepts/charts-cards-kanban.md`).
  * The rung (`CartesianChart`), the kinds (`Lines`, `Bars`, `Sparkline`,
- * `Heatmap`, `BandStrip`), the card (`ChartCard`), the shared cursor (`chartCursor`) and the geometry seam (`useChartFocus`, `chartLabels`). Engine marks for
+ * `Heatmap`, `BandStrip`, `Waterfall`, `RangeNavigator`), the card (`ChartCard`), the shared cursor (`chartCursor`) and the geometry seam (`useChartFocus`, `chartLabels`). Engine marks for
  * `CartesianChart`'s `marks` are imported from the allowed `@tanstack/charts/*` subpaths directly;
  * tokens come from `basalt-ui/tokens`, formatters from the root `basalt-ui` entry. Nothing here re-exports
  * either, or the engine.
@@ -24,6 +24,14 @@ export {
   type IntervalTrackProps,
   type IntervalX,
 } from './parts/interval-track'
+export { Waterfall, type WaterfallProps } from './parts/waterfall'
+export {
+  RangeNavigator,
+  type ChartWindow,
+  type ChartWindowSpans,
+  type RangeNavigatorProps,
+  type WindowHandle,
+} from './parts/range-navigator'
 export { ChartCard } from './parts/chart-card'
 export { chartCursor } from './core/cursor'
 export {
@@ -57,6 +65,7 @@ export type {
 export type {
   CartesianChartProps,
   ChartCardProps,
+  ChartEvent,
   ChartFigure,
   ChartPane,
   ChartPlot,
@@ -64,6 +73,7 @@ export type {
   ChartSelection,
   ChartTooltipConfig,
   ChartZone,
+  ColorBy,
   CurveName,
   CustomMarks,
   ChartMarks,

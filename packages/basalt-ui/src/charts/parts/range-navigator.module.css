@@ -1,0 +1,37 @@
+/* The navigator's preset row: the chart layer's own segmented buttons, since `./charts` reaches no
+ * UI framework (scripts/check-budgets, the peer classes). Sized like a small `Segmented`. */
+.presets {
+  display: inline-flex;
+  align-self: flex-start;
+  gap: 2px;
+  margin: 0;
+  min-inline-size: 0;
+  padding: 2px;
+  border: 1px solid var(--basalt-hairline);
+  border-radius: 6px;
+}
+
+.preset {
+  all: unset;
+  padding: 1px 8px;
+  border-radius: 4px;
+  color: var(--basalt-ink-muted);
+  font-size: 12px;
+  line-height: 18px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.preset:hover {
+  color: var(--basalt-ink);
+}
+
+.preset[aria-pressed='true'] {
+  background: color-mix(in oklab, var(--basalt-brand) 14%, transparent);
+  color: var(--basalt-ink);
+}
+
+.preset:focus-visible {
+  outline: 2px solid var(--basalt-brand);
+  outline-offset: 1px;
+}
