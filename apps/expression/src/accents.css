@@ -2,7 +2,7 @@
 /* basalt-ui 2.29.0 — `basalt-ui tokens:css --accents violet,rose,orange,green,teal --out src/accents.css` */
 :root[data-accent='violet']:not([data-theme]),
 :root[data-accent='violet'][data-theme='light'] {
-  --basalt-brand: #8452cf;
+  --basalt-brand: #8351cd;
   --basalt-brand-fill: #8856d2;
   --basalt-info: #7343bd;
   --basalt-chart-1: #8856d2;
@@ -48,12 +48,12 @@
 }
 :root[data-accent='rose']:not([data-theme]),
 :root[data-accent='rose'][data-theme='light'] {
-  --basalt-brand: #c0414e;
+  --basalt-brand: #bd3f4c;
   --basalt-brand-fill: #c34551;
   --basalt-info: #ad2f40;
   --basalt-chart-1: #c34551;
   --basalt-chart-2: #784916;
-  --basalt-chart-3: #55968d;
+  --basalt-chart-3: #004a44;
   --basalt-chart-4: #9e579c;
   --basalt-chart-5: #003e02;
   --basalt-seq-1: #ffd9d8;
@@ -100,7 +100,7 @@
 }
 :root[data-accent='orange']:not([data-theme]),
 :root[data-accent='orange'][data-theme='light'] {
-  --basalt-brand: #b54f1f;
+  --basalt-brand: #b34d1e;
   --basalt-brand-fill: #b95222;
   --basalt-info: #a23f0f;
   --basalt-chart-1: #b95222;
@@ -152,7 +152,7 @@
 }
 :root[data-accent='green']:not([data-theme]),
 :root[data-accent='green'][data-theme='light'] {
-  --basalt-brand: #2a7d40;
+  --basalt-brand: #287b3e;
   --basalt-brand-fill: #2d8043;
   --basalt-info: #146d31;
   --basalt-chart-1: #2d8043;
@@ -204,7 +204,7 @@
 }
 :root[data-accent='teal']:not([data-theme]),
 :root[data-accent='teal'][data-theme='light'] {
-  --basalt-brand: #1d7b71;
+  --basalt-brand: #1b7970;
   --basalt-brand-fill: #217e74;
   --basalt-info: #006b61;
   --basalt-chart-1: #217e74;
