@@ -256,7 +256,10 @@ export function KanbanCard<C extends string>(props: KanbanCardProps<C>): ReactEl
       data-dragging={move !== 'static' && move.dragging === true ? '' : undefined}
       className="group/kanban @container h-full min-w-0 data-dragging:opacity-40"
     >
-      <Card flush className="relative h-full in-data-[slot=board-column]:rounded-inset">
+      <Card
+        flush
+        className="relative h-full group-data-popup-open/kanban:bg-accent in-data-[slot=board-column]:rounded-inset"
+      >
         {href !== undefined && (
           <AppLink
             data-slot="kanban-target"

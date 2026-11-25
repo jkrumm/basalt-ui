@@ -29,7 +29,7 @@ export function formatValue(value: number | string | null): string | null {
 
 /** The card surface (`cardVariants({ flush: true })` of `ui/card`, which this closure cannot import). */
 export const SURFACE =
-  'flex flex-col overflow-clip rounded-card bg-card p-0 text-foreground shadow-card [--card-edge:1rem] @max-regular:[--card-edge:0.75rem] [--card-gutter:calc(var(--radius-card)_-_var(--radius-inset))]'
+  'flex flex-col overflow-clip rounded-card bg-card p-0 text-foreground shadow-card data-popup-open:bg-accent [--card-edge:1rem] @max-regular:[--card-edge:0.75rem] [--card-gutter:calc(var(--radius-card)_-_var(--radius-inset))]'
 
 const identOf = (id: string): string => id.replace(/[^\w-]/g, '')
 
