@@ -128,6 +128,15 @@ describe('compileCartesian', () => {
     })
     expect(isRich(plain)).toBe(false)
     expect(isRich(compileCartesian<Row, Date>({ ...base, tooltip: false }))).toBe(false)
+    // Extra rows may carry a status, which only the rich body draws.
+    const rows = compileCartesian<Row, Date>({
+      ...base,
+      series: [base.series[0] as ChartSeries<Row>],
+      tooltip: {
+        rows: () => [{ label: 'Budget', value: '120', status: { tone: 'bad', label: 'over' } }],
+      },
+    })
+    expect(isRich(rows)).toBe(true)
   })
 })
 

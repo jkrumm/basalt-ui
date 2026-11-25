@@ -97,11 +97,12 @@ function sideDomain<D>(props: SeamProps<D>, side: 'left' | 'right'): Extent | nu
   const given = cfg?.domain
   // A tuple is applied by `toEngineSpec` already; nothing given leaves the engine's auto domain.
   if (given === undefined || Array.isArray(given)) return null
-  const onSide = props.series.filter((s) => (s.axis === 'right') === (side === 'right'))
-  // A bar or an area stands on zero: withLogY draws such a chart linear, so its domain is the linear one.
+  // A bar or an area stands on zero: withLogY draws such a chart linear, so its domain is the linear
+  // one. withLogY refuses on a bar or area anywhere in the chart, withLogY2 on a right-axis one.
+  const refusers = side === 'left' ? props.series : props.series.filter((s) => s.axis === 'right')
   const log =
     cfg?.scale === 'log' &&
-    !onSide.some((s) => s.mark === 'bar' || (s.mark === 'line' && s.area !== undefined))
+    !refusers.some((s) => s.mark === 'bar' || (s.mark === 'line' && s.area !== undefined))
   const extent = sideExtent(props, side, log)
   if (extent === null) return null
   const domain = typeof given === 'function' ? given(extent) : boundedDomain(extent, given, log)

@@ -99,7 +99,10 @@ export type IntervalTrackProps<
     /** `false` hides the legend. */
     legend?: false | undefined
     /** Rows after the span row (a status, an owner). `false` turns the tooltip off. */
-    tooltip?: false | { rows?: ((d: T) => readonly ChartTooltipRow[]) | undefined } | undefined
+    tooltip?:
+      | false
+      | { rows?: ((d: T) => readonly Omit<ChartTooltipRow, 'status'>[]) | undefined }
+      | undefined
     /**
      * `useChartFocus(data, …)`: pointing at a span or stepping with the arrow keys focuses it, it takes a
      * ring (a lane span also lifts one tone) while every other span keeps its paint, and `focus.readout` drives a card
