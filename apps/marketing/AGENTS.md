@@ -20,6 +20,7 @@ Before changing a page, component, island, layout or guide under `src/`, Read `s
 bun run build                                  # astro build (needs packages/basalt-ui built first)
 bun run typecheck                              # astro check, also part of the root typecheck
 bun run measure -- --check [--browser]         # site-budgets.json: zero JS on static pages, island cost, CSS, LCP, CLS
+bun scripts/docs-palette.ts                    # every Starlight / Expressive Code color variable in dist resolves to --basalt-*
 ```
 
 `site-budgets.json` records the measured numbers as budgets; raise one only with the reason in the
