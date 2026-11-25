@@ -154,7 +154,7 @@ export function TabsTrigger({
       {...props}
       data-slot="tabs-trigger"
       className={cn(
-        'relative inline-flex shrink-0 cursor-pointer items-center gap-1.5 px-3 font-medium whitespace-nowrap text-muted-foreground select-none focus-ring focus-visible:-outline-offset-2 transition-colors hover:text-foreground data-active:text-foreground data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:min-h-11 motion-reduce:transition-none',
+        'relative inline-flex shrink-0 items-center gap-1.5 px-3 font-medium whitespace-nowrap text-muted-foreground select-none focus-ring focus-visible:-outline-offset-2 transition-colors hover:text-foreground data-active:text-foreground data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:min-h-11 motion-reduce:transition-none',
         look === 'segment' &&
           'h-[calc(var(--tabs-h)-0.25rem)] justify-center rounded-chip data-active:bg-secondary data-active:shadow-raised forced-colors:border forced-colors:border-current forced-colors:data-active:border-2',
         look === 'pill' &&

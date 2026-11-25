@@ -54,7 +54,7 @@ export const selectVariants = cva('relative block w-full min-w-0')
  * selectTriggerVariants({ size: 'sm' })
  */
 export const selectTriggerVariants = cva(
-  'flex w-full min-w-0 cursor-pointer items-center justify-between gap-2 rounded-ctrl border border-input bg-background text-left text-foreground focus-ring transition-colors data-placeholder:text-faint data-readonly:cursor-default data-readonly:border-transparent data-readonly:bg-inset data-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50 pointer-coarse:text-base',
+  'flex w-full min-w-0 items-center justify-between gap-2 rounded-ctrl border border-input bg-background text-left text-foreground focus-ring transition-colors data-placeholder:text-faint data-readonly:cursor-default data-readonly:border-transparent data-readonly:bg-inset data-invalid:border-bad data-disabled:opacity-50 pointer-coarse:text-base',
   {
     variants: {
       size: {
@@ -85,7 +85,7 @@ export const selectContentVariants = cva(
  * selectItemVariants({ size: 'sm' })
  */
 export const selectItemVariants = cva(
-  'relative flex w-full cursor-default items-center rounded-chip text-left outline-none select-none data-highlighted:bg-accent active:bg-accent data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base',
+  'relative flex w-full items-center rounded-chip text-left outline-none select-none data-highlighted:bg-accent active:bg-accent data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base',
   {
     variants: {
       size: {
@@ -106,7 +106,7 @@ export const selectItemVariants = cva(
  * nativeSelectVariants({ size: 'sm' })
  */
 export const nativeSelectVariants = cva(
-  'relative block w-full min-w-0 [&_select]:w-full [&_select]:min-w-0 [&_select]:cursor-pointer [&_select]:appearance-none [&_select]:rounded-ctrl [&_select]:border [&_select]:border-input [&_select]:bg-background [&_select]:text-foreground [&_select]:focus-ring [&_select]:transition-colors [&_select]:aria-invalid:border-bad [&_select]:disabled:cursor-not-allowed [&_select]:disabled:opacity-50 [&_select]:pointer-coarse:text-base',
+  'relative block w-full min-w-0 [&_select]:w-full [&_select]:min-w-0 [&_select]:appearance-none [&_select]:rounded-ctrl [&_select]:border [&_select]:border-input [&_select]:bg-background [&_select]:text-foreground [&_select]:focus-ring [&_select]:transition-colors [&_select]:aria-invalid:border-bad [&_select]:disabled:opacity-50 [&_select]:pointer-coarse:text-base',
   {
     variants: {
       size: {

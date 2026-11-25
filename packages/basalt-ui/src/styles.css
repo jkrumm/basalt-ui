@@ -17,6 +17,7 @@
 
 /* The touch rules (the iOS input-zoom floor on a coarse pointer, `touch-action`), one file `tailwind.css` imports as well. */
 @import './css/touch.css' layer(basalt);
+@import './css/cursor.css' layer(basalt);
 
 /* Hubot Sans has no `zero` OpenType feature and its default zero is slashed, so a head-face "2026" or
  * "90 days" cannot be fixed with `font-feature-settings`. Digits come from the sans instead: this

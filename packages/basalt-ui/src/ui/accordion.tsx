@@ -87,7 +87,7 @@ export function AccordionTrigger({
         {...props}
         data-slot="accordion-trigger"
         className={cn(
-          'group flex min-h-row flex-1 cursor-pointer items-center justify-between gap-3 rounded-ctrl px-2 py-2 text-left text-sm font-medium text-foreground focus-ring transition-colors hover:bg-accent data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:min-h-11 motion-reduce:transition-none',
+          'group flex min-h-row flex-1 items-center justify-between gap-3 rounded-ctrl px-2 py-2 text-left text-sm font-medium text-foreground focus-ring transition-colors hover:bg-accent data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:min-h-11 motion-reduce:transition-none',
           className,
         )}
       >

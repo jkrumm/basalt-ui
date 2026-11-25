@@ -19,7 +19,7 @@ export const quickPicksVariants = cva('flex flex-wrap items-center gap-2 pointer
  * never rides on color alone.
  */
 const quickPickVariants = cva(
-  'relative inline-flex h-6 cursor-pointer items-center rounded-full border border-input bg-background px-3 text-xs text-foreground transition-colors select-none focus-ring after:absolute after:inset-x-0 after:top-1/2 after:h-6 after:-translate-y-1/2 pointer-coarse:after:h-11 hover:bg-accent data-checked:border-transparent data-checked:bg-primary data-checked:text-primary-foreground data-disabled:cursor-not-allowed data-disabled:opacity-50',
+  'relative inline-flex h-6 items-center rounded-full border border-input bg-background px-3 text-xs text-foreground transition-colors select-none focus-ring after:absolute after:inset-x-0 after:top-1/2 after:h-6 after:-translate-y-1/2 pointer-coarse:after:h-11 hover:bg-accent data-checked:border-transparent data-checked:bg-primary data-checked:text-primary-foreground data-disabled:opacity-50',
 )
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */

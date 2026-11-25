@@ -28,7 +28,7 @@ export const numberFieldVariants = cva(
 // The border sits outside the buttons, so the `::after` overlay reaches over it: the hit target is
 // the full row height, not the row height minus 2 px.
 const stepperVariants = cva(
-  'relative flex shrink-0 cursor-pointer items-center justify-center text-muted-foreground transition-colors select-none after:absolute after:inset-x-0 after:-inset-y-px hover:bg-accent hover:text-foreground data-disabled:cursor-not-allowed pointer-coarse:w-11',
+  'relative flex shrink-0 items-center justify-center text-muted-foreground transition-colors select-none after:absolute after:inset-x-0 after:-inset-y-px hover:bg-accent hover:text-foreground pointer-coarse:w-11',
   {
     variants: { size: { md: 'w-8', sm: 'w-6' } },
     defaultVariants: { size: 'md' },

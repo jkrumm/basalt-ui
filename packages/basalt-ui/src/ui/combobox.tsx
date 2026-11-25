@@ -88,7 +88,7 @@ export const comboboxContentVariants = cva(
  * comboboxItemVariants({ size: 'sm' })
  */
 export const comboboxItemVariants = cva(
-  'relative flex w-full cursor-default items-center rounded-chip text-left outline-none select-none data-highlighted:bg-accent active:bg-accent data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base',
+  'relative flex w-full items-center rounded-chip text-left outline-none select-none data-highlighted:bg-accent active:bg-accent data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base',
   {
     variants: {
       size: {
@@ -175,7 +175,7 @@ export const autocompleteContentVariants = cva(
  * autocompleteItemVariants()
  */
 export const autocompleteItemVariants = cva(
-  'relative flex w-full cursor-default items-center gap-2 rounded-chip px-2 py-1.5 text-sm outline-none select-none data-highlighted:bg-accent active:bg-accent data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base',
+  'relative flex w-full items-center gap-2 rounded-chip px-2 py-1.5 text-sm outline-none select-none data-highlighted:bg-accent active:bg-accent data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base',
 )
 
 /**

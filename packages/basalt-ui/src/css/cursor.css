@@ -1,0 +1,75 @@
+/*
+ * The cursor law of basalt-ui: ONE file, imported by `styles.css` and by the generated `tailwind.css` /
+ * `static.css` (all `layer(basalt)`), so every consumer gets the same rule whichever sheets it loads.
+ *
+ * Tailwind 4's preflight leaves a button on the default arrow, so what acts on a click says so here:
+ * every enabled button, link, summary, labelled control and ARIA widget role shows a pointer, a row
+ * or card that opens on click (`data-activatable`) too, and a draggable element a grab hand. Anything
+ * disabled shows `not-allowed`. A text field keeps the UA's `text` and a resize edge its own resize
+ * cursor (set where the edge is drawn). A `cursor-*` utility sits in a later layer and still wins, so a
+ * component states its cursor only where it differs from this law.
+ *
+ * `:where()` keeps the pointer rule at zero specificity; the disabled rule is one class level above it
+ * so it beats the pointer rule whichever comes first.
+ */
+:where(
+  button,
+  summary,
+  select,
+  a[href],
+  [role='button'],
+  [role='link'],
+  [role='menuitem'],
+  [role='menuitemcheckbox'],
+  [role='menuitemradio'],
+  [role='option'],
+  [role='tab'],
+  [role='checkbox'],
+  [role='radio'],
+  [role='switch'],
+  [data-activatable],
+  label:has(input, select, button, [role='checkbox'], [role='radio'], [role='switch']),
+  label[for],
+  input:is(
+    [type='checkbox'],
+    [type='radio'],
+    [type='button'],
+    [type='submit'],
+    [type='reset'],
+    [type='file'],
+    [type='range']
+  )
+) {
+  cursor: pointer;
+}
+
+:where(
+  button,
+  summary,
+  select,
+  input,
+  textarea,
+  [role='button'],
+  [role='link'],
+  [role='menuitem'],
+  [role='menuitemcheckbox'],
+  [role='menuitemradio'],
+  [role='option'],
+  [role='tab'],
+  [role='checkbox'],
+  [role='radio'],
+  [role='switch'],
+  [data-activatable],
+  label
+):is(:disabled, [aria-disabled='true'], [data-disabled], :has(:disabled, [data-disabled])) {
+  cursor: not-allowed;
+}
+
+/* A draggable element is its own handle: the grab hand at rest, the closed hand while held. */
+[draggable='true'] {
+  cursor: grab;
+}
+
+[draggable='true']:active {
+  cursor: grabbing;
+}

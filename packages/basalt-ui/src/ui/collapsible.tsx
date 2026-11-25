@@ -47,7 +47,7 @@ export function CollapsibleTrigger({ className, ...props }: CollapsibleTriggerPr
       {...props}
       data-slot="collapsible-trigger"
       className={cn(
-        'relative cursor-pointer rounded-ctrl focus-ring data-disabled:pointer-events-none data-disabled:opacity-50 after:absolute after:inset-x-0 after:top-1/2 after:h-full after:min-h-6 after:-translate-y-1/2 pointer-coarse:after:min-h-11',
+        'relative rounded-ctrl focus-ring data-disabled:pointer-events-none data-disabled:opacity-50 after:absolute after:inset-x-0 after:top-1/2 after:h-full after:min-h-6 after:-translate-y-1/2 pointer-coarse:after:min-h-11',
         className,
       )}
     />

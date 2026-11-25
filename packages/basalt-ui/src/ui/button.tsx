@@ -17,7 +17,7 @@ import { GROUPED_SMALL_BUTTON, buttonScopeClass, useControlScope } from '../core
  * buttonVariants({ variant: 'ghost', size: 'sm', shape: 'icon' }) // class string for a non-`Button` element
  */
 export const buttonVariants = cva(
-  'relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-ctrl text-sm font-medium whitespace-nowrap select-none focus-ring transition-colors data-disabled:pointer-events-none data-disabled:opacity-50 data-loading:cursor-progress',
+  'relative inline-flex shrink-0 items-center justify-center gap-1.5 rounded-ctrl text-sm font-medium whitespace-nowrap select-none focus-ring transition-colors data-disabled:pointer-events-none data-disabled:opacity-50 data-loading:cursor-progress',
   {
     variants: {
       variant: {
@@ -55,7 +55,7 @@ export const buttonVariants = cva(
  * pressableVariants({ size: 'chip' })
  */
 export const pressableVariants = cva(
-  'relative cursor-pointer focus-ring after:absolute after:inset-x-0 after:top-1/2 after:h-full after:min-h-6 after:-translate-y-1/2 pointer-coarse:after:min-h-11',
+  'relative focus-ring after:absolute after:inset-x-0 after:top-1/2 after:h-full after:min-h-6 after:-translate-y-1/2 pointer-coarse:after:min-h-11',
   {
     variants: {
       size: {
