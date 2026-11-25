@@ -88,10 +88,9 @@ describe('useKeyboardInset', () => {
     render(<Host />)
     await focus('Name')
     expect(host().hasAttribute('data-keyboard')).toBe(false)
-    expect(host().style.getPropertyValue('--basalt-keyboard-inset')).toBe('0px')
   })
 
-  test('the inset is what the visual viewport leaves of the layout viewport', async () => {
+  test('a keyboard covering the visual viewport writes no inset: the shell is never padded by it', async () => {
     Object.defineProperty(window, 'visualViewport', {
       value: {
         height: document.documentElement.clientHeight - 300,
@@ -104,6 +103,7 @@ describe('useKeyboardInset', () => {
     pointer(true)
     render(<Host />)
     await focus('Name')
-    expect(host().style.getPropertyValue('--basalt-keyboard-inset')).toBe('300px')
+    expect(host().hasAttribute('data-keyboard')).toBe(true)
+    expect(host().style.getPropertyValue('--basalt-keyboard-inset')).toBe('')
   })
 })

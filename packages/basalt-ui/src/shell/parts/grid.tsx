@@ -295,8 +295,8 @@ export function ShellGrid({
       className={cn(
         'group/shell grid h-dvh w-full grid-cols-[var(--shell-rail-w)_minmax(0,1fr)] grid-rows-[var(--shell-top-h)_minmax(0,1fr)_auto] bg-background font-sans text-foreground',
         // The device's safe areas (`viewport-fit=cover`): the frame pads top, left and right. The bottom is the
-        // tab bar's on a phone and the root's from `md`, plus what the keyboard covers (`useKeyboardInset`).
-        'pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pb-[calc(var(--shell-safe-b)+var(--basalt-keyboard-inset,0px))] pl-[env(safe-area-inset-left)] [--shell-safe-b:0px] md:[--shell-safe-b:env(safe-area-inset-bottom)]',
+        // tab bar's on a phone and the root's from `md`.
+        'pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pb-(--shell-safe-b) pl-[env(safe-area-inset-left)] [--shell-safe-b:0px] md:[--shell-safe-b:env(safe-area-inset-bottom)]',
         // One top row at every width: the brand zone over the rail and the header strip beside it (a
         // title bar spans both). Compact has no rail column, so the strip is the whole row there.
         titlebar

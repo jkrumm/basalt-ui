@@ -4,7 +4,8 @@
  * - safe areas: with non-zero insets emulated on all four sides (`Emulation.setSafeAreaInsetsOverride`)
  *   the shell pads top, left and right, the tab bar owns the bottom inset on a phone and the root owns
  *   it from `md`, and a bottom Sheet keeps its content clear of the home indicator and the notch;
- * - the keyboard: while a text field has focus under a coarse pointer the bottom bar is gone, a field
+ * - the keyboard: while a text field has focus under a coarse pointer the bottom bar is gone and nothing
+ *   else is added (no padding by the keyboard's height: iOS leaves the layout viewport alone), a field
  *   in a Sheet stays inside the visual viewport, a checkbox or a fine pointer never hides the bar;
  * - the Sheet: a grabber, a content-height rest capped at 90dvh, snap points that move it and a drag
  *   down that dismisses it.
@@ -131,6 +132,47 @@ layout('Mobile foundation — the keyboard', () => {
     await p.raw.evaluate(() => (document.activeElement as HTMLElement).blur())
     await p.raw.waitForFunction(() => !document.documentElement.hasAttribute('data-keyboard'))
     expect(await barShown(p)).toBe(true)
+  })
+
+  test('a focused field adds no block above the keyboard: the shell pads no more than before focus', async () => {
+    const p = await openFixture(specOf({ pageField: true }), PHONE)
+    // A software keyboard shrinks the VISUAL viewport only (iOS never resizes the layout viewport): fake the 336 px it covers.
+    await p.raw.evaluate((covered) => {
+      const real = window.visualViewport!
+      const fake = Object.create(real, {
+        height: { value: window.innerHeight - covered },
+        offsetTop: { value: 0 },
+      })
+      Object.defineProperty(window, 'visualViewport', { value: fake, configurable: true })
+    }, 336)
+    const read = (): Promise<{ pad: number; bottom: number; below: number }> =>
+      p.raw.evaluate((sel) => {
+        const root = document.querySelector<HTMLElement>(sel)!
+        const pad = Number.parseFloat(getComputedStyle(root).paddingBottom)
+        const rects = [...root.children].map((c) => c.getBoundingClientRect().bottom)
+        const form = document
+          .querySelector('[data-testid="field-page"]')!
+          .closest('form, main, [data-slot]')!
+        return {
+          pad,
+          bottom: Math.max(...rects),
+          below: window.innerHeight - form.getBoundingClientRect().bottom,
+        }
+      }, ROOT)
+    const before = await read()
+    await p.raw.focus('[data-testid="field-page"]')
+    await p.raw.waitForFunction(() => document.documentElement.hasAttribute('data-keyboard'))
+    await p.settle()
+    const after = await read()
+    expect(after.pad).toBe(before.pad)
+    expect(after.bottom).toBeCloseTo(before.bottom, 0)
+    // The room under the field's form can only grow (the bar left), never gain a spacer.
+    expect(after.below).toBeGreaterThanOrEqual(before.below - 0.5)
+    expect(
+      await p.raw.evaluate(() =>
+        document.documentElement.style.getPropertyValue('--basalt-keyboard-inset'),
+      ),
+    ).toBe('')
   })
 
   test('a fine pointer keeps the bar: a mouse has no software keyboard', async () => {
