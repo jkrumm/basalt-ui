@@ -96,8 +96,8 @@ export function Alert({ tone, title, className, children, ...props }: AlertProps
         <path d={GLYPH[resolved]} />
       </svg>
       <div className="flex min-w-0 flex-col gap-0.5 wrap-anywhere">
-        {title !== undefined && <p className="font-medium">{title}</p>}
-        <div className="text-muted-foreground">{children}</div>
+        {title !== undefined && <p className="mt-0 font-medium">{title}</p>}
+        <div className="text-muted-foreground [&>:first-child]:mt-0">{children}</div>
       </div>
     </div>
   )

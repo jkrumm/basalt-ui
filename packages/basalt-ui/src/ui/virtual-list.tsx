@@ -9,13 +9,14 @@ import type { VirtualItem } from '../core/ports'
 /**
  * The `VirtualList` cva table: the scroller. It is a native overflow box with a thin scrollbar in
  * the line token; the caller bounds its height (`max-h-96`, or a flex parent) and the rows scroll
- * inside it.
+ * inside it. The bar's room is reserved (`scrollbar-gutter: stable`); rows inset from their host take
+ * `[scrollbar-gutter:stable_both-edges]` in `className`, so the left and right inset match.
  *
  * @example
  * virtualListVariants() // class string for a non-`VirtualList` scroller
  */
 export const virtualListVariants = cva(
-  'relative min-h-0 min-w-0 overflow-y-auto overscroll-contain [scrollbar-color:var(--basalt-line)_transparent] [scrollbar-width:thin]',
+  'relative min-h-0 min-w-0 overflow-y-auto overscroll-contain [scrollbar-color:var(--basalt-line)_transparent] [scrollbar-gutter:stable] [scrollbar-width:thin]',
 )
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
