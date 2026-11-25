@@ -166,7 +166,7 @@ async function browserNumbers(): Promise<Record<string, { lcpMs: number; cls: nu
 /**
  * The layout shift of every guide: each is loaded in a viewport as tall as the page (so every shift is in
  * view and every island hydrates at once) at 1440 and 390 px, with its scripts held back so the static
- * picture paints first, and the shift is read once the islands are in. A guide is held at 0.
+ * picture paints first, and the shift is read once the islands are in, counting from the moment the faces are loaded. A guide is held at 0.
  */
 async function guideShift(routes: readonly string[]): Promise<Record<string, number>> {
   const { chromium } = await import("playwright-core");
@@ -190,23 +190,29 @@ async function guideShift(routes: readonly string[]): Promise<Record<string, num
       for (const width of [1440, 390]) {
         const page = await browser.newPage({ viewport: { width, height: 6000 } });
         await page.addInitScript(() => {
-          const w = window as unknown as { __cls: number };
+          const w = window as unknown as { __cls: number; __from: number };
           w.__cls = 0;
+          w.__from = Number.POSITIVE_INFINITY;
           new PerformanceObserver((list) => {
             for (const e of list.getEntries() as unknown as {
               value: number;
               hadRecentInput: boolean;
+              startTime: number;
             }[])
-              if (!e.hadRecentInput) w.__cls += e.value;
+              if (!e.hadRecentInput && e.startTime >= w.__from) w.__cls += e.value;
           }).observe({ type: "layout-shift", buffered: true });
         });
         await page.route(/\.js(\?|$)/, async (request) => {
-          await new Promise((resolve) => setTimeout(resolve, 600));
+          await new Promise((resolve) => setTimeout(resolve, 1500));
           await request.continue();
         });
         await page.goto(`http://localhost:${server.port}${path}`, { waitUntil: "load" });
-        await page.evaluate(() => document.fonts.ready);
-        await page.waitForTimeout(2100);
+        // A late font swap moves text on a slow host whatever a page does: a shift counts from the moment the faces are in.
+        await page.evaluate(async () => {
+          await document.fonts.ready;
+          (window as unknown as { __from: number }).__from = performance.now();
+        });
+        await page.waitForTimeout(3100);
         worst = Math.max(
           worst,
           await page.evaluate(() => (window as unknown as { __cls: number }).__cls),
