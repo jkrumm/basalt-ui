@@ -159,8 +159,8 @@ export function geometryFindings({ tolerance }: GeometryOptions): GeometryFindin
     }
   }
 
-  // stray-bar: a bar that draws for a few pixels of overflow nobody meant to scroll (a `stable` gutter's
-  // empty track is no bar: it needs overflow) (a ring, an underline)
+  // stray-bar: a bar that draws for a few pixels of overflow nobody meant to scroll (a ring, an underline), or
+  // for none; only the empty vertical track of a `stable` gutter is no bar
   for (const el of all as HTMLElement[]) {
     if (!shown(el)) continue
     const b = bars(el)
