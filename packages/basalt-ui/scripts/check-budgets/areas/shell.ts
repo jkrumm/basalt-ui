@@ -82,8 +82,8 @@ export const rows: readonly RowDef[] = [
     // 182700 -> 185300 (Issue 3207): 184958 B measured; the palette and the shell pickers present as a sheet on a phone.
     // 185300 -> 187200 (Issue 3262): 186793 B measured; the palette's record sources (search, recents, actions) and the record step commands.
     // 187200 -> 188000 (Issue 3292): 187737 B measured; the breadcrumb trail builder and its strip renderer.
-    // 188000 -> 188600 (Issue 3297): 188495 B measured; the sheet's fit before paint and the Peek drawer presentation the shell's pickers reach.
-    ceiling: 188600,
+    // 188000 -> 188800 (Issue 3297): 188624 B measured; the sheet's fit before paint and the Peek drawer presentation the shell's pickers reach.
+    ceiling: 188800,
     measure: () => measureSource(reExportAll({ shell: 'shell/index' })),
   },
   {
@@ -127,7 +127,7 @@ export const raises: Raises = {
   'shell-subpath': [
     {
       from: 188000,
-      to: 188600,
+      to: 188800,
       consumer:
         'the record drawer and the one-motion sheet (owner direction 2026-11-25, Issue 3297): a sheet fits its content before paint and keeps its height on the way out, a modeless drawer with a third snap, and the Peek drawer presentation for the table detail host',
       repo: 'basalt-ui',
