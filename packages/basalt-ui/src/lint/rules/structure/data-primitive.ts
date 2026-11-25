@@ -33,6 +33,7 @@ import { isTestFile, mergeVisitors } from '../../factory'
 import type { AstForm } from '../../rule-table'
 import { defineRules } from '../../rule-table'
 import { dataPrimitiveLiveForms } from './data-primitive-live'
+import { CHART_KINDS } from './primitive-bypass'
 
 const isNode = (value: unknown): value is Node =>
   typeof value === 'object' && value !== null && typeof (value as Node).type === 'string'
@@ -449,21 +450,8 @@ export const queryClientSingleton: AstForm = {
   fixture: 'structure-rest/data-primitive-query-client-singleton.tsx',
 }
 
-const CHART_ELEMENTS: ReadonlySet<string> = new Set([
-  'CartesianChart',
-  'Lines',
-  'Bars',
-  'StackedArea',
-  'Sparkline',
-  'MiniBars',
-  'Donut',
-  'Heatmap',
-  'IntervalTrack',
-  'Waterfall',
-  'RangeNavigator',
-  'DualPanel',
-  'MirroredBars',
-])
+/** The chart kinds of primitive-bypass, one list, and `MiniBars`, a cell chart that is never a panel root. */
+const CHART_ELEMENTS: ReadonlySet<string> = new Set([...CHART_KINDS, 'MiniBars'])
 
 /** A shipped chart kind, or any element named `*Chart` (an app's own wrapper, `BarChart`). */
 const isChartElement = (tag: string): boolean => CHART_ELEMENTS.has(tag) || tag.endsWith('Chart')
