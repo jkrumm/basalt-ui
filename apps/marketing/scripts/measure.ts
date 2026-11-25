@@ -163,6 +163,65 @@ async function browserNumbers(): Promise<Record<string, { lcpMs: number; cls: nu
   return out;
 }
 
+/**
+ * The layout shift of every guide: each is loaded in a viewport as tall as the page (so every shift is in
+ * view and every island hydrates at once) at 1440 and 390 px, with its scripts held back so the static
+ * picture paints first, and the shift is read once the islands are in. A guide is held at 0.
+ */
+async function guideShift(routes: readonly string[]): Promise<Record<string, number>> {
+  const { chromium } = await import("playwright-core");
+  const server = Bun.serve({
+    port: 0,
+    fetch(req) {
+      const path = decodeURIComponent(new URL(req.url).pathname);
+      const file = [join(DIST, path), join(DIST, path, "index.html")].find(
+        (f) => existsSync(f) && statSync(f).isFile(),
+      );
+      return file === undefined
+        ? new Response("not found", { status: 404 })
+        : new Response(Bun.file(file));
+    },
+  });
+  const browser = await chromium.launch();
+  const out: Record<string, number> = {};
+  try {
+    for (const path of routes) {
+      let worst = 0;
+      for (const width of [1440, 390]) {
+        const page = await browser.newPage({ viewport: { width, height: 6000 } });
+        await page.addInitScript(() => {
+          const w = window as unknown as { __cls: number };
+          w.__cls = 0;
+          new PerformanceObserver((list) => {
+            for (const e of list.getEntries() as unknown as {
+              value: number;
+              hadRecentInput: boolean;
+            }[])
+              if (!e.hadRecentInput) w.__cls += e.value;
+          }).observe({ type: "layout-shift", buffered: true });
+        });
+        await page.route(/\.js(\?|$)/, async (request) => {
+          await new Promise((resolve) => setTimeout(resolve, 600));
+          await request.continue();
+        });
+        await page.goto(`http://localhost:${server.port}${path}`, { waitUntil: "load" });
+        await page.evaluate(() => document.fonts.ready);
+        await page.waitForTimeout(2100);
+        worst = Math.max(
+          worst,
+          await page.evaluate(() => (window as unknown as { __cls: number }).__cls),
+        );
+        await page.close();
+      }
+      out[path] = worst;
+    }
+  } finally {
+    await browser.close();
+    server.stop(true);
+  }
+  return out;
+}
+
 type Budgets = {
   staticModuleJsGzip: number;
   inlineJsGzip: number;
@@ -172,6 +231,7 @@ type Budgets = {
   cssGzipPerPage: number;
   lcpMs: number;
   cls: number;
+  guideCls: number;
 };
 
 if (!existsSync(DIST)) {
@@ -201,6 +261,7 @@ const numbers: Budgets = {
   cssGzipPerPage: Math.max(0, ...measured.map((p) => p.cssGzip)),
   lcpMs: 0,
   cls: 0,
+  guideCls: 0,
 };
 
 console.log("route\tislands\tmodule JS gz\tinline JS gz\tCSS gz");
@@ -213,6 +274,11 @@ if (args.has("--browser")) {
     console.log(`${path}\tLCP ${v.lcpMs} ms\tCLS ${v.cls}`);
   numbers.lcpMs = Math.max(...Object.values(vitals).map((v) => v.lcpMs));
   numbers.cls = Math.max(...Object.values(vitals).map((v) => v.cls));
+  const shifts = await guideShift(
+    measured.map((p) => p.route).filter((r) => r.startsWith("/guides/") && r !== "/guides/"),
+  );
+  for (const [path, value] of Object.entries(shifts)) console.log(`${path}\tguide CLS ${value}`);
+  numbers.guideCls = Math.max(0, ...Object.values(shifts));
 }
 console.log(JSON.stringify(numbers, null, 2));
 
@@ -220,7 +286,7 @@ if (args.has("--write")) writeFileSync(BUDGETS, `${JSON.stringify(numbers, null,
 
 if (args.has("--check")) {
   const budgets = JSON.parse(readFileSync(BUDGETS, "utf8")) as Budgets;
-  const browserKeys = new Set(["lcpMs", "cls"]);
+  const browserKeys = new Set(["lcpMs", "cls", "guideCls"]);
   const over = (Object.keys(budgets) as (keyof Budgets)[])
     .filter((k) => args.has("--browser") || !browserKeys.has(k))
     .filter((k) => numbers[k] > budgets[k]);

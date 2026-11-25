@@ -42,7 +42,9 @@ The root `apps/marketing/AGENTS.md` points here. Read this before changing a pag
 - MDX pages take `Tabs`, `Tab`, `Form`, `Field` and `SubmitButton` from `siteMdxComponents(...)`, which render
   with no JavaScript; `DataTable` and `Chart` are the package's `basalt-ui/astro/mdx/*.astro` tags, added to
   `components` by the page. `/guides/interactive-content` is held at zero module JavaScript (it is not in
-  `SCRIPTED`); `/guides/islands-in-mdx` carries the two islands.
+  `SCRIPTED`); `/guides/islands-in-mdx` carries the two islands. `/guides/what-needs-no-script` shows the parts that
+  ship none (stat cards, a static table, tabs, a note), each marked `ModeTag` static, enhanced or island. Every
+  guide is held at a layout shift of 0 (`guideCls`): a `Chart` waits behind its own card loading, never a box.
 - A fence in a guide is highlighted by Starlight's expressive-code, whose copy-button module script
   `plugins/guide-static-code.mjs` removes from `src/guides/` pages (the site's `SiteCodeBlock` button stays);
   the docs keep it. The integration must follow `starlight()` in `integrations`.

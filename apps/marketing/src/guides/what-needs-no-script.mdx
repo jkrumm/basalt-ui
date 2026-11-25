@@ -1,0 +1,62 @@
+---
+title: What needs no script
+description: Stat cards with sparklines, tables, tabs and notes, each rendered to HTML with no client JavaScript, and what an island adds.
+date: 2026-11-25
+order: 4
+---
+
+import { ModeTag } from '../components/ModeTag'
+import { FleetStrip, HeroConsole } from '../components/HeroConsole'
+
+Most of a content page is HTML. Each part below carries the mark of what it ships: <ModeTag mode="static" /> is HTML and CSS only, <ModeTag mode="enhanced" /> works as HTML and gains behavior in an island, and <ModeTag mode="island" /> needs its script. This page is built from the first kind, and ships no JavaScript beyond the head script every page carries.
+
+## Stat cards <ModeTag mode="static" />
+
+A dashboard's cards render at build time, sparklines included. The picture is drawn at rest, so nothing hydrates.
+
+<HeroConsole />
+
+A strip of figures is the same: one surface, a sparkline in a cell, no script.
+
+<FleetStrip />
+
+## Tables <ModeTag mode="static" />
+
+A table of plain data is a native table with numbers and dates formatted by the shared formats. `interactive` is what makes it <ModeTag mode="enhanced" />: the same HTML first, sorting and paging once it hydrates (see [Islands in MDX](/guides/islands-in-mdx/)).
+
+<DataTable
+  label="Deploys per week"
+  columns={[
+    { key: 'week', label: 'Week', kind: 'date' },
+    { key: 'deploys', label: 'Deploys', kind: 'number' },
+    { key: 'rollbacks', label: 'Rollbacks', kind: 'number' },
+  ]}
+  rows={[
+    { week: '2026-08-17', deploys: 24, rollbacks: 0 },
+    { week: '2026-08-24', deploys: 28, rollbacks: 2 },
+    { week: '2026-08-31', deploys: 26, rollbacks: 1 },
+    { week: '2026-09-07', deploys: 31, rollbacks: 1 },
+  ]}
+/>
+
+## Tabs <ModeTag mode="static" />
+
+Tabs are platform markup: an ARIA tab list and its panels. The head script every page carries switches them; without it every panel shows under its name.
+
+<Tabs label="Install with" tabs={['bun', 'npm', 'pnpm']}>
+  <Tab label="bun">`bun add basalt-ui`</Tab>
+  <Tab label="npm">`npm install basalt-ui`</Tab>
+  <Tab label="pnpm">`pnpm add basalt-ui`</Tab>
+</Tabs>
+
+## Notes and steps <ModeTag mode="static" />
+
+<SiteCallout tone="info" title="Nothing to hydrate">
+  A callout, the steps below and the code on this page are HTML. A chart is the one part that measures its box, so it is never plain static: see the [chart island](/charts/).
+</SiteCallout>
+
+<Steps>
+  <Step title="Write the page">An MDX file in the guides collection.</Step>
+  <Step title="Name the parts">Import a part, or use a tag from the map.</Step>
+  <Step title="Ship it">No directive, no script.</Step>
+</Steps>

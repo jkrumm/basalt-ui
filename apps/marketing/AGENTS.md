@@ -19,7 +19,7 @@ Before changing a page, component, island, layout or guide under `src/`, Read `s
 ```bash
 bun run build                                  # astro build (needs packages/basalt-ui built first)
 bun run typecheck                              # astro check, also part of the root typecheck
-bun run measure -- --check [--browser]         # site-budgets.json: zero JS on static pages, island cost, CSS, LCP, CLS
+bun run measure -- --check [--browser]         # site-budgets.json: zero JS on static pages, island cost, CSS, LCP, CLS, and a layout shift of 0 on every guide
 bun scripts/docs-palette.ts                    # every Starlight / Expressive Code color variable in dist resolves to --basalt-*
 ```
 
