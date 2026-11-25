@@ -42,8 +42,8 @@ function revealOnFocus(el: HTMLElement): void {
 /**
  * The `Textarea` cva table. The box grows with its content (`field-sizing: content`) from a floor of
  * `rows` lines (`--textarea-rows`, set by the component) to a ceiling of 10 lines, then scrolls. An
- * engine without `field-sizing` keeps the fixed `rows` box. A coarse pointer gets the 44 px floor and
- * 16 px text (below that iOS Safari zooms the page on focus). `size` sets the text and the padding,
+ * engine without `field-sizing` keeps the fixed `rows` box. A coarse pointer keeps the
+ * density's text size. `size` sets the text and the padding,
  * the same steps as `Input`; the height is `rows`.
  *
  * @example

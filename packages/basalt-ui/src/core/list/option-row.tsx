@@ -19,7 +19,7 @@ export type RowSize = 'sm' | 'md' | 'lg'
  * attributes. A coarse pointer lifts it to the 44 px floor.
  */
 export const optionRowVariants = cva(
-  'relative flex w-full items-center rounded-chip text-left outline-none select-none data-highlighted:bg-accent active:bg-accent data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base',
+  'relative flex w-full items-center rounded-chip text-left outline-none select-none data-highlighted:bg-accent active:bg-accent data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:min-h-11',
   {
     variants: {
       size: {

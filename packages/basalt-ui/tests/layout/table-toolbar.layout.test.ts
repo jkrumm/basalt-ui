@@ -232,7 +232,9 @@ layout('TableToolbar', () => {
             // A small control keeps a 44 px `::after` hit area centred on its box.
             const after = getComputedStyle(el, '::after')
             const hit = Math.max(r.height, Number.parseFloat(after.height) || 0)
-            return hit < 44 - 0.5
+            // A text field has no `::after`: its own box (the density's height, 24 px at least) is its target.
+            const need = el instanceof HTMLInputElement ? 24 : 44
+            return hit < need - 0.5
               ? [`${el.getAttribute('aria-label') ?? el.textContent}: ${hit}`]
               : []
           })

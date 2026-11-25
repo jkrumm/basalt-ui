@@ -7,10 +7,10 @@ import { GROUPED_SMALL_BUTTON, buttonScopeClass, useControlScope } from '../core
 
 /**
  * The `Button` cva table: the one source the generator reads for the type union, the `no-restyle`
- * contract and the props docs. Heights come from the density tokens (`h-ctl`); `pointer-coarse:`
- * lifts the visible control to the 44 px floor, and the small sizes keep 24 px visible with a 44 px
- * `::after` hit area. A small icon button also takes 10 px of inline margin under a coarse pointer, so
- * its 44 px wide `::after` sits inside the button's own margin box and adds no scrollable overflow to
+ * contract and the props docs. Heights come from the density tokens (`h-ctl`) on every pointer: a
+ * button is never taller on a phone. A coarse pointer gets a 44 px `::after` hit area around it. An
+ * icon button also takes inline margin under a coarse pointer (8 px at `md`, 10 px at `sm`), so its
+ * 44 px wide `::after` sits inside the button's own margin box and adds no scrollable overflow to
  * the scroller it ends (a row of links, a code frame).
  *
  * @example
@@ -28,7 +28,7 @@ export const buttonVariants = cva(
         danger: 'bg-bad-tint text-bad hover:brightness-90 active:brightness-80',
       },
       size: {
-        md: '',
+        md: 'after:absolute after:inset-x-0 after:top-1/2 after:h-full after:-translate-y-1/2 pointer-coarse:after:min-h-11',
         sm: 'text-xs after:absolute after:inset-x-0 after:top-1/2 after:h-full after:-translate-y-1/2 pointer-coarse:after:min-h-11',
       },
       shape: { default: '', icon: '' },
@@ -36,7 +36,11 @@ export const buttonVariants = cva(
     compoundVariants: [
       { size: 'md', shape: 'default', class: 'h-ctl px-3' },
       { size: 'sm', shape: 'default', class: 'h-6 px-2' },
-      { size: 'md', shape: 'icon', class: 'size-ctl pointer-coarse:min-w-(--basalt-ctl-h)' },
+      {
+        size: 'md',
+        shape: 'icon',
+        class: 'size-ctl pointer-coarse:mx-2 pointer-coarse:after:-inset-x-2',
+      },
       {
         size: 'sm',
         shape: 'icon',

@@ -36,7 +36,7 @@ export const menuContentVariants = cva(
  * menuItemVariants()
  */
 export const menuItemVariants = cva(
-  'relative flex w-full items-center justify-between gap-2 rounded-chip px-2 py-1.5 text-sm outline-none select-none data-highlighted:bg-accent active:bg-accent data-popup-open:bg-accent data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base',
+  'relative flex w-full items-center justify-between gap-2 rounded-chip px-2 py-1.5 text-sm outline-none select-none data-highlighted:bg-accent active:bg-accent data-popup-open:bg-accent data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:min-h-11',
 )
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */

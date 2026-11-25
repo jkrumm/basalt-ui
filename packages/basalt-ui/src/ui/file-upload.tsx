@@ -8,13 +8,13 @@ import { cn } from '../core/cn'
  * The `FileUpload` drop-zone cva table: a dashed, bordered box that centres its icon, text and
  * hint. `data-dragging` lights the border and fill while a file is dragged over it; `data-disabled`
  * dims it. `compact` is the smaller zone shown under a chosen file in single mode. A coarse
- * pointer gets the 44 px floor and 16 px text (below that iOS Safari zooms the page on focus).
+ * pointer keeps the density's text size.
  *
  * @example
  * fileUploadVariants({ compact: true }) // class string for a hand-built drop zone
  */
 export const fileUploadVariants = cva(
-  'group flex w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-ctrl border border-dashed border-input bg-background px-4 text-center text-foreground focus-ring transition-colors data-invalid:border-bad data-dragging:border-brand data-dragging:bg-accent data-disabled:cursor-not-allowed data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base',
+  'group flex w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-ctrl border border-dashed border-input bg-background px-4 text-center text-foreground focus-ring transition-colors data-invalid:border-bad data-dragging:border-brand data-dragging:bg-accent data-disabled:cursor-not-allowed data-disabled:opacity-50',
   {
     variants: {
       compact: {
@@ -374,7 +374,7 @@ export function FileUpload({
         id={errorsId}
         data-file-upload="errors"
         aria-live="polite"
-        className="flex flex-col gap-1 text-xs text-bad pointer-coarse:text-sm empty:hidden"
+        className="flex flex-col gap-1 text-xs text-bad empty:hidden"
       >
         {messages.map((message) => (
           <p key={message}>{message}</p>
@@ -386,7 +386,7 @@ export function FileUpload({
             <li
               key={`${file.name}-${file.size}-${file.lastModified}-${index}`}
               data-file-upload="item"
-              className="flex items-center gap-2 text-sm pointer-coarse:text-base"
+              className="flex items-center gap-2 text-sm"
             >
               <FileIcon />
               <span className="min-w-0 flex-1 truncate" title={file.name}>

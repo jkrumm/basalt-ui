@@ -14,7 +14,8 @@ function t(f){try{var x=f();if(x==="light"||x==="dark"||x==="auto")return x}catc
 function s(k){return t(function(){return localStorage.getItem(k)})}
 v=s("basalt:scheme")||t(function(){return c&&document.cookie.split(/;\s*/).reduce(function(r,p){
 return r||(p.indexOf(c+"=")===0?p.slice(c.length+1):r)},"")})||"auto"
-if(v==="light"||v==="dark")d.setAttribute(a,v)})()</script>
+if(v==="light"||v==="dark")d.setAttribute(a,v)})()
+;(function(){var n=navigator,u=n.userAgent;if(!(/iP(hone|od|ad)/.test(u)||/Macintosh/.test(u)&&n.maxTouchPoints>1))return;function f(){var m=document.querySelector('meta[name="viewport"]');if(m&&!/maximum-scale/.test(m.content))m.content+=", maximum-scale=1"}document.readyState==="loading"?document.addEventListener("DOMContentLoaded",f):f()})()</script>
   </head>
   <body>
     <div class="canvas">

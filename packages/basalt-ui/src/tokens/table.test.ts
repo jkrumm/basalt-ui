@@ -160,11 +160,11 @@ describe('values', () => {
     }
   })
 
-  test('density moves control and row height only; coarse raises the row floor to 44px', () => {
+  test('density moves control and row height only; coarse raises the hit floor to 44px', () => {
     expect(DENSITY.dense).toEqual({ 'ctl-h': '1.75rem', 'row-h': '2rem' })
     expect(DENSITY.normal).toEqual({ 'ctl-h': '2rem', 'row-h': '2.5rem' })
     expect(DENSITY.comfortable).toEqual({ 'ctl-h': '2.5rem', 'row-h': '3rem' })
-    expect(COARSE).toEqual({ 'ctl-h': '2.75rem', 'row-h': '2.75rem', hit: '2.75rem' })
+    expect(COARSE).toEqual({ hit: '2.75rem' })
   })
 })
 

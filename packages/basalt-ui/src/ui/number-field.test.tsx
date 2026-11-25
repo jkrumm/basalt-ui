@@ -53,13 +53,13 @@ describe('number-field module', () => {
     expect(container.querySelector('[data-slot="number-field"]')?.className).toContain('h-6')
   })
 
-  test('the text input spans the row border to border (24 px at sm, 44 px coarse), steppers too', () => {
+  test('the text input spans the row border to border (24 px at sm, the same on a phone), steppers too', () => {
     const { getByLabelText, container } = render(<NumberField aria-label="Qty" />)
     expect(getByLabelText('Qty').className).toMatch(/(^| )-my-px( |$)/)
     expect(container.querySelector('[data-slot="number-field"]')?.className).toContain('h-ctl')
-    expect(numberFieldVariants({ size: 'sm' })).toContain('pointer-coarse:h-ctl')
-    expect(inputAddonVariants({ size: 'sm' })).toContain('pointer-coarse:h-ctl')
-    expect(segmentedVariants({ size: 'sm' })).toContain('pointer-coarse:min-h-ctl')
+    expect(numberFieldVariants({ size: 'sm' })).not.toContain('pointer-coarse')
+    expect(inputAddonVariants({ size: 'sm' })).not.toContain('pointer-coarse')
+    expect(segmentedVariants({ size: 'sm' })).not.toContain('pointer-coarse')
     expect(getByLabelText('Increase').className).toContain('after:-inset-y-px')
   })
 

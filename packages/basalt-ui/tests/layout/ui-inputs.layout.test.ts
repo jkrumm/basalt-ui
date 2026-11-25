@@ -188,7 +188,7 @@ layout('Textarea, NumberField and Checkbox', () => {
           }
         })
 
-        test('the text inputs compute 16 px under a coarse pointer and keep the 44 px floor', async () => {
+        test('the text inputs keep the density size and height on a coarse pointer: never 16 px, never 44 px', async () => {
           const page = await open(viewport, pointer)
           const probes = await page.raw.evaluate(() =>
             [
@@ -206,12 +206,9 @@ layout('Textarea, NumberField and Checkbox', () => {
             }),
           )
           for (const { sel, fontSize, height } of probes) {
-            if (pointer === 'coarse') {
-              expect(fontSize, `${sel} font-size`).toBe('16px')
-              expect(height, `${sel} height`).toBeGreaterThanOrEqual(44)
-            } else {
-              expect(Number.parseFloat(fontSize), `${sel} font-size`).toBeLessThan(16)
-            }
+            expect(Number.parseFloat(fontSize), `${sel} font-size`).toBeLessThan(16)
+            // a textarea is a `rows` box; the single-line fields keep the density's height
+            if (!sel.includes('ui-note')) expect(height, `${sel} height`).toBeLessThan(40)
           }
         })
 
@@ -253,8 +250,8 @@ layout('Textarea, NumberField and Checkbox', () => {
           expect(long.scrolls).toBe(true)
 
           const single = await read('ui-note-one')
-          if (pointer === 'coarse') expect(single.height).toBeGreaterThanOrEqual(44 - 0.5)
-          else near(single.height, single.line + single.chrome)
+          expect(single.height).toBeLessThan(44)
+          near(single.height, single.line + single.chrome)
         })
 
         test('the number field prints 1.234,5 in de-DE', async () => {

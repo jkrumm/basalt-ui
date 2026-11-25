@@ -10,13 +10,13 @@ import { useMessages } from '../core/messages/use-messages'
 /**
  * The `TagInput` cva table: the field box the chips and the entry share. It looks like an `Input`
  * (one control high, growing as the chips wrap), outlines on focus anywhere inside and turns red
- * when the entry is invalid. A coarse pointer gets the 44 px floor and 16 px text.
+ * when the entry is invalid. A coarse pointer keeps the density's height and text size.
  *
  * @example
  * tagInputVariants() // class string for a hand-built field box
  */
 export const tagInputVariants = cva(
-  'flex min-h-ctl w-full min-w-0 cursor-text flex-wrap items-center gap-1 rounded-ctrl border border-input bg-background px-1.5 py-0.5 text-sm text-foreground transition-colors focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand has-aria-invalid:border-bad has-data-disabled:cursor-not-allowed has-data-disabled:opacity-50 pointer-coarse:py-0 pointer-coarse:text-base',
+  'flex min-h-ctl w-full min-w-0 cursor-text flex-wrap items-center gap-1 rounded-ctrl border border-input bg-background px-1.5 py-0.5 text-sm text-foreground transition-colors focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand has-aria-invalid:border-bad has-data-disabled:cursor-not-allowed has-data-disabled:opacity-50',
 )
 
 /**
@@ -234,7 +234,7 @@ export function TagInput({
         aria-describedby={ariaDescribedBy}
         aria-invalid={invalid || undefined}
         {...(inputMode !== undefined && { inputMode })}
-        className="h-6 min-w-16 flex-1 bg-transparent px-1 text-foreground outline-none placeholder:text-faint pointer-coarse:h-11"
+        className="h-6 min-w-16 flex-1 bg-transparent px-1 text-foreground outline-none placeholder:text-faint"
       />
     </div>
   )

@@ -2,33 +2,13 @@
  * The touch rules of basalt-ui: ONE file, imported by `styles.css` and by the generated
  * `tailwind.css` / `static.css` (both `layer(basalt)`), so every consumer gets the same rule
  * whichever sheets it loads. An app that loads two of them gets the rule twice, byte for byte.
+ *
+ * There is no input font-size floor. A field computes the density's own size on a phone as on a
+ * desktop; iOS's focus zoom is stopped in the head instead (`maximum-scale=1` on iOS and iPadOS only,
+ * added by `themeScript()`, which `basalt()` and the root templates inline), and Android Chrome keeps
+ * pinch zoom. Touch reach comes from an invisible hit area (`--basalt-hit`, `::after`), never from a
+ * larger control.
  */
-
-/*
- * Input zoom FLOOR. Safari zooms the viewport whenever a focused input computes below 16px and never
- * zooms back out on blur. The floor holds on a COARSE primary pointer only: on a mouse the control
- * keeps its own size (`text-sm`, 13px at the default density). The axis is the pointer, never the
- * width, so a desktop window narrowed to 390 keeps its fine-pointer sizes.
- *
- * 16px is the only clean fix: `maximum-scale=1` and `user-scalable=no` are ignored by iOS and
- * block zoom for low vision (WCAG 1.4.4); `text-size-adjust` governs text inflation, not focus zoom.
- *
- * `max()` makes it a FLOOR, not a pin: a deliberately larger input keeps its size. `!important` is
- * deliberate and singular: an inline `style` attribute outranks every stylesheet rule, so without it a
- * `style={{ fontSize: 13 }}` on a raw `<input>` silently re-opens the zoom bug. The lint presets catch
- * the authoring mistake at build time; this is the runtime backstop.
- * `--basalt-input-fz-floor` defaults to 16px; an app that never runs on iOS Safari can set it.
- *
- * Reaches `input`, `select` and `textarea`. A control drawn on another element (a Select trigger, a
- * DatePicker button) sets `pointer-coarse:text-base` on itself.
- */
-@media (pointer: coarse) {
-  input,
-  select,
-  textarea {
-    font-size: max(var(--basalt-input-fz-floor, 16px), var(--input-fz, 1rem)) !important;
-  }
-}
 
 /*
  * No double-tap-to-zoom wait on anything tappable; pinch zoom and panning stay. A control that must

@@ -6,8 +6,8 @@ import { cn } from '../core/cn'
 import { scopeClass, useControlScope } from '../core/control-scope'
 
 /**
- * The `NumberField` cva table: a bordered row of decrement, text input and increment. Coarse
- * pointers get the 44 px floor and 16 px text (below that iOS Safari zooms the page on focus).
+ * The `NumberField` cva table: a bordered row of decrement, text input and increment. The
+ * stepper buttons keep their width; a coarse pointer gets a 44 px `::after` hit area on each.
  *
  * @example
  * numberFieldVariants({ size: 'sm' })
@@ -18,7 +18,7 @@ export const numberFieldVariants = cva(
     variants: {
       size: {
         md: 'h-ctl',
-        sm: 'h-6 pointer-coarse:h-ctl',
+        sm: 'h-6',
       },
     },
     defaultVariants: { size: 'md' },
@@ -28,7 +28,7 @@ export const numberFieldVariants = cva(
 // The border sits outside the buttons, so the `::after` overlay reaches over it: the hit target is
 // the full row height, not the row height minus 2 px.
 const stepperVariants = cva(
-  'relative flex shrink-0 items-center justify-center text-muted-foreground transition-colors select-none after:absolute after:inset-x-0 after:-inset-y-px hover:bg-accent hover:text-foreground pointer-coarse:w-11',
+  'relative flex shrink-0 items-center justify-center text-muted-foreground transition-colors select-none after:absolute after:inset-x-0 after:-inset-y-px hover:bg-accent hover:text-foreground pointer-coarse:after:-inset-x-2.5 pointer-coarse:after:-inset-y-[11px]',
   {
     variants: { size: { md: 'w-8', sm: 'w-6' } },
     defaultVariants: { size: 'md' },
@@ -44,7 +44,7 @@ const EDGE_END = 'rounded-r-[calc(var(--radius-ctrl)-1px)]'
 // at `sm`, under the 24 px target floor; 42 px under a coarse pointer); the negative margin lets it
 // span border to border, as the combobox input does.
 const entryVariants = cva(
-  '-my-px min-w-0 flex-1 scroll-my-1.5 bg-transparent text-center tabular-nums outline-none placeholder:text-faint pointer-coarse:text-base',
+  '-my-px min-w-0 flex-1 scroll-my-1.5 bg-transparent text-center tabular-nums outline-none placeholder:text-faint',
   {
     variants: { size: { md: 'px-3 text-sm', sm: 'px-2 text-xs' } },
     defaultVariants: { size: 'md' },

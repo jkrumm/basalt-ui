@@ -140,7 +140,7 @@ layout('Select, NativeSelect, Combobox and Autocomplete', () => {
   for (const viewport of VIEWPORTS) {
     for (const pointer of POINTERS) {
       describe(`${viewport.name} ${viewport.width}, ${pointer} pointer`, () => {
-        test('closed controls keep the control height; coarse gets 44 px and 16 px text', async () => {
+        test('closed controls keep the control height and text size on a coarse pointer too', async () => {
           const page = await open(viewport, pointer)
           const heights = await page.raw.evaluate(() => {
             const read = (sel: string) => {
@@ -160,11 +160,8 @@ layout('Select, NativeSelect, Combobox and Autocomplete', () => {
             }
           })
           for (const [name, { h, font }] of Object.entries(heights)) {
-            if (pointer === 'coarse') {
-              // the combobox's inner input sits in a 44 px box; its own height is not the target
-              if (name !== 'comboInput') expect(h, `${name} height`).toBeGreaterThanOrEqual(44)
-              expect(font, `${name} font`).toBeGreaterThanOrEqual(16)
-            } else if (name === 'small') {
+            expect(font, `${name} font`).toBeLessThan(16)
+            if (name === 'small') {
               expect(h, `${name} height`).toBe(24)
             } else if (name !== 'comboInput') {
               expect(h, `${name} height`).toBeGreaterThanOrEqual(28)

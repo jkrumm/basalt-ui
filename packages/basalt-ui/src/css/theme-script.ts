@@ -15,6 +15,8 @@ export interface ThemeScriptOptions {
   cookie?: string | undefined
   /** `false` stamps only the scheme; by default the appearance `setAppearance` stored is stamped too. */
   appearance?: false | undefined
+  /** `false` leaves the viewport meta alone; by default iOS and iPadOS WebKit get `maximum-scale=1` (no focus zoom). */
+  zoom?: false | undefined
 }
 
 /**
@@ -23,6 +25,9 @@ export interface ThemeScriptOptions {
  * nothing. Logic is its own copy of `readScheme`; parity is tested, not shared. A second statement
  * does the same for the appearance object: each valid `density`, `frame` and `accent` becomes its
  * `data-*` attribute unless the page already has one (its copy of `readAppearance`, tested alike).
+ * A third statement adds `maximum-scale=1` to the viewport meta on iOS and iPadOS only: WebKit there
+ * zooms to a focused field and never zooms back, and still lets the reader pinch; Android Chrome
+ * would lose pinch zoom, so no other platform is touched.
  *
  * @useWhen a host renders its own `<head>` (TanStack Start, a content site outside Astro) and must set the scheme before paint
  * @neverWhen the app builds with `basalt()` from `basalt-ui/vite` or `basaltAstro()` from `basalt-ui/astro`, which inline it already
@@ -40,7 +45,19 @@ export function themeScript(options: ThemeScriptOptions = {}): string {
     `return r||(p.indexOf(c+"=")===0?p.slice(c.length+1):r)},"")})||${fallback}`,
     `if(v==="light"||v==="dark")d.setAttribute(a,v)})()`,
     ...(options.appearance === false ? [] : [appearanceStatement()]),
+    ...(options.zoom === false ? [] : [zoomStatement()]),
   ].join('\n')
+}
+
+/** The iOS half: `maximum-scale=1` on the viewport meta once the head has parsed, on iPhone, iPod and iPad (which reports as a touch Mac). */
+function zoomStatement(): string {
+  return (
+    ';(function(){var n=navigator,u=n.userAgent;' +
+    'if(!(/iP(hone|od|ad)/.test(u)||/Macintosh/.test(u)&&n.maxTouchPoints>1))return;' +
+    'function f(){var m=document.querySelector(\'meta[name="viewport"]\');' +
+    'if(m&&!/maximum-scale/.test(m.content))m.content+=", maximum-scale=1"}' +
+    'document.readyState==="loading"?document.addEventListener("DOMContentLoaded",f):f()})()'
+  )
 }
 
 /** The appearance half: stamps each stored, valid attribute the page does not have yet. */

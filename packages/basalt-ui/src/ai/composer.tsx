@@ -336,7 +336,7 @@ export function Composer<Value = unknown>({
         onChange={(event) => edit(event.currentTarget.value, event.currentTarget.selectionStart)}
         onSelect={(event) => setCaret(event.currentTarget.selectionStart)}
         onKeyDown={onKeyDown}
-        className="block field-sizing-content max-h-50 min-h-12 w-full resize-none overflow-y-auto bg-transparent px-1 text-sm leading-6 text-foreground outline-none placeholder:text-faint pointer-coarse:text-base"
+        className="block field-sizing-content max-h-50 min-h-12 w-full resize-none overflow-y-auto bg-transparent px-1 text-sm leading-6 text-foreground outline-none placeholder:text-faint"
       />
       <div data-slot="composer-footer" className="flex min-h-8 items-center gap-1">
         {hasAdd && (

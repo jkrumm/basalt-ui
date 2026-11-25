@@ -75,12 +75,12 @@ export const inputGroupVariants = cva(
  * inputAddonVariants({ size: 'sm' })
  */
 export const inputAddonVariants = cva(
-  'inline-flex items-center rounded-ctrl border border-input bg-inset text-muted-foreground whitespace-nowrap select-none pointer-coarse:text-base',
+  'inline-flex items-center rounded-ctrl border border-input bg-inset text-muted-foreground whitespace-nowrap select-none',
   {
     variants: {
       size: {
         md: 'h-ctl px-3 text-sm',
-        sm: 'h-6 px-2 text-xs pointer-coarse:h-ctl',
+        sm: 'h-6 px-2 text-xs',
       },
     },
     defaultVariants: { size: 'md' },

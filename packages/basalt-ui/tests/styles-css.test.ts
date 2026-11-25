@@ -28,16 +28,13 @@ describe('styles.css heading width', () => {
 })
 
 describe('styles.css !important budget', () => {
-  it('uses !important nowhere itself: the one use, the iOS input-zoom floor, lives in css/touch.css', () => {
+  it('uses !important nowhere: styles.css and css/touch.css carry none', () => {
     expect([...declarations.matchAll(/!important/g)]).toHaveLength(0)
     const touch = readFileSync(
       join(import.meta.dir, '..', 'src', 'css', 'touch.css'),
       'utf8',
     ).replace(/\/\*[\s\S]*?\*\//g, '')
-    expect([...touch.matchAll(/!important/g)]).toHaveLength(1)
-    expect(touch).toContain(
-      'font-size: max(var(--basalt-input-fz-floor, 16px), var(--input-fz, 1rem)) !important',
-    )
+    expect([...touch.matchAll(/!important/g)]).toHaveLength(0)
   })
 })
 

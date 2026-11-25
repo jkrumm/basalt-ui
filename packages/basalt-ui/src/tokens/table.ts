@@ -551,10 +551,10 @@ export const DENSITY = {
 export type Density = keyof typeof DENSITY
 
 /**
- * Primary-pointer overrides: the 2.x 44px floor, asserted in the layout suite (d14). `ctl-h` is the
- * control height every `h-ctl` control reads, so a component never patches its own height on touch.
+ * Primary-pointer overrides: the hit floor only. A control keeps its density's drawn height on a
+ * phone; touch reach is an invisible 44px `::after` hit area (asserted in the layout suite, d14).
  */
-export const COARSE = { 'ctl-h': '2.75rem', 'row-h': '2.75rem', hit: '2.75rem' } as const
+export const COARSE = { hit: '2.75rem' } as const
 
 /** Tailwind-only color aliases, which name no `--basalt-*` of their own (3.2). */
 export const COLOR_ALIASES: readonly { readonly tw: string; readonly token: string }[] = [

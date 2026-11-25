@@ -190,14 +190,15 @@ layout('control vocabulary and groups', () => {
         for (const box of grouped) near(box.height, 24, `group sm ${box.slot}`)
       })
 
-      test('coarse pointer: one 44 px floor; a small button lifts to it inside a group', async () => {
+      test('coarse pointer: every control keeps the height it has on a fine one', async () => {
+        const fine = await open(viewport, 'fine')
         const page = await open(viewport, 'coarse')
-        for (const box of await boxesOf(page, 'row-md')) near(box.height, 44, `md ${box.slot}`)
-        for (const box of await boxesOf(page, 'group-sm'))
-          near(box.height, 44, `group sm ${box.slot}`)
-        for (const box of await boxesOf(page, 'row-sm')) {
-          const alone = box.slot === 'button' || box.slot === 'copy-button'
-          near(box.height, alone ? 24 : 44, `sm ${box.slot}`)
+        for (const row of ['row-md', 'row-sm', 'group-sm']) {
+          const want = await boxesOf(fine, row)
+          const got = await boxesOf(page, row)
+          expect(got.length, row).toBe(want.length)
+          for (const [i, box] of got.entries())
+            near(box.height, want[i]!.height, `${row} ${box.slot}`)
         }
       })
 

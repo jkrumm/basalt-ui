@@ -191,15 +191,6 @@ exports[`emitTokensCss snapshot: the whole default sheet 1`] = `
   --basalt-row-h: 3rem;
 }
 @media (pointer: coarse) {
-  :root:not([data-density]),
-  [data-density='dense'],
-  [data-density='normal'] {
-    --basalt-ctl-h: 2.75rem;
-    --basalt-row-h: 2.75rem;
-  }
-  [data-density='comfortable'] {
-    --basalt-ctl-h: 2.75rem;
-  }
   :root {
     --basalt-hit: 2.75rem;
   }

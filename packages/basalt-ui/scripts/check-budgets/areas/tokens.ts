@@ -111,7 +111,8 @@ export const rows: readonly RowDef[] = [
     // 1877 with the card ring in both schemes (1787 B, Issue 2851).
     // 1892 with `--basalt-scrim-wash` in both schemes (1801 B, Issue 2940).
     // 1902 with the control height on a coarse pointer at every density (1811 B, Issue 3206).
-    ceiling: 1902,
+    // 1863 without it: a coarse pointer raises the hit floor only (1774 B, Issue 3298).
+    ceiling: 1863,
     measure: () => gzipFileBytes(join(CSS_DIR, 'tokens.css')),
   },
   {
