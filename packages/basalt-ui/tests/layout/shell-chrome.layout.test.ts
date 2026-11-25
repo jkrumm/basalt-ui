@@ -225,7 +225,7 @@ const BAND: ShellSlot = LAYOUT_TARGET === 'v3' ? 'page-bar' : 'shell-band'
 
 /**
  * Cases that grade a 2.x-only road and are not registered on v3: the shell's padding on `Main` and
- * the header (v3's gutter lives on `Page` and is pinned by `shell-frame`: 8, 16, 24 beside the 240,
+ * the header (v3's gutter lives on `Page` and is pinned by `shell-frame`: 8, 12, 16 beside the 240,
  * 64, 0 rail), the `headerHeight` prop and `--basalt-shell-lead-inset` (both retired by concept
  * section 7; `chrome="native-overlay"` replaces them in v3-shell-i8-commands). Registering nothing,
  * not a skip, keeps the printed skip count honest.
