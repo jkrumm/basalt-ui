@@ -81,7 +81,7 @@ function SectionRows({
           aria-hidden="true"
           className={cn(
             'pointer-events-none absolute inset-x-0 top-0 ps-(--phone-safe-l) pe-(--phone-safe-r) pb-1',
-            '[transition:opacity_var(--basalt-dur-base)_var(--basalt-ease-standard)]',
+            '[transition:opacity_var(--basalt-dur-base)_var(--basalt-ease)]',
             fading && 'opacity-0',
           )}
         >
@@ -173,7 +173,7 @@ export function PhoneDrawer(props: VariantProps): ReactElement {
             }}
             className={cn(
               'fixed inset-0 z-30 bg-scrim',
-              '[transition:opacity_var(--basalt-dur-base)_var(--basalt-ease-standard)] data-starting-style:opacity-0 data-ending-style:opacity-0',
+              '[transition:opacity_var(--basalt-dur-base)_var(--basalt-ease)] data-starting-style:opacity-0 data-ending-style:opacity-0',
             )}
           />
           <BaseDrawer.Portal>
@@ -192,10 +192,10 @@ export function PhoneDrawer(props: VariantProps): ReactElement {
                   'pointer-events-auto flex w-full shrink-0 flex-col overflow-hidden rounded-t-card bg-popover text-foreground shadow-overlay ring-1 ring-border outline-none',
                   // The snap offset rests the popup at a short or tall height; a drag adds to it.
                   'translate-y-[calc(var(--drawer-snap-point-offset,0px)+var(--drawer-swipe-movement-y,0px))]',
-                  '[transition:translate_var(--basalt-spring),opacity_var(--basalt-dur-base)_var(--basalt-ease-standard)]',
+                  '[transition:translate_var(--basalt-spring),opacity_var(--basalt-dur-base)_var(--basalt-ease)]',
                   'data-starting-style:translate-y-full data-starting-style:opacity-0 data-ending-style:translate-y-full data-ending-style:opacity-0',
                   // A drag follows the finger; reduced motion fades in place instead of sliding.
-                  'data-swiping:[transition:none] motion-reduce:[transition:opacity_var(--basalt-dur-base)_var(--basalt-ease-standard)]',
+                  'data-swiping:[transition:none] motion-reduce:[transition:opacity_var(--basalt-dur-base)_var(--basalt-ease)]',
                 )}
               >
                 <div ref={headRef} className="shrink-0">

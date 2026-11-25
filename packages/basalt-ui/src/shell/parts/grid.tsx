@@ -317,7 +317,7 @@ export function ShellGrid({
         phoneNav !== 'tabs' && [
           SAFE,
           'max-md:pt-(--phone-safe-t) max-md:ps-(--phone-safe-l) max-md:pe-(--phone-safe-r)',
-          'max-md:relative max-md:z-10 max-md:translate-x-[var(--phone-sidebar-x,0px)] max-md:[transition:translate_var(--basalt-spring),box-shadow_var(--basalt-dur-base)_var(--basalt-ease-standard)]',
+          'max-md:relative max-md:z-10 max-md:translate-x-[var(--phone-sidebar-x,0px)] max-md:[transition:translate_var(--basalt-spring),box-shadow_var(--basalt-dur-base)_var(--basalt-ease)]',
           'data-phone-sidebar:shadow-overlay data-phone-dragging:[transition:none] motion-reduce:[transition:none]',
         ],
         PRINT_FRAME,
