@@ -109,6 +109,7 @@ export const REFERENCE_BYTE_BUDGETS: Readonly<Record<string, number>> = {
   'agent/skills/basalt-app/references/performance.md': 3_094,
   'agent/skills/basalt-app/references/recipes.md': 5_842,
   'agent/skills/basalt-app/references/testing.md': 2_176,
+  'agent/skills/basalt-charts/references/advanced.md': 3_181, // y2, colorBy, events, extremes, the rich tooltip, Waterfall, RangeNavigator (Issue 3300)
   'agent/skills/basalt-charts/references/custom-marks.md': 3_403,
   'agent/skills/basalt-charts/references/linked-parts.md': 6_860,
   'agent/skills/basalt-design/references/ai.md': 7_092,
