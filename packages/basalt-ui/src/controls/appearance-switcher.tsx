@@ -75,7 +75,7 @@ const SCHEMES: readonly Scheme[] = ['light', 'dark', 'auto']
 /** A frame's miniature: the rail on the frame's ground and the work surface, inset or flush. */
 function FramePreview({ frame }: { frame: AppearanceFrame }): ReactElement {
   return (
-    <span className="flex aspect-[120/76] w-full bg-background">
+    <span className="flex aspect-[120/56] w-full bg-background">
       <span className="flex w-1/5 flex-col gap-1 p-1.5">
         <span className="h-1 rounded-full bg-muted-foreground/40" />
         <span className="h-1 rounded-full bg-muted-foreground/25" />
@@ -108,7 +108,7 @@ function DensityPreview({ density }: { density: AppearanceDensity }): ReactEleme
   return (
     <span
       className={cn(
-        'flex aspect-[120/76] w-full flex-col justify-center bg-background px-3',
+        'flex aspect-[120/56] w-full flex-col justify-center bg-background px-3',
         DENSITY_LINES[density],
       )}
     >
