@@ -1,8 +1,5 @@
 import { useEffect } from 'react'
 
-// Built, not quoted: `scripts/gen-basalt-names.ts` reads every quoted `--basalt-*` name in shipped source into the 2.x allowlist.
-const INSET_VAR = `--basalt-${'keyboard-inset'}`
-
 /** The `<input type>` values that open no software keyboard. */
 const NO_KEYBOARD = new Set([
   'button',
@@ -26,24 +23,14 @@ export function isTextField(el: Element | null): boolean {
   return el instanceof HTMLElement && el.isContentEditable
 }
 
-/** Px between the bottom of the layout viewport and the bottom of the visual one: what a keyboard covers. */
-function keyboardInset(): number {
-  // happy-dom and old WebViews have none: the property is `undefined` there, not `null`
-  const visual = window.visualViewport as VisualViewport | null | undefined
-  if (!visual) return 0
-  return Math.max(
-    0,
-    Math.round(document.documentElement.clientHeight - visual.height - visual.offsetTop),
-  )
-}
-
 /**
- * While a text field has focus under a coarse pointer, `<html>` carries `data-keyboard` and the
- * custom property `--basalt-keyboard-inset` holds the height the keyboard covers, read from the
- * `visualViewport` (browsers that resize the layout viewport for the keyboard report 0). The shell
- * hides its bottom bar on the attribute and pads its bottom edge by the inset, so a field outside a
- * Sheet stays visible; a Sheet is handled by Base UI's `Drawer.VirtualKeyboardProvider`. Both
- * are written to the element, not to React state: a keystroke re-renders nothing.
+ * While a text field has focus under a coarse pointer, `<html>` carries `data-keyboard`; the shell
+ * hides its bottom bar on the attribute so the bar steps out of the keyboard's way. Nothing else
+ * moves: the browser scrolls the focused field into view, and a Sheet is handled by Base UI's
+ * `Drawer.VirtualKeyboardProvider`. (A bottom padding by the keyboard's height was tried and
+ * removed: iOS does not resize the layout viewport, so the padding showed as an empty block above
+ * the keyboard.) The attribute is written to the element, not to React state: a keystroke re-renders
+ * nothing.
  *
  * @example
  * useKeyboardInset()
@@ -54,13 +41,11 @@ export function useKeyboardInset(): void {
     // a test DOM without `matchMedia` (the jsdom lane) has no pointer to read
     if (typeof window.matchMedia !== 'function') return undefined
     const coarse = window.matchMedia('(pointer: coarse)')
-    const visual = window.visualViewport
     let timer: ReturnType<typeof setTimeout> | undefined
     const sync = (): void => {
       const open = coarse.matches && isTextField(document.activeElement)
       if (open) el.setAttribute('data-keyboard', '')
       else el.removeAttribute('data-keyboard')
-      el.style.setProperty(INSET_VAR, `${open ? keyboardInset() : 0}px`)
     }
     // `focusout` fires while `activeElement` is still the body; the next field takes it a tick later.
     const later = (): void => {
@@ -69,17 +54,12 @@ export function useKeyboardInset(): void {
     }
     document.addEventListener('focusin', later)
     document.addEventListener('focusout', later)
-    visual?.addEventListener('resize', sync)
-    visual?.addEventListener('scroll', sync)
     sync()
     return () => {
       clearTimeout(timer)
       document.removeEventListener('focusin', later)
       document.removeEventListener('focusout', later)
-      visual?.removeEventListener('resize', sync)
-      visual?.removeEventListener('scroll', sync)
       el.removeAttribute('data-keyboard')
-      el.style.removeProperty(INSET_VAR)
     }
   }, [])
 }

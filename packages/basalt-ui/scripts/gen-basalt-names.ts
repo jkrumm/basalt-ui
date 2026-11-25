@@ -10,7 +10,7 @@
  * 2. The v3 token table (`TOKENS`) — every `--basalt-<name>` the v3 sheets emit (`--basalt-text-xs-lh`,
  *    `--basalt-canvas`, …), so a consumer's `var(--basalt-text-xs-lh)` is never judged unknown.
  * 3. The component-scoped names basalt's own source declares (`--basalt-hit-gap`,
- *    `--basalt-space-icon-size`, `--basalt-keyboard-inset`), from every non-test file:
+ *    `--basalt-space-icon-size`), from every non-test file:
  *    a declaration (`--basalt-x:` — in a `.css` file or in CSS text inside a `.ts`/`.tsx` template
  *    literal) and, in `.ts`/`.tsx`, ANY quoted `'--basalt-x'` string literal. The quoted form is
  *    deliberately broad — a style-object key, a `setProperty` name, a const — so a quoted
