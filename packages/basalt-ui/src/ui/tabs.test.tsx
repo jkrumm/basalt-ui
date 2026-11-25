@@ -57,9 +57,10 @@ describe('tabs module', () => {
     expect(container.querySelector('[data-slot="tabs"]')?.className).toContain('[--tabs-h:1.5rem]')
   })
 
-  test('triggers lift to the 44 px floor under a coarse pointer', () => {
+  test('triggers keep their height and reach a 44 px hit area under a coarse pointer', () => {
     const { container } = render(<Sample />)
-    expect(tab(container, 'Alpha').className).toContain('pointer-coarse:min-h-11')
+    expect(tab(container, 'Alpha').className).toContain('pointer-coarse:after:min-h-11')
+    expect(tab(container, 'Alpha').className).not.toContain('pointer-coarse:min-h-11')
   })
 
   test('className is merged after the variant classes and cannot replace the slot', () => {
@@ -124,7 +125,7 @@ describe('tabs module', () => {
     const trigger = tab(container, 'Alpha').className
     expect(trigger).toContain('data-active:bg-secondary')
     expect(trigger).not.toContain('border-brand')
-    expect(trigger).toContain('pointer-coarse:min-h-11')
+    expect(trigger).toContain('pointer-coarse:after:min-h-11')
     expect(trigger).toContain('forced-colors:border')
   })
 

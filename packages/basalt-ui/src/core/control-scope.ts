@@ -36,12 +36,11 @@ export function scopeClass(scope: ControlScope | null): string | undefined {
 }
 
 /**
- * A small button or copy button in a group lifts to the 44 px coarse floor of its neighbours (alone it
- * keeps 24 px drawn and a 44 px `::after`) and drops the coarse inline margin that would open a gap;
- * an icon's hit area stops at its own edge, since that margin no longer holds its overhang.
+ * A small button or copy button in a group keeps its drawn height like its neighbours and drops the
+ * coarse inline margin that would open a gap; its hit area stops at its own edge, since that margin
+ * no longer holds its overhang.
  */
-export const GROUPED_SMALL_BUTTON =
-  'pointer-coarse:mx-0 pointer-coarse:min-h-11 pointer-coarse:min-w-11 pointer-coarse:after:inset-x-0'
+export const GROUPED_SMALL_BUTTON = 'pointer-coarse:mx-0 pointer-coarse:after:inset-x-0'
 
 /** A button's share of `scopeClass`: it grows in a `fill` group and keeps its own width otherwise. */
 export function buttonScopeClass(scope: ControlScope | null): string | undefined {

@@ -1,6 +1,5 @@
 import { useRef, useState } from 'react'
 import type { ReactElement, ReactNode } from 'react'
-import { cn } from '../core/cn'
 import { commitsDraft } from '../core/commit-key'
 import { useFormat } from '../core/format'
 import type { CalendarDate } from '../core/format'
@@ -98,9 +97,6 @@ export type PropertyListProps = {
 
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/
 
-/** On touch every row is one 44 px line, so a read-only row keeps the pitch of the editable ones around it. */
-const TOUCH_ROW = 'pointer-coarse:flex pointer-coarse:min-h-11 pointer-coarse:items-center'
-
 function focusOnMount(node: HTMLElement | null): void {
   node?.focus()
 }
@@ -177,7 +173,7 @@ function ValueButton({
       data-slot="property-value"
       aria-label={t('page.propertyEdit', label)}
       onClick={onOpen}
-      className="-mx-1.5 -my-0.5 block max-w-full rounded-chip px-1.5 py-0.5 text-left [overflow-wrap:anywhere] text-foreground focus-ring hover:bg-accent pointer-coarse:my-0 pointer-coarse:flex pointer-coarse:min-h-11 pointer-coarse:items-center"
+      className="relative -mx-1.5 -my-0.5 block max-w-full rounded-chip px-1.5 py-0.5 text-left [overflow-wrap:anywhere] text-foreground focus-ring hover:bg-accent after:absolute after:inset-x-0 after:top-1/2 after:h-full after:-translate-y-1/2 pointer-coarse:after:min-h-11"
     >
       {children}
     </button>
@@ -447,8 +443,8 @@ function Row({ row }: { row: PropertyRow }): ReactElement {
       data-editing={editing ? '' : undefined}
       className="contents"
     >
-      <dt className={cn(FACTS_TERM, TOUCH_ROW)}>{row.label}</dt>
-      <dd className={cn(FACTS_VALUE, row.kind === undefined && TOUCH_ROW)}>{value}</dd>
+      <dt className={FACTS_TERM}>{row.label}</dt>
+      <dd className={FACTS_VALUE}>{value}</dd>
     </div>
   )
 }

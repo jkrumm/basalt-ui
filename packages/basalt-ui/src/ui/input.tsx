@@ -7,8 +7,8 @@ import { ControlScopeProvider, scopeClass, useControlScope } from '../core/contr
 import type { IconComponent } from '../core/ports'
 
 /**
- * The `Input` cva table. Coarse pointers get the 44 px floor and 16 px text (below that iOS Safari
- * zooms the page on focus). A read-only field keeps its value readable: the inset surface, no border,
+ * The `Input` cva table. A coarse pointer keeps the density's height and text size; the iOS focus
+ * zoom is stopped in the head (`themeScript()`), never by a larger field. A read-only field keeps its value readable: the inset surface, no border,
  * no editable affordance; it never takes the disabled opacity.
  *
  * @example
@@ -20,7 +20,7 @@ export const inputVariants = cva(
     variants: {
       size: {
         md: 'h-ctl px-3 text-sm',
-        sm: 'h-6 px-2 text-xs pointer-coarse:h-ctl',
+        sm: 'h-6 px-2 text-xs',
       },
     },
     defaultVariants: { size: 'md' },

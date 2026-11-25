@@ -33,7 +33,7 @@ describe('PropertyList layout', () => {
     expect(container.querySelectorAll('button')).toHaveLength(1)
   })
 
-  test('on touch every row is one 44 px line, an editable value is one target, and no negative margin spills it', () => {
+  test('on touch a row keeps its density height; an editable value is one target with a 44 px hit area, and no negative margin spills it', () => {
     const { container } = render(
       <PropertyList
         rows={[
@@ -50,9 +50,10 @@ describe('PropertyList layout', () => {
       />,
     )
     for (const cell of container.querySelectorAll('dt, [data-kind="fact"] dd'))
-      expect(cell.className).toContain('pointer-coarse:min-h-11')
+      expect(cell.className).not.toContain('pointer-coarse')
     const button = container.querySelector('button')!
-    expect(button.className).toContain('pointer-coarse:min-h-11')
+    expect(button.className).toContain('pointer-coarse:after:min-h-11')
+    expect(button.className).not.toContain('pointer-coarse:min-h-11')
     expect(button.className).not.toContain('pointer-coarse:-my')
   })
 })

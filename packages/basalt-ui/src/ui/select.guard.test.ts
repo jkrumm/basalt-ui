@@ -52,6 +52,6 @@ describe('select guard', () => {
     expect(selectItemVariants()).toContain('pointer-coarse:min-h-11')
     expect(nativeSelectVariants()).toContain('appearance-none')
     expect(nativeSelectVariants()).toContain('h-ctl')
-    expect(nativeSelectVariants()).toContain('pointer-coarse:text-base')
+    expect(nativeSelectVariants()).not.toContain('pointer-coarse:text-base')
   })
 })

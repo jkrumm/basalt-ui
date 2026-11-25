@@ -4,6 +4,7 @@
  * on a fine pointer. `bare-*` are plain elements for the `styles.css` sheet.
  */
 import { createRoot } from 'react-dom/client'
+import { Button } from '../../../src/ui/button'
 import { Combobox, ComboboxContent, ComboboxInput, ComboboxItem } from '../../../src/ui/combobox'
 import { DatePicker } from '../../../src/ui/date-picker'
 import { Input } from '../../../src/ui/input'
@@ -46,6 +47,10 @@ function Fixture() {
         </ComboboxContent>
       </Combobox>
       <DatePicker aria-label="Due date" data-testid="m-date" />
+      <Button data-testid="m-button">Save</Button>
+      <Button size="sm" data-testid="m-button-sm">
+        Cancel
+      </Button>
     </main>
   )
 }

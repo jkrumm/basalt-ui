@@ -49,19 +49,19 @@ export const comboboxVariants = cva('relative block w-full min-w-0')
 
 /**
  * The `ComboboxInput` cva table: the visible input box. The inner input spans the box edge to edge,
- * so the hit target is the full control height. A coarse pointer gets the 44 px floor and
- * 16 px text (below that iOS Safari zooms the page on focus).
+ * so the hit target is the full control height. A coarse pointer keeps the
+ * density's height and text size.
  *
  * @example
  * comboboxInputVariants({ size: 'sm' })
  */
 export const comboboxInputVariants = cva(
-  'flex w-full min-w-0 items-center gap-2 rounded-ctrl border border-input bg-background text-foreground transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-brand has-focus-visible:outline-solid data-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50 pointer-coarse:text-base [&_input]:-my-px [&_input]:min-w-0 [&_input]:flex-1 [&_input]:scroll-my-1.5 [&_input]:self-stretch [&_input]:bg-transparent [&_input]:outline-none [&_input]:placeholder:text-faint',
+  'flex w-full min-w-0 items-center gap-2 rounded-ctrl border border-input bg-background text-foreground transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-brand has-focus-visible:outline-solid data-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50 [&_input]:-my-px [&_input]:min-w-0 [&_input]:flex-1 [&_input]:scroll-my-1.5 [&_input]:self-stretch [&_input]:bg-transparent [&_input]:outline-none [&_input]:placeholder:text-faint',
   {
     variants: {
       size: {
         md: 'h-ctl px-3 text-sm',
-        sm: 'h-6 px-2 text-xs pointer-coarse:h-ctl',
+        sm: 'h-6 px-2 text-xs',
       },
     },
     defaultVariants: { size: 'md' },
@@ -82,13 +82,13 @@ export const comboboxContentVariants = cva(
 /**
  * The `ComboboxItem` cva table: one option row, the same row `Select` and the command palette draw
  * (`sm` and `md` at the control heights, `lg` the palette's). A coarse pointer lifts it to the
- * 44 px floor.
+ * 44 px row.
  *
  * @example
  * comboboxItemVariants({ size: 'sm' })
  */
 export const comboboxItemVariants = cva(
-  'relative flex w-full items-center rounded-chip text-left outline-none select-none data-highlighted:bg-accent active:bg-accent data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base',
+  'relative flex w-full items-center rounded-chip text-left outline-none select-none data-highlighted:bg-accent active:bg-accent data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:min-h-11',
   {
     variants: {
       size: {
@@ -109,12 +109,12 @@ export const comboboxItemVariants = cva(
  * comboboxChipsVariants({ size: 'sm' })
  */
 export const comboboxChipsVariants = cva(
-  'flex w-full min-w-0 flex-wrap items-center gap-1 rounded-ctrl border border-input bg-background text-foreground transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-brand has-focus-visible:outline-solid data-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50 pointer-coarse:py-0 pointer-coarse:text-base [&_input]:min-h-6 [&_input]:min-w-16 [&_input]:flex-1 [&_input]:scroll-my-1.5 pointer-coarse:[&_input]:-my-px pointer-coarse:[&_input]:min-h-ctl [&_input]:bg-transparent [&_input]:outline-none [&_input]:placeholder:text-faint',
+  'flex w-full min-w-0 flex-wrap items-center gap-1 rounded-ctrl border border-input bg-background text-foreground transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-brand has-focus-visible:outline-solid data-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50 [&_input]:min-h-6 [&_input]:min-w-16 [&_input]:flex-1 [&_input]:scroll-my-1.5 [&_input]:bg-transparent [&_input]:outline-none [&_input]:placeholder:text-faint',
   {
     variants: {
       size: {
         md: 'min-h-ctl px-2 py-0.5 text-sm',
-        sm: 'min-h-6 px-1.5 py-0 text-xs pointer-coarse:min-h-ctl',
+        sm: 'min-h-6 px-1.5 py-0 text-xs',
       },
     },
     defaultVariants: { size: 'md' },
@@ -146,12 +146,12 @@ export const autocompleteVariants = cva('relative block w-full min-w-0')
  * autocompleteInputVariants({ size: 'sm' })
  */
 export const autocompleteInputVariants = cva(
-  'flex w-full min-w-0 items-center gap-2 rounded-ctrl border border-input bg-background text-foreground transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-brand has-focus-visible:outline-solid data-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50 pointer-coarse:text-base [&_input]:-my-px [&_input]:min-w-0 [&_input]:flex-1 [&_input]:scroll-my-1.5 [&_input]:self-stretch [&_input]:bg-transparent [&_input]:outline-none [&_input]:placeholder:text-faint',
+  'flex w-full min-w-0 items-center gap-2 rounded-ctrl border border-input bg-background text-foreground transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-brand has-focus-visible:outline-solid data-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50 [&_input]:-my-px [&_input]:min-w-0 [&_input]:flex-1 [&_input]:scroll-my-1.5 [&_input]:self-stretch [&_input]:bg-transparent [&_input]:outline-none [&_input]:placeholder:text-faint',
   {
     variants: {
       size: {
         md: 'h-ctl px-3 text-sm',
-        sm: 'h-6 px-2 text-xs pointer-coarse:h-ctl',
+        sm: 'h-6 px-2 text-xs',
       },
     },
     defaultVariants: { size: 'md' },
@@ -175,7 +175,7 @@ export const autocompleteContentVariants = cva(
  * autocompleteItemVariants()
  */
 export const autocompleteItemVariants = cva(
-  'relative flex w-full items-center gap-2 rounded-chip px-2 py-1.5 text-sm outline-none select-none data-highlighted:bg-accent active:bg-accent data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base',
+  'relative flex w-full items-center gap-2 rounded-chip px-2 py-1.5 text-sm outline-none select-none data-highlighted:bg-accent active:bg-accent data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:min-h-11',
 )
 
 /**

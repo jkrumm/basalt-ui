@@ -53,11 +53,11 @@ describe('table module', () => {
     expect(getByLabelText('Orders').className).not.toContain('[--table-row-h:1.75rem]')
   })
 
-  test('sm sets the fixed row height and keeps the coarse-pointer floor', () => {
+  test('sm sets the fixed row height on every pointer', () => {
     const { getByLabelText } = render(<Sample size="sm" />)
     const { className } = getByLabelText('Orders')
     expect(className).toContain('[--table-row-h:1.75rem]')
-    expect(className).toContain('pointer-coarse:[--table-row-h:var(--basalt-row-h)]')
+    expect(className).not.toContain('pointer-coarse')
   })
 
   test('the head sticks and rows carry hairlines by default', () => {

@@ -14,6 +14,9 @@ Boot script for `<head>`. Four duties: read (key, cookie, default), validate, st
 nothing. Logic is its own copy of `readScheme`; parity is tested, not shared. A second statement
 does the same for the appearance object: each valid `density`, `frame` and `accent` becomes its
 `data-*` attribute unless the page already has one (its copy of `readAppearance`, tested alike).
+A third statement adds `maximum-scale=1` to the viewport meta on iOS and iPadOS only: WebKit there
+zooms to a focused field and never zooms back, and still lets the reader pinch; Android Chrome
+would lose pinch zoom, so no other platform is touched.
 
 ## Signature
 
@@ -24,6 +27,7 @@ themeScript(options?: ThemeScriptOptions): string
   default?: Scheme
   cookie?: string
   appearance?: false  // `false` stamps only the scheme; by default the appearance `setAppearance` stored is stamped too
+  zoom?: false  // `false` leaves the viewport meta alone; by default iOS and iPadOS WebKit get `maximum-scale=1` (no focus zoom)
 ```
 
 `ThemeScriptOptions` import from `basalt-ui/theme-script`: `import type { ThemeScriptOptions } from 'basalt-ui/theme-script'`.

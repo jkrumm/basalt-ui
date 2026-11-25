@@ -292,13 +292,8 @@ describe('token invariants (docs/v3/evidence/self-tokens-theme.md §d)', () => {
 
   test.todo('d12 layer statement first: no basalt rule is unlayered (tok-t3)', pending)
 
-  test('d13 iOS floor: inputs get font-size max(16px, ...) and it is !important, and lg is the 16px rung', () => {
-    const rule = touchCss.match(
-      /input\s*,\s*\n?\s*select\s*,\s*\n?\s*textarea\s*\{\s*\n?\s*font-size:\s*([^;]+);/,
-    )
-    expect(rule).not.toBeNull()
-    expect(rule?.[1]).toContain('max(var(--basalt-input-fz-floor, 16px)')
-    expect(rule?.[1]).toContain('!important')
+  test('d13 no iOS input floor: the touch sheet sets no font size; lg is the 16px rung', () => {
+    expect(touchCss.replace(/\/\*[\s\S]*?\*\//g, '')).not.toMatch(/font-size/)
     expect(BASALT.text.lg).toBe(16)
   })
 

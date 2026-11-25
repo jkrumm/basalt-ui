@@ -233,3 +233,62 @@ describe('themeScript stamps the stored appearance before paint', () => {
     expect(attrs()).toEqual([null, null, null])
   })
 })
+
+describe('themeScript viewport zoom', () => {
+  const IPHONE =
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
+  const IPAD =
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/18.0 Safari/605.1.15'
+  const ANDROID =
+    'Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Mobile Safari/537.36'
+  const CONTENT = 'width=device-width, initial-scale=1, viewport-fit=cover'
+  const original = { ua: navigator.userAgent, touch: navigator.maxTouchPoints }
+
+  function viewport(): HTMLMetaElement {
+    document.head.querySelector('meta[name="viewport"]')?.remove()
+    const meta = document.createElement('meta')
+    meta.name = 'viewport'
+    meta.content = CONTENT
+    document.head.append(meta)
+    return meta
+  }
+
+  function visit(ua: string, touch: number, options?: Parameters<typeof themeScript>[0]): string {
+    Object.defineProperty(navigator, 'userAgent', { value: ua, configurable: true })
+    Object.defineProperty(navigator, 'maxTouchPoints', { value: touch, configurable: true })
+    const meta = viewport()
+    new Function(themeScript(options))()
+    return meta.content
+  }
+
+  afterEach(() => {
+    Object.defineProperty(navigator, 'userAgent', { value: original.ua, configurable: true })
+    Object.defineProperty(navigator, 'maxTouchPoints', {
+      value: original.touch,
+      configurable: true,
+    })
+    document.head.querySelector('meta[name="viewport"]')?.remove()
+  })
+
+  test('an iPhone gets maximum-scale=1', () => {
+    expect(visit(IPHONE, 5)).toBe(`${CONTENT}, maximum-scale=1`)
+  })
+
+  test('an iPad, which reports as a touch Mac, gets it too', () => {
+    expect(visit(IPAD, 5)).toBe(`${CONTENT}, maximum-scale=1`)
+  })
+
+  test('a Mac without touch and Android Chrome keep their pinch zoom', () => {
+    expect(visit(IPAD, 0)).toBe(CONTENT)
+    expect(visit(ANDROID, 5)).toBe(CONTENT)
+  })
+
+  test('a viewport that names maximum-scale already is left alone; zoom: false skips it', () => {
+    Object.defineProperty(navigator, 'userAgent', { value: IPHONE, configurable: true })
+    const meta = viewport()
+    meta.content = 'width=device-width, maximum-scale=5'
+    new Function(themeScript())()
+    expect(meta.content).toBe('width=device-width, maximum-scale=5')
+    expect(visit(IPHONE, 5, { zoom: false })).toBe(CONTENT)
+  })
+})

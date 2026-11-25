@@ -21,11 +21,11 @@ export const tableVariants = cva(
     variants: {
       size: {
         md: '',
-        sm: '[--table-row-h:1.75rem] pointer-coarse:[--table-row-h:var(--basalt-row-h)]',
+        sm: '[--table-row-h:1.75rem]',
       },
       look: {
         reading: '',
-        grid: 'tabular-nums [--table-row-h:1.75rem] pointer-coarse:[--table-row-h:var(--basalt-row-h)] [&_:is(th,td)]:border-e [&_:is(th,td)]:border-border [&_:is(th,td):last-child]:border-e-0',
+        grid: 'tabular-nums [--table-row-h:1.75rem] [&_:is(th,td)]:border-e [&_:is(th,td)]:border-border [&_:is(th,td):last-child]:border-e-0',
       },
     },
     defaultVariants: { size: 'md', look: 'reading' },

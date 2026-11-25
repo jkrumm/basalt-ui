@@ -59,8 +59,9 @@ function anchorOf<K extends string>(
   }
 }
 
+// A navigation row is a list's whole target: it keeps a 44 px row on a phone, where rows sit flush and no `::after` can reach past a neighbour.
 const LINK =
-  'flex h-ctl min-w-0 flex-1 items-center gap-2 rounded-ctrl px-2.5 text-sm whitespace-nowrap text-muted-foreground focus-ring hover:bg-accent hover:text-foreground aria-[current=page]:bg-selected aria-[current=page]:font-medium aria-[current=page]:text-foreground'
+  'flex h-ctl min-w-0 pointer-coarse:min-h-11 flex-1 items-center gap-2 rounded-ctrl px-2.5 text-sm whitespace-nowrap text-muted-foreground focus-ring hover:bg-accent hover:text-foreground aria-[current=page]:bg-selected aria-[current=page]:font-medium aria-[current=page]:text-foreground'
 
 function Badge({ badge }: { badge: NonNullable<InnerNavItem['badge']> }): ReactElement {
   const t = useMessages(page)
@@ -163,7 +164,7 @@ function Group<K extends string>({
           if (loading)
             return (
               <li key={item.id} data-slot="inner-nav-item" className="flex shrink-0 items-center">
-                <div className="flex h-ctl min-w-0 flex-1 items-center px-2.5 text-sm">
+                <div className="flex h-ctl min-w-0 flex-1 items-center px-2.5 text-sm pointer-coarse:min-h-11">
                   <Skeleton className="w-24" />
                 </div>
               </li>

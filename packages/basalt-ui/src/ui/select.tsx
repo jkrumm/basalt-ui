@@ -48,19 +48,19 @@ export type { ListVirtual } from '../core/list/engine'
 export const selectVariants = cva('relative block w-full min-w-0')
 
 /**
- * The `SelectTrigger` cva table: the closed control. A coarse pointer gets the 44 px floor and 16 px
- * text (below that iOS Safari zooms the page on focus).
+ * The `SelectTrigger` cva table: the closed control. It keeps the density's height on a phone; a
+ * coarse pointer gets a 44 px `::after` hit area.
  *
  * @example
  * selectTriggerVariants({ size: 'sm' })
  */
 export const selectTriggerVariants = cva(
-  'flex w-full min-w-0 items-center justify-between gap-2 rounded-ctrl border border-input bg-background text-left text-foreground focus-ring transition-colors data-placeholder:text-faint data-readonly:cursor-default data-readonly:border-transparent data-readonly:bg-inset data-invalid:border-bad data-disabled:opacity-50 pointer-coarse:text-base',
+  'relative flex w-full min-w-0 items-center justify-between gap-2 rounded-ctrl border border-input bg-background text-left text-foreground after:absolute after:inset-x-0 after:top-1/2 after:h-full after:-translate-y-1/2 pointer-coarse:after:min-h-11 focus-ring transition-colors data-placeholder:text-faint data-readonly:cursor-default data-readonly:border-transparent data-readonly:bg-inset data-invalid:border-bad data-disabled:opacity-50',
   {
     variants: {
       size: {
         md: 'h-ctl px-3 text-sm',
-        sm: 'h-6 px-2 text-xs pointer-coarse:h-ctl',
+        sm: 'h-6 px-2 text-xs',
       },
     },
     defaultVariants: { size: 'md' },
@@ -80,13 +80,13 @@ export const selectContentVariants = cva(
 
 /**
  * The `SelectItem` cva table: one option row, the same row `Combobox` and the command palette draw,
- * at the control's height. A coarse pointer lifts it to the 44 px floor.
+ * at the control's height. A coarse pointer lifts it to the 44 px row.
  *
  * @example
  * selectItemVariants({ size: 'sm' })
  */
 export const selectItemVariants = cva(
-  'relative flex w-full items-center rounded-chip text-left outline-none select-none data-highlighted:bg-accent active:bg-accent data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base',
+  'relative flex w-full items-center rounded-chip text-left outline-none select-none data-highlighted:bg-accent active:bg-accent data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:min-h-11',
   {
     variants: {
       size: {
@@ -101,18 +101,18 @@ export const selectItemVariants = cva(
 /**
  * The `NativeSelect` cva table: the platform `<select>` drawn like `Input`, for a row-level choice
  * or the OS picker on a phone. It strips the platform chrome (`appearance-none`) and draws its own
- * chevron. Coarse pointers get the 44 px floor and 16 px text.
+ * chevron. A coarse pointer keeps the density's height and text size.
  *
  * @example
  * nativeSelectVariants({ size: 'sm' })
  */
 export const nativeSelectVariants = cva(
-  'relative block w-full min-w-0 [&_select]:w-full [&_select]:min-w-0 [&_select]:appearance-none [&_select]:rounded-ctrl [&_select]:border [&_select]:border-input [&_select]:bg-background [&_select]:text-foreground [&_select]:focus-ring [&_select]:transition-colors [&_select]:aria-invalid:border-bad [&_select]:disabled:opacity-50 [&_select]:pointer-coarse:text-base',
+  'relative block w-full min-w-0 [&_select]:w-full [&_select]:min-w-0 [&_select]:appearance-none [&_select]:rounded-ctrl [&_select]:border [&_select]:border-input [&_select]:bg-background [&_select]:text-foreground [&_select]:focus-ring [&_select]:transition-colors [&_select]:aria-invalid:border-bad [&_select]:disabled:opacity-50',
   {
     variants: {
       size: {
         md: '[&_select]:h-ctl [&_select]:pr-8 [&_select]:pl-3 [&_select]:text-sm',
-        sm: '[&_select]:h-6 [&_select]:pr-6 [&_select]:pl-2 [&_select]:text-xs [&_select]:pointer-coarse:h-ctl',
+        sm: '[&_select]:h-6 [&_select]:pr-6 [&_select]:pl-2 [&_select]:text-xs',
       },
     },
     defaultVariants: { size: 'md' },
@@ -712,7 +712,7 @@ export type NativeSelectProps = Omit<ComponentPropsWithoutRef<'select'>, 'classN
 
 /**
  * The platform `<select>` with the design's box and chevron: appearance stripped, height from
- * `size`, focus ring, 16 px text on a coarse pointer. Use it for a row-level choice or where the OS
+ * `size`, focus ring, the field's text size on every pointer. Use it for a row-level choice or where the OS
  * picker is the better phone UI. Name it with a wrapping `<label>` or `aria-label`.
  *
  * @useWhen a row-level choice, or the OS picker beats a popup on a phone

@@ -90,12 +90,8 @@ describe('tailwind bridge drift', () => {
     expect(css.slice(media)).toContain('background-color: var(--basalt-card)')
   })
 
-  test('compiled: the coarse input floor sits inside its media query', async () => {
+  test('compiled: no input font-size floor under a coarse pointer', async () => {
     const css = await build([])
-    const floor = css.indexOf('font-size: max(var(--basalt-input-fz-floor, 16px)')
-    expect(floor).toBeGreaterThan(-1)
-    // The nearest media query before the declaration is the coarse pointer one, in the `basalt` layer.
-    const media = css.lastIndexOf('@media', floor)
-    expect(css.slice(media, floor)).toContain('(pointer: coarse)')
+    expect(css).not.toContain('--basalt-input-fz-floor')
   })
 })

@@ -96,7 +96,7 @@ SelectGroup({ className, label, children, ...props }: SelectGroupProps): ReactEl
 ### `NativeSelect`
 
 The platform `<select>` with the design's box and chevron: appearance stripped, height from
-`size`, focus ring, 16 px text on a coarse pointer. Use it for a row-level choice or where the OS
+`size`, focus ring, the field's text size on every pointer. Use it for a row-level choice or where the OS
 picker is the better phone UI. Name it with a wrapping `<label>` or `aria-label`.
 
 ```ts

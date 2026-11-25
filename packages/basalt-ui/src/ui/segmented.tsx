@@ -23,7 +23,7 @@ export const segmentedVariants = cva(
     variants: {
       size: {
         md: 'min-h-ctl',
-        sm: 'min-h-6 pointer-coarse:min-h-ctl',
+        sm: 'min-h-6',
       },
       fill: {
         true: 'flex w-full',
@@ -48,7 +48,7 @@ const OWN_FACE =
  * segmentedItemVariants({ size: 'md' })
  */
 export const segmentedItemVariants = cva(
-  `relative z-10 flex flex-auto shrink-0 whitespace-nowrap pointer-coarse:min-w-11 items-center justify-center gap-1.5 rounded-chip text-center font-medium text-muted-foreground transition-colors select-none motion-reduce:transition-none group-data-[fill=true]/segmented:flex-1 group-data-[fill=true]/segmented:basis-0 focus-ring focus-visible:-outline-offset-2 after:absolute after:inset-x-0 after:top-1/2 after:h-full after:min-h-6 after:-translate-y-1/2 pointer-coarse:after:min-h-11 hover:text-foreground data-pressed:text-foreground data-disabled:pointer-events-none data-disabled:opacity-50 ${OWN_FACE}`,
+  `relative z-10 flex flex-auto shrink-0 whitespace-nowrap items-center justify-center gap-1.5 rounded-chip text-center font-medium text-muted-foreground transition-colors select-none motion-reduce:transition-none group-data-[fill=true]/segmented:flex-1 group-data-[fill=true]/segmented:basis-0 focus-ring focus-visible:-outline-offset-2 after:absolute after:inset-x-0 after:top-1/2 after:h-full after:min-h-6 after:-translate-y-1/2 pointer-coarse:after:min-h-11 hover:text-foreground data-pressed:text-foreground data-disabled:pointer-events-none data-disabled:opacity-50 ${OWN_FACE}`,
   {
     variants: {
       size: {

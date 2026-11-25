@@ -210,6 +210,14 @@ layout('FormField and FormRow', () => {
               (input.type === 'checkbox' || input.type === 'range' || input.type === 'radio')
             )
               continue
+            // A text field cannot own a pseudo-element: its hit target is its own box, which keeps the density's height on a phone (WCAG 2.5.8's 24 px); a button, a stepper and a switch reach 44 through `::after`.
+            const textEntry =
+              (input instanceof HTMLInputElement &&
+                !['button', 'submit', 'reset', 'checkbox', 'radio', 'range'].includes(
+                  input.type,
+                )) ||
+              input instanceof HTMLTextAreaElement
+            const need = textEntry ? 24 : HIT
             const r = el.getBoundingClientRect()
             if (r.width < 4 || r.height < 4) continue
             const style = getComputedStyle(el)
@@ -220,7 +228,11 @@ layout('FormField and FormRow', () => {
             const w = Math.max(r.width, Number.isNaN(aw) || after.content === 'none' ? 0 : aw)
             const h = Math.max(r.height, Number.isNaN(ah) || after.content === 'none' ? 0 : ah)
             checked++
-            if (h + 0.5 < HIT || (w + 0.5 < HIT && el.getAttribute('role') !== 'switch'))
+            // A switch is judged by height (its width may be the track), and so is a segmented option: adjacent options may not overlap, so each keeps its own width.
+            const heightOnly =
+              el.getAttribute('role') === 'switch' ||
+              el.getAttribute('data-slot') === 'segmented-item'
+            if (h + 0.5 < need || (w + 0.5 < HIT && !heightOnly))
               short.push(
                 `${el.tagName.toLowerCase()}[${el.getAttribute('data-slot') ?? ''}] ${w.toFixed(0)}x${h.toFixed(0)}`,
               )

@@ -41,6 +41,6 @@ describe('file-upload guard', () => {
     })
     expect(fileUploadVariants()).toContain('border-dashed')
     expect(fileUploadVariants({ compact: true })).toContain('py-3')
-    expect(fileUploadVariants()).toContain('pointer-coarse:min-h-11')
+    expect(fileUploadVariants()).not.toContain('pointer-coarse')
   })
 })

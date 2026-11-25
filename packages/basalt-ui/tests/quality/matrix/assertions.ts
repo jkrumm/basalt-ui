@@ -216,10 +216,21 @@ export async function hitFloor(page: Page, pointer: 'fine' | 'coarse'): Promise<
         const ah = parseFloat(after.height)
         const w = Math.max(r.width, Number.isNaN(aw) || after.content === 'none' ? 0 : aw)
         const h = Math.max(r.height, Number.isNaN(ah) || after.content === 'none' ? 0 : ah)
+        // A text field cannot own a pseudo-element: its own box, the density's height, is its target (WCAG 2.5.8's 24 px).
+        const textEntry =
+          (el instanceof HTMLInputElement &&
+            !['button', 'submit', 'reset', 'checkbox', 'radio', 'range'].includes(el.type)) ||
+          el instanceof HTMLTextAreaElement ||
+          el instanceof HTMLSelectElement ||
+          // a combobox's closed box is a field: it keeps the density's height and holds an input of its own, so no `::after` can cover it
+          ['combobox-input', 'autocomplete-input'].includes(el.getAttribute('data-slot') ?? '')
+        const needFloor = textEntry ? Math.min(floor, 24) : floor
         const gap = parseFloat(style.getPropertyValue('--basalt-hit-gap')) || 0
         const gapBlock = parseFloat(style.getPropertyValue('--basalt-hit-gap-block')) || gap
-        const needW = gap ? Math.min(floor, r.width + gap) : floor
-        const needH = gapBlock ? Math.min(floor, r.height + gapBlock) : floor
+        // A segmented option sits flush against its neighbours: it keeps its own width and reaches the floor in height.
+        const flush = el.getAttribute('data-slot') === 'segmented-item'
+        const needW = flush ? 0 : gap ? Math.min(floor, r.width + gap) : floor
+        const needH = gapBlock ? Math.min(needFloor, r.height + gapBlock) : needFloor
         checked++
         if (w + 0.5 < needW || h + 0.5 < needH) {
           const slot = el.getAttribute('data-slot')

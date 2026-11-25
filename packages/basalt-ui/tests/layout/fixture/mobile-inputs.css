@@ -5,6 +5,7 @@
  */
 @import '../../../src/css/tailwind.css' source(none);
 @source './mobile-inputs-fixture.tsx';
+@source '../../../src/ui/button.tsx';
 @source '../../../src/ui/input.tsx';
 @source '../../../src/ui/textarea.tsx';
 @source '../../../src/ui/select.tsx';

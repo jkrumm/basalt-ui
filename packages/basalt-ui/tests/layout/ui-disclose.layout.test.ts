@@ -128,10 +128,16 @@ layout('ui disclosure group', () => {
         expect(info!.clientWidth).toBeLessThanOrEqual(viewport.width)
       })
 
-      test('every trigger meets the 44 px floor under a coarse pointer', async () => {
+      test('every trigger reaches the 44 px floor under a coarse pointer, drawn at its own height', async () => {
         const page = await open(viewport)
         const heights = await page.raw.evaluate((sel) => {
-          return [...document.querySelectorAll(sel)].map((el) => el.getBoundingClientRect().height)
+          return [...document.querySelectorAll(sel)].map((el) => {
+            const after = getComputedStyle(el, '::after')
+            return Math.max(
+              el.getBoundingClientRect().height,
+              after.content === 'none' ? 0 : Number.parseFloat(after.height) || 0,
+            )
+          })
         }, '[data-slot="tabs-trigger"], [data-slot="accordion-trigger"]')
         expect(heights.length).toBeGreaterThan(8)
         for (const h of heights) expect(h).toBeGreaterThanOrEqual(HIT_FLOOR - 0.5)

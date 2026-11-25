@@ -26,19 +26,19 @@ export type { CalendarDate } from '../core/format'
 /**
  * The trigger's cva table: a field-shaped button on the input surface that shows the picked day
  * (or the placeholder) and opens the calendar. It is the root element of `DatePicker` and
- * `DateRangePicker`. `size` takes the steps every field takes; coarse pointers get the 44 px floor and
- * 16 px text.
+ * `DateRangePicker`. `size` takes the steps every field takes; a coarse pointer gets a 44 px
+ * `::after` hit area, never a taller field.
  *
  * @example
  * datePickerVariants({ size: 'sm' }) // class string for a hand-built trigger
  */
 export const datePickerVariants = cva(
-  'flex w-full min-w-0 items-center justify-between gap-2 rounded-ctrl border border-input bg-background text-left text-foreground tabular-nums focus-ring transition-colors aria-invalid:border-bad data-placeholder:text-faint data-disabled:opacity-50 pointer-coarse:text-base',
+  'relative flex w-full min-w-0 items-center justify-between gap-2 rounded-ctrl border border-input bg-background text-left text-foreground tabular-nums after:absolute after:inset-x-0 after:top-1/2 after:h-full after:-translate-y-1/2 pointer-coarse:after:min-h-11 focus-ring transition-colors aria-invalid:border-bad data-placeholder:text-faint data-disabled:opacity-50',
   {
     variants: {
       size: {
         md: 'h-ctl px-3 text-sm',
-        sm: 'h-6 px-2 text-xs pointer-coarse:h-ctl',
+        sm: 'h-6 px-2 text-xs',
       },
     },
     defaultVariants: { size: 'md' },

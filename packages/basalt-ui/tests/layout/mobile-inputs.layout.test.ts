@@ -1,9 +1,10 @@
 /**
- * One rule for input text, in real Chrome: a coarse primary pointer computes 16 px on Input, Textarea,
- * a Select trigger, a Combobox and a DatePicker field, and the control height is the token's 44 px; a
- * fine pointer keeps the control size (`text-sm`) and `--basalt-ctl-h`. The rule comes from the
- * sheets an app loads: `tailwind.css` (utilities and tokens) and `styles.css`, which both import
- * `css/touch.css`; a bare `<input>` under `styles.css` alone follows the same pointer axis.
+ * One rule for fields and buttons, in real Chrome: a phone computes the density's own text size and
+ * control height, the same as a desktop at 1800 (Issue 3298). The 16 px iOS floor and the 44 px control
+ * are gone; touch reach is a 44 px `::after` hit area around a Button, a Select trigger and a
+ * DatePicker. A bare text field cannot own a pseudo-element, so its hit target is its own box. The
+ * rule comes from the sheets an app loads: `tailwind.css` (utilities and tokens) and `styles.css`,
+ * which both import `css/touch.css`.
  */
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
@@ -87,76 +88,90 @@ const SELECTORS = {
   'Select trigger': '[data-testid="m-select"]',
   Combobox: '[data-testid="m-combobox"] input, input[data-testid="m-combobox"]',
   'DatePicker field': '[data-slot="date-picker"]',
+  Button: '[data-testid="m-button"]',
+  'Button sm': '[data-testid="m-button-sm"]',
 } as const
 
-type Metrics = { fontSize: number; height: number; probe: number; ctl: number }
+/** Controls that own a `::after`: their hit target is the box united with it. A bare field has none. */
+const WITH_HIT_AREA = new Set(['Select trigger', 'DatePicker field', 'Button', 'Button sm'])
+
+type Metrics = { fontSize: number; height: number; hitHeight: number; hitWidth: number }
 
 const metrics = (page: LayoutPage, selector: string): Promise<Metrics> =>
   page.raw.evaluate((sel) => {
     const el = document.querySelector<HTMLElement>(sel)
     if (el === null) throw new Error(`mobile-inputs: no ${sel}`)
-    const box = (el.closest<HTMLElement>('[data-slot]') ?? el).getBoundingClientRect()
-    const root = getComputedStyle(document.documentElement)
+    const host = el.closest<HTMLElement>('[data-slot]') ?? el
+    const box = host.getBoundingClientRect()
+    const after = getComputedStyle(host, '::after')
+    const aw = after.content === 'none' ? 0 : Number.parseFloat(after.width) || 0
+    const ah = after.content === 'none' ? 0 : Number.parseFloat(after.height) || 0
     return {
       fontSize: Number.parseFloat(getComputedStyle(el).fontSize),
       height: box.height,
-      probe: Number.parseFloat(
-        getComputedStyle(document.querySelector<HTMLElement>('[data-testid="probe-text-sm"]')!)
-          .fontSize,
-      ),
-      ctl:
-        Number.parseFloat(root.getPropertyValue('--basalt-ctl-h')) *
-        Number.parseFloat(root.fontSize),
+      hitHeight: Math.max(box.height, ah),
+      hitWidth: Math.max(box.width, aw),
     }
   }, selector)
 
-layout('tailwind.css: input text and control height by pointer', () => {
-  for (const pointer of POINTERS) {
-    describe(`${pointer} pointer at ${PHONE.width}`, () => {
-      for (const [name, selector] of Object.entries(SELECTORS)) {
-        test(`${name}`, async () => {
-          const page = await openFixture(EMPTY_SPEC, PHONE, appDocument, 'reduce', pointer)
-          await page.raw.waitForSelector('[data-testid="m-input"]')
-          const m = await metrics(page, selector)
-          if (pointer === 'coarse') {
-            expect(m.fontSize).toBe(16)
-            expect(m.height).toBeGreaterThanOrEqual(44)
-            expect(m.ctl).toBe(44)
-          } else {
-            expect(m.fontSize).toBeLessThan(16)
-            expect(m.ctl).toBeLessThan(44)
-            if (name === 'Textarea') expect(m.height).toBeGreaterThanOrEqual(m.ctl)
-            else if (name !== 'Input sm') expect(m.height).toBeCloseTo(m.ctl, 0)
-          }
-        })
-      }
-      test('the control size on a fine pointer is the text-sm size', async () => {
-        const page = await openFixture(EMPTY_SPEC, PHONE, appDocument, 'reduce', pointer)
-        await page.raw.waitForSelector('[data-testid="m-input"]')
-        const m = await metrics(page, SELECTORS.Input)
-        expect(m.fontSize).toBe(pointer === 'coarse' ? 16 : m.probe)
-      })
+const FINE_DESKTOP = { name: 'desktop 1800', width: 1800, height: 1200 }
+
+layout('tailwind.css: a phone keeps the desktop size of every field and button', () => {
+  for (const [name, selector] of Object.entries(SELECTORS)) {
+    test(`${name}: font size and height at ${PHONE.width} (coarse) equal those at 1800 (fine)`, async () => {
+      const desktop = await openFixture(EMPTY_SPEC, FINE_DESKTOP, appDocument, 'reduce', 'fine')
+      await desktop.raw.waitForSelector('[data-testid="m-input"]')
+      const fine = await metrics(desktop, selector)
+      const phone = await openFixture(EMPTY_SPEC, PHONE, appDocument, 'reduce', 'coarse')
+      await phone.raw.waitForSelector('[data-testid="m-input"]')
+      const coarse = await metrics(phone, selector)
+      expect(coarse.fontSize).toBe(fine.fontSize)
+      expect(coarse.fontSize).toBeLessThan(16)
+      expect(coarse.height).toBeCloseTo(fine.height, 0)
     })
   }
+
+  for (const name of WITH_HIT_AREA) {
+    test(`${name}: a 44 x 44 hit target at ${PHONE.width}`, async () => {
+      const page = await openFixture(EMPTY_SPEC, PHONE, appDocument, 'reduce', 'coarse')
+      await page.raw.waitForSelector('[data-testid="m-input"]')
+      const m = await metrics(page, SELECTORS[name as keyof typeof SELECTORS])
+      expect(m.hitHeight).toBeGreaterThanOrEqual(44 - 0.5)
+      expect(m.hitWidth).toBeGreaterThanOrEqual(44 - 0.5)
+    })
+  }
+
+  test('the control height token is the density height on both pointers', async () => {
+    for (const pointer of ['fine', 'coarse'] as const) {
+      const page = await openFixture(EMPTY_SPEC, PHONE, appDocument, 'reduce', pointer)
+      await page.raw.waitForSelector('[data-testid="m-input"]')
+      const ctl = await page.raw.evaluate(() => {
+        const root = getComputedStyle(document.documentElement)
+        return {
+          ctl:
+            Number.parseFloat(root.getPropertyValue('--basalt-ctl-h')) *
+            Number.parseFloat(root.fontSize),
+          hit: root.getPropertyValue('--basalt-hit').trim(),
+        }
+      })
+      expect(ctl.ctl, pointer).toBe(28)
+      expect(ctl.hit, pointer).toBe(pointer === 'coarse' ? '2.75rem' : '1.5rem')
+    }
+  })
 })
 
-layout('styles.css: the same rule on bare elements', () => {
+layout('styles.css: no floor on bare elements', () => {
   const sizeOf = (page: LayoutPage, id: string): Promise<number> =>
     page.raw.evaluate(
       (sel) => Number.parseFloat(getComputedStyle(document.querySelector(sel)!).fontSize),
       `#${id}`,
     )
 
-  test('a coarse pointer computes 16 px, an inline style cannot lower it', async () => {
-    const page = await openFixture(EMPTY_SPEC, PHONE, stylesDocument, 'reduce', 'coarse')
-    for (const id of ['bare-input', 'bare-textarea', 'bare-select', 'bare-inline']) {
-      expect(await sizeOf(page, id), id).toBe(16)
-    }
-  })
-
-  test('a fine pointer keeps the browser size: no floor', async () => {
-    const page = await openFixture(EMPTY_SPEC, PHONE, stylesDocument, 'reduce', 'fine')
-    expect(await sizeOf(page, 'bare-input')).toBeLessThan(16)
-    expect(await sizeOf(page, 'bare-inline')).toBe(12)
-  })
+  for (const pointer of POINTERS) {
+    test(`${pointer}: an inline 12 px style stays 12 px and a bare input keeps the browser size`, async () => {
+      const page = await openFixture(EMPTY_SPEC, PHONE, stylesDocument, 'reduce', pointer)
+      expect(await sizeOf(page, 'bare-inline')).toBe(12)
+      expect(await sizeOf(page, 'bare-input')).toBeLessThan(16)
+    })
+  }
 })

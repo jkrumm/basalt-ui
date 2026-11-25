@@ -43,7 +43,7 @@ describe('combobox guard', () => {
     expect(comboboxVariants()).toContain('w-full')
     expect(comboboxInputVariants({ size: 'sm' })).toContain('h-6')
     expect(comboboxInputVariants()).toContain('h-ctl')
-    expect(comboboxInputVariants({ size: 'sm' })).toContain('pointer-coarse:h-ctl')
+    expect(comboboxInputVariants({ size: 'sm' })).not.toContain('pointer-coarse')
     expect(comboboxChipsVariants()).toContain('flex-wrap')
     expect(comboboxContentVariants()).toContain('max-h-(--available-height)')
     expect(comboboxItemVariants()).toContain('pointer-coarse:min-h-11')
