@@ -55,8 +55,8 @@ Columns: `No directive` is the static HTML: `clean`, `differs` from the client:o
 | step-rail | StepRail | clean | no directive | 81.2 kB | 10.0 kB | 35.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: bars scaled to the longest step are drawn at rest; it never animates. |
 | lines | Lines | differs | client:visible | 197.4 kB | 126.2 kB | 37.8 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 126.2 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-dark). |
 | bars | Bars | differs | client:visible | 197.3 kB | 126.1 kB | 37.8 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 126.1 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-dark). |
-| cartesian-chart | CartesianChart | differs | client:visible | 192.7 kB | 121.5 kB | 37.8 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 121.5 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-dark). |
-| chart-card | ChartCard | differs | client:visible | 206.9 kB | 135.7 kB | 37.8 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 135.7 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-light). |
+| cartesian-chart | CartesianChart | differs | client:visible | 197.3 kB | 126.1 kB | 37.8 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 126.1 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-dark). |
+| chart-card | ChartCard | differs | client:visible | 210.7 kB | 139.5 kB | 37.8 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 139.5 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-light). |
 | heatmap | Heatmap | differs | client:visible | 193.2 kB | 122.0 kB | 37.8 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 122.0 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-light). |
 | interval-track | IntervalTrack | differs | client:visible | 194.3 kB | 123.1 kB | 37.8 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 123.1 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-dark). |
 | sparkline | Sparkline | clean | client:visible | 89.6 kB | 18.4 kB | 37.8 kB | Static picture first, the island adds behaviour: the keyboard and pointer readout of a labelled sparkline. client:visible, up to 18.4 kB further (client:idle above the fold). |
@@ -134,8 +134,8 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 |-|-|-|
 | lines | correct at the declared width only | client:visible, up to 126.2 kB further |
 | bars | correct at the declared width only | client:visible, up to 126.1 kB further |
-| cartesian-chart | correct at the declared width only | client:visible, up to 121.5 kB further |
-| chart-card | correct at the declared width only | client:visible, up to 135.7 kB further |
+| cartesian-chart | correct at the declared width only | client:visible, up to 126.1 kB further |
+| chart-card | correct at the declared width only | client:visible, up to 139.5 kB further |
 | heatmap | correct at the declared width only | client:visible, up to 122.0 kB further |
 | interval-track | correct at the declared width only | client:visible, up to 123.1 kB further |
 | sparkline | correct | client:visible, up to 18.4 kB further |
@@ -181,8 +181,8 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 - step-rail: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
 - lines: the rich chart tooltip, the log right axis, colorBy lines, events, extremes and floating bars (Issue 3300): the chart core every chart island carries
 - bars: the rich chart tooltip, the log right axis, colorBy lines, events, extremes and floating bars (Issue 3300): the chart core every chart island carries
-- cartesian-chart: the mobile overlays (Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom sheet on a phone; the presenter hooks ship in every overlay island, and the Dock carries the sheet frame
-- chart-card: right click, long press and Shift+F10 open a row or card menu (Issue 3295): the shared context trigger joins the card menu and the table closure
+- cartesian-chart: the rich chart tooltip, the log right axis, colorBy lines, events, extremes and floating bars (Issue 3300): the chart core every chart island carries
+- chart-card: the rich chart tooltip, the log right axis, colorBy lines, events, extremes and floating bars (Issue 3300): the chart core every chart island carries
 - heatmap: the rich chart tooltip, the log right axis, colorBy lines, events, extremes and floating bars (Issue 3300): the chart core every chart island carries
 - interval-track: the rich chart tooltip, the log right axis, colorBy lines, events, extremes and floating bars (Issue 3300): the chart core every chart island carries
 - sparkline: the mobile overlays (Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom sheet on a phone; the presenter hooks ship in every overlay island, and the Dock carries the sheet frame
