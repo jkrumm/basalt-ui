@@ -34,7 +34,7 @@ IntervalTrack<T, X extends IntervalX = IntervalX, K extends string = string>(pro
   xTicks?: number | readonly X[]  // A tick count, or the exact tick values
   xTitle?: string  // The x axis name with its unit
   legend?: false  // `false` hides the legend
-  tooltip?: false | { rows?: ((d: T) => readonly ChartTooltipRow[]) | undefined; }  // Rows after the span row (a status, an owner)
+  tooltip?: false | { rows?: ((d: T) => readonly Omit<ChartTooltipRow, "status">[]) | undefined; }  // Rows after the span row (a status, an owner)
   focus?: ChartFocus<T>  // `useChartFocus(data, …)`: pointing at a span or stepping with the arrow keys focuses it, it takes a ring (a lane span also lifts one tone) while every other span keeps its paint, and `focus.readout` drives a card fact
   height?: number | "fill" | ResponsiveChartHeight  // A fixed height, or `'fill'` (a `ChartCard` box) to take the parent's
   phase?: Phase | QueryStateLike  // The load state, as on every data part: a `Phase` or a query result

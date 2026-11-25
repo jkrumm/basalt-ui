@@ -7,6 +7,7 @@
 import { useEffect, useId, useLayoutEffect, useRef } from 'react'
 import type { CSSProperties, MouseEvent, ReactElement } from 'react'
 import { BASALT, alpha } from '../tokens'
+import { defaultNumberFormat } from './core/compile'
 import { CV } from './core/theme'
 import { rampGradientCss, rampStops } from './core/rich-tooltip'
 import classes from './chart-legend.module.css'
@@ -152,7 +153,7 @@ const RAMP_KEY_PX = 48
 function RampKey({ s }: { s: SwatchStyle }): ReactElement | null {
   const by = s.colorBy
   if (by === undefined) return null
-  const format = by.format ?? ((v: number) => String(v))
+  const format = by.format ?? ((v: number) => defaultNumberFormat(v))
   return (
     <span data-legend-ramp="" style={rampKeyStyle}>
       <span>{by.label}</span>

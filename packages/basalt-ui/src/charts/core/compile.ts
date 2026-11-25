@@ -2413,14 +2413,19 @@ export function compileCartesian<T, X extends ChartX>(
     return xScaleFor(input.data.map(input.x), false, domain as unknown as readonly [X, X])
   }
   const dotRoomAxes = (base: Axes<T>, access: PlotAccess, frameHeight: number): Axes<T> => {
-    if (input.y?.scale === 'log') return base
-    const onLeft = dotsOn('left')
-    const onRight = base.right === null ? [] : dotsOn('right')
-    if (!nearEnd(base.left, onLeft) && !(base.right && nearEnd(base.right, onRight))) return base
+    // The room is linear value space: a log axis (either side) keeps its decades as they are.
+    const leftLinear = base.left.log !== true
+    const rightLinear = base.right !== null && base.right.log !== true
+    const onLeft = leftLinear ? dotsOn('left') : []
+    const onRight = rightLinear ? dotsOn('right') : []
+    const leftNear = leftLinear && nearEnd(base.left, onLeft)
+    const rightNear = rightLinear && base.right !== null && nearEnd(base.right, onRight)
+    if (!leftNear && !rightNear) return base
     access.read()
     const plotHeight = access.size()?.height ?? frameHeight
-    const left = roomForDots(base.left, onLeft, plotHeight)
-    const right = base.right && roomForDots(base.right, onRight, plotHeight)
+    const left = leftLinear ? roomForDots(base.left, onLeft, plotHeight) : base.left
+    const right =
+      base.right && (rightLinear ? roomForDots(base.right, onRight, plotHeight) : base.right)
     if (left === base.left && right === base.right) return base
     return { ...base, left, right, axisOf: (side) => (side === 'right' && right ? right : left) }
   }
@@ -2783,12 +2788,14 @@ export function compileCartesian<T, X extends ChartX>(
         const ctx = captionContext()
         const frame = { width: ctx.plotWidth, height: ctx.plotHeight }
         captionMarks()
-        const rightDomain = axes.right?.domain ?? axes.left.domain
+        const rightAxis = axes.right ?? axes.left
         return [
           ...ctx.placed.left.map((b) =>
             pxBox(b, warpFor(axes.left.log).domain(axes.left.domain), frame),
           ),
-          ...ctx.placed.right.map((b) => pxBox(b, rightDomain, frame)),
+          ...ctx.placed.right.map((b) =>
+            pxBox(b, warpFor(rightAxis.log).domain(rightAxis.domain), frame),
+          ),
           ...hostBoxesBeforeCaptions(),
         ]
       }
@@ -3053,10 +3060,15 @@ export function compileCartesian<T, X extends ChartX>(
   return input.tooltip !== false && richTooltip(input) ? markRich(definition) : definition
 }
 
-/** Whether any row of the chart's tooltip carries a change, a reference, a status or an event. */
+/**
+ * Whether a row of the chart's tooltip can carry a change, a reference, a status or an event. Extra
+ * `rows` are a function whose rows may carry a `status`, so they take the rich body too.
+ */
 function richTooltip<T, X extends ChartX>(input: CartesianInput<T, X>): boolean {
+  const config = input.tooltip || undefined
   return (
-    (input.tooltip || undefined)?.change !== undefined ||
+    config?.change !== undefined ||
+    config?.rows !== undefined ||
     (input.events?.length ?? 0) > 0 ||
     input.series.some(
       (s) => s.compare !== undefined || s.status !== undefined || s.colorBy !== undefined,

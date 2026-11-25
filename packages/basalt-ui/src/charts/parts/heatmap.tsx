@@ -120,7 +120,8 @@ type HeatmapBase<T, K extends string> = BasaltProps & {
     | (
         | false
         | {
-            rows?: ((d: T) => readonly ChartTooltipRow[]) | undefined
+            /** Extra rows, data only: a status shows only on a CartesianChart's rich tooltip. */
+            rows?: ((d: T) => readonly Omit<ChartTooltipRow, 'status'>[]) | undefined
             /** The value row's label. Default "Value". */
             valueLabel?: string | undefined
           }
