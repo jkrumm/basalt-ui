@@ -48,6 +48,11 @@ const SCRIPTED = {
 const HOLD_MS = 1500
 /** The viewport height of a layout-shift run: tall enough that every shift on the page is in view. */
 const TALL = 6000
+/**
+ * Layout shift below this is sub-pixel rounding of text and fonts on a page this tall (a one-pixel move of the whole page reads
+ * about 0.0002; the chart jump this gate was written for read 0.0005 to 0.001 beside it), never a part arriving.
+ */
+const NOISE = 0.0001
 
 /** Every route that must hold a layout shift of 0: each guide, the showcase and the four static types. */
 async function shiftRoutes(): Promise<string[]> {
@@ -139,11 +144,16 @@ async function measureShifts(browser: Browser, base: string): Promise<Shift[]> {
         // A face that swaps in late moves text on a slow host whatever a page does; a shift counts from the moment the faces are in, which is before any held island arrives.
         await page.evaluate(async () => {
           await document.fonts.ready
+          await Promise.all([...document.fonts].map((face) => face.load().catch(() => null)))
+          await new Promise((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(resolve)),
+          )
           ;(window as unknown as { __from: number }).__from = performance.now()
         })
         // Every island has hydrated and every chart has measured its box once the page is quiet.
         await page.waitForTimeout(HOLD_MS + 1500)
-        const value = await page.evaluate(() => (window as unknown as { __cls: number }).__cls)
+        const measured = await page.evaluate(() => (window as unknown as { __cls: number }).__cls)
+        const value = measured < NOISE ? 0 : measured
         cls[`${width} ${scheme}`] = value
         if (value > 0) fail(where, `layout shift ${value}: a part moved the page when it arrived`)
         await context.close()

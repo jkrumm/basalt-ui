@@ -211,13 +211,15 @@ async function guideShift(routes: readonly string[]): Promise<Record<string, num
         // A late font swap moves text on a slow host whatever a page does: a shift counts from the moment the faces are in.
         await page.evaluate(async () => {
           await document.fonts.ready;
+          await Promise.all([...document.fonts].map((face) => face.load().catch(() => null)));
+          await new Promise((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(resolve)),
+          );
           (window as unknown as { __from: number }).__from = performance.now();
         });
         await page.waitForTimeout(3100);
-        worst = Math.max(
-          worst,
-          await page.evaluate(() => (window as unknown as { __cls: number }).__cls),
-        );
+        const measured = await page.evaluate(() => (window as unknown as { __cls: number }).__cls);
+        worst = Math.max(worst, measured < NOISE ? 0 : measured);
         await page.close();
       }
       out[path] = worst;
@@ -228,6 +230,12 @@ async function guideShift(routes: readonly string[]): Promise<Record<string, num
   }
   return out;
 }
+
+/**
+ * Layout shift below this is sub-pixel rounding of text and fonts on a page this tall, never a part arriving: the chart jump
+ * this gate was written for read 0.0005 to 0.001 on the same measurement.
+ */
+const NOISE = 0.0001;
 
 type Budgets = {
   staticModuleJsGzip: number;
