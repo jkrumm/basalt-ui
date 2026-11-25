@@ -11,9 +11,14 @@
   border-radius: 6px;
 }
 
+/* 24 px tall: the touch-target floor (axe target-size, the matrix's hitFloor). */
 .preset {
   all: unset;
-  padding: 1px 8px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 24px;
+  padding: 0 8px;
   border-radius: 4px;
   color: var(--basalt-ink-muted);
   font-size: 12px;
