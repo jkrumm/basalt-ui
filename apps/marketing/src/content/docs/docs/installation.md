@@ -29,7 +29,9 @@ pnpm add -D @tailwindcss/typography shadcn tw-animate-css
 - `shadcn` - Component CLI tool for adding UI components
 - `tw-animate-css` - Animation utilities
 
-**Note:** These are peer dependencies, meaning you install them separately. This prevents version conflicts and lets you control which versions you use.
+:::note
+These are peer dependencies, meaning you install them separately. This prevents version conflicts and lets you control which versions you use.
+:::
 
 ### Step 2: Import the CSS
 
@@ -40,7 +42,9 @@ Add this to your main CSS file:
 @import "basalt-ui/tailwind.css";
 ```
 
-⚠️ **Critical:** This import **REPLACES** `@import "tailwindcss"` - do NOT use both!
+:::caution[Replaces the Tailwind import]
+This import **replaces** `@import "tailwindcss"`. Do not use both.
+:::
 
 ```css
 /* ❌ WRONG - Don't import both */
@@ -190,7 +194,9 @@ export default function RootLayout({ children }) {
 }
 ```
 
-**Note:** Tailwind v4 CSS imports work automatically in Next.js 15+ with App Router. No config file needed!
+:::tip
+Tailwind v4 CSS imports work automatically in Next.js 15+ with App Router. No config file needed.
+:::
 
 ### Astro
 
@@ -583,7 +589,9 @@ export default defineConfig({
 4. Ensure `node_modules/@fontsource-variable/` contains `hubot-sans`, `nunito-sans` and `jetbrains-mono`
 5. Ensure no Content Security Policy blocking fonts
 
-**Note:** the faces come from basalt-ui's dependencies; a missing package means a broken install, not a missing step in your app.
+:::note
+The faces come from basalt-ui's dependencies; a missing package means a broken install, not a missing step in your app.
+:::
 
 ### ShadCN components wrong colors
 
