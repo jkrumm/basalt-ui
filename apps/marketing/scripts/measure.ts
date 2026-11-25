@@ -221,8 +221,7 @@ async function guideShift(routes: readonly string[]): Promise<Record<string, num
         await page.waitForFunction(
           () =>
             document.querySelectorAll("astro-island[ssr]").length === 0 &&
-            document.querySelectorAll('[data-slot="chart-card"][data-phase="loading"]').length ===
-              0,
+            document.querySelectorAll('[data-slot="card"][data-phase="loading"]').length === 0,
           undefined,
           { timeout: 60_000 },
         );
