@@ -79,9 +79,9 @@ Columns: `No directive` is the static HTML: `clean`, `differs` from the client:o
 | empty-state | EmptyState | clean | no directive | 86.6 kB | 15.4 kB | 36.3 kB | The static HTML is the whole part, 0 bytes of JavaScript: the cause line and the link action are drawn at rest; the filtered reset needs JS and is not shown. |
 | facts | Facts | clean | no directive | 73.1 kB | 1.9 kB | 36.3 kB | The static HTML is the whole part, 0 bytes of JavaScript: a definition list is drawn at rest. |
 | inner-nav | InnerNav | fails | none works | 167.7 kB | 96.6 kB | 36.3 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
-| page-aside | PageAside | clean | client:visible | 186.5 kB | 115.3 kB | 36.3 kB | Static picture first, the island adds behaviour: the docked panel is the picture; its open, close and sheet states need JS. client:visible, up to 115.3 kB further (client:idle above the fold). |
+| page-aside | PageAside | clean | client:visible | 187.5 kB | 116.3 kB | 36.3 kB | Static picture first, the island adds behaviour: the docked panel is the picture; its open, close and sheet states need JS. client:visible, up to 116.3 kB further (client:idle above the fold). |
 | split-page | SplitPage | fails | none works | 179.0 kB | 107.9 kB | 36.3 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
-| dock | Dock | clean | client:visible | 186.1 kB | 114.9 kB | 36.3 kB | Static picture first, the island adds behaviour: the open record panel is the picture; close and focus hand-off need JS. client:visible, up to 114.9 kB further (client:idle above the fold). |
+| dock | Dock | clean | client:visible | 187.2 kB | 115.9 kB | 36.3 kB | Static picture first, the island adds behaviour: the open record panel is the picture; close and focus hand-off need JS. client:visible, up to 115.9 kB further (client:idle above the fold). |
 | peek | Peek | clean | client:visible | 189.5 kB | 118.3 kB | 36.3 kB | Static picture first, the island adds behaviour: the open panel is the picture; Escape, close and the width drag need JS. client:visible, up to 118.3 kB further (client:idle above the fold). |
 | query-state | QueryState | clean | no directive | 89.9 kB | 18.7 kB | 36.3 kB | The static HTML is the whole part, 0 bytes of JavaScript: the ready branch is drawn at rest; loading and error arms are not shown. |
 | refresh-button | RefreshButton | differs | client:visible | 87.1 kB | 15.9 kB | 36.3 kB | Static picture first, the island adds behaviour: the press runs the refresh and needs JS; the age text is absent until hydration. client:visible, up to 15.9 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 1440-dark). |
@@ -202,9 +202,9 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 - empty-state: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
 - facts: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
 - inner-nav: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
-- page-aside: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
+- page-aside: Sheet fits its content before paint and keeps its height on the way out, which Dock and PageAside carry as a bottom sheet (Issue 3297)
 - split-page: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
-- dock: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
+- dock: Sheet fits its content before paint and keeps its height on the way out, which Dock and PageAside carry as a bottom sheet (Issue 3297)
 - peek: Peek gains the drawer presentation, a bottom panel with a height handle and the shell room it reserves (Issue 3297)
 - query-state: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
 - refresh-button: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
