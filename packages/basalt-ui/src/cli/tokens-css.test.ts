@@ -215,7 +215,10 @@ describe('tokens:css --format json', () => {
     ).toBe(0)
     writeFileSync(
       resolve(dir, 'tokens.json'),
-      read('tokens.json').replace('"canvas": "#f', '"canvas": "#e'),
+      read('tokens.json').replace(
+        /("canvas": "#)(.)/,
+        (_, head: string, first: string) => head + (first === '0' ? '1' : '0'),
+      ),
     )
     const { value, log } = capture(() =>
       tokensCss(['--format', 'json', '--check', '--out', 'tokens.json'], dir),
