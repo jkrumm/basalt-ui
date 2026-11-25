@@ -558,10 +558,7 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions<D>)
       }),
     } as Parameters<typeof compileCartesian<D, ChartX>>[0])
     // Selection is part of the definition, not of any mark; the server never runs its handlers.
-    if (controller === undefined) return compiled
-    // The rich-tooltip flag is keyed on the definition object: the selected copy carries it on.
-    const selected = { ...compiled, selection: controller }
-    return isRich(compiled) ? markRich(selected) : selected
+    return withSelection(compiled, controller)
   }, [
     spec,
     marks,
@@ -659,4 +656,17 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions<D>)
       {resolved === null && table === true && <DataTable {...props} />}
     </>
   )
+}
+
+/**
+ * The compiled definition with its selection controller. The rich-tooltip flag is keyed on the
+ * definition object, so the selected copy carries it on.
+ */
+export function withSelection(
+  compiled: CartesianDefinition,
+  controller: CartesianDefinition['selection'] | undefined,
+): CartesianDefinition {
+  if (controller === undefined) return compiled
+  const selected = { ...compiled, selection: controller }
+  return isRich(compiled) ? markRich(selected) : selected
 }

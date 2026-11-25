@@ -6,6 +6,7 @@ import { describe, expect, test } from 'bun:test'
 import { withLogY2 } from './axis-gaps'
 import { compileCartesian, eventsByDatum, rampGradient } from './core/compile'
 import { changeOf, isRich, rampColor, rampShare } from './core/rich-tooltip'
+import { withSelection } from './parts/cartesian'
 import { CV } from './core/theme'
 import { chartWindow } from './parts/range-navigator'
 import { waterfallSteps } from './parts/waterfall'
@@ -137,6 +138,17 @@ describe('compileCartesian', () => {
       },
     })
     expect(isRich(rows)).toBe(true)
+    // A selectable chart copies the definition to add its controller: the copy stays rich.
+    const controller = {} as NonNullable<Parameters<typeof withSelection>[1]>
+    expect(isRich(withSelection(rows, controller))).toBe(true)
+    expect(
+      isRich(
+        withSelection(
+          compileCartesian<Row, Date>({ ...base, series: [base.series[0] as ChartSeries<Row>] }),
+          controller,
+        ),
+      ),
+    ).toBe(false)
   })
 })
 
