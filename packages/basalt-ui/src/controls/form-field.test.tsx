@@ -187,6 +187,13 @@ describe('firstError', () => {
     expect(firstError([{ fieldErrors: { a: [{ message: 'nested' }] } }])).toBe('nested')
   })
 
+  test('a `{ form }` entry (toSubmitErrors) reads its form message', () => {
+    expect(firstError([{ form: 'Boom' }])).toBe('Boom')
+    expect(firstError([{ form: '' }, { form: 'later' }])).toBe('later')
+    expect(firstError([{ form: { message: 'nested' } }])).toBe('nested')
+    expect(firstError([{ fields: { a: 'field only' } }])).toBeUndefined()
+  })
+
   test('an unreadable object is not an error message', () => {
     expect(firstError([{ code: 4 }, 12, true])).toBeUndefined()
   })
