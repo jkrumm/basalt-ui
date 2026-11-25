@@ -192,6 +192,14 @@ layout('ControlView', () => {
                     '[data-slot="number-field"], [data-slot="combobox-chips"]',
                   ) ?? input)
                 : input
+            // A text field cannot own a pseudo-element: its own box, at the density's height, is its target (24 px at least); a button, a stepper and a switch reach 44 through `::after`.
+            const textEntry =
+              (input instanceof HTMLInputElement &&
+                !['button', 'submit', 'reset', 'checkbox', 'radio', 'range'].includes(
+                  input.type,
+                )) ||
+              input instanceof HTMLTextAreaElement
+            const need = textEntry ? 24 : HIT
             const r = el.getBoundingClientRect()
             if (r.width < 4 || r.height < 4) continue
             const style = getComputedStyle(el)
@@ -202,8 +210,11 @@ layout('ControlView', () => {
             const w = Math.max(r.width, Number.isNaN(aw) || after.content === 'none' ? 0 : aw)
             const h = Math.max(r.height, Number.isNaN(ah) || after.content === 'none' ? 0 : ah)
             checked++
-            // A switch or checkbox is judged by height; its width may be the track.
-            if (h + 0.5 < HIT || (w + 0.5 < HIT && el.getAttribute('role') !== 'switch'))
+            // A switch is judged by height (its width may be the track), and so is a segmented option: adjacent options may not overlap, so each keeps its own width.
+            const heightOnly =
+              el.getAttribute('role') === 'switch' ||
+              el.getAttribute('data-slot') === 'segmented-item'
+            if (h + 0.5 < need || (w + 0.5 < HIT && !heightOnly && !textEntry))
               short.push(
                 `${el.tagName.toLowerCase()}[${el.getAttribute('data-slot') ?? ''}] "${(el.getAttribute('aria-label') ?? el.textContent ?? '').trim().slice(0, 24)}" ${w.toFixed(0)}x${h.toFixed(0)}`,
               )

@@ -61,7 +61,7 @@ Add `--check` to either command in CI: it writes nothing and exits 1 when the co
 `auto` needs no JavaScript: `tokens.css` follows `prefers-color-scheme` while `<html>` carries no
 `data-theme`. The script adds the stored choice before first paint. Copy it into `<head>` verbatim,
 or call `themeScript({ appearance: false })` from `basalt-ui/theme-script` at build time. A static page
-has no appearance setter, so the literal below is the scheme half only; a test keeps it byte-equal to
+has no appearance setter, so the literal below is the scheme half plus the iOS zoom clause; a test keeps it byte-equal to
 `themeScript({ appearance: false })`.
 
 <!-- prettier-ignore -->
@@ -73,6 +73,7 @@ function s(k){return t(function(){return localStorage.getItem(k)})}
 v=s("basalt:scheme")||t(function(){return c&&document.cookie.split(/;\s*/).reduce(function(r,p){
 return r||(p.indexOf(c+"=")===0?p.slice(c.length+1):r)},"")})||"auto"
 if(v==="light"||v==="dark")d.setAttribute(a,v)})()
+;(function(){var n=navigator,u=n.userAgent;if(!(/iP(hone|od|ad)/.test(u)||/Macintosh/.test(u)&&n.maxTouchPoints>1))return;function f(){var m=document.querySelector('meta[name="viewport"]');if(m&&!/maximum-scale/.test(m.content))m.content+=", maximum-scale=1"}document.readyState==="loading"?document.addEventListener("DOMContentLoaded",f):f()})()
 </script>
 ```
 

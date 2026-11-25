@@ -9,9 +9,10 @@ import { GROUPED_SMALL_BUTTON, buttonScopeClass, useControlScope } from '../core
  * The `Button` cva table: the one source the generator reads for the type union, the `no-restyle`
  * contract and the props docs. Heights come from the density tokens (`h-ctl`) on every pointer: a
  * button is never taller on a phone. A coarse pointer gets a 44 px `::after` hit area around it. An
- * icon button also takes inline margin under a coarse pointer (8 px at `md`, 10 px at `sm`), so its
- * 44 px wide `::after` sits inside the button's own margin box and adds no scrollable overflow to
- * the scroller it ends (a row of links, a code frame).
+ * `sm` icon button also takes 10 px of inline margin under a coarse pointer, so its 44 px wide
+ * `::after` sits inside the button's own margin box and adds no scrollable overflow to the scroller
+ * it ends (a row of links, a code frame); an `md` icon button keeps its gap and lets the overlay
+ * reach into it.
  *
  * @example
  * buttonVariants({ variant: 'ghost', size: 'sm', shape: 'icon' }) // class string for a non-`Button` element
@@ -39,7 +40,7 @@ export const buttonVariants = cva(
       {
         size: 'md',
         shape: 'icon',
-        class: 'size-ctl pointer-coarse:mx-2 pointer-coarse:after:-inset-x-2',
+        class: 'size-ctl pointer-coarse:after:-inset-x-2',
       },
       {
         size: 'sm',
