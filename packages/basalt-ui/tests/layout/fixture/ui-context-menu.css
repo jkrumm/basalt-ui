@@ -1,0 +1,10 @@
+/*
+ * The `ui-context-menu` fixture's Tailwind v4 entry, compiled WITH preflight like `ui-popups.css`.
+ * `ui-context-menu.layout.test.ts` compiles it into a temp directory; nothing generated lands in the repo.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './ui-context-menu-fixture.tsx';
+@source '../../../src/ui/context-menu.tsx';
+@source '../../../src/ui/menu.tsx';
+@source '../../../src/ui/button.tsx';
+@source '../../../src/ui/input.tsx';
