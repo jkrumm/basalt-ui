@@ -2495,6 +2495,16 @@ export function compileCartesian<T, X extends ChartX>(
   const definition: CartesianDefinition = {
     chart: ({ width, height }: ChartBuildContext): StoredChartSpec => {
       const cls = resolveContainerClass(width)
+      // On a phone, two or more dated events keep their rules, dots and tooltip rows but drop their
+      // captions: the captions of a few years' events pile up over a 300 px plot.
+      const xRefLines =
+        cls === 'narrow' && (input.events?.length ?? 0) > 1
+          ? input.xRefLines?.map((l) =>
+              input.events?.some((e) => e.label === l.label && timeOf(e.at) === timeOf(l.x))
+                ? { ...l, label: undefined }
+                : l,
+            )
+          : input.xRefLines
       const access = plotAccess(definition, input.plot, MAIN_PANE)
       // `capped` holds the page's domain; `axes` may grow it so an edge dot draws whole. A datum
       // past the cap is clamped to the cap, so the growth keeps it whole too.
@@ -2592,7 +2602,7 @@ export function compileCartesian<T, X extends ChartX>(
         }
         const marksBlock = xBlocked(plotWidth, size?.height ?? height)
         const xSpots = xRefLabelSpots({
-          lines: input.xRefLines,
+          lines: xRefLines,
           fraction: (x, at) => edgeFraction(model, x, at),
           plotWidth,
           fontSize: BASALT.text.micro,
@@ -2630,7 +2640,7 @@ export function compileCartesian<T, X extends ChartX>(
         const domain = warpFor(axes.left.log).domain(axes.left.domain)
         return pageLabels.map((b) => valueBox(b, domain, frame))
       }
-      const hasXCaption = (input.xRefLines ?? []).some((l) => l.label)
+      const hasXCaption = (xRefLines ?? []).some((l) => l.label)
       // The captions are placed once, in one order: the vertical rules', then the reference
       // lines', then the zones'. A page's own labels read the result (`hostBoxes`) while its marks
       // build, which is after the end labels have claimed their room and before the rest of this pass.
@@ -2978,7 +2988,7 @@ export function compileCartesian<T, X extends ChartX>(
           ...zoneCaptions,
           // The rules are drawn under the value labels: a label a rule crosses sits on its backing, and the rule gives way.
           ...xRefLineMarks({
-            lines: input.xRefLines,
+            lines: xRefLines,
             fraction: (x, at) => edgeFraction(model, x, at),
             top: Math.max(...axes.left.domain),
             plotWidth: xPlotWidth,
