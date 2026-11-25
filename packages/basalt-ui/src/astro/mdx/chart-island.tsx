@@ -51,10 +51,11 @@ function color(index: number, pick: ChartSeriesSpec['color']): { light: string; 
 }
 
 /**
- * A chart card for an MDX page: a `ChartCard` around `Lines` or `Bars`, built from plain data so an
- * Astro island can carry it. It needs no provider. A chart measures its box, so render it with
- * `client:only="react"` and a fallback of the card's height, or `client:visible` once the server
- * picture is right (see the `Chart` tag).
+ * A chart card for an MDX page: one flat `ChartCard` (title, figure and plot on one surface) around
+ * `Lines` or `Bars`, built from plain data so an Astro island can carry it. It needs no provider. A
+ * chart measures its box, so render it with `client:only="react"` behind {@link ChartFallback}, which
+ * is the same card loading and so exactly as tall, or `client:visible` once the server picture is
+ * right (see the `Chart` tag).
  *
  * @useWhen an article shows one small chart of a few series
  * @neverWhen the chart needs custom marks, zones or linked readouts (write an island with `CartesianChart`)
@@ -86,6 +87,7 @@ export function ChartIsland({
         title={title}
         figure={figure === undefined ? undefined : { value: figure, period }}
         height="tall"
+        flat
         chart={() =>
           kind === 'bars' ? (
             <Bars
@@ -119,5 +121,32 @@ export function ChartIsland({
         }
       />
     </IntlScope>
+  )
+}
+
+/**
+ * What an island waits behind: the card of {@link ChartIsland} in its loading phase, drawn on the
+ * server. Every phase of a card draws in the same box, so it is as tall as the ready card at any width
+ * and the page below it does not move when the chart arrives.
+ *
+ * @useWhen a `client:only` chart island needs its slot held until it renders
+ * @neverWhen the chart renders on the server (`client:visible` and `client:idle` need no fallback)
+ *
+ * @example
+ * <ChartFallback title="Deploys" figure="34" period="week of 22 Sep" />
+ */
+export function ChartFallback({
+  title,
+  figure,
+  period,
+}: Pick<ChartIslandProps, 'title' | 'figure' | 'period'>): ReactElement {
+  return (
+    <ChartCard
+      title={title}
+      figure={figure === undefined ? undefined : { value: null, period }}
+      height="tall"
+      flat
+      phase="loading"
+    />
   )
 }

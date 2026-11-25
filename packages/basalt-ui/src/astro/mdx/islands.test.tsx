@@ -4,7 +4,7 @@
  */
 import { describe, expect, test } from 'bun:test'
 import { renderToString } from 'react-dom/server'
-import { ChartIsland } from './chart-island'
+import { ChartFallback, ChartIsland } from './chart-island'
 import { TableIsland } from './table-island'
 
 const data = [
@@ -44,6 +44,32 @@ describe('ChartIsland', () => {
     expect(html).toContain('--basalt-chart-1')
     expect(html).toContain('--basalt-chart-3')
     expect(html).not.toMatch(/#[0-9a-f]{6}/i)
+  })
+
+  test('title, figure and plot share one surface: no inset behind the figure', () => {
+    const html = renderToString(
+      <ChartIsland title="t" figure="17" x="week" data={data} series={series} />,
+    )
+    expect(html).not.toContain('data-surface="inset"')
+  })
+
+  test('the fallback is the same card loading, in the same box, so it is as tall', () => {
+    const ready = renderToString(
+      <ChartIsland
+        title="t"
+        figure="17"
+        period="week of 20 Jul"
+        x="week"
+        data={data}
+        series={series}
+      />,
+    )
+    const held = renderToString(<ChartFallback title="t" figure="17" period="week of 20 Jul" />)
+    expect(held).toContain('data-phase="loading"')
+    const box = (html: string): string | undefined => html.match(/h-\[clamp\([^\]]+\]/)?.[0]
+    expect(box(held)).toBeDefined()
+    expect(box(held)).toBe(box(ready))
+    expect(held).not.toContain('<svg')
   })
 
   test('carries no provider and no figure when none is given', () => {
