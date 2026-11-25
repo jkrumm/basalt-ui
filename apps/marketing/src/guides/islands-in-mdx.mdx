@@ -31,7 +31,7 @@ Add `interactive` to the `DataTable` tag. The page is rendered as HTML first and
 
 ## A chart
 
-A chart measures the box it draws in, so the `Chart` tag renders on the client behind a fallback of the card's height: `client:only="react"`. Pass `load="visible"` to render it on the server and hydrate it in view once a chart kind's server picture matches the browser's.
+A chart measures the box it draws in, so the `Chart` tag renders on the client: `client:only="react"`. Until it arrives the page shows the same card, loading, which is as tall as the finished one at any width, so nothing below it moves. Pass `load="visible"` to render it on the server and hydrate it in view once a chart kind's server picture matches the browser's.
 
 <Chart
   title="Deploys per week"
