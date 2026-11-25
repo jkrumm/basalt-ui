@@ -1,10 +1,11 @@
 ---
 // The `Chart` MDX tag: a chart island with its hydration directive chosen by `load`.
-// `only` (default) renders on the client behind a fallback of the card's height, because the
-// server picture of a chart differs from the browser's below its declared width (a phone);
+// `only` (default) renders on the client behind the same card loading (`ChartFallback`, drawn on the
+// server and as tall as the ready card), because the server picture of a chart differs from the
+// browser's below its declared width (a phone);
 // `visible` and `idle` server-render it.
 // The island's module is a sibling file of the published dist, hence the `.js` specifier.
-import { ChartIsland } from './chart-island.js'
+import { ChartFallback, ChartIsland } from './chart-island.js'
 import type { ChartIslandProps } from './chart-island.js'
 
 interface Props extends ChartIslandProps {
@@ -16,7 +17,7 @@ const { load = 'only', ...props } = Astro.props
 {
   load === 'only' && (
     <ChartIsland {...props} client:only="react">
-      <div slot="fallback" class="h-[25rem] rounded-card bg-card" />
+      <ChartFallback slot="fallback" title={props.title} figure={props.figure} period={props.period} />
     </ChartIsland>
   )
 }

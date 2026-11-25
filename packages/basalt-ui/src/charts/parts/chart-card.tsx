@@ -317,6 +317,7 @@ export function ChartCard(props: ChartCardProps): ReactElement {
     height = 'auto',
     panes,
     bleed = false,
+    flat = false,
   } = props
   const chart =
     panes === undefined
@@ -374,11 +375,15 @@ export function ChartCard(props: ChartCardProps): ReactElement {
             />
             <div
               data-slot="inset"
-              data-surface="inset"
+              data-surface={flat ? 'card' : 'inset'}
               className={cn(
-                'flex min-h-0 flex-col bg-inset py-3 first:mt-(--card-gutter) last:mb-(--card-gutter)',
+                'flex min-h-0 flex-col',
+                flat
+                  ? // One surface: the figure and the plot sit on the card, under its title.
+                    'px-(--card-edge) pt-1 pb-(--card-edge)'
+                  : 'bg-inset py-3 first:mt-(--card-gutter) last:mb-(--card-gutter)',
                 // A bleeding plot runs under the inset's sides, so the inset keeps no gutter and no rounded sides.
-                bleed
+                flat || bleed
                   ? 'px-(--card-edge)'
                   : 'mx-(--card-gutter) rounded-inset px-[calc(var(--card-edge)_-_var(--card-gutter))]',
                 height === 'fill' ? 'flex-1' : 'grow',

@@ -458,6 +458,14 @@ export type ChartCardProps = Omit<FrameState, 'phase'> & {
    * @default false
    */
   bleed?: boolean | undefined
+  /**
+   * One surface: the figure and the chart sit on the card itself, under the title, with no inset
+   * behind them. For a card in running text (an article, a guide), where a card around a second
+   * card reads as a frame inside a frame. The box, its height and the phases are unchanged.
+   *
+   * @default false
+   */
+  flat?: boolean | undefined
 } & (
     | (FrameHead & { chart: BoxSlot; panes?: undefined })
     /**
