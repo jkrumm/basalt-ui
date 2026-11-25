@@ -4,9 +4,8 @@ deploy:
   mode: none
 ship:
   - via: pr
-# Not a throttle: the factory's memory fit, load rule and test slots, the `browser` lane and the `after` edges
+# No repo cap (NL32): the factory's memory fit, load rule and test slots, the `browser` lane and the `after` edges
 # decide how many leads really run.
-leads: 16
 # A lead runs `make check-fast` (the whole of `make check` but the layout and unit suites, which run only the files the
 # branch's changes reach: scripts/layout-select.ts, scripts/unit-select.ts). CI covers the whole of `make check` on the pull
 # request head as parallel jobs (checks, unit, the layout suite sharded four ways, the quality matrix, and `make check CI_SPLIT=1` for the steps no other
@@ -18,10 +17,10 @@ checks: { fast: make check-fast, full: make check, ci: true }
 slots: { run: 60m }
 # The layout suite is a Chrome tree. Its context-per-test close keeps one run near 2.5 GB resident, under the 3 GiB
 # reservation below. A row that adds browser work files itself `lane: browser`; admission reserves `memory` per
-# running lead against the host ceiling, so memory holds them back. `leads: 16` is the repo cap: the count does not bind.
+# running lead against the host ceiling, so memory holds them back. The lane has no cap of its own: `leads: 64` is the host bound.
 lanes:
   browser:
-    leads: 16
+    leads: 64
     memory: 3GiB
 # The unit suite may run on the factory's step host when the mini's test line would make it wait longer (Makefile
 # `test`, `$(call slot,unit)`). Measured 2026-11-17: 187 s on the host in parallel against 412 s on the mini.
