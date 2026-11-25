@@ -1,0 +1,10 @@
+/*
+ * The `popup-fit` fixture's Tailwind v4 entry, compiled WITH preflight and the font faces like
+ * `ui-popups.css`. `popup-fit.layout.test.ts` compiles it into a temp directory.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './popup-fit-fixture.tsx';
+@source '../../../src/ui';
+@source '../../../src/core/list';
+@source '../../../src/controls/appearance-switcher.tsx';
+@source '../../../src/ai/model-picker.tsx';
