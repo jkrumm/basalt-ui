@@ -49,7 +49,10 @@ export type CrumbTrail = {
 export type CrumbInput = {
   readonly entries: readonly CrumbNavEntry[]
   readonly activeId: string | undefined
+  /** The pathname, each segment decoded (`decodePath`), as every path here is compared. */
   readonly pathname: string
+  /** The decoded path a nav item links to against the pathname (`navItemPath`): the router's matcher. */
+  readonly pathOf: (item: CrumbNavItem) => string | undefined
   readonly routes: readonly CrumbRoute[]
   readonly claim: CrumbClaim | undefined
   /** The leaf without a claim: the nav label, or `Not found`. */
@@ -63,31 +66,6 @@ const segmentsOf = (path: string): string[] => path.split('/').filter(Boolean)
 
 const normalize = (path: string): string => `/${segmentsOf(path).join('/')}`
 
-/**
- * The item's path against the pathname: a `$param` the link pins is that value, an unpinned one
- * takes the pathname's segment. `undefined` for a splat, or a template longer than the pathname.
- */
-function concretePath(item: CrumbNavItem, pathname: string): string | undefined {
-  const template = segmentsOf(item.link.to)
-  const path = segmentsOf(pathname)
-  if (template.length > path.length) return undefined
-  const params = (typeof item.link.params === 'object' ? item.link.params : null) as Record<
-    string,
-    unknown
-  > | null
-  const out: string[] = []
-  for (const [i, seg] of template.entries()) {
-    if (seg === '$') return undefined
-    if (!seg.startsWith('$')) {
-      out.push(seg)
-      continue
-    }
-    const pinned = params?.[seg.slice(1)]
-    out.push(typeof pinned === 'string' || typeof pinned === 'number' ? String(pinned) : path[i]!)
-  }
-  return `/${out.join('/')}`
-}
-
 export function buildCrumbs(input: CrumbInput): CrumbTrail {
   const leaf = input.missing ? input.fallbackLabel : (input.claim?.title ?? input.fallbackLabel)
   if (input.missing) return { section: undefined, ancestors: [], leaf }
@@ -98,7 +76,7 @@ export function buildCrumbs(input: CrumbInput): CrumbTrail {
   const paths: (string | undefined)[] = []
   const pathOf = (crumb: CrumbAncestor): string | undefined =>
     crumb.kind === 'nav'
-      ? concretePath(crumb.item, input.pathname)
+      ? input.pathOf(crumb.item)
       : typeof crumb.href === 'string'
         ? normalize(crumb.href.split(/[?#]/)[0]!)
         : undefined
@@ -113,9 +91,7 @@ export function buildCrumbs(input: CrumbInput): CrumbTrail {
   const path = segmentsOf(input.pathname)
   for (let depth = 1; depth < path.length; depth += 1) {
     const prefix = `/${path.slice(0, depth).join('/')}`
-    const navHit = input.entries.find(
-      (entry) => concretePath(entry.item, input.pathname) === prefix,
-    )
+    const navHit = input.entries.find((entry) => input.pathOf(entry.item) === prefix)
     if (navHit !== undefined) {
       push({ kind: 'nav', label: navHit.item.label, item: navHit.item })
       continue

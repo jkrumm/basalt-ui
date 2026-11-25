@@ -31,6 +31,17 @@ const ENTRIES: CrumbNavEntry[] = [
   { item: item('run', 'Run', '/runs/$id'), ancestors: [], section: 'Runs' },
 ]
 
+/** The router's `navItemPath` in miniature: a pinned param is its value, an unpinned one the pathname's segment. */
+const pathOf =
+  (pathname: string) =>
+  (nav: CrumbNavItem): string | undefined => {
+    const template = nav.link.to.split('/').filter(Boolean)
+    const path = pathname.split('/').filter(Boolean)
+    if (template.length > path.length) return undefined
+    const params = (nav.link.params ?? {}) as Record<string, string>
+    return `/${template.map((seg, i) => (seg.startsWith('$') ? (params[seg.slice(1)] ?? path[i]) : seg)).join('/')}`
+  }
+
 function trail(
   pathname: string,
   activeId: string | undefined,
@@ -40,6 +51,7 @@ function trail(
     entries: ENTRIES,
     activeId,
     pathname,
+    pathOf: pathOf(pathname),
     routes: [],
     claim: undefined,
     fallbackLabel: ENTRIES.find((e) => e.item.id === activeId)?.item.label,

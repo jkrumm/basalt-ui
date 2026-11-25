@@ -91,6 +91,33 @@ function hitOf(item: AnyNavItem, pathname: string): Hit {
   return matchPath(item, pathname)
 }
 
+/** The pathname with each segment decoded, so paths compare as the resolver matches them. */
+export function decodePath(pathname: string): string {
+  return `/${segmentsOf(pathname)
+    .map((seg) => decodeSegment(seg) ?? seg)
+    .join('/')}`
+}
+
+/**
+ * The decoded path an item links to, read against the pathname: a `$param` its link pins is that
+ * value, an unpinned one takes the pathname's segment. `undefined` for a splat or a template longer
+ * than the pathname. The breadcrumb compares it with the pathname's prefixes.
+ */
+export function navItemPath(
+  item: { readonly link: { readonly to: string; readonly params?: unknown } },
+  pathname: string,
+): string | undefined {
+  const template = segmentsOf(item.link.to)
+  const path = segmentsOf(pathname)
+  if (template.length > path.length || template.includes('$')) return undefined
+  return `/${template
+    .map((seg, i) => {
+      if (!seg.startsWith('$')) return seg
+      return pinnedSegment(seg, item.link.params) ?? decodeSegment(path[i]) ?? ''
+    })
+    .join('/')}`
+}
+
 const specificity = (item: AnyNavItem): number => segmentsOf(item.link.to).length
 
 export function resolveActive(nav: AnyNavConfig, pathname: string): ActiveNav {

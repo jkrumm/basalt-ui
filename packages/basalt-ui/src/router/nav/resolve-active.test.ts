@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { resolveActive } from './resolve-active'
+import { decodePath, navItemPath, resolveActive } from './resolve-active'
 import type { AnyNavConfig, AnyNavItem } from './types'
 
 const item = (id: string, to: string, extra: Partial<AnyNavItem> = {}): AnyNavItem => ({
@@ -248,5 +248,28 @@ describe('resolveActive properties (seeded)', () => {
         for (const r of root) expect(activeId).not.toBe(r.id)
       }
     }
+  })
+})
+
+describe('navItemPath and decodePath, the breadcrumb matcher', () => {
+  const item = (to: string, params?: object) => ({
+    link: params === undefined ? { to } : { to, params },
+  })
+
+  test('a static item is its own path', () => {
+    expect(navItemPath(item('/ref/parts'), '/ref/parts/x')).toBe('/ref/parts')
+  })
+
+  test('an unpinned param takes the decoded pathname segment, a pinned one its value', () => {
+    expect(navItemPath(item('/runs/$id'), '/runs/run%207/logs')).toBe('/runs/run 7')
+    expect(navItemPath(item('/runs/$id', { id: 'run 7' }), '/runs/run%207/logs')).toBe(
+      '/runs/run 7',
+    )
+    expect(decodePath('/runs/run%207/logs')).toBe('/runs/run 7/logs')
+  })
+
+  test('a splat or a template longer than the pathname has no path', () => {
+    expect(navItemPath(item('/files/$'), '/files/a/b')).toBeUndefined()
+    expect(navItemPath(item('/a/b/c'), '/a/b')).toBeUndefined()
   })
 })

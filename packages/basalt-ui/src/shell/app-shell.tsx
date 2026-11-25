@@ -8,7 +8,12 @@ import { DOCK_WIDTH } from '../page/core/docking'
 import { PanelSteps } from '../page/record-panel'
 import { useSizeClass } from '../page/use-size-class'
 import { registerNav } from '../router/nav/registry'
-import { flattenNavEntries, resolveActive } from '../router/nav/resolve-active'
+import {
+  decodePath,
+  flattenNavEntries,
+  navItemPath,
+  resolveActive,
+} from '../router/nav/resolve-active'
 import type { DefinedNav } from '../router/nav/types'
 import { Button } from '../ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet'
@@ -271,8 +276,12 @@ export function AppShell<N extends DefinedNav>({
   const crumbs = buildCrumbs({
     entries,
     activeId: active.activeId,
-    pathname,
-    routes: parseRoutes(routeKey),
+    pathname: decodePath(pathname),
+    pathOf: (item) => navItemPath(item, pathname),
+    routes: parseRoutes(routeKey).map((route) => ({
+      ...route,
+      pathname: decodePath(route.pathname),
+    })),
     claim: readCrumbClaim(breadcrumb),
     fallbackLabel,
     compact: sizeClass === 'compact',
