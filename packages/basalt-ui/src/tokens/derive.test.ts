@@ -93,9 +93,9 @@ describe('the status solids are derived per surface (Wave 34)', () => {
   // bad dark #f97d74 before). `MIGRATING.md` § Unreleased lists them.
   test('the default config pins every status hex', () => {
     expect(deriveTokens(DEFAULT_DERIVE_CONFIG).status).toEqual({
-      good: { light: '#2f774b', dark: '#52c07c' },
-      warn: { light: '#935f00', dark: '#e6a53d' },
-      bad: { light: '#b5403d', dark: '#fe8178' },
+      good: { light: '#2c7549', dark: '#52c07c' },
+      warn: { light: '#8f5c00', dark: '#e6a53d' },
+      bad: { light: '#b43f3d', dark: '#fe8178' },
     })
   })
 

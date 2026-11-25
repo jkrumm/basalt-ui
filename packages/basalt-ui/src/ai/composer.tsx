@@ -291,7 +291,7 @@ export function Composer<Value = unknown>({
       data-status={status}
       className={cn(
         // The box draws the one ring of its text box, as a combobox draws the ring of its input.
-        'flex flex-col gap-2 rounded-card border border-border bg-background p-2.5 has-[>textarea:focus-visible]:outline-2 has-[>textarea:focus-visible]:outline-offset-2 has-[>textarea:focus-visible]:outline-brand has-[>textarea:focus-visible]:outline-solid',
+        'flex flex-col gap-2 rounded-card border border-border bg-field p-2.5 has-[>textarea:focus-visible]:outline-2 has-[>textarea:focus-visible]:outline-offset-2 has-[>textarea:focus-visible]:outline-brand has-[>textarea:focus-visible]:outline-solid',
         disabled && 'opacity-50',
         className,
       )}

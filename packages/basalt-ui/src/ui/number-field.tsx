@@ -13,7 +13,7 @@ import { scopeClass, useControlScope } from '../core/control-scope'
  * numberFieldVariants({ size: 'sm' })
  */
 export const numberFieldVariants = cva(
-  'flex w-full min-w-0 items-stretch rounded-ctrl border border-input bg-background text-foreground transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-brand data-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50',
+  'flex w-full min-w-0 items-stretch rounded-ctrl border border-input bg-field text-foreground transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-brand data-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50',
   {
     variants: {
       size: {

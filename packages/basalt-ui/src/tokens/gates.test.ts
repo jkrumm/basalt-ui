@@ -43,7 +43,7 @@ describe('PAIRS', () => {
     expect(names).toContain('input-on-raised')
   })
 
-  test('the measured numbers on the 2.x anchor: fill 3.04 on the dark page, brand ink 4.57 on the light page', () => {
+  test('the measured numbers on the 2.x anchor: fill 3.04 on the dark page, brand ink 4.59 on the light page', () => {
     const { colors } = deriveV3()
     const ratio = (fg: string, bg: string, side: 'light' | 'dark'): number =>
       contrastRatio(
@@ -55,7 +55,7 @@ describe('PAIRS', () => {
     expect(ratio('brand-fill', 'inset', 'dark')).toBeCloseTo(3.04, 2)
     // The fill on a dark card is 2.61 BY DESIGN: blue never fills on card, so it is no pair.
     expect(ratio('brand-fill', 'card', 'dark')).toBeCloseTo(2.61, 2)
-    expect(ratio('brand', 'canvas', 'light')).toBeCloseTo(4.57, 2)
+    expect(ratio('brand', 'canvas', 'light')).toBeCloseTo(4.59, 2)
     expect(ratio('brand', 'canvas', 'dark')).toBeCloseTo(8.23, 2)
     expect(ratio('ink-faint', 'raised', 'dark')).toBeCloseTo(4.87, 2)
     expect(ratio('on-brand', 'brand-fill', 'light')).toBeCloseTo(4.9, 2)
@@ -68,7 +68,7 @@ describe('PAIRS', () => {
     expect(step('dark')).toBeGreaterThan(0.03)
     expect(step('light')).toBeGreaterThanOrEqual(0.014)
     expect(step('dark')).toBeCloseTo(0.044, 3)
-    expect(step('light')).toBeCloseTo(0.014, 3)
+    expect(step('light')).toBeCloseTo(0.018, 3)
   })
 
   test('the card step gate holds .03 in dark and .014 in light', () => {

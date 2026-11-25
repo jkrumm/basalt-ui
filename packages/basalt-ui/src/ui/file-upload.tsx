@@ -14,7 +14,7 @@ import { cn } from '../core/cn'
  * fileUploadVariants({ compact: true }) // class string for a hand-built drop zone
  */
 export const fileUploadVariants = cva(
-  'group flex w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-ctrl border border-dashed border-input bg-background px-4 text-center text-foreground focus-ring transition-colors data-invalid:border-bad data-dragging:border-brand data-dragging:bg-accent data-disabled:cursor-not-allowed data-disabled:opacity-50',
+  'group flex w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-ctrl border border-dashed border-input bg-field px-4 text-center text-foreground focus-ring transition-colors data-invalid:border-bad data-dragging:border-brand data-dragging:bg-accent data-disabled:cursor-not-allowed data-disabled:opacity-50',
   {
     variants: {
       compact: {

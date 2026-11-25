@@ -6,10 +6,11 @@ exports[`emitTokensCss snapshot: the whole default sheet 1`] = `
 :root,
 :root[data-theme='light'] {
   color-scheme: light;
-  --basalt-canvas: #f2f2f5;
-  --basalt-inset: #ffffff;
-  --basalt-card: #fafafd;
-  --basalt-raised: #ffffff;
+  --basalt-canvas: #efeff3;
+  --basalt-inset: #f0f0f4;
+  --basalt-field: #ffffff;
+  --basalt-card: #f6f6fa;
+  --basalt-raised: #fafafe;
   --basalt-hover: color-mix(in srgb, var(--basalt-ink) 5%, transparent);
   --basalt-selected: color-mix(in srgb, var(--basalt-ink) 7.5%, transparent);
   --basalt-scrim: color-mix(in srgb, var(--basalt-ink) 45%, transparent);
@@ -18,13 +19,13 @@ exports[`emitTokensCss snapshot: the whole default sheet 1`] = `
   --basalt-input: color-mix(in srgb, var(--basalt-ink) 52%, transparent);
   --basalt-ink: #262629;
   --basalt-ink-muted: #525255;
-  --basalt-ink-faint: #69696c;
-  --basalt-brand: #4071a4;
+  --basalt-ink-faint: #656569;
+  --basalt-brand: #3d6fa1;
   --basalt-brand-fill: #4374a6;
   --basalt-on-brand: #ffffff;
-  --basalt-good: #297146;
-  --basalt-warn: #8c5900;
-  --basalt-bad: #af3b39;
+  --basalt-good: #266f43;
+  --basalt-warn: #895700;
+  --basalt-bad: #ac3837;
   --basalt-info: #2c6192;
   --basalt-tint-pct: 12%;
   --basalt-line: #77777a;
@@ -50,6 +51,7 @@ exports[`emitTokensCss snapshot: the whole default sheet 1`] = `
     color-scheme: dark;
     --basalt-canvas: #27272a;
     --basalt-inset: #27272a;
+    --basalt-field: #363639;
     --basalt-card: #323235;
     --basalt-raised: #38383b;
     --basalt-hover: color-mix(in srgb, var(--basalt-ink) 7%, transparent);
@@ -94,6 +96,7 @@ exports[`emitTokensCss snapshot: the whole default sheet 1`] = `
       color-scheme: dark;
       --basalt-canvas: #27272a;
       --basalt-inset: #27272a;
+      --basalt-field: #363639;
       --basalt-card: #323235;
       --basalt-raised: #38383b;
       --basalt-hover: color-mix(in srgb, var(--basalt-ink) 7%, transparent);
@@ -214,6 +217,7 @@ exports[`BASALT types, names, zone A snapshot: BASALT types 1`] = `
 export const BASALT = {
   canvas: 'var(--basalt-canvas)',
   inset: 'var(--basalt-inset)',
+  field: 'var(--basalt-field)',
   card: 'var(--basalt-card)',
   raised: 'var(--basalt-raised)',
   surface: 'var(--basalt-surface)',
@@ -301,6 +305,7 @@ export type BasaltKey = keyof typeof BASALT
 export type BasaltVar =
   | '--basalt-canvas'
   | '--basalt-inset'
+  | '--basalt-field'
   | '--basalt-card'
   | '--basalt-raised'
   | '--basalt-surface'

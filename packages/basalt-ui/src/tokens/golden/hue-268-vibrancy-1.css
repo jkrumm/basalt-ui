@@ -3,10 +3,11 @@
 :root,
 :root[data-theme='light'] {
   color-scheme: light;
-  --basalt-canvas: #f2f2f5;
-  --basalt-inset: #ffffff;
-  --basalt-card: #fafafd;
-  --basalt-raised: #ffffff;
+  --basalt-canvas: #efeff3;
+  --basalt-inset: #f0f0f4;
+  --basalt-field: #ffffff;
+  --basalt-card: #f6f6fa;
+  --basalt-raised: #fafafe;
   --basalt-hover: color-mix(in srgb, var(--basalt-ink) 5%, transparent);
   --basalt-selected: color-mix(in srgb, var(--basalt-ink) 7.5%, transparent);
   --basalt-scrim: color-mix(in srgb, var(--basalt-ink) 45%, transparent);
@@ -15,13 +16,13 @@
   --basalt-input: color-mix(in srgb, var(--basalt-ink) 52%, transparent);
   --basalt-ink: #262629;
   --basalt-ink-muted: #525255;
-  --basalt-ink-faint: #69696c;
-  --basalt-brand: #2371b3;
+  --basalt-ink-faint: #656569;
+  --basalt-brand: #2070b1;
   --basalt-brand-fill: #2975b6;
   --basalt-on-brand: #ffffff;
-  --basalt-good: #297146;
-  --basalt-warn: #8c5900;
-  --basalt-bad: #af3b39;
+  --basalt-good: #266f43;
+  --basalt-warn: #895700;
+  --basalt-bad: #ac3837;
   --basalt-info: #0062a2;
   --basalt-tint-pct: 12%;
   --basalt-line: #77777a;
@@ -47,6 +48,7 @@
     color-scheme: dark;
     --basalt-canvas: #27272a;
     --basalt-inset: #27272a;
+    --basalt-field: #363639;
     --basalt-card: #323235;
     --basalt-raised: #38383b;
     --basalt-hover: color-mix(in srgb, var(--basalt-ink) 7%, transparent);
@@ -91,6 +93,7 @@
       color-scheme: dark;
       --basalt-canvas: #27272a;
       --basalt-inset: #27272a;
+      --basalt-field: #363639;
       --basalt-card: #323235;
       --basalt-raised: #38383b;
       --basalt-hover: color-mix(in srgb, var(--basalt-ink) 7%, transparent);

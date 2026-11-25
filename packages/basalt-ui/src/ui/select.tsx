@@ -55,7 +55,7 @@ export const selectVariants = cva('relative block w-full min-w-0')
  * selectTriggerVariants({ size: 'sm' })
  */
 export const selectTriggerVariants = cva(
-  'relative flex w-full min-w-0 items-center justify-between gap-2 rounded-ctrl border border-input bg-background text-left text-foreground after:absolute after:inset-x-0 after:top-1/2 after:h-full after:-translate-y-1/2 pointer-coarse:after:min-h-11 focus-ring transition-colors data-placeholder:text-faint data-readonly:cursor-default data-readonly:border-transparent data-readonly:bg-inset data-invalid:border-bad data-disabled:opacity-50',
+  'relative flex w-full min-w-0 items-center justify-between gap-2 rounded-ctrl border border-input bg-field text-left text-foreground after:absolute after:inset-x-0 after:top-1/2 after:h-full after:-translate-y-1/2 pointer-coarse:after:min-h-11 focus-ring transition-colors data-placeholder:text-faint data-readonly:cursor-default data-readonly:border-transparent data-readonly:bg-inset data-invalid:border-bad data-disabled:opacity-50',
   {
     variants: {
       size: {
@@ -107,7 +107,7 @@ export const selectItemVariants = cva(
  * nativeSelectVariants({ size: 'sm' })
  */
 export const nativeSelectVariants = cva(
-  'relative block w-full min-w-0 [&_select]:w-full [&_select]:min-w-0 [&_select]:appearance-none [&_select]:rounded-ctrl [&_select]:border [&_select]:border-input [&_select]:bg-background [&_select]:text-foreground [&_select]:focus-ring [&_select]:transition-colors [&_select]:aria-invalid:border-bad [&_select]:disabled:opacity-50',
+  'relative block w-full min-w-0 [&_select]:w-full [&_select]:min-w-0 [&_select]:appearance-none [&_select]:rounded-ctrl [&_select]:border [&_select]:border-input [&_select]:bg-field [&_select]:text-foreground [&_select]:focus-ring [&_select]:transition-colors [&_select]:aria-invalid:border-bad [&_select]:disabled:opacity-50',
   {
     variants: {
       size: {

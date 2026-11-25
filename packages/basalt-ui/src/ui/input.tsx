@@ -15,7 +15,7 @@ import type { IconComponent } from '../core/ports'
  * inputVariants({ size: 'sm' })
  */
 export const inputVariants = cva(
-  'w-full min-w-0 rounded-ctrl border border-input bg-background text-foreground placeholder:text-faint focus-ring transition-colors [&[readonly]]:cursor-default [&[readonly]]:border-transparent [&[readonly]]:bg-inset aria-invalid:border-bad data-disabled:opacity-50',
+  'w-full min-w-0 rounded-ctrl border border-input bg-field text-foreground placeholder:text-faint focus-ring transition-colors [&[readonly]]:cursor-default [&[readonly]]:border-transparent [&[readonly]]:bg-inset aria-invalid:border-bad data-disabled:opacity-50',
   {
     variants: {
       size: {

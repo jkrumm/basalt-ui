@@ -20,7 +20,7 @@ export const oneTimeCodeVariants = cva('flex items-center gap-2')
  * on focus). Focus outlines the box; an invalid code turns every box red; a disabled one fades.
  */
 const oneTimeCodeInputVariants = cva(
-  'h-11 w-10 min-w-0 pointer-coarse:w-11 rounded-ctrl border border-input bg-background p-0 text-center text-base text-foreground tabular-nums focus-ring transition-colors aria-invalid:border-bad data-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50 read-only:border-transparent read-only:bg-inset',
+  'h-11 w-10 min-w-0 pointer-coarse:w-11 rounded-ctrl border border-input bg-field p-0 text-center text-base text-foreground tabular-nums focus-ring transition-colors aria-invalid:border-bad data-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50 read-only:border-transparent read-only:bg-inset',
 )
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */

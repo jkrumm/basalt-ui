@@ -16,8 +16,8 @@ import { hexToOklab } from './oklab'
 export type GateScheme = 'light' | 'dark'
 const SCHEMES: readonly GateScheme[] = ['light', 'dark']
 
-type Surface = 'canvas' | 'inset' | 'card' | 'raised'
-const SURFACES: readonly Surface[] = ['canvas', 'inset', 'card', 'raised']
+type Surface = 'canvas' | 'inset' | 'field' | 'card' | 'raised'
+const SURFACES: readonly Surface[] = ['canvas', 'inset', 'field', 'card', 'raised']
 
 export type PairRow = {
   /** `<role>-on-<surface>`, the word a failure leads with. */
@@ -60,6 +60,7 @@ const hex = (derived: DerivedV3, name: ColorNameV3, scheme: GateScheme): string 
 const surfaces = (derived: DerivedV3, scheme: GateScheme): Record<Surface, string> => ({
   canvas: hex(derived, 'canvas', scheme),
   inset: hex(derived, 'inset', scheme),
+  field: hex(derived, 'field', scheme),
   card: hex(derived, 'card', scheme),
   raised: hex(derived, 'raised', scheme),
 })
@@ -77,9 +78,9 @@ function contrast(fg: ColorNameV3, bg: Surface | ColorNameV3, min: number, fix: 
 
 function buildPairs(): PairRow[] {
   const rows: PairRow[] = []
-  const text: readonly Surface[] = ['canvas', 'inset', 'card']
+  const text: readonly Surface[] = ['canvas', 'inset', 'field', 'card']
 
-  // Inks and brand ink >= 4.5 on canvas, inset, card; faint is not gated on raised (a control
+  // Inks and brand ink >= 4.5 on canvas, inset, field, card; faint is not gated on raised (a control
   // surface, not a text one).
   for (const fg of ['ink', 'ink-muted', 'ink-faint', 'brand'] as const)
     for (const bg of text) rows.push(contrast(fg, bg, 4.5, FIX_NEUTRAL))

@@ -35,7 +35,7 @@ export const radioGroupVariants = cva('', {
  * radioVariants() // class string for a hand-built radio
  */
 export const radioVariants = cva(
-  'relative inline-flex size-4 shrink-0 items-center justify-center rounded-full border border-input bg-background focus-ring transition-colors after:absolute after:top-1/2 after:left-1/2 after:size-6 after:-translate-1/2 pointer-coarse:after:size-11 data-checked:border-brand-fill data-checked:bg-brand-fill data-invalid:border-bad data-disabled:opacity-50',
+  'relative inline-flex size-4 shrink-0 items-center justify-center rounded-full border border-input bg-field focus-ring transition-colors after:absolute after:top-1/2 after:left-1/2 after:size-6 after:-translate-1/2 pointer-coarse:after:size-11 data-checked:border-brand-fill data-checked:bg-brand-fill data-invalid:border-bad data-disabled:opacity-50',
 )
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
