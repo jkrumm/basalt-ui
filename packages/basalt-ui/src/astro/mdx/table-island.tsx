@@ -1,4 +1,6 @@
 import { useState } from 'react'
+// The table tiers (phone card, scroller): imported here so only a page that renders this island carries the sheet.
+import '../../table/table.css'
 import type { ReactElement } from 'react'
 import { col, DataTable, useDataTable } from '../../table'
 import type { SiteColumn, SiteRow } from '../../static/data-table'

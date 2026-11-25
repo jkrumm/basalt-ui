@@ -87,6 +87,31 @@ describe('the island check', () => {
   })
 })
 
+describe('the table tiers', () => {
+  it('are imported by a site module that imports the table, and by no other', async () => {
+    const root = new URL(`file://${join(PKG, '../../apps/playground-astro')}/`)
+    let config: { vite?: { plugins: Record<string, unknown>[] } } = {}
+    await basaltAstro({ sources: false, fonts: false }).hooks['astro:config:setup']({
+      config: { root },
+      updateConfig: (next) => {
+        config = next as typeof config
+      },
+      injectScript: () => {},
+    })
+    const plugin = config.vite?.plugins.find((p) => p['name'] === 'basalt-ui:table-sheet') as
+      | { transform: (code: string, id: string) => { code: string } | null }
+      | undefined
+    expect(plugin).toBeDefined()
+    const island = "import { DataTable } from 'basalt-ui/table'\n"
+    expect(plugin?.transform(island, '/site/islands/Runs.tsx')?.code).toContain(
+      "import 'basalt-ui/table.css'",
+    )
+    expect(
+      plugin?.transform("import { Lines } from 'basalt-ui/charts'\n", '/site/a.tsx'),
+    ).toBeNull()
+  })
+})
+
 describe('.basalt/sources.css', () => {
   it('reads the closure keys the site imports, the MDX tags as their island subpath, and skips code fences', () => {
     const root = tmp()

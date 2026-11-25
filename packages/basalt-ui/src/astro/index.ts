@@ -19,6 +19,7 @@ import type { ThemeScriptOptions } from '../css/theme-script'
 import { siteScript } from '../static/site-script'
 import { installedPackage } from '../vite/graph'
 import { SOURCES_PATH } from '../vite/sources'
+import { withTableSheet } from '../vite/table-sheet'
 import { deadIslandMessage, deadIslands } from './islands'
 import { renderSiteSources, siteImports } from './sources'
 
@@ -133,6 +134,19 @@ async function fromSite<T>(root: URL, specifier: string): Promise<T> {
 }
 
 /**
+ * A site module that imports `basalt-ui/table` (a table island of its own) gets the table tiers, as
+ * `basalt()` adds them to an app, so a phone card and a scroller need no import by hand. The `DataTable`
+ * MDX tag's island imports the sheet itself.
+ */
+const tableSheetPlugin = {
+  name: 'basalt-ui:table-sheet',
+  transform(code: string, id: string): { code: string; map: null } | null {
+    const next = withTableSheet(code, id)
+    return next === null ? null : { code: next, map: null }
+  },
+}
+
+/**
  * The head scripts, in order: the scheme first (before paint), then the parts' listeners. A content
  * site stamps the scheme only: it has no appearance setter, so the appearance statement would be bytes
  * on every page for nothing.
@@ -164,7 +178,7 @@ export function basaltAstro(options: BasaltAstroOptions = {}): BasaltAstroIntegr
           config.root,
           '@tailwindcss/vite',
         )
-        const plugins = [tailwind.default()]
+        const plugins = [tailwind.default(), tableSheetPlugin]
         if (options.fonts === false) {
           updateConfig({ vite: { plugins } })
         } else {
