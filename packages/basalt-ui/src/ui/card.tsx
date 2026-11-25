@@ -156,7 +156,7 @@ export function CardInfo({ label, children, className, ...props }: CardInfoProps
         popoverTarget={id}
         style={{ anchorName: anchor }}
         className={cn(
-          'relative z-10 inline-flex border-0 bg-transparent p-0 size-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground focus-ring after:absolute after:inset-0 pointer-coarse:after:-inset-2.5',
+          'relative z-10 inline-flex border-0 bg-transparent p-0 size-6 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground focus-ring after:absolute after:inset-0 pointer-coarse:after:-inset-2.5',
           className,
         )}
       >
@@ -233,7 +233,7 @@ export function CardBand({
 // ── Phase ────────────────────────────────────────────────────────────────────────────────────────
 
 const ACTION =
-  'relative z-20 inline-flex h-6 shrink-0 cursor-pointer items-center rounded-ctrl bg-secondary px-2 text-xs font-medium text-foreground shadow-raised hover:bg-accent focus-ring after:absolute after:inset-x-0 after:top-1/2 after:h-full after:-translate-y-1/2 pointer-coarse:after:min-h-11'
+  'relative z-20 inline-flex h-6 shrink-0 items-center rounded-ctrl bg-secondary px-2 text-xs font-medium text-foreground shadow-raised hover:bg-accent focus-ring after:absolute after:inset-x-0 after:top-1/2 after:h-full after:-translate-y-1/2 pointer-coarse:after:min-h-11'
 
 const ERROR_TEXT: Record<ErrorKind | 'default', string> = {
   forbidden: 'You do not have access to this.',

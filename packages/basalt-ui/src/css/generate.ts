@@ -152,8 +152,8 @@ const STATIC_SOURCES = [
 function tailwindCss(variant: 'app' | 'static' = 'app'): string {
   const imports =
     variant === 'app'
-      ? "@import './fonts.css';\n@import './touch.css' layer(basalt);\n"
-      : "@import './prose.css';\n@import './touch.css' layer(basalt);\n" +
+      ? "@import './fonts.css';\n@import './touch.css' layer(basalt);\n@import './cursor.css' layer(basalt);\n"
+      : "@import './prose.css';\n@import './touch.css' layer(basalt);\n@import './cursor.css' layer(basalt);\n" +
         STATIC_SOURCES.map((s) => `@source '${s}';\n`).join('')
   const entries = bridgeEntries()
   const colors = entries.filter((e) => e.tw.startsWith('--color-'))

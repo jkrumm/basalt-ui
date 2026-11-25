@@ -174,6 +174,7 @@ export function BoardLayout<T>({
             // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- the card's menu holds Open, its keyboard path; a click on the face is the pointer shortcut
             <div
               data-slot="table-board-card"
+              data-activatable=""
               data-selected={ticked ? '' : undefined}
               className="relative h-full cursor-pointer rounded-inset data-selected:ring-2 data-selected:ring-brand"
               onClick={open(item.id)}

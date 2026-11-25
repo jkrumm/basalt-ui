@@ -5,6 +5,7 @@
 @import './tokens.css' layer(theme);
 @import './prose.css';
 @import './touch.css' layer(basalt);
+@import './cursor.css' layer(basalt);
 @source '../static';
 @source '../page/prose.{js,tsx}';
 @source '../ui/alert.{js,tsx}';

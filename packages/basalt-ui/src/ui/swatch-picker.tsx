@@ -82,7 +82,7 @@ export const swatchPickerVariants = cva('grid w-fit grid-cols-4 gap-2 pointer-co
  * ring set off from the disc, so the state never rides on color alone.
  */
 const swatchVariants = cva(
-  'relative inline-flex size-7 cursor-pointer items-center justify-center rounded-full text-on-brand focus-ring transition-shadow after:absolute after:top-1/2 after:left-1/2 after:size-7 after:-translate-1/2 pointer-coarse:after:size-11 hover:opacity-90 data-checked:ring-2 data-checked:ring-foreground data-checked:ring-offset-2 data-checked:ring-offset-background data-disabled:cursor-not-allowed data-disabled:opacity-50',
+  'relative inline-flex size-7 items-center justify-center rounded-full text-on-brand focus-ring transition-shadow after:absolute after:top-1/2 after:left-1/2 after:size-7 after:-translate-1/2 pointer-coarse:after:size-11 hover:opacity-90 data-checked:ring-2 data-checked:ring-foreground data-checked:ring-offset-2 data-checked:ring-offset-background data-disabled:opacity-50',
 )
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */

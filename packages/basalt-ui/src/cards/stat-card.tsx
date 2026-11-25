@@ -223,7 +223,7 @@ type TargetProps = { label: string } & ({ href: string | NavTarget } | { onClick
  */
 function Target(props: TargetProps): ReactElement {
   const className =
-    'absolute inset-0 z-10 cursor-pointer rounded-card border-0 bg-transparent p-0 focus-ring focus-visible:-outline-offset-2'
+    'absolute inset-0 z-10 rounded-card border-0 bg-transparent p-0 focus-ring focus-visible:-outline-offset-2'
   if ('href' in props) {
     return (
       <AppLink

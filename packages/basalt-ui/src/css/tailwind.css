@@ -5,6 +5,7 @@
 @import './tokens.css' layer(theme);
 @import './fonts.css';
 @import './touch.css' layer(basalt);
+@import './cursor.css' layer(basalt);
 @custom-variant dark {
   &:where([data-theme='dark'], [data-theme='dark'] *) {
     @slot;

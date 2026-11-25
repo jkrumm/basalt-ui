@@ -12,7 +12,7 @@ import { cn } from '../core/cn'
  * switchVariants() // class string for a hand-built switch
  */
 export const switchVariants = cva(
-  'relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-transparent bg-input p-px focus-ring transition-colors after:absolute after:top-1/2 after:left-1/2 after:h-6 after:w-full after:min-w-6 after:-translate-1/2 pointer-coarse:after:h-11 pointer-coarse:after:min-w-11 data-checked:bg-brand-fill data-invalid:ring-1 data-invalid:ring-bad data-disabled:cursor-not-allowed data-disabled:opacity-50',
+  'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border border-transparent bg-input p-px focus-ring transition-colors after:absolute after:top-1/2 after:left-1/2 after:h-6 after:w-full after:min-w-6 after:-translate-1/2 pointer-coarse:after:h-11 pointer-coarse:after:min-w-11 data-checked:bg-brand-fill data-invalid:ring-1 data-invalid:ring-bad data-disabled:opacity-50',
 )
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
