@@ -66,14 +66,15 @@ Tailwind-only aliases: `primary`/`primary-foreground` = ink/canvas; `secondary` 
 
 ### 3.3 Surfaces and nesting
 
-**Re-anchored 2026-11-11 (owner review, Issue 820).** The warm ramp below this note is superseded: every surface and ink is the 2.x zinc derivation (`deriveTokens(DEFAULT_DERIVE_CONFIG)`) under a v3 name, `SURFACE_FROM_2X` and `INK_FROM_2X` in `derive.ts`, and `anchor-2x.test.ts` pins it. Warmth is the opt-in `neutral: 'stone'`. The measured numbers in 3.3 and 3.4 are the pre-review ones; the test holds the current ones. **Light card, 2026-11-12 (Issue 863, owner verdict on the Spec):** the light shell is the 2.x `panel`, 1.07:1 on the canvas like the factory console's card (the `subtle` band was 1.02:1 and read as the page); the white inset sits .014 L inside it, so the `card-step` gate holds .03 in dark and .014 in light.
+**Re-anchored 2026-11-11 (owner review, Issue 820).** The warm ramp below this note is superseded: every surface and ink is the 2.x zinc derivation (`deriveTokens(DEFAULT_DERIVE_CONFIG)`) under a v3 name, `SURFACE_FROM_2X` and `INK_FROM_2X` in `derive.ts`, and `anchor-2x.test.ts` pins it. Warmth is the opt-in `neutral: 'stone'`. The measured numbers in 3.3 and 3.4 are the pre-review ones; the test holds the current ones. **Surfaces off white, 2026-11-25 (Issue 3296, owner review):** the light canvas, card, inset and raised sit in the zinc ramp (no light surface is `#ffffff`), and a form field has its own role, `field` (white in light, two tones above the card in dark, so a field is never darker than its card). The page stops at tone ~94.4: darker, the light chart marks lose their 3:1 floor on it and `chart-4` and `chart-5` fall under the CVD gate. The hexes below are the current ones; the card step against the canvas is now 1.06:1 and the inset sits .018 L inside the card. **Light card, 2026-11-12 (Issue 863, owner verdict on the Spec):** the light shell is the 2.x `panel`, 1.07:1 on the canvas like the factory console's card (the `subtle` band was 1.02:1 and read as the page); the white inset sits .014 L inside it, so the `card-step` gate holds .03 in dark and .014 in light.
 
 | Role   | 2.x stop                     | Dark T, hex    | Light T, hex   | Use                                     |
 | ------ | ---------------------------- | -------------- | -------------- | --------------------------------------- |
-| canvas | `bg`                         | 15.7 `#27272a` | 95.6 `#f2f2f5` | Page, table head                        |
-| inset  | `field`                      | 15.7 `#27272a` | 100 `#ffffff`  | The reading surface: data, rows, charts |
-| card   | `subtle` dark, `panel` light | 20.9 `#323235` | 98.3 `#fafafd` | Ringed frame, header and footer bands   |
-| raised | `elevated`                   | 23.6 `#38383b` | 100 `#ffffff`  | Controls, tiles, popovers, chips        |
+| canvas | `bg`                         | 15.7 `#27272a` | 94.5 `#efeff3` | Page, table head                        |
+| inset  | `field`                      | 15.7 `#27272a` | 95 `#f0f0f4`   | The reading surface: data, rows, charts |
+| field  | `FIELD_TONE_V3`              | 22.7 `#363639` | 100 `#ffffff`  | The fill of a form field                |
+| card   | `subtle` dark, `panel` light | 20.9 `#323235` | 97 `#f6f6fa`   | Ringed frame, header and footer bands   |
+| raised | `elevated`                   | 23.6 `#38383b` | 98.5 `#fafafe` | Controls, tiles, popovers, chips        |
 
 ```
 canvas
