@@ -3,7 +3,8 @@
  * The site's performance numbers, measured on the built `dist`, never claimed: per page the module
  * JavaScript it loads (gzip, with its static imports), its islands, the inline head scripts and its
  * stylesheets (gzip); the cost of the React runtime the first island brings and of each further
- * island's own chunk; with `--browser`, LCP and CLS on three page types in a headless Chrome.
+ * island's own chunk; with `--browser`, LCP and CLS on three page types in a headless Chrome, and the
+ * layout shift of every guide at 1440 and 390 px (`guideCls`, held at 0).
  *
  *   bun apps/marketing/scripts/measure.ts            # print the numbers
  *   bun apps/marketing/scripts/measure.ts --check    # exit 1 when a number breaks site-budgets.json
