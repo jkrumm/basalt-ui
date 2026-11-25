@@ -127,9 +127,9 @@ export const SHELL_GEOMETRY =
         railExpanded: 240,
         railCollapsed: 64,
         brandInsetExpanded: 16,
-        // The work surface's panel from md up: an 8 px inset on its three free sides; its edge is an
-        // outset ring in that inset, so it takes no pixel from the rows inside.
-        panelInset: 8,
+        // The work surface's panel from md up: a 6 px inset on its end and bottom (its top meets the
+        // header strip); its edge is an outset ring in that inset, so it takes no pixel from the rows inside.
+        panelInset: 6,
         panelEdge: 0,
       }
 

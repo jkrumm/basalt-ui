@@ -1,15 +1,17 @@
 /**
- * The header: the identity row, the first row of the work surface, three bare regions on one row of
- * one height. The brand zone is the frame's, above the rail (`BrandZone`); a compact screen has no
- * rail, so the row leads with the logo there. Under `chrome="native-overlay"` the header is the
- * window's title bar instead: a row of the frame over the whole width, the brand zone in it.
+ * The header: the breadcrumb strip, the frame's top row beside the brand zone (`BrandZone`, above the
+ * rail), so the two share one row's height and baseline; three bare regions on that one row, on the
+ * frame's color above the work surface. A compact screen has no rail, so there the strip is the phone
+ * header: it leads with the logo, paints the surface's color and closes on a rule. Under
+ * `chrome="native-overlay"` the header is the window's title bar instead: a row of the frame over the
+ * whole width, the brand zone in it.
  *
- * - `start` (`shell-lead`): the breadcrumb, on the page's gutter. The server renders the nav-derived
- *   breadcrumb; a page's `PageBar title` replaces it.
+ * - `start` (`shell-lead`): the breadcrumb trail (`parts/crumbs.tsx`), on the page's gutter. The
+ *   server renders the nav-derived trail; a page's `PageBar title` and `parent` join it.
  * - `center`: the global controls (`AppShell globalControls`). Hidden compact, unless the slot says
  *   `compact: true`: it then draws its own narrow form (`globalControls(specs)`'s `Filters (n)`).
- * - `end`: the page's claimed actions, the aside trigger on a compact screen, then the global
- *   actions (`shell-trail`).
+ * - `end`: the aside trigger on a compact screen, then the global actions and status
+ *   (`shell-trail`). A page's own actions are its `PageBar` band's, in the surface below.
  *
  * The global actions run in priority tiers (`core/header-tiers.ts` holds the numbers): the header
  * row is a size container, a `priority` 3 action yields below 1040 px of row width, a 2 below 860,
@@ -42,11 +44,9 @@ export const HEADER_BOX_HEIGHT = 32
 
 export type HeaderProps = {
   brand: ShellBrand
-  /** The breadcrumb's content: the claimed trail, or the nav-derived leaf. */
+  /** The breadcrumb trail. */
   breadcrumb: ReactNode
   globalControls: ControlsSlot | undefined
-  /** The page's claimed `actions`. */
-  actions: ReactNode
   globalActions: readonly GlobalAction[]
   /** The compact-screen trigger of a claimed aside. */
   asideTrigger: ReactNode
@@ -59,8 +59,8 @@ export type HeaderProps = {
 /**
  * The brand zone, as wide as the rail. The rail's collapse toggle lives here: expanded it sits at the
  * zone's end, collapsed it is the zone's only content, centred on the rail. On the web it is the
- * frame's top cell, above the rail and level with the identity row; under `native-overlay` it sits in
- * the title bar.
+ * frame's top cell, above the rail and in one row with the breadcrumb strip; under `native-overlay` it
+ * sits in the title bar.
  */
 export function BrandZone({
   brand,
@@ -89,8 +89,8 @@ function Brand({
       data-slot="shell-brand-zone"
       className={cn(
         'flex shrink-0 items-center gap-2 ps-4 pe-2 md:w-(--shell-rail-w) md:overflow-hidden',
-        // On the web the zone is a frame cell: hidden with the rail, level with the identity row.
-        !native && 'hidden min-w-0 [grid-area:brand] md:flex md:pt-(--shell-inset)',
+        // On the web the zone is a frame cell: hidden with the rail, in one row with the strip.
+        !native && 'hidden min-w-0 [grid-area:brand] md:flex',
         !native && PRINT_OFF,
         // Collapsed: the zone is the rail's width and holds the toggle alone, centred.
         'group-data-[rail=collapsed]/shell:md:justify-center group-data-[rail=collapsed]/shell:md:px-0',
@@ -186,7 +186,12 @@ function BrandMark({ brand }: { brand: ShellBrand }): ReactElement {
 function ActionBody({ action, box }: { action: GlobalAction; box: ShellBox }): ReactElement {
   if (action.kind === 'custom') {
     return (
-      <div data-slot="shell-action" className="h-8 overflow-hidden">
+      // Clipped to one control row, with the focus ring's room around it: the padding widens the clip
+      // and the matching negative margin keeps the footprint at the row's 32 px.
+      <div
+        data-slot="shell-action"
+        className="-m-1 box-content flex h-8 items-center overflow-hidden p-1"
+      >
         {action.render(box)}
       </div>
     )
@@ -274,7 +279,6 @@ export function Header({
   brand,
   breadcrumb,
   globalControls,
-  actions,
   globalActions,
   asideTrigger,
   sizeClass,
@@ -294,13 +298,12 @@ export function Header({
         native
           ? cn(NATIVE_HEADER, 'bg-background')
           : cn(
-              // The identity row's rule, a hairline row on the surface. Over main it gives way to a
-              // page's band, whose own rule closes the bar: row and band read as one with one rule.
-              "after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border after:content-['']",
+              // From `md` the strip is bare on the frame; the surface's own edge is the line under it.
+              // The phone header paints the surface's color and closes on a hairline, which gives way
+              // to a page's band, whose own rule closes the bar: header and band read as one.
+              'max-md:bg-card',
+              "max-md:after:pointer-events-none max-md:after:absolute max-md:after:inset-x-0 max-md:after:bottom-0 max-md:after:h-px max-md:after:bg-border max-md:after:content-['']",
               'group-data-page-band/shell:after:hidden',
-              // The aside and dock columns have no band under them, so they keep their part of the rule.
-              "before:pointer-events-none before:absolute before:end-0 before:bottom-0 before:hidden before:h-px before:w-[calc(var(--shell-aside-w,0px)+var(--shell-dock-w,0px))] before:bg-border before:content-['']",
-              'group-data-page-band/shell:before:block',
             ),
         'group-data-[compact-header=hidden]/shell:max-md:hidden',
         PRINT_OFF,
@@ -328,7 +331,7 @@ export function Header({
           )}
           <div
             data-slot="shell-breadcrumb"
-            className="ms-(--shell-gutter) flex min-w-0 items-center gap-2 text-sm text-muted-foreground [&>*]:min-w-0 [&>*]:truncate [&>[data-slot=page-breadcrumb-leaf]]:font-medium [&>[data-slot=page-breadcrumb-leaf]]:text-foreground [&>[data-slot=page-breadcrumb-parent]]:after:ms-2 [&>[data-slot=page-breadcrumb-parent]]:after:text-faint [&>[data-slot=page-breadcrumb-parent]]:after:content-['/']"
+            className="ms-(--shell-gutter) flex min-w-0 items-center gap-2 text-sm text-muted-foreground [&>*]:min-w-0 [&>*]:truncate [&>[data-slot=page-breadcrumb-leaf]]:font-medium [&>[data-slot=page-breadcrumb-leaf]]:text-foreground [&>[data-slot=page-breadcrumb-separator]]:shrink-0 [&>[data-slot=page-breadcrumb-separator]]:overflow-visible"
           >
             {breadcrumb}
           </div>
@@ -346,9 +349,6 @@ export function Header({
           </div>
         )}
         <div data-slot="shell-end" className="flex shrink-0 items-center gap-2 ps-2">
-          <div data-slot="shell-page-bar-host" className="flex min-w-0 items-center gap-2">
-            {actions}
-          </div>
           {asideTrigger}
           {globalActions.length > 0 && (
             <div data-slot="shell-trail" className="flex shrink-0 items-center gap-1">

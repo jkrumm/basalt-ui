@@ -303,7 +303,9 @@ describe('the crumb parent', () => {
     const { release } = mount('/f/queue?sel=7')
     release()
     await waitFor(() => expect(crumb()).toBe('Job 7'))
-    const parent = document.querySelector<HTMLElement>('a[data-slot="page-breadcrumb-parent"]')
+    const parent = [
+      ...document.querySelectorAll<HTMLElement>('a[data-slot="page-breadcrumb-parent"]'),
+    ].find((a) => a.textContent === 'Queue')
     parent?.focus()
     await act(async () => {
       fireEvent.click(parent as Element, { button: 0 })
@@ -315,8 +317,9 @@ describe('the crumb parent', () => {
   test('is not the current page', async () => {
     mount('/f/queue?sel=7')
     await waitFor(() => expect(crumb()).toBe('Job 7'))
-    const parent = document.querySelector('a[data-slot="page-breadcrumb-parent"]')
-    expect(parent?.hasAttribute('aria-current')).toBe(false)
+    const parents = [...document.querySelectorAll('a[data-slot="page-breadcrumb-parent"]')]
+    expect(parents.map((a) => a.textContent)).toEqual(['Overview', 'Queue'])
+    expect(parents.some((a) => a.hasAttribute('aria-current'))).toBe(false)
   })
 })
 
@@ -327,9 +330,10 @@ describe('the crumb trail', () => {
     await waitFor(() => expect(crumb()).toBe('Fleet overview'))
     await act(() => router.navigate({ to: '/f/services' }))
     await waitFor(() => expect(crumb()).toBe('Services'))
-    const trail = [
-      ...(document.querySelector('[data-slot="shell-breadcrumb"]')?.children ?? []),
-    ].map((el) => el.textContent)
+    const trail = [...(document.querySelector('[data-slot="shell-breadcrumb"]')?.children ?? [])]
+      .filter((el) => el.getAttribute('data-slot') !== 'page-breadcrumb-separator')
+      .map((el) => el.textContent)
+    // The page's parent links where the nav's Overview does, so it takes that place.
     expect(trail).toEqual(['Fleet', 'All services', 'Services'])
   })
 })

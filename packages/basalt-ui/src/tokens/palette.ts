@@ -659,13 +659,16 @@ const SPACE_STEP_BASE = {
    *  nav-icon column any more (x=20: 10px of `.root` frame inset plus 10px of NavLink inset,
    *  `rowInsetX` twice) — the header's brand zone aligns to that column on its own
    *  (`shell/app-brand.module.css`), so the page gutter is free to be a gutter. The header's
-   *  breadcrumb, the page-bar band and Main all land on this one number. */
-  appShellInset: 16,
-  /** The page gutter at the EXPANDED size class only — a TRIAL (`docs/waves/design-parity/SPEC.md`
-   *  D7): the reference measures 24 at 1440, and 16 was a deliberate earlier choice down from 20, so
-   *  the wider gutter applies where the evidence is and is reverted by setting this to
-   *  `appShellInset` (one line). Medium keeps `appShellInset`, compact keeps `appShellInsetMobile`. */
-  appShellInsetExpanded: 24,
+   *  breadcrumb, the page-bar band and Main all land on this one number.
+   *
+   *  12 at the medium size class, down from 16, with the breadcrumb strip moved onto the frame's top
+   *  row: the panel lost its header row, and the owner read 16 and 24 as content padded in too far.
+   *  The shell's `--shell-gutter` (`shell/parts/grid.tsx`) is the same number. */
+  appShellInset: 12,
+  /** The page gutter at the EXPANDED size class: 16, down from the 24 of the design-parity trial
+   *  (`docs/waves/design-parity/SPEC.md` D7) when the breadcrumb strip left the panel. Medium keeps
+   *  `appShellInset`, compact keeps `appShellInsetMobile`. */
+  appShellInsetExpanded: 16,
   /** The page gutter BELOW `sm` — the phone half of `appShellInset` above. A separate entry rather
    *  than one responsive value for the same reason `appShellNavbarWidth` is one: there is no sidebar
    *  seam to align to on a phone, so the number is answering a different question (how much of a

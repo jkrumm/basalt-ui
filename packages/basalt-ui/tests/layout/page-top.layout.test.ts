@@ -2,8 +2,9 @@
  * The page top (owner review 1, docs/v3/issues/owner-1/v3-owner-1-page-top.json), measured on the
  * built playground in a real browser at 1800 and 390:
  *
- * - under `AppShell` a page with tabs or controls shows one rule between chrome and content: the
- *   header's rule gives way over main and the band's closes the bar;
+ * - under `AppShell` a page with tabs or controls shows one rule between chrome and content: from
+ *   `md` the header strip sits bare on the frame above the work surface, whose edge is the line, and
+ *   the band's rule closes the bar; on a phone the header's rule gives way to the band's;
  * - content starts one page gutter under the chrome's last rule, with a band (States, Fleet
  *   overview) and without one (the title-only expression scenarios c12, n02, n27), so the distance
  *   is the same token on every page.
@@ -158,20 +159,26 @@ layout('the page top on the playground and the expression app', () => {
           expect(m.firstContentTop - m.chromeBottom).toBeCloseTo(m.gutter, 0)
         })
       }
+      // From md the strip is bare on the frame: the surface's own edge is the line under it.
+      const phone = viewport.width < 840
       for (const route of BANDLESS) {
-        test(`${route}: the header's rule, content one gutter under it`, async () => {
+        test(`${route}: ${phone ? "the header's rule" : 'the surface edge'}, content one gutter under it`, async () => {
           const m = await measure(viewport, route)
           expect(m.banded, 'a title-only PageBar draws no band').toBe(false)
-          expect(m.headerRule, "the header's rule spans the header").toBeCloseTo(m.headerWidth, 0)
+          expect(
+            m.headerRule,
+            "the phone header's rule spans it; the strip draws none",
+          ).toBeCloseTo(phone ? m.headerWidth : 0, 0)
           expect(m.firstContentTop - m.chromeBottom).toBeCloseTo(m.gutter, 0)
         })
       }
 
-      test('with a band, the header keeps its rule over an aside column', async () => {
+      test('with a band beside an aside column, no header rule doubles it', async () => {
         const m = await measure(viewport, BANDED[0], 320)
         expect(m.banded).toBe(true)
         expect(m.sideColumns, 'the aside column took its width').toBeCloseTo(320, 0)
-        expect(m.sideRule).toBeCloseTo(m.sideColumns, 0)
+        expect(m.sideRule, 'the header draws no rule of its own over the aside').toBe(0)
+        expect(m.headerRule).toBe(0)
       })
 
       test('the distance from the chrome to the first content is one value on all five pages', async () => {

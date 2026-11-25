@@ -4,7 +4,7 @@ use when: 'a screen needs a title, tabs, search, filters, a layout toggle, a ref
 never when: 'the screen has none of those (leave the bar out) or the title belongs to a card (use the card title)'
 subpath: basalt-ui/page
 peers: ['@base-ui/react']
-slots: [page-bar, page-bar-controls, page-bar-end, page-bar-row, page-bar-search-line, page-bar-tabs, page-bar-tabs-row, page-breadcrumb-parent, page-header-actions]
+slots: [page-bar, page-bar-controls, page-bar-end, page-bar-row, page-bar-search-line, page-bar-tabs, page-bar-tabs-row, page-breadcrumb-parent]
 ---
 
 # PageBar

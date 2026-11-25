@@ -411,13 +411,11 @@ function SettingsButton({ settings }: { settings: PageSettings }): ReactElement 
  * `@regular` the layout toggle steps aside.
  *
  * Where it renders follows the context, never a prop. Under an `AppShell` `title` claims the
- * header's breadcrumb leaf (`parent` the trail before it, a link through the provider's `link` for a
+ * breadcrumb strip's leaf (`parent` the last ancestor before it, a link through the provider's `link` for a
  * path string and a `NavTarget` alike, so a click keeps the document), names the in-flow screen-reader `h1` and
- * `document.title`. `actions` end the band when it holds a control (tabs, search, controls,
- * connection, refresh, layout or settings) and claim the header's end, the identity row, when it
- * holds none. Without a shell `title` is the visible `h1` and `actions` sit in the band. A
- * band that holds a control is sticky at the nearest scrollport; a band of a title alone scrolls
- * away. It publishes its measured height as `--page-bar-h`; an empty band renders nothing. `tabs`
+ * `document.title`; the band is the work surface's first line, the controls line under the strip,
+ * and `actions` end it. Without a shell `title` is the visible `h1`. A band that holds a control
+ * or an action is sticky at the nearest scrollport; a band of a title alone scrolls away. It publishes its measured height as `--page-bar-h`; an empty band renders nothing. `tabs`
  * is `{ state, label, badges }` of an enum field (a tab strip bound to it; `badges` keyed by value
  * give a tab its count, `attention` and tone) or a `ControlsSlot` for custom content.
  * `actions` holds at most five entries and at most one `primary`. An `identity` (avatar, subtitle,
@@ -503,7 +501,6 @@ export function PageBar<K extends string = string, L extends string = string>({
     refresh !== undefined ||
     layout !== undefined ||
     settings !== undefined
-  const actionsInHeader = inShell && !hasRow
   const recordNav =
     records === undefined ? null : (
       <RecordNav records={records} close={records.close ?? parent?.href} />
@@ -542,21 +539,6 @@ export function PageBar<K extends string = string, L extends string = string>({
     }
   }, [host, owns, id, title, parent])
 
-  useIsomorphicLayoutEffect(() => {
-    if (host === null || !owns || !actionsInHeader) return undefined
-    if (list.length === 0 && favorite === undefined && records === undefined) return undefined
-    return host.claim(
-      'actions',
-      <div data-slot="page-header-actions" className="flex min-w-0 items-center gap-2">
-        {recordNav}
-        {favorite !== undefined && <FavoriteToggle {...favorite} />}
-        {list.length > 0 && <PageActions actions={list} primaryLast={false} />}
-      </div>,
-      `${id}:actions`,
-    )
-    // `list` is rebuilt per render, `actions` is the caller's value.
-  }, [host, owns, id, actions, favorite, records, actionsInHeader])
-
   // Publish the band height onto Page before paint, then on every resize. A zero reading is refused.
   useIsomorphicLayoutEffect(() => {
     if (node === null) return undefined
@@ -583,8 +565,8 @@ export function PageBar<K extends string = string, L extends string = string>({
 
   if (!owns) return null
 
-  const bandActions = !actionsInHeader && list.length > 0
-  const hasControls = hasRow || (!inShell && (list.length > 0 || records !== undefined))
+  const bandActions = list.length > 0
+  const hasControls = hasRow || list.length > 0 || records !== undefined || favorite !== undefined
   const named = identity !== undefined && title !== undefined
   const bandHasContent = hasControls || named || (!inShell && title !== undefined)
 
@@ -693,7 +675,7 @@ export function PageBar<K extends string = string, L extends string = string>({
             )}
             {refresh !== undefined && <RefreshButton {...refresh} />}
             {layout !== undefined && <LayoutToggle layout={layout} />}
-            {!actionsInHeader && recordNav}
+            {recordNav}
             {favorite !== undefined && <FavoriteToggle {...favorite} />}
             {settings !== undefined && <SettingsButton settings={settings} />}
             {bandActions && <PageActions actions={list} primaryLast />}

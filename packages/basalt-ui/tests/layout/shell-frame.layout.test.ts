@@ -3,7 +3,8 @@
  * `AppShell` under a memory router with a `Page` inside.
  *
  * - the document never scrolls and never overflows sideways at 1440, 1024 and 390;
- * - one header height at every width, gutters 8, 16, 24, rail 240, 64, 0;
+ * - one header height at every width, the frame's top row beside the brand zone, gutters 8, 12, 16,
+ *   rail 240, 64, 0;
  * - the docked aside's header meets the page-bar band's bottom edge, and an unclaimed aside is 0 wide;
  * - axe finds no serious or critical landmark, region or heading-one violation;
  * - the skip link is the first tab stop and moves focus into `Main`;
@@ -59,8 +60,8 @@ const REPO_ROOT = new URL('../../../../', import.meta.url).pathname
 const axeSource = readFileSync(`${REPO_ROOT}node_modules/axe-core/axe.min.js`, 'utf8')
 
 const VIEWPORTS: readonly { viewport: Viewport; gutter: number; rail: number }[] = [
-  { viewport: DESKTOP_1440, gutter: 24, rail: 240 },
-  { viewport: LAPTOP_1024, gutter: 16, rail: 64 },
+  { viewport: DESKTOP_1440, gutter: 16, rail: 240 },
+  { viewport: LAPTOP_1024, gutter: 12, rail: 64 },
   { viewport: PHONE, gutter: 8, rail: 0 },
 ]
 
@@ -149,8 +150,14 @@ layout('AppShell frame — real layout', () => {
         const p = await openFixture(specOf(), viewport)
         const header = await p.box('header', HEADER)
         expect(header.box.height).toBe(48)
-        // The header is the work surface's first row.
-        expect(header.box.top).toBe((await surfaceOf(p)).innerTop)
+        // The header is the frame's top row, and the work surface starts under it.
+        expect(header.box.top).toBe(0)
+        expect((await surfaceOf(p)).top).toBe(header.box.bottom)
+        if (rail > 0) {
+          // The brand zone is the row's other cell: one top, one height, so one line across.
+          const brand = (await p.box('brand zone', S('shell-brand-zone'))).box
+          expect([brand.top, brand.height, brand.right]).toEqual([0, 48, header.box.left])
+        }
         const root = await p.box('root', ROOT)
         expect(root.box.height).toBe(viewport.height)
         expect(parseFloat(await p.computed(PAGE_MAIN, 'padding-left'))).toBe(gutter)
@@ -403,19 +410,16 @@ layout('the two planes: the rail on the frame, one work surface for the page', (
         expect(g.surface, 'the surface and the frame are two colors').not.toBe(g.frame)
         expect(g.railEdge, 'the rail draws no hairline: the planes divide it').toBe(0)
         const header = (await p.box('header', HEADER)).box
-        expect(
-          header.left,
-          'the identity row starts on the surface, past the rail',
-        ).toBeGreaterThanOrEqual(g.left)
+        expect(header.left, 'the strip starts past the rail, over the surface').toBe(g.left)
+        expect(g.top, 'the surface starts under the strip').toBe(header.bottom)
         if (rail === 0) {
-          expect([g.top, g.left, g.radius]).toEqual([0, 0, 0])
+          expect([g.left, g.radius]).toEqual([0, 0])
           expect(g.right).toBe(viewport.width)
           expect(g.edges).toEqual([0, 0, 0, 0])
           expect(g.ring).toBe('none')
           return
         }
         expect(g.left, 'no inset on the rail side').toBe(rail)
-        expect(g.top).toBe(INSET)
         expect(viewport.width - g.right).toBe(INSET)
         expect(viewport.height - g.bottom).toBe(INSET)
         expect(g.radius).toBe(CARD_RADIUS)
@@ -425,17 +429,17 @@ layout('the two planes: the rail on the frame, one work surface for the page', (
     }
   }
 
-  test('flush meets the window on every side, with one hairline toward the rail', async () => {
+  test('flush meets the window on every free side, with one hairline toward the rail and the strip', async () => {
     const p = await openFixture(specOf({ frame: 'flush' }), DESKTOP_1440)
     const g = await surfaceOf(p)
     expect([g.top, g.left, g.right, g.bottom, g.radius]).toEqual([
-      0,
+      48,
       240,
       1440,
       DESKTOP_1440.height,
       0,
     ])
-    expect(g.edges).toEqual([0, 0, 0, 1])
+    expect(g.edges).toEqual([1, 0, 0, 1])
     expect((await p.box('header', HEADER)).box.top).toBe(0)
   })
 
@@ -448,14 +452,15 @@ layout('the two planes: the rail on the frame, one work surface for the page', (
     const panelProp = await openFixture(specOf(), DESKTOP_1440)
     await setFrame(panelProp, 'flush')
     const flush = await surfaceOf(panelProp)
-    expect([flush.top, flush.left, flush.right, flush.radius]).toEqual([0, 240, 1440, 0])
-    expect(flush.edges).toEqual([0, 0, 0, 1])
+    expect([flush.top, flush.left, flush.right, flush.radius]).toEqual([48, 240, 1440, 0])
+    expect(flush.edges).toEqual([1, 0, 0, 1])
     await setFrame(panelProp, null)
 
     const flushProp = await openFixture(specOf({ frame: 'flush' }), DESKTOP_1440)
     await setFrame(flushProp, 'panel')
     const panel = await surfaceOf(flushProp)
-    expect([panel.top, panel.left, panel.radius]).toEqual([INSET, 240, CARD_RADIUS])
+    expect([panel.top, panel.left, panel.radius]).toEqual([48, 240, CARD_RADIUS])
+    expect(1440 - panel.right).toBe(INSET)
     expect(panel.edges).toEqual([0, 0, 0, 0])
     expect(panel.ring).toMatch(/0px 0px 0px 1px/)
     await setFrame(flushProp, null)
@@ -463,7 +468,7 @@ layout('the two planes: the rail on the frame, one work surface for the page', (
     const phone = await openFixture(specOf(), PHONE)
     await setFrame(phone, 'panel')
     const compact = await surfaceOf(phone)
-    expect([compact.top, compact.left, compact.radius]).toEqual([0, 0, 0])
+    expect([compact.top, compact.left, compact.radius]).toEqual([48, 0, 0])
     expect(compact.ring).toBe('none')
     await setFrame(phone, null)
   })
@@ -499,6 +504,6 @@ layout('the two planes: the rail on the frame, one work surface for the page', (
     expect(card.bg, 'no ground contrast: the card is the surface color').toBe(card.surface)
     expect(card.shadow, 'the ring is the card shadow').toMatch(/0px 0px 0px 1px/)
     expect(card.border, 'one edge: no border beside the ring').toBe(0)
-    expect(parseFloat(await p.computed(PAGE_MAIN, 'padding-left'))).toBe(24)
+    expect(parseFloat(await p.computed(PAGE_MAIN, 'padding-left'))).toBe(16)
   })
 })

@@ -37,7 +37,6 @@ function renderHeader(
         brand={{ name: 'Argo' }}
         breadcrumb={<span data-slot="page-breadcrumb-leaf">Runs</span>}
         globalControls={undefined}
-        actions={null}
         globalActions={[]}
         asideTrigger={null}
         sizeClass="expanded"
@@ -211,11 +210,12 @@ describe('the one kebab', () => {
 })
 
 describe('regions', () => {
-  test('the page actions sit in their own host before the trail', () => {
-    renderHeader({ actions: <button type="button">New run</button>, globalActions: [CLUSTER[0]!] })
-    const host = document.querySelector('[data-slot="shell-page-bar-host"]')
-    expect(host?.textContent).toBe('New run')
-    expect(host?.nextElementSibling?.getAttribute('data-slot')).toBe('shell-trail')
+  test('the strip ends on the global actions: no page action has a host in it', () => {
+    renderHeader({ globalActions: [CLUSTER[0]!] })
+    expect(document.querySelector('[data-slot="shell-page-bar-host"]')).toBeNull()
+    const end = document.querySelector('[data-slot="shell-end"]')
+    expect(end?.lastElementChild?.getAttribute('data-slot')).toBe('shell-trail')
+    expect(end?.querySelector('[data-item="status"]')?.textContent).toBe('3 jobs')
   })
 
   test('the breadcrumb is claimed content, not derived here', () => {
