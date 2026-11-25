@@ -49,6 +49,8 @@
         "ComboboxContent": "div",
         "ComboboxInput": "div",
         "ComboboxItem": "div",
+        "ContextMenuContent": "div",
+        "ContextMenuTrigger": "div",
         "ControlGroup": "div",
         "CopyButton": "button",
         "CountBadge": "div",
