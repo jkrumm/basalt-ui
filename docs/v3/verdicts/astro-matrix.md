@@ -46,17 +46,17 @@ Columns: `No directive` is the static HTML: `clean`, `differs` from the client:o
 | virtual-list | VirtualList | clean | client:visible | 84.9 kB | 13.7 kB | 35.8 kB | Static picture first, the island adds behaviour: the first window renders statically; JS windows the scroll. client:visible, up to 13.7 kB further (client:idle above the fold). |
 | stat-card | StatCard | clean | no directive | 101.0 kB | 29.8 kB | 37.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: figure, delta, verdict and sparkline are all drawn at rest. |
 | stat-group | StatGroup, StatCell | clean | no directive | 106.7 kB | 35.5 kB | 37.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: figures, deltas and sparklines are drawn at rest; the chart sits in its box. |
-| bar-list | BarList | clean | no directive | 94.1 kB | 22.9 kB | 35.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: the ranked bars are the picture; rows are plain text without a link. |
+| bar-list | BarList | clean | no directive | 96.1 kB | 24.9 kB | 35.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: the ranked bars are the picture; rows are plain text without a link. |
 | chain-view | ChainView | clean | client:visible | 95.0 kB | 23.8 kB | 35.8 kB | Static picture first, the island adds behaviour: pan, zoom and trace focus need JS; the laid-out graph is the static picture. client:visible, up to 23.8 kB further (client:idle above the fold). |
-| data-panel | DataPanel | clean | no directive | 89.7 kB | 18.5 kB | 35.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: the card frame and its body list are drawn at rest. |
+| data-panel | DataPanel | clean | no directive | 91.5 kB | 20.3 kB | 35.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: the card frame and its body list are drawn at rest. |
 | event-list | EventList | clean | client:visible | 90.8 kB | 19.6 kB | 35.8 kB | Static picture first, the island adds behaviour: "Show more" pages the feed; the first page is the static picture. client:visible, up to 19.6 kB further (client:idle above the fold). |
-| kanban-card | KanbanCard | clean | client:visible | 91.4 kB | 20.2 kB | 35.8 kB | Static picture first, the island adds behaviour: the move menu and drag need JS; the card is drawn at rest. client:visible, up to 20.2 kB further (client:idle above the fold). |
+| kanban-card | KanbanCard | clean | client:visible | 93.8 kB | 22.6 kB | 35.8 kB | Static picture first, the island adds behaviour: the move menu and drag need JS; the card is drawn at rest. client:visible, up to 22.6 kB further (client:idle above the fold). |
 | row-list | RowList | clean | client:visible | 89.6 kB | 18.4 kB | 35.8 kB | Static picture first, the island adds behaviour: a row shares focus with its chart mark; hover and focus highlight need JS. client:visible, up to 18.4 kB further (client:idle above the fold). |
 | step-rail | StepRail | clean | no directive | 81.2 kB | 10.0 kB | 35.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: bars scaled to the longest step are drawn at rest; it never animates. |
 | lines | Lines | differs | client:visible | 192.8 kB | 121.6 kB | 37.8 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 121.6 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-dark). |
 | bars | Bars | differs | client:visible | 192.8 kB | 121.5 kB | 37.8 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 121.5 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-dark). |
 | cartesian-chart | CartesianChart | differs | client:visible | 192.7 kB | 121.5 kB | 37.8 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 121.5 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-dark). |
-| chart-card | ChartCard | differs | client:visible | 204.7 kB | 133.5 kB | 37.8 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 133.5 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-light). |
+| chart-card | ChartCard | differs | client:visible | 206.9 kB | 135.7 kB | 37.8 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 135.7 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-light). |
 | heatmap | Heatmap | differs | client:visible | 189.5 kB | 118.3 kB | 37.8 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 118.3 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-light). |
 | interval-track | IntervalTrack | differs | client:visible | 190.5 kB | 119.3 kB | 37.8 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 119.3 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-dark). |
 | sparkline | Sparkline | clean | client:visible | 89.6 kB | 18.4 kB | 37.8 kB | Static picture first, the island adds behaviour: the keyboard and pointer readout of a labelled sparkline. client:visible, up to 18.4 kB further (client:idle above the fold). |
@@ -75,7 +75,7 @@ Columns: `No directive` is the static HTML: `clean`, `differs` from the client:o
 | site-changelog | SiteChangelog | clean | no directive | 77.2 kB | 6.0 kB | 35.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: anchored release notes; the version column is CSS-sticky. |
 | callout | Callout | clean | no directive | 80.9 kB | 9.7 kB | 36.3 kB | The static HTML is the whole part, 0 bytes of JavaScript: a static note; no behaviour. |
 | prose | Prose | clean | no directive | 76.7 kB | 5.5 kB | 36.3 kB | The static HTML is the whole part, 0 bytes of JavaScript: typography only. |
-| page | Page, PageBar, PageSummary, Section, CardGrid | clean | client:visible | 200.3 kB | 129.1 kB | 36.3 kB | Static picture first, the island adds behaviour: action buttons need JS; the frame, title, summary and figures are the static picture. client:visible, up to 129.1 kB further (client:idle above the fold). |
+| page | Page, PageBar, PageSummary, Section, CardGrid | clean | client:visible | 202.7 kB | 131.4 kB | 36.3 kB | Static picture first, the island adds behaviour: action buttons need JS; the frame, title, summary and figures are the static picture. client:visible, up to 131.4 kB further (client:idle above the fold). |
 | empty-state | EmptyState | clean | no directive | 86.6 kB | 15.4 kB | 36.3 kB | The static HTML is the whole part, 0 bytes of JavaScript: the cause line and the link action are drawn at rest; the filtered reset needs JS and is not shown. |
 | facts | Facts | clean | no directive | 73.1 kB | 1.9 kB | 36.3 kB | The static HTML is the whole part, 0 bytes of JavaScript: a definition list is drawn at rest. |
 | inner-nav | InnerNav | fails | none works | 167.7 kB | 96.6 kB | 36.3 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
@@ -120,10 +120,10 @@ Every part of a family on one page, each its own island, in one mode: the JavaSc
 |-|-|-|-|-|-|-|
 | ui | 27 | 0 | 133.1 kB | 251.0 kB | 251.0 kB | 251.0 kB |
 | cards | 9 | 0 | 130.4 kB | 142.7 kB | 142.6 kB | 142.6 kB |
-| charts | 8 | 0 | 205.7 kB | 223.6 kB | 223.5 kB | 223.5 kB |
+| charts | 8 | 0 | 207.9 kB | 225.7 kB | 225.7 kB | 225.7 kB |
 | table | 4 | 0 | 338.9 kB | 352.6 kB | 352.5 kB | 352.5 kB |
 | content | 9 | 0 | 274.7 kB | 281.4 kB | 281.3 kB | 281.3 kB |
-| page | 19 | 0 | 202.7 kB | 292.3 kB | 292.2 kB | 380.0 kB |
+| page | 19 | 0 | 205.0 kB | 293.9 kB | 293.9 kB | 381.6 kB |
 | forms | 18 | 0 | 187.3 kB | 253.4 kB | 253.3 kB | 253.3 kB |
 
 ## Charts: is the static picture correct?
@@ -135,7 +135,7 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 | lines | correct at the declared width only | client:visible, up to 121.6 kB further |
 | bars | correct at the declared width only | client:visible, up to 121.5 kB further |
 | cartesian-chart | correct at the declared width only | client:visible, up to 121.5 kB further |
-| chart-card | correct at the declared width only | client:visible, up to 133.5 kB further |
+| chart-card | correct at the declared width only | client:visible, up to 135.7 kB further |
 | heatmap | correct at the declared width only | client:visible, up to 118.3 kB further |
 | interval-track | correct at the declared width only | client:visible, up to 119.3 kB further |
 | sparkline | correct | client:visible, up to 18.4 kB further |
@@ -172,17 +172,17 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 - virtual-list: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
 - stat-card: the mobile overlays (Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom sheet on a phone; the presenter hooks ship in every overlay island, and the Dock carries the sheet frame
 - stat-group: the mobile overlays (Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom sheet on a phone; the presenter hooks ship in every overlay island, and the Dock carries the sheet frame
-- bar-list: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
+- bar-list: right click, long press and Shift+F10 open a row or card menu (Issue 3295): the shared context trigger joins the card menu and the table closure
 - chain-view: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
-- data-panel: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
+- data-panel: right click, long press and Shift+F10 open a row or card menu (Issue 3295): the shared context trigger joins the card menu and the table closure
 - event-list: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
-- kanban-card: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
+- kanban-card: right click, long press and Shift+F10 open a row or card menu (Issue 3295): the shared context trigger joins the card menu and the table closure
 - row-list: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
 - step-rail: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
 - lines: the mobile overlays (Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom sheet on a phone; the presenter hooks ship in every overlay island, and the Dock carries the sheet frame
 - bars: the mobile overlays (Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom sheet on a phone; the presenter hooks ship in every overlay island, and the Dock carries the sheet frame
 - cartesian-chart: the mobile overlays (Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom sheet on a phone; the presenter hooks ship in every overlay island, and the Dock carries the sheet frame
-- chart-card: the mobile overlays (Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom sheet on a phone; the presenter hooks ship in every overlay island, and the Dock carries the sheet frame
+- chart-card: right click, long press and Shift+F10 open a row or card menu (Issue 3295): the shared context trigger joins the card menu and the table closure
 - heatmap: the mobile overlays (Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom sheet on a phone; the presenter hooks ship in every overlay island, and the Dock carries the sheet frame
 - interval-track: the mobile overlays (Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom sheet on a phone; the presenter hooks ship in every overlay island, and the Dock carries the sheet frame
 - sparkline: the mobile overlays (Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom sheet on a phone; the presenter hooks ship in every overlay island, and the Dock carries the sheet frame
@@ -198,7 +198,7 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 - site-header: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
 - callout: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
 - prose: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
-- page: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
+- page: right click, long press and Shift+F10 open a row or card menu (Issue 3295): the shared context trigger joins the card menu and the table closure
 - empty-state: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
 - facts: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
 - inner-nav: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
@@ -236,9 +236,10 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 - stepper: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
 - family ui: the mobile overlays (Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom sheet on a phone; the sheet is one lazy chunk and the presenter hooks ship in every ui island
 - family cards: phase.ts gains the settled-empty rule (settledEmpty, resolveFrame) every frame page imports; a few bytes on the form, cards and page families
+- family charts: right click, long press and Shift+F10 open a row or card menu (Issue 3295): the shared context trigger joins the card menu and the table closure
 - family table: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
 - family content: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
-- family page: ga-seams (Issue 3262): PageBar records (the record steps and their k/j registration) and CommandPalette sources (debounced abortable record search, recents per source, row actions)
+- family page: right click, long press and Shift+F10 open a row or card menu (Issue 3295): the shared context trigger joins the card menu and the table closure
 - family forms: the mobile overlays (Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom sheet on a phone; the sheet is one lazy chunk and the presenter hooks ship in every ui island
 
 ## Findings
