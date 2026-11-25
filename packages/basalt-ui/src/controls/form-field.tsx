@@ -104,8 +104,15 @@ function read(entry: unknown): string | undefined {
   if (typeof entry === 'string') return entry === '' ? undefined : entry
   if (Array.isArray(entry)) return firstError(entry)
   if (typeof entry !== 'object' || entry === null) return undefined
-  const { message, fieldErrors } = entry as { message?: unknown; fieldErrors?: unknown }
+  const { message, form, fieldErrors } = entry as {
+    message?: unknown
+    form?: unknown
+    fieldErrors?: unknown
+  }
   if (typeof message === 'string' && message !== '') return message
+  // The form-level message of a `toSubmitErrors` result, which TanStack stores as `{ form }`.
+  const formMessage = read(form)
+  if (formMessage !== undefined) return formMessage
   if (typeof fieldErrors === 'object' && fieldErrors !== null) {
     return firstError(Object.values(fieldErrors))
   }

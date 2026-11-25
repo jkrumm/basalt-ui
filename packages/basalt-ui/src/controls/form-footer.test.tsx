@@ -151,4 +151,14 @@ describe('FormFooter', () => {
     act(() => form.patch({ errors: ['Server down'] }))
     expect(region.textContent).toBe('Server down')
   })
+
+  test('a toSubmitErrors form-level error (`{ form }`) shows in the live region', () => {
+    const form = fakeForm()
+    const { container } = render(
+      <FormFooter form={form} actions={[{ label: 'Save', primary: true }]} />,
+    )
+    const region = container.querySelector('[data-slot="form-footer-error"]')!
+    act(() => form.patch({ errors: [{ form: 'Boom' }] }))
+    expect(region.textContent).toBe('Boom')
+  })
 })
