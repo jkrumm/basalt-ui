@@ -24,7 +24,7 @@ const GLOBAL_ACTIONS: NonNullable<ShellProps['globalActions']> = [
     label: 'Appearance',
     icon: Palette,
     mobile: 'more',
-    content: () => <AppearanceSwitcher accents={ACCENTS} className="w-80" />,
+    content: () => <AppearanceSwitcher accents={ACCENTS} />,
   },
 ]
 
