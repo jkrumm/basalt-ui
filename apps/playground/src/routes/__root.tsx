@@ -85,8 +85,15 @@ function RootLayout() {
   const [workspaceId, setWorkspaceId] = useState<string>(WORKSPACES[0].id)
   const current = WORKSPACES.find((w) => w.id === workspaceId) ?? WORKSPACES[0]
 
-  // The auth pages draw outside the shell: no rail, no header, no palette.
-  if (bare) return <Outlet />
+  // The auth pages draw outside the shell: no rail, no header, no palette. The shell paints the page
+  // surface, so the bare branch paints it too, or the text and the focus ring sit on a transparent body.
+  if (bare) {
+    return (
+      <div className="min-h-dvh bg-background font-sans text-foreground">
+        <Outlet />
+      </div>
+    )
+  }
 
   const account: NonNullable<ShellProps['account']> =
     session === null
