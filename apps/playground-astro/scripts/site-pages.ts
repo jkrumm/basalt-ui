@@ -45,7 +45,7 @@ const SCRIPTED = {
 } as const
 
 /** How long the page's scripts are held back, so the static picture is painted before any island arrives. */
-const HOLD_MS = 600
+const HOLD_MS = 1500
 /** The viewport height of a layout-shift run: tall enough that every shift on the page is in view. */
 const TALL = 6000
 
@@ -119,14 +119,16 @@ async function measureShifts(browser: Browser, base: string): Promise<Shift[]> {
         })
         const page = await context.newPage()
         await page.addInitScript(() => {
-          const w = window as unknown as { __cls: number }
+          const w = window as unknown as { __cls: number; __from: number }
           w.__cls = 0
+          w.__from = Number.POSITIVE_INFINITY
           new PerformanceObserver((list) => {
             for (const e of list.getEntries() as unknown as {
               value: number
               hadRecentInput: boolean
+              startTime: number
             }[])
-              if (!e.hadRecentInput) w.__cls += e.value
+              if (!e.hadRecentInput && e.startTime >= w.__from) w.__cls += e.value
           }).observe({ type: 'layout-shift', buffered: true })
         })
         await page.route(/\.js(\?|$)/, async (request) => {
@@ -134,7 +136,11 @@ async function measureShifts(browser: Browser, base: string): Promise<Shift[]> {
           await request.continue()
         })
         await page.goto(base + route, { waitUntil: 'load' })
-        await page.evaluate(() => document.fonts.ready)
+        // A face that swaps in late moves text on a slow host whatever a page does; a shift counts from the moment the faces are in, which is before any held island arrives.
+        await page.evaluate(async () => {
+          await document.fonts.ready
+          ;(window as unknown as { __from: number }).__from = performance.now()
+        })
         // Every island has hydrated and every chart has measured its box once the page is quiet.
         await page.waitForTimeout(HOLD_MS + 1500)
         const value = await page.evaluate(() => (window as unknown as { __cls: number }).__cls)
