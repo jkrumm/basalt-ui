@@ -77,6 +77,11 @@
       "import": "./dist/core/cn.js",
       "default": "./dist/core/cn.js"
     },
+    "./core/context-trigger": {
+      "types": "./dist/core/context-trigger.d.ts",
+      "import": "./dist/core/context-trigger.js",
+      "default": "./dist/core/context-trigger.js"
+    },
     "./core/control-scope": {
       "types": "./dist/core/control-scope.d.ts",
       "import": "./dist/core/control-scope.js",
