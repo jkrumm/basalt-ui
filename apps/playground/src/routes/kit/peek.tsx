@@ -26,8 +26,9 @@ const c = col<Photo>()
 const store = defineControls({ id: 'kit-peek', scope: 'page', fields: { row: field.string('') } })
 
 /**
- * A table whose rows open their record in the table's own panel: a side panel, a window or the page
- * (the header's Open as menu, remembered for this table), with previous and next through the rows.
+ * A table whose rows open their record in the table's own panel: a side panel, a window, the page or
+ * a short drawer under the rows (the header's Open as menu, remembered for this table), with previous
+ * and next through the rows.
  */
 function FromRows(): ReactElement {
   const t = useDataTable({
