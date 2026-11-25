@@ -375,7 +375,7 @@ export function ChartCard(props: ChartCardProps): ReactElement {
             />
             <div
               data-slot="inset"
-              data-surface={flat ? 'card' : 'inset'}
+              data-surface={flat ? undefined : 'inset'}
               className={cn(
                 'flex min-h-0 flex-col',
                 flat
