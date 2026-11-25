@@ -20,11 +20,12 @@ import {
 } from '@tanstack/react-router'
 import type { QueryClient } from '@tanstack/react-query'
 import { AppearanceSwitcher } from 'basalt-ui/controls'
-import { OverlayHost } from 'basalt-ui/page'
+import { useConnection } from 'basalt-ui/data'
+import { ConnectionIndicator, OverlayHost } from 'basalt-ui/page'
 import { AppShell, CommandPalette } from 'basalt-ui/shell'
 import { Building2, Globe, Palette, Rocket } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import type { ComponentProps } from 'react'
+import type { ComponentProps, ReactElement } from 'react'
 import { COMMANDS } from '../demo/commands'
 import { globals } from '../demo/globals'
 import { NAV } from '../demo/nav-model'
@@ -49,8 +50,23 @@ const BLOCKS: Blocks = [
   { kind: 'progress', id: 'getting-started', label: 'Getting started', value: 0.2 },
 ]
 
-/** The header's appearance popover: the same part the settings page's Appearance pane draws. */
+/** The app's data connection, read where it renders so the strip re-renders alone. */
+function ConnectionStatus(): ReactElement {
+  return <ConnectionIndicator connection={useConnection()} />
+}
+
+/**
+ * The strip's trailing slot: the connection state, then the appearance popover (the same part the
+ * settings page's Appearance pane draws).
+ */
 const GLOBAL_ACTIONS: NonNullable<ShellProps['globalActions']> = [
+  {
+    id: 'connection',
+    kind: 'custom',
+    label: 'Connection',
+    mobile: 'hidden',
+    render: () => <ConnectionStatus />,
+  },
   {
     id: 'appearance',
     kind: 'popover',
