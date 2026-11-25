@@ -221,7 +221,7 @@ export function DeltaBadge({
         </>
       )}
       {value}
-      {label !== undefined && <span className="font-normal opacity-80">{label}</span>}
+      {label !== undefined && <span className="font-normal">{label}</span>}
     </span>
   )
 }
