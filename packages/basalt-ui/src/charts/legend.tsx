@@ -6,6 +6,7 @@
  */
 import { useEffect, useId, useLayoutEffect, useRef } from 'react'
 import type { CSSProperties, MouseEvent, ReactElement } from 'react'
+import { useProviderContext } from '../core/provider'
 import { BASALT, alpha } from '../tokens'
 import { defaultNumberFormat } from './core/compile'
 import { CV } from './core/theme'
@@ -151,9 +152,10 @@ const RAMP_KEY_PX = 48
  * series' own entry, so the legend says what the line's colors mean.
  */
 function RampKey({ s }: { s: SwatchStyle }): ReactElement | null {
+  const { locale } = useProviderContext()
   const by = s.colorBy
   if (by === undefined) return null
-  const format = by.format ?? ((v: number) => defaultNumberFormat(v))
+  const format = by.format ?? ((v: number) => defaultNumberFormat(v, locale))
   return (
     <span data-legend-ramp="" style={rampKeyStyle}>
       <span>{by.label}</span>
