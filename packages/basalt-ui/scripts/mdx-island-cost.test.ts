@@ -59,12 +59,13 @@ const BUDGET_ROWS: readonly (readonly [string, string])[] = [
   ['CSS per page', 'cssGzipPerPage'],
   ['LCP', 'lcpMs'],
   ['CLS', 'cls'],
+  ['layout shift of every guide', 'guideCls'],
 ]
 
 /** Budgets are bytes, written as bytes: the doc's cost column is kB of 1024, so one unit never means two bases. */
 const show = (key: string, value: number): string => {
   if (key === 'lcpMs') return `${value.toLocaleString('en-US')} ms`
-  if (key === 'cls') return String(value)
+  if (key === 'cls' || key === 'guideCls') return String(value)
   return `${value.toLocaleString('en-US')} B`
 }
 

@@ -31,7 +31,7 @@ export default defineConfig({ integrations: [react(), basaltAstro()] })
 ```
 
 `basaltAstro()` does five things in `astro:config:setup`: it adds `@tailwindcss/vite` (never add it to
-`vite.plugins` as well), writes `.basalt/sources.css` and injects it on every page, registers the three
+`vite.plugins` as well; its one transform appends `import 'basalt-ui/table.css'`, the table tiers, to a site module that imports `basalt-ui/table`, as `basalt()` does for an app), writes `.basalt/sources.css` and injects it on every page, registers the three
 faces with the Astro Fonts API (Fontsource), and inlines `themeScript()` then the parts' own listeners in
 every head. At `astro:build:done` it runs the island check (below).
 
@@ -129,7 +129,9 @@ object prop: Astro hands that over as an Astro template and the build fails. Lab
    - `client:idle` for one above the fold that the reader does not need at once;
    - `client:load` only for one that must answer the first tap;
    - `client:only="react"` only for a part that measures its box, such as a chart, with a fallback
-     of the same height so nothing shifts.
+     of the same height so nothing shifts. For a chart card the fallback is the same card in its
+     `loading` phase (`ChartCard` with `phase="loading"`, which the `Chart` tag draws itself): every
+     phase of a card draws in one box, so it is as tall as the ready card at any width.
 3. **One `BasaltProvider` per island**, never around the page: islands run isolated from each other,
    so a context cannot span two. Parts that share state live in one island.
 4. **Fonts** through the Astro Fonts API from the integration; the body and heading faces are preloaded, the code face swaps in when used.
@@ -155,6 +157,7 @@ object prop: Astro hands that over as an Astro template and the build fails. Lab
 | CSS per page, gzip | 44,200 B |
 | LCP, landing, article and docs page, 390 px, local | 1,000 ms |
 | CLS, the same three pages | 0.05 |
+| layout shift of every guide, at 1440 and 390 px, islands arriving late | 0 |
 
 <!-- site-budgets:end -->
 
@@ -195,7 +198,7 @@ const components = { ...siteMdxComponents(labels), Chart, DataTable }
 | `Form`, `Field`, `SubmitButton` | a native form | none | none | none | 0 |
 | `DataTable` | a static table | none | none | none | 0 |
 | `DataTable interactive` | the same table | sortable, pageable `DataTable` | `client:visible` (`load="idle"` above the fold) | `data-table` | 268.6 kB |
-| `Chart` | a fallback box of the card's height | `ChartCard` over `Lines` or `Bars` | `client:only="react"` (`load="visible"` or `"idle"` once its server picture is right) | `chart-card` | 135.7 kB |
+| `Chart` | the card loading, as tall as the finished one | `ChartCard` over `Lines` or `Bars` | `client:only="react"` (`load="visible"` or `"idle"` once its server picture is right) | `chart-card` | 135.7 kB |
 
 <!-- mdx-island-cost:end -->
 
@@ -221,8 +224,8 @@ ceiling every CI build is held to, and a test holds the two together.
 ## Page types
 
 Each page type is a recipe on shipped parts. The working copy of each is `apps/playground-astro/site/`
-(built by `bun run build:site`, checked by `scripts/site-pages.ts`: no module script, axe, both schemes at 1440
-and 390 px), and `apps/marketing` runs the same recipes. Copy a recipe and change its words.
+(built by `bun run build:site`, checked by `scripts/site-pages.ts`: no module script on the static types, axe, both schemes at 1440
+and 390 px, and a layout shift of 0 on every guide and the showcase page), and `apps/marketing` runs the same recipes. Copy a recipe and change its words.
 
 | Page | Built from | Where |
 |-|-|-|
