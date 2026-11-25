@@ -71,6 +71,9 @@ function Fixture(): ReactElement {
       <div data-testid="button-disabled" className="flex gap-2">
         <Button disabled>Save</Button>
       </div>
+      <div data-testid="row-with-disabled" data-activatable="" className="flex gap-2">
+        <Button disabled>Archive</Button>
+      </div>
       <div data-testid="menu">
         <Menu defaultOpen>
           <MenuTrigger render={<Button />}>Actions</MenuTrigger>
