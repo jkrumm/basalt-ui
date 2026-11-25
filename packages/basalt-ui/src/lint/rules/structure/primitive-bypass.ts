@@ -101,6 +101,8 @@ export const CHART_KINDS: ReadonlySet<string> = new Set([
   'Donut',
   'Heatmap',
   'IntervalTrack',
+  'Waterfall',
+  'RangeNavigator',
   'DualPanel',
   'MirroredBars',
 ])
