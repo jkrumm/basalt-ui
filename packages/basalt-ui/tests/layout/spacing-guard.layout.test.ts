@@ -211,6 +211,13 @@ layout('the spacing guard fails what it must', () => {
     expect(lines(found)).toMatch(/stray-bar: .*for 0 px of overflow/)
   })
 
+  test('an always-on horizontal scrollbar, gutter or not', async () => {
+    const found = await offend(
+      '<div style="width:300px;height:100px;overflow-x:scroll;scrollbar-gutter:stable;background:#eee"><div style="width:60px;height:60px"></div></div>',
+    )
+    expect(lines(found)).toMatch(/stray-bar: .*horizontal scrollbar for 0 px of overflow/)
+  })
+
   test('a reserved gutter with no overflow draws no stray bar', async () => {
     const found = await offend(
       '<div style="width:300px;height:100px;overflow-y:auto;scrollbar-gutter:stable;background:#eee"><div style="height:60px"></div></div>',
