@@ -193,6 +193,13 @@ export const rows: readonly RowDef[] = [
 export const raises: Raises = {
   'tokens-css-gzip': [
     {
+      from: 1902,
+      to: 1932,
+      consumer:
+        'the owner review of 2026-11-25 (Issue 3296): `--basalt-field` is the fill of a form field in both schemes, so a field is never darker than its card in dark and the white inset leaves the light surfaces',
+      repo: 'basalt-ui',
+    },
+    {
       from: 1892,
       to: 1902,
       consumer:
