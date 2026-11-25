@@ -18,6 +18,7 @@ A one-dimensional strip of gap-free bands over the shared x axis, each band in o
 BandStrip<T, X extends ChartX = ChartX, K extends string = string>(props: BandStripProps<T, X, K>): ReactElement
   data: readonly T[]
   x: (d: T) => X
+  events?: readonly XEvent<X>[]  // Dated events: a dot on the x axis line and a tooltip row (their rules are `xRefLines`)
   height?: number | ResponsiveChartHeight  // Default: the height law (measured width × class ratio, 160–420px, ≤ 45vh on touch)
   tooltip?: false | ChartTooltipConfig<T, X>
   legend?: false | ChartLegendConfig  // `false` hides the legend

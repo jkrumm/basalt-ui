@@ -170,9 +170,14 @@ export function drawnRows<T, X extends ChartX>(
   return s.gaps === 'connect' ? rows.filter((r) => r.y !== null) : rows
 }
 
+/** What a `colorBy` line keeps of its opacity while a focus dims the rest: its gradient has no dimmed paint. */
+const RAMP_DIM = 0.45
+
 export function lineMark<T, X extends ChartX>(
   plot: PlotContext<T, X>,
   s: ChartSeries<T>,
+  /** A stroke paint that replaces the series color (a `colorBy` line's gradient); it dims by opacity. */
+  stroke?: string,
 ): ChartMarks[number] {
   const yScale = yScaleOf(plot, s)
   return lineY(drawnRows(plot, s), {
@@ -181,11 +186,14 @@ export function lineMark<T, X extends ChartX>(
     y: 'y',
     z: 'series',
     // A `focus` holding a datum dims every line: to the level a bar's rest dims to, or, with two or more lines, in its own hue at reduced weight.
-    stroke: linePaint(plot, s.color),
+    stroke: stroke ?? linePaint(plot, s.color),
     strokeWidth:
       (s.strokeWidth ?? LINE_STROKE_WIDTH) *
       (plot.focused !== null && keepsHue(plot) ? HUE_WEIGHT : 1),
-    strokeOpacity: (s.strokeOpacity ?? 1) * emphasis(plot.highlighted, s),
+    strokeOpacity:
+      (s.strokeOpacity ?? 1) *
+      emphasis(plot.highlighted, s) *
+      (stroke !== undefined && plot.focused !== null ? RAMP_DIM : 1),
     curve: chartCurve(s.curve ?? 'linear'),
     ...(s.dash === 'dashed' && { strokeDasharray: DASH }),
     ...(yScale !== undefined && { yScale }),

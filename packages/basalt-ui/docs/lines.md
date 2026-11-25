@@ -19,6 +19,8 @@ Lines<D>(props: LinesProps<D>): ReactElement
   data: readonly D[]
   x: XConfig<D>
   y?: YConfig
+  y2?: Omit<YConfig, "gutter">  // The right axis, which the series with `axis: 'right'` are measured against: its own domain, format, title and `scale: 'log'` (a price over years beside a 0 to 100 score)
+  events?: readonly ChartEvent[]  // Dated events on the x axis, see {@link ChartEvent}
   summary?: string
   table?: boolean
   height?: number | "fill"
@@ -30,13 +32,13 @@ Lines<D>(props: LinesProps<D>): ReactElement
   selection?: ChartSelection<D>
   focus?: ChartFocus<D>  // Pointer and arrow keys focus a datum of `focus.items`; the rest dims, the readout follows
   label: string
-  series: readonly (SeriesBase<D> & Y<D> & { mark: "line"; curve?: CurveName; dash?: boolean; area?: "fade"; weight?: "quiet" | "strong"; gaps?: "connect"; parent?: string; })[]
+  series: readonly (SeriesBase<D> & Y<D> & { mark: "line"; curve?: CurveName; dash?: boolean; area?: "fade"; weight?: "quiet" | "strong"; gaps?: "connect"; parent?: string; colorBy?: ColorBy<D>; extremes?: boolean; })[]
   naming?: "auto" | "legend" | "endLabels"  // Who names the lines: `'auto'` (end labels from the wide class, the legend below it), `'legend'` or `'endLabels'`
 ```
 
 `Phase`, `QueryStateLike` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike } from 'basalt-ui/cards'`.
 
-`ChartFocus`, `ChartRefLine`, `ChartSelection`, `ChartTooltipConfig`, `ChartZone`, `CurveName`, `LinesProps`, `SeriesBase`, `XConfig`, `YConfig` import from `basalt-ui/charts`: `import type { ChartFocus, ChartRefLine, ChartSelection, ChartTooltipConfig, ChartZone, CurveName, LinesProps, SeriesBase, XConfig, YConfig } from 'basalt-ui/charts'`.
+`ChartEvent`, `ChartFocus`, `ChartRefLine`, `ChartSelection`, `ChartTooltipConfig`, `ChartZone`, `ColorBy`, `CurveName`, `LinesProps`, `SeriesBase`, `XConfig`, `YConfig` import from `basalt-ui/charts`: `import type { ChartEvent, ChartFocus, ChartRefLine, ChartSelection, ChartTooltipConfig, ChartZone, ColorBy, CurveName, LinesProps, SeriesBase, XConfig, YConfig } from 'basalt-ui/charts'`.
 
 ## Example
 

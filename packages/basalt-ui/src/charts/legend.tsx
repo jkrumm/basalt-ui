@@ -4,10 +4,11 @@
  * its parent's entry. Toggling an entry hides the series from the plot, the tooltip and the auto
  * domain together; hovering one emphasizes it (the definition is rebuilt with `highlighted`).
  */
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef } from 'react'
 import type { CSSProperties, MouseEvent, ReactElement } from 'react'
 import { BASALT, alpha } from '../tokens'
 import { CV } from './core/theme'
+import { rampGradientCss, rampStops } from './core/rich-tooltip'
 import classes from './chart-legend.module.css'
 import type { ChartSeries } from './types'
 
@@ -137,9 +138,48 @@ export type GlyphKey = { glyph?: string | undefined; glyphInk?: string | undefin
 
 type SwatchStyle = Pick<
   SignedSeries<never>,
-  'color' | 'colorNegative' | 'mark' | 'dash' | 'strokeOpacity' | 'fillOpacity' | 'role'
+  'color' | 'colorNegative' | 'mark' | 'dash' | 'strokeOpacity' | 'fillOpacity' | 'role' | 'colorBy'
 > &
   GlyphKey
+
+/** The ramp bar's width beside a `colorBy` entry, px. */
+const RAMP_KEY_PX = 48
+
+/**
+ * A `colorBy` line's key: the reading's name, the low end, the ramp and the high end, muted after the
+ * series' own entry, so the legend says what the line's colors mean.
+ */
+function RampKey({ s }: { s: SwatchStyle }): ReactElement | null {
+  const by = s.colorBy
+  if (by === undefined) return null
+  const format = by.format ?? ((v: number) => String(v))
+  return (
+    <span data-legend-ramp="" style={rampKeyStyle}>
+      <span>{by.label}</span>
+      <span>{format(by.domain[0])}</span>
+      <span
+        aria-hidden
+        style={{
+          width: RAMP_KEY_PX,
+          height: 8,
+          borderRadius: 2,
+          background: rampGradientCss(by.ramp),
+          flex: 'none',
+        }}
+      />
+      <span>{format(by.domain[1])}</span>
+    </span>
+  )
+}
+
+const rampKeyStyle: CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 4,
+  color: CV.axis,
+  flex: 'none',
+  fontVariantNumeric: 'tabular-nums',
+}
 
 /** A swatch fill: the series color, or a hard-stop split for a sign-colored bar. */
 const swatchFill = (s: SwatchStyle): string =>
@@ -158,6 +198,7 @@ export const LINE_SWATCH = {
 
 function LineSwatch({ s, compact }: { s: SwatchStyle; compact: boolean }): ReactElement {
   const { width, dash } = compact ? LINE_SWATCH.narrow : LINE_SWATCH.wide
+  const rampKeyId = `basalt-ramp-key-${useId().replaceAll(/[^\w-]/g, '')}`
   return (
     <svg
       aria-hidden
@@ -166,12 +207,21 @@ function LineSwatch({ s, compact }: { s: SwatchStyle; compact: boolean }): React
       height={8}
       style={{ flex: 'none' }}
     >
+      {s.colorBy && (
+        <defs>
+          <linearGradient id={rampKeyId} x1="0" x2="1" y1="0" y2="0">
+            {rampStops(s.colorBy.ramp).map((color, i, all) => (
+              <stop key={color} offset={i / (all.length - 1)} style={{ stopColor: color }} />
+            ))}
+          </linearGradient>
+        </defs>
+      )}
       <line
         x1={1}
         x2={width - 1}
         y1={4}
         y2={4}
-        stroke={s.color}
+        stroke={s.colorBy ? `url(#${rampKeyId})` : s.color}
         // A reference line is drawn as a 1px rule (`refLineMarks`), a series from 2px: the key keeps that difference.
         strokeWidth={s.role === 'reference' ? 1 : 2}
         strokeLinecap={s.dash === 'dashed' ? 'butt' : 'round'}
@@ -378,6 +428,7 @@ export function ChartLegend<T>(props: ChartLegendProps<T>): ReactElement | null 
                 {s.label}
               </span>
               {s.note !== undefined && <span style={noteStyle}>{s.note}</span>}
+              <RampKey s={s} />
             </>
           )
           const itemStyle: CSSProperties = { ...buttonStyle, opacity: off ? 0.4 : 1 }

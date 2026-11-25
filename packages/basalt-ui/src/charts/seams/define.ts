@@ -11,6 +11,8 @@ import type { BarLayout } from '../parts/bars-marks'
 /** The v3 props a seam may read. */
 export type SeamProps<D> = Pick<CartesianChartProps<D>, 'data' | 'series' | 'x'> & {
   y?: YConfig | undefined
+  /** The right axis (`CartesianChart.y2`). */
+  y2?: Omit<YConfig, 'gutter'> | undefined
   /** How the chart lays out its bars (a kind's switch): every bar of a stacked layout is one stack. Default `'stacked'`. */
   layout?: BarLayout | undefined
 }

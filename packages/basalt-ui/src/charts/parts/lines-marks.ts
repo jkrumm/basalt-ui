@@ -5,7 +5,8 @@
 import { areaY } from '@tanstack/charts/area'
 import { dot } from '@tanstack/charts/dot'
 import { decorative } from '@tanstack/charts/mark/decorative'
-import { areaGradientId } from '../core/compile'
+import { text } from '@tanstack/charts/text'
+import { areaGradientId, defaultNumberFormat, rampGradientId } from '../core/compile'
 import { CV } from '../core/theme'
 import { BASALT } from '../../tokens'
 import { chartCurve } from '../core/curves'
@@ -89,9 +90,11 @@ export function lineMarks<D>(plot: PlotContext<D, ChartX>, input: LineMarksInput
   }
   for (const s of lines) {
     const yScale = yScaleOf(plot, s)
-    out.push(lineMark(plot, s))
+    const ramp = s.colorBy && `url(#${rampGradientId(all.findIndex((o) => o.key === s.key))})`
+    out.push(lineMark(plot, s, ramp))
     out.push(...loneDots(s, drawnRows(plot, s), yScale, plot.highlighted))
     out.push(...markersOf(s, plot.rows(s.key), yScale))
+    if (s.extremes === true) out.push(...extremeMarks(plot, s))
   }
   out.push(...focusDots(plot, plotted))
   const labelled = plotted.filter((s) => s.role !== 'reference')
@@ -102,6 +105,72 @@ export function lineMarks<D>(plot: PlotContext<D, ChartX>, input: LineMarksInput
   )
   out.push(...endLabelMarks(plan, (color) => linePaint(plot, color)))
   return out
+}
+
+/** Air between an extreme's dot and its caption, px. */
+const EXTREME_DX = 8
+/** Drops a caption's baseline so its text centres on the point, px. */
+const EXTREME_DY = 4
+/** A caption right of a point past this share of the plot would run off it: it goes left. */
+const EXTREME_FLIP = 0.72
+
+/**
+ * The highest and the lowest drawn point of a line inside the x domain, each with a ringed dot and a
+ * caption (`High 69.0k`, `Low 3.2k`) level with it, on the side of the point the plot has room on: a
+ * point on the plot's top or bottom edge keeps its caption inside.
+ * A flat line, or one with fewer than two points in view, names neither.
+ */
+export function extremeMarks<D>(plot: PlotContext<D, ChartX>, s: ChartSeries<D>): ChartMarks {
+  const inView = plot.rows(s.key).filter((r) => {
+    const f = plot.xFraction(r.x)
+    return r.y !== null && Number.isFinite(r.y) && f !== null && f >= 0 && f <= 1
+  })
+  if (inView.length < 2) return []
+  let high = inView[0] as PlotRow<D, ChartX>
+  let low = high
+  for (const r of inView) {
+    if ((r.y as number) > (high.y as number)) high = r
+    if ((r.y as number) < (low.y as number)) low = r
+  }
+  if (high.y === low.y) return []
+  const yScale = yScaleOf(plot, s)
+  const format = (r: PlotRow<D, ChartX>): string => {
+    const v = s.getValue(r.datum) ?? (r.y as number)
+    return s.formatValue ? s.formatValue(v, r.datum) : defaultNumberFormat(v)
+  }
+  const caption = (r: PlotRow<D, ChartX>, word: string, id: string) => {
+    const flip = (plot.xFraction(r.x) ?? 0) > EXTREME_FLIP
+    return decorative(
+      text([r], {
+        id,
+        x: rowX,
+        y: 'y',
+        text: () => `${word} ${format(r)}`,
+        fill: CV.ink,
+        fontSize: BASALT.text.micro,
+        anchor: flip ? 'end' : 'start',
+        dx: flip ? -EXTREME_DX : EXTREME_DX,
+        dy: EXTREME_DY,
+        ...(yScale !== undefined && { yScale }),
+      }),
+    )
+  }
+  return [
+    decorative(
+      dot([high, low], {
+        id: `${s.key}-extremes`,
+        x: rowX,
+        y: 'y',
+        r: BASALT.dotR,
+        fill: CV.surface,
+        stroke: CV.ink,
+        strokeWidth: 1.5,
+        ...(yScale !== undefined && { yScale }),
+      }),
+    ),
+    caption(high, 'High', `${s.key}-high`),
+    caption(low, 'Low', `${s.key}-low`),
+  ]
 }
 
 /** Whether a series' last non-null point exists and sits inside the chart's x domain. */

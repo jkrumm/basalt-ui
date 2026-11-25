@@ -18,6 +18,8 @@ normalised by `layout`.
 Bars<D>(props: BarsProps<D>): ReactElement
   data: readonly D[]
   x: XConfig<D>
+  y2?: Omit<YConfig, "gutter">  // The right axis, which the series with `axis: 'right'` are measured against: its own domain, format, title and `scale: 'log'` (a price over years beside a 0 to 100 score)
+  events?: readonly ChartEvent[]  // Dated events on the x axis, see {@link ChartEvent}
   summary?: string
   table?: boolean
   height?: number | "fill"
@@ -36,7 +38,7 @@ Bars<D>(props: BarsProps<D>): ReactElement
 
 `Phase`, `QueryStateLike` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike } from 'basalt-ui/cards'`.
 
-`BarsProps`, `BarsSeries`, `ChartFocus`, `ChartRefLine`, `ChartSelection`, `ChartTooltipConfig`, `ChartZone`, `XConfig`, `YConfig` import from `basalt-ui/charts`: `import type { BarsProps, BarsSeries, ChartFocus, ChartRefLine, ChartSelection, ChartTooltipConfig, ChartZone, XConfig, YConfig } from 'basalt-ui/charts'`.
+`BarsProps`, `BarsSeries`, `ChartEvent`, `ChartFocus`, `ChartRefLine`, `ChartSelection`, `ChartTooltipConfig`, `ChartZone`, `XConfig`, `YConfig` import from `basalt-ui/charts`: `import type { BarsProps, BarsSeries, ChartEvent, ChartFocus, ChartRefLine, ChartSelection, ChartTooltipConfig, ChartZone, XConfig, YConfig } from 'basalt-ui/charts'`.
 
 ## Example
 

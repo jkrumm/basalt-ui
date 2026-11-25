@@ -26,6 +26,7 @@ import {
   refLegendSeries,
   zoneLegendSeries,
 } from '../core/compile'
+import type { CartesianDefinition } from '../core/compile'
 import { labelTieMarks } from '../core/label-ties'
 import { samePlots } from '../core/plot-context'
 import type { PlotSizes } from '../core/plot-context'
@@ -54,9 +55,13 @@ import type { LinesNaming } from '../labels'
 export const TABLE_MAX_POINTS = 200
 
 /** Kind-only switches the public props never carry: `Lines` and `Bars` set them, a bare chart has none. */
-export type PlotOptions = {
+export type PlotOptions<D = never> = {
   /** Bar stacking. Default `'stacked'`. */
   layout?: BarLayout
+  /** `Waterfall`: every bar floats from `base` and takes `fill` per datum. */
+  floating?: { base: (d: D) => number; fill: (d: D) => string } | undefined
+  /** `RangeNavigator`: engine controls (the brush) on a plot with no y axis. */
+  controls?: CartesianDefinition['controls'] | undefined
   /** Who names the lines: end labels or the legend. Default `'auto'`. */
   naming?: LinesNaming
 }
@@ -219,8 +224,8 @@ function itemEnd(last: ChartX, xs: readonly ChartX[]): ChartX {
 }
 
 /** The rung `Lines` and `Bars` render through: the public props plus the kind-only options. */
-export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): ReactElement {
-  const { summary, table, phase, layout = 'stacked', naming = 'auto' } = props
+export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions<D>): ReactElement {
+  const { summary, table, phase, layout = 'stacked', naming = 'auto', floating, controls } = props
   const ariaLabel = props.label
   const chartId = useId()
   const { locale } = useProviderContext()
@@ -244,7 +249,7 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
     setPlot((prev) => (samePlots(prev, next) ? prev : next))
   }, [])
 
-  const { data, x, series, refLines, cursor, tooltip, selection, focus } = props
+  const { data, x, series, refLines, cursor, tooltip, selection, focus, y2, events } = props
   // Panes of one card share the widest y gutter unless the page fixed its own (`y.gutter`).
   const pane = useContext(PaneGutterContext)
   const ownGutter = props.y?.gutter !== undefined
@@ -287,6 +292,8 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
     data,
     x,
     y,
+    y2,
+    events,
     series,
     zones,
     refLines,
@@ -328,8 +335,15 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
         return [b.key, first === undefined ? b : { ...b, fillOpacity: first }] as const
       }),
     )
-    return { ...base, series: base.series.map((s) => shaded.get(s.key) ?? s) }
-  }, [base, stable.series, opacityOf])
+    const series = base.series.map((s) => shaded.get(s.key) ?? s)
+    if (floating === undefined) return { ...base, series }
+    return {
+      ...base,
+      series: series.map((s, i) =>
+        stable.series[i]?.mark === 'bar' ? { ...s, base: floating.base, fillOf: floating.fill } : s,
+      ),
+    }
+  }, [base, stable.series, opacityOf, floating])
 
   // ── the legend gives way to end labels only when they WILL draw for every line ─────────────────
   const lineSeries = spec.series.filter((s, i) => stable.series[i]?.mark === 'line')
@@ -534,6 +548,13 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
         stack: stable.layout === 'grouped' ? undefined : stable.layout,
       }),
       ...(stable.bare && { bare: true, tooltipBelow: true }),
+      ...(controls !== undefined && {
+        controls,
+        yAxis: false,
+        keyboard: false,
+        crosshair: false,
+        focusRing: false,
+      }),
     } as Parameters<typeof compileCartesian<D, ChartX>>[0])
     // Selection is part of the definition, not of any mark; the server never runs its handlers.
     return controller === undefined ? compiled : { ...compiled, selection: controller }
@@ -558,6 +579,7 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
     stable.bare,
     controller,
     pane,
+    controls,
   ])
 
   // ── legend: micro has none, compact shows dots, regular and wide show chips (CSS) ──────────────
@@ -572,7 +594,9 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
   const entryCount = legendEntries(legendSeries, false)[0]?.length ?? 0
   const state = toChartState(phase)
   const resolved = resolveChartState(state)
-  const shown = !bare && !labelsOnly && entryCount > 1
+  // A `colorBy` line keeps its legend alone too: the ramp key says what its colors mean.
+  const ramped = spec.series.some((s) => s.colorBy !== undefined)
+  const shown = !bare && !labelsOnly && (entryCount > 1 || ramped)
   const toggle = entryCount >= 2
   const onToggle = useCallback((key: string) => setOwnHidden((prev) => toggledKeys(prev, key)), [])
   const isolatable = useMemo(() => isolatableKeys(legendSeries), [legendSeries])
