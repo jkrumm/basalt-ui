@@ -5,12 +5,19 @@
  * The shell matches every destination against the live router for `active` and projects the one
  * declaration onto the rail, the phone tab bar, the breadcrumb and the document title.
  *
+ * `/sign-in` and `/register` (`auth/stub.ts`) render bare, outside the shell.
+ *
  * Page content renders through `<Outlet />`; each destination is a file route under `routes/`.
  * The app's one `CommandPalette` sits inside the shell: it lists every nav destination and the
  * commands of `demo/commands.ts`, searches the suppliers (`demo/palette-sources.ts`), takes `Mod+K`,
  * and the rail's search row opens it.
  */
-import { Outlet, createRootRouteWithContext, useNavigate } from '@tanstack/react-router'
+import {
+  Outlet,
+  createRootRouteWithContext,
+  useNavigate,
+  useRouterState,
+} from '@tanstack/react-router'
 import type { QueryClient } from '@tanstack/react-query'
 import { AppearanceSwitcher } from 'basalt-ui/controls'
 import { OverlayHost } from 'basalt-ui/page'
@@ -24,6 +31,7 @@ import { NAV } from '../demo/nav-model'
 import { OVERLAYS } from '../demo/overlays'
 import { PALETTE_SOURCES } from '../demo/palette-sources'
 import { PeekLayer } from '../demo/peek-layer'
+import { AUTH_PATHS, signOut, useSession } from '../auth/stub'
 import { ACCENTS } from '../lib/accents'
 import { onPaletteRequest } from '../lib/palette-open'
 
@@ -53,8 +61,6 @@ const GLOBAL_ACTIONS: NonNullable<ShellProps['globalActions']> = [
   },
 ]
 
-const noop = (): void => {}
-
 /** `?chrome=native-overlay` shows the desktop window chrome in the browser: a 52 header with the lead strip and drag region. */
 const CHROME: NonNullable<ShellProps['chrome']> =
   typeof window !== 'undefined' &&
@@ -69,16 +75,23 @@ const WORKSPACES = [
   { id: 'globex', label: 'Globex', icon: Globe },
 ] as const
 
-/** The shell's account row, signed out: the playground has no auth. */
-const ACCOUNT: NonNullable<ShellProps['account']> = { status: 'signed-out', onSignIn: noop }
-
 function RootLayout() {
   const navigate = useNavigate()
+  const session = useSession()
+  const bare = useRouterState({ select: (s) => AUTH_PATHS.includes(s.location.pathname) })
   const [paletteOpen, setPaletteOpen] = useState(false)
   // a page that shows how the palette presents itself asks the one palette to open
   useEffect(() => onPaletteRequest(() => setPaletteOpen(true)), [])
   const [workspaceId, setWorkspaceId] = useState<string>(WORKSPACES[0].id)
   const current = WORKSPACES.find((w) => w.id === workspaceId) ?? WORKSPACES[0]
+
+  // The auth pages draw outside the shell: no rail, no header, no palette.
+  if (bare) return <Outlet />
+
+  const account: NonNullable<ShellProps['account']> =
+    session === null
+      ? { status: 'signed-out', onSignIn: () => void navigate({ to: '/sign-in' }) }
+      : { status: 'signed-in', name: session.username, detail: session.email, onSignOut: signOut }
 
   return (
     <AppShell
@@ -103,7 +116,7 @@ function RootLayout() {
           },
         ],
       }}
-      account={ACCOUNT}
+      account={account}
       workspace={{
         current,
         options: WORKSPACES,

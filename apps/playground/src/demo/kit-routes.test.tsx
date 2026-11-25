@@ -450,3 +450,75 @@ describe('the mailbox composer', () => {
     )
   })
 })
+
+describe('the auth pages', () => {
+  const field = (token: string): HTMLInputElement => {
+    const found = document.querySelector<HTMLInputElement>(`input[autocomplete="${token}"]`)
+    if (found === null) throw new Error(`no field with autocomplete ${token}`)
+    return found
+  }
+
+  test('sign in draws outside the shell, each field names its autofill token', async () => {
+    mount('/sign-in')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Sign in' })).toBeDefined()
+    expect(document.querySelector('[data-slot="shell-main"]')).toBeNull()
+    expect(field('username')).toBeDefined()
+    expect(field('current-password')).toBeDefined()
+  })
+
+  test('sign in: a wrong pair shows the error, demo and demo lands on the tour', async () => {
+    mount('/sign-in')
+    await screen.findByRole('heading', { level: 1, name: 'Sign in' })
+    fireEvent.input(field('username'), { target: { value: 'ada' } })
+    fireEvent.input(field('current-password'), { target: { value: 'nope' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
+    expect(await screen.findByText(/The username or password is wrong/)).toBeDefined()
+    fireEvent.input(field('username'), { target: { value: 'demo' } })
+    fireEvent.input(field('current-password'), { target: { value: 'demo' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
+    expect(await screen.findByText('Account pages')).toBeDefined()
+    expect(document.querySelector('[data-slot="shell-main"]')).not.toBeNull()
+  })
+
+  test('sign in: blur and submit check a field', async () => {
+    mount('/sign-in')
+    await screen.findByRole('heading', { level: 1, name: 'Sign in' })
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
+    expect(await screen.findByText('Enter your username.')).toBeDefined()
+    expect(screen.getByText('Enter your password.')).toBeDefined()
+  })
+
+  test('sign in: the forgotten-password link ends in a sent state', async () => {
+    mount('/sign-in')
+    fireEvent.click(await screen.findByRole('button', { name: 'Forgot your password?' }))
+    fireEvent.input(field('email'), { target: { value: 'ada@example.com' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Send reset link' }))
+    expect(await screen.findByText('Check your inbox')).toBeDefined()
+    expect(screen.getByText(/ada@example.com, a reset link is on its way/)).toBeDefined()
+  })
+
+  test('register: the taken address comes back on its field, a new one lands on the tour', async () => {
+    mount('/register')
+    await screen.findByRole('heading', { level: 1, name: 'Create your account' })
+    fireEvent.input(field('name'), { target: { value: 'Ada' } })
+    fireEvent.input(field('email'), { target: { value: 'demo@example.com' } })
+    fireEvent.input(field('new-password'), { target: { value: 'correct horse' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Create account' }))
+    expect(
+      await screen.findByText('An account with this address exists. Sign in instead.'),
+    ).toBeDefined()
+    fireEvent.input(field('email'), { target: { value: 'ada@example.com' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Create account' }))
+    expect(await screen.findByText('Account pages')).toBeDefined()
+  })
+
+  test('the landing links both pages, and the nav names neither', async () => {
+    mount('/')
+    const signIn = await screen.findByRole('link', { name: /Sign in/ })
+    expect(signIn.getAttribute('href')).toBe('/sign-in')
+    expect(screen.getByRole('link', { name: /Register/ }).getAttribute('href')).toBe('/register')
+    const paths = NAV.sections.flatMap((s) => s.items.map((item) => String(item.link.to)))
+    expect(paths).not.toContain('/sign-in')
+    expect(paths).not.toContain('/register')
+  })
+})
