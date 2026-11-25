@@ -91,7 +91,7 @@ export const AGENT_LINE_BUDGETS: Readonly<Record<string, number>> = {
 export const AGENT_BYTE_BUDGETS: Readonly<Record<string, number>> = {
   'agent/skills/basalt-app/SKILL.md': 12_886,
   'agent/skills/basalt-design/SKILL.md': 6_951,
-  'agent/skills/basalt-charts/SKILL.md': 7_972,
+  'agent/skills/basalt-charts/SKILL.md': 7_987, // + Waterfall, RangeNavigator and the advanced pointer (Issue 3300); under the 8,000 bar
   'agent/templates/AGENTS-block.md.tpl': 4_618,
   'agent/skills/basalt-site/SKILL.md': 4_112,
   'agent/templates/AGENTS-block.site.md.tpl': 2_294,
