@@ -26,7 +26,12 @@ const sizeLiterals = new Set(
  * Component-shape rules still on a viewport `@media` (a container question — later waves move them
  * onto `@container` and delete their entry here). Keyed by file relative to `src/`.
  */
-const COMPONENT_SHAPE_LEGACY: Record<string, readonly string[]> = {}
+const COMPONENT_SHAPE_LEGACY: Record<string, readonly string[]> = {
+  // Starlight's own sidebar breakpoint: the docs bridge sizes the sidebar above it, and a media condition
+  // cannot read a custom property. It is Starlight's number, not a basalt size class.
+  'css/starlight.css': ['50em'],
+  'css/templates/starlight.css': ['50em'],
+}
 
 /** `@container basalt-card` is the card-chrome axis: its literals are CONTAINER_CLASSES boundaries. */
 const containerLiterals = new Set(
