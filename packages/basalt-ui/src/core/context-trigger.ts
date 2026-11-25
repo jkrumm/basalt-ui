@@ -32,9 +32,19 @@ const EDITABLE =
 const isEditable = (target: EventTarget | null): boolean =>
   target instanceof Element && target.closest(EDITABLE) !== null
 
-/** The event came from inside the trigger's own DOM, not from a portalled popup that bubbles to it. */
-const inside = (e: Evt): boolean =>
-  e.currentTarget instanceof Node && e.target instanceof Node && e.currentTarget.contains(e.target)
+/**
+ * The event is this trigger's: it came from inside its own DOM (not a portalled popup that bubbles
+ * to it), and no more specific trigger sits between the target and it. A card that holds a table
+ * with row menus yields to the row; a trigger that opted out marks nothing, so the card still answers.
+ */
+const inside = (e: Evt): boolean => {
+  const { currentTarget: host, target } = e
+  if (!(host instanceof Element) || !(target instanceof Element) || !host.contains(target)) {
+    return false
+  }
+  const nearest = target.closest('[data-context-trigger]')
+  return nearest === null || nearest === host || !host.contains(nearest)
+}
 
 /** Shift+F10 and the context-menu key: what a keyboard has in place of a right click. */
 const isMenuKey = (e: KeyEvt): boolean => e.key === 'ContextMenu' || (e.key === 'F10' && e.shiftKey)
@@ -179,8 +189,8 @@ export type ContextTriggerProps = {
   onTouchEnd: (e: TouchEvent) => void
   onTouchCancel: () => void
   onClickCapture: (e: MouseEvent) => void
-  /** Marks the part for the stylesheet: no iOS callout on a long press. */
-  'data-context-trigger': ''
+  /** Marks an enabled trigger: no iOS callout on a long press, and a trigger above it yields to it. */
+  'data-context-trigger'?: ''
 }
 
 /**
@@ -213,6 +223,6 @@ export function useContextTrigger(options: {
     onTouchEnd: h.touchend,
     onTouchCancel: h.touchcancel,
     onClickCapture: h.clickCapture,
-    'data-context-trigger': '',
+    ...(options.disabled !== true && { 'data-context-trigger': '' as const }),
   }
 }

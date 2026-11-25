@@ -2,6 +2,8 @@
 import { cleanup, fireEvent, render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { ChartCard } from '../charts'
+import { SURFACE } from '../charts/parts/chart-card-frame'
+import { cardVariants } from '../ui/card'
 
 const menu = [
   { id: 'a', label: 'Export', onClick: () => undefined },
@@ -50,5 +52,25 @@ describe('CardMenu context menu', () => {
     render(<ChartCard title="Requests" menu={menu} contextMenu={false} chart={() => null} />)
     expect(fireEvent.contextMenu(card())).toBe(true)
     expect(shown).toHaveLength(0)
+  })
+
+  test('a more specific trigger inside the card keeps its own event', () => {
+    render(<ChartCard title="Requests" menu={menu} chart={() => null} />)
+    const inner = document.createElement('div')
+    inner.setAttribute('data-context-trigger', '')
+    card().append(inner)
+    expect(fireEvent.contextMenu(inner)).toBe(true)
+    fireEvent.keyDown(inner, { key: 'F10', shiftKey: true })
+    expect(shown).toHaveLength(0)
+    // a part that opted out marks nothing: the card still answers there
+    const plain = document.createElement('div')
+    card().append(plain)
+    expect(fireEvent.contextMenu(plain)).toBe(false)
+    expect(shown).toHaveLength(1)
+  })
+
+  test('the open state is styled on every card surface', () => {
+    const base = cardVariants({ flush: true }).split(' ')
+    for (const cls of base) expect(SURFACE.split(' ')).toContain(cls)
   })
 })

@@ -197,7 +197,7 @@ function GroupView({
       data-flow-group={group.id}
       data-folded={folded ? '' : undefined}
       aria-labelledby={`${id}-title`}
-      className="relative flex min-w-0 flex-col rounded-card border bg-background p-1 in-data-[tool=pointer]:cursor-auto"
+      className="relative flex min-w-0 flex-col rounded-card border bg-background p-1 data-popup-open:bg-accent in-data-[tool=pointer]:cursor-auto"
     >
       <div
         data-flow-anchor={group.id}
