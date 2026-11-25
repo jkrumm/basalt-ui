@@ -70,6 +70,8 @@ function Grid({
     data,
     getRowId: (row) => row.id,
     mode: { kind: 'client' },
+    // Plain data has no identity column to title a phone card, so a card is a grid of labelled values.
+    phone: 'fields',
   })
   return <DataTable table={table} />
 }
