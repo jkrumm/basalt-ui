@@ -3,6 +3,7 @@ import type { ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
 import { base } from '../core/messages/base'
 import { useMessages } from '../core/messages/use-messages'
+import { POPUP_POSITIONER, POPUP_POSITIONER_CLASS } from '../core/popup-position'
 import { popoverContentVariants } from './popover'
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
@@ -66,8 +67,17 @@ function Hint({
         </svg>
       </BasePopover.Trigger>
       <BasePopover.Portal>
-        <BasePopover.Positioner sideOffset={6} className="z-50 outline-none">
-          <BasePopover.Popup className={cn(popoverContentVariants(), 'w-max max-w-xs')}>
+        <BasePopover.Positioner
+          {...POPUP_POSITIONER}
+          sideOffset={6}
+          className={POPUP_POSITIONER_CLASS}
+        >
+          <BasePopover.Popup
+            className={cn(
+              popoverContentVariants(),
+              'w-max max-w-[min(20rem,var(--available-width))]',
+            )}
+          >
             <BasePopover.Title className="text-sm font-semibold text-foreground">
               {title}
             </BasePopover.Title>

@@ -12,6 +12,7 @@ import type { ListOption, ListSource } from '../core/list/options'
 import { defaultRank } from '../core/list/rank'
 import type { RankFn } from '../core/list/rank'
 import { ai } from '../core/messages/ai'
+import { POPUP_POSITIONER, POPUP_POSITIONER_CLASS } from '../core/popup-position'
 import { useMessages } from '../core/messages/use-messages'
 import { buttonVariants } from '../ui/button'
 import { ChevronGlyph } from './glyphs'
@@ -98,10 +99,15 @@ export function ModelPicker(props: ModelPickerProps): ReactElement {
       </BaseCombobox.Trigger>
       <ControlScopeProvider value={null}>
         <BaseCombobox.Portal>
-          <BaseCombobox.Positioner sideOffset={4} align="start" className="z-50 outline-none">
+          <BaseCombobox.Positioner
+            {...POPUP_POSITIONER}
+            sideOffset={4}
+            align="start"
+            className={POPUP_POSITIONER_CLASS}
+          >
             <BaseCombobox.Popup
               data-slot="model-picker-content"
-              className="flex max-h-(--available-height) w-72 flex-col overflow-hidden rounded-ctrl border border-border bg-popover shadow-overlay outline-none"
+              className="flex max-h-(--available-height) w-72 max-w-(--available-width) flex-col overflow-hidden rounded-ctrl border border-border bg-popover shadow-overlay outline-none"
             >
               <div className="border-b border-border p-1">
                 <BaseCombobox.Input

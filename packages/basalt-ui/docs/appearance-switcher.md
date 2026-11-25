@@ -12,7 +12,8 @@ slots: [appearance-switcher]
 The reader's appearance in one part: theme, accent color, density and layout, each applied to
 `<html>` the moment it is picked and kept across reloads (`setScheme`, `setAppearance`), with a
 reset that returns every row to the app's default. Theme, density and layout are choice tiles,
-the accent a swatch row. It keys on its container, so it fits a settings row and a popover alike.
+the accent a swatch row. It keys on its container, so it fits a settings row and a popover alike:
+18 rem wide where its parent sizes to its content (a menu submenu), never wider than its parent.
 
 ## Signature
 
