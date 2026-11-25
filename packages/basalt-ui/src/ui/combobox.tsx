@@ -56,7 +56,7 @@ export const comboboxVariants = cva('relative block w-full min-w-0')
  * comboboxInputVariants({ size: 'sm' })
  */
 export const comboboxInputVariants = cva(
-  'flex w-full min-w-0 items-center gap-2 rounded-ctrl border border-input bg-background text-foreground transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-brand has-focus-visible:outline-solid data-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50 [&_input]:-my-px [&_input]:min-w-0 [&_input]:flex-1 [&_input]:scroll-my-1.5 [&_input]:self-stretch [&_input]:bg-transparent [&_input]:outline-none [&_input]:placeholder:text-faint',
+  'flex w-full min-w-0 items-center gap-2 rounded-ctrl border border-input bg-field text-foreground transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-brand has-focus-visible:outline-solid data-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50 [&_input]:-my-px [&_input]:min-w-0 [&_input]:flex-1 [&_input]:scroll-my-1.5 [&_input]:self-stretch [&_input]:bg-transparent [&_input]:outline-none [&_input]:placeholder:text-faint',
   {
     variants: {
       size: {
@@ -109,7 +109,7 @@ export const comboboxItemVariants = cva(
  * comboboxChipsVariants({ size: 'sm' })
  */
 export const comboboxChipsVariants = cva(
-  'flex w-full min-w-0 flex-wrap items-center gap-1 rounded-ctrl border border-input bg-background text-foreground transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-brand has-focus-visible:outline-solid data-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50 [&_input]:min-h-6 [&_input]:min-w-16 [&_input]:flex-1 [&_input]:scroll-my-1.5 [&_input]:bg-transparent [&_input]:outline-none [&_input]:placeholder:text-faint',
+  'flex w-full min-w-0 flex-wrap items-center gap-1 rounded-ctrl border border-input bg-field text-foreground transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-brand has-focus-visible:outline-solid data-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50 [&_input]:min-h-6 [&_input]:min-w-16 [&_input]:flex-1 [&_input]:scroll-my-1.5 [&_input]:bg-transparent [&_input]:outline-none [&_input]:placeholder:text-faint',
   {
     variants: {
       size: {
@@ -146,7 +146,7 @@ export const autocompleteVariants = cva('relative block w-full min-w-0')
  * autocompleteInputVariants({ size: 'sm' })
  */
 export const autocompleteInputVariants = cva(
-  'flex w-full min-w-0 items-center gap-2 rounded-ctrl border border-input bg-background text-foreground transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-brand has-focus-visible:outline-solid data-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50 [&_input]:-my-px [&_input]:min-w-0 [&_input]:flex-1 [&_input]:scroll-my-1.5 [&_input]:self-stretch [&_input]:bg-transparent [&_input]:outline-none [&_input]:placeholder:text-faint',
+  'flex w-full min-w-0 items-center gap-2 rounded-ctrl border border-input bg-field text-foreground transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-brand has-focus-visible:outline-solid data-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50 [&_input]:-my-px [&_input]:min-w-0 [&_input]:flex-1 [&_input]:scroll-my-1.5 [&_input]:self-stretch [&_input]:bg-transparent [&_input]:outline-none [&_input]:placeholder:text-faint',
   {
     variants: {
       size: {

@@ -16,7 +16,7 @@ import { useMessages } from '../core/messages/use-messages'
  * tagInputVariants() // class string for a hand-built field box
  */
 export const tagInputVariants = cva(
-  'flex min-h-ctl w-full min-w-0 cursor-text flex-wrap items-center gap-1 rounded-ctrl border border-input bg-background px-1.5 py-0.5 text-sm text-foreground transition-colors focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand has-aria-invalid:border-bad has-data-disabled:cursor-not-allowed has-data-disabled:opacity-50',
+  'flex min-h-ctl w-full min-w-0 cursor-text flex-wrap items-center gap-1 rounded-ctrl border border-input bg-field px-1.5 py-0.5 text-sm text-foreground transition-colors focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand has-aria-invalid:border-bad has-data-disabled:cursor-not-allowed has-data-disabled:opacity-50',
 )
 
 /**

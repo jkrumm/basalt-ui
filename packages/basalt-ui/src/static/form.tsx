@@ -33,7 +33,7 @@ export type SiteFieldProps = {
 
 /** The same look as `Input` and `Button`, restated because `basalt-ui/ui` pulls in Base UI and this subpath needs react alone. */
 const CONTROL =
-  'w-full min-w-0 rounded-ctrl border border-input bg-background px-3 text-sm text-foreground placeholder:text-faint focus-ring transition-colors user-invalid:border-bad'
+  'w-full min-w-0 rounded-ctrl border border-input bg-field px-3 text-sm text-foreground placeholder:text-faint focus-ring transition-colors user-invalid:border-bad'
 
 /**
  * A native form: it posts to `action` with no client JavaScript. The browser validates `required` and

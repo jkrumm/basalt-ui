@@ -22,6 +22,7 @@ export const BASALT_FAMILIES: readonly string[] = [
   'dur',
   'ease',
   'faint',
+  'field',
   'fill',
   'font',
   'ghost',

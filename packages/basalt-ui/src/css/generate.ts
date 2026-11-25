@@ -185,7 +185,7 @@ function tailwindCss(variant: 'app' | 'static' = 'app'): string {
     surfaceRules +
     '  @media (forced-colors: active) {\n    [data-surface] {\n      border: 1px solid CanvasText;\n    }\n  }\n' +
     '  input:-webkit-autofill,\n  textarea:-webkit-autofill,\n  select:-webkit-autofill {\n' +
-    '    -webkit-box-shadow: 0 0 0 100vh var(--basalt-surface) inset;\n' +
+    '    -webkit-box-shadow: 0 0 0 100vh var(--basalt-field) inset;\n' +
     '    -webkit-text-fill-color: var(--basalt-ink);\n' +
     '    caret-color: var(--basalt-ink);\n' +
     '  }\n' +

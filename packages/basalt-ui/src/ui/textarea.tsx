@@ -50,7 +50,7 @@ function revealOnFocus(el: HTMLElement): void {
  * textareaVariants({ size: 'sm' }) // class string for a hand-built textarea
  */
 export const textareaVariants = cva(
-  'block field-sizing-content min-h-[max(var(--basalt-ctl-h),calc(var(--textarea-rows,3)*1lh+var(--textarea-pad)+2px))] max-h-[calc(10lh+var(--textarea-pad)+2px)] w-full min-w-0 resize-y rounded-ctrl border border-input bg-background text-foreground placeholder:text-faint focus-ring transition-colors [&[readonly]]:cursor-default [&[readonly]]:border-transparent [&[readonly]]:bg-inset aria-invalid:border-bad data-disabled:opacity-50',
+  'block field-sizing-content min-h-[max(var(--basalt-ctl-h),calc(var(--textarea-rows,3)*1lh+var(--textarea-pad)+2px))] max-h-[calc(10lh+var(--textarea-pad)+2px)] w-full min-w-0 resize-y rounded-ctrl border border-input bg-field text-foreground placeholder:text-faint focus-ring transition-colors [&[readonly]]:cursor-default [&[readonly]]:border-transparent [&[readonly]]:bg-inset aria-invalid:border-bad data-disabled:opacity-50',
   {
     variants: {
       size: {

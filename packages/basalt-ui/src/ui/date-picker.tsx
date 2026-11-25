@@ -33,7 +33,7 @@ export type { CalendarDate } from '../core/format'
  * datePickerVariants({ size: 'sm' }) // class string for a hand-built trigger
  */
 export const datePickerVariants = cva(
-  'relative flex w-full min-w-0 items-center justify-between gap-2 rounded-ctrl border border-input bg-background text-left text-foreground tabular-nums after:absolute after:inset-x-0 after:top-1/2 after:h-full after:-translate-y-1/2 pointer-coarse:after:min-h-11 focus-ring transition-colors aria-invalid:border-bad data-placeholder:text-faint data-disabled:opacity-50',
+  'relative flex w-full min-w-0 items-center justify-between gap-2 rounded-ctrl border border-input bg-field text-left text-foreground tabular-nums after:absolute after:inset-x-0 after:top-1/2 after:h-full after:-translate-y-1/2 pointer-coarse:after:min-h-11 focus-ring transition-colors aria-invalid:border-bad data-placeholder:text-faint data-disabled:opacity-50',
   {
     variants: {
       size: {

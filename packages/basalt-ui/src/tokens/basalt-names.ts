@@ -35,6 +35,7 @@ export const BASALT_NAMES: readonly string[] = [
   '--basalt-ease-enter',
   '--basalt-ease-exit',
   '--basalt-faint',
+  '--basalt-field',
   '--basalt-fill-cyan',
   '--basalt-fill-grape',
   '--basalt-fill-gray',

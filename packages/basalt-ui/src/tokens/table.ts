@@ -114,6 +114,13 @@ export const TOKENS: readonly TokenDef[] = [
     tw: ['--color-inset'],
   },
   {
+    name: 'field',
+    family: 'surface',
+    role: 'A form field: the fill of an input, select and picker trigger; never darker than its card',
+    value: color('field'),
+    tw: ['--color-field'],
+  },
+  {
     name: 'card',
     family: 'surface',
     role: 'Ringed frame, header and footer bands',

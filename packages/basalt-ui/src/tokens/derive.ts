@@ -286,15 +286,22 @@ export type SurfaceKey =
 export type RowSurfaceKey = 'rowHover' | 'rowSelected'
 
 const SURFACE_TONE: Record<Side, Record<Exclude<SurfaceKey, RowSurfaceKey>, number>> = {
+  // Light steps off white into the zinc ramp (the +2 baseline lands the page at tone 94.5, the card
+  // 97, the inset well 95, the raised surface 98.5): no surface is #ffffff, so a card reads off the
+  // page by lightness alone. The page cannot go darker: below tone ~94.4 the light chart marks lose
+  // the 3:1 floor on it and `chart-4` / `chart-5` fall under the 8.0 CVD gate. The v3 `field` role
+  // (FIELD_TONE_V3) is the one white fill left.
+  // Candidate B, one edit away (wells at the page tone, raised 97.8, no white field): field: 92.5,
+  // elevated: 95.8, panelHover: 95.8, and FIELD_TONE_V3.light = 97.5.
   light: {
-    bg: 93.45,
-    panel: 96.21,
-    panelHover: 98.27,
-    elevated: 98.27,
-    subtle: 94.15,
-    field: 100,
-    border: 87.86,
-    hairline: 90.94,
+    bg: 92.5,
+    panel: 95,
+    panelHover: 96.5,
+    elevated: 96.5,
+    subtle: 93.5,
+    field: 93,
+    border: 86.5,
+    hairline: 90,
   },
   dark: {
     bg: 13.82,
@@ -329,9 +336,9 @@ export function mixHex(a: string, b: string, t: number): string {
 export type InkKey = 'ink' | 'ink2' | 'muted' | 'faint'
 
 const INK_TONE: Record<Side, Record<InkKey, number>> = {
-  // light `faint` is tone 44.5 so tertiary text clears WCAG AA (4.5:1) on every text surface
-  // (bg / panel / subtle / field); 48.44 landed at 4.23–4.31:1 on bg and subtle.
-  light: { ink: 15.16, ink2: 27.09, muted: 34.88, faint: 44.5 },
+  // light `faint` is tone 43.5 so tertiary text clears WCAG AA (4.5:1) on every text surface
+  // (bg / panel / subtle / field); 44.5 fell to 4.48:1 on the 92.5 page.
+  light: { ink: 15.16, ink2: 27.09, muted: 34.88, faint: 43 },
   dark: { ink: 90.94, ink2: 88.12, muted: 84.91, faint: 68.5 },
 }
 
@@ -560,10 +567,19 @@ export const INK_FROM_2X = {
  * under protanopia and deuteranopia (`chart-N-cvd-*`), so the emitter would refuse the default seed. */
 export const VIBRANCY_RANGE_V3 = { min: -4, max: 5 } as const
 
+/**
+ * The fill of a form field, effective tone (v3 has no level knob). Dark sits two tones above the
+ * card (20.7) so a field is never darker than the card it is on; light is the one white fill: a
+ * small well on a tinted card is the affordance, and no large surface is white. The hue and chroma
+ * are the neutral family's, like every surface.
+ */
+const FIELD_TONE_V3: Record<Side, number> = { light: 100, dark: 22.7 }
+
 /** The v3 color roles the table lists with a `{ light, dark }` pair. */
 export const COLOR_NAMES_V3 = [
   'canvas',
   'inset',
+  'field',
   'card',
   'raised',
   'ink',
@@ -713,6 +729,10 @@ export function deriveV3(config: DeriveV3Config = DEFAULT_DERIVE_V3_CONFIG): Der
     }
   for (const [key, from] of Object.entries(INK_FROM_2X))
     colors[key as keyof typeof INK_FROM_2X] = base.ink[from]
+  const neutralFamily = NEUTRAL_PRESETS[config.neutral]
+  colors.field = pair((side) =>
+    hctToHex({ hue: neutralFamily.hue, chroma: neutralFamily.chroma, tone: FIELD_TONE_V3[side] }),
+  )
 
   colors['brand-fill'] = base.accentFill
   colors['on-brand'] = base.onAccent

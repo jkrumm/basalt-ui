@@ -92,19 +92,22 @@ const MOTION_ADDED = [
 /** The Dialog backdrop beside `scrim`. */
 const WASH_ADDED = ['scrim-wash'].map((name) => `--basalt-${name}`)
 
+/** The form-field fill: never darker than the card it sits on, white in light. */
+const FIELD_ADDED = ['field'].map((name) => `--basalt-${name}`)
+
 describe('public names', () => {
   test('the 3.2 list is 74 names', () => {
     expect(BOOKED_74).toHaveLength(74)
     expect(new Set(BOOKED_74).size).toBe(74)
   })
 
-  test('the emitted --basalt-* name set equals the 74 names of 3.2, --basalt-input and the motion scale, and is at most 90', () => {
+  test('the emitted --basalt-* name set equals the 74 names of 3.2, --basalt-input, the motion scale, the scrim wash and the field fill, and is at most 90', () => {
     const css = emitTokensCss({ version: '3.0.0' })
     const emitted = new Set([...css.matchAll(/(--basalt-[a-z0-9-]+)\s*:/g)].map((m) => m[1]!))
     expect([...emitted].sort()).toEqual(
-      [...BOOKED_74, '--basalt-input', ...MOTION_ADDED, ...WASH_ADDED].sort(),
+      [...BOOKED_74, '--basalt-input', ...MOTION_ADDED, ...WASH_ADDED, ...FIELD_ADDED].sort(),
     )
-    expect(emitted.size).toBe(82)
+    expect(emitted.size).toBe(83)
     expect(emitted.size).toBeLessThanOrEqual(90)
     expect([...tokenNames()].sort()).toEqual([...emitted].sort())
   })
