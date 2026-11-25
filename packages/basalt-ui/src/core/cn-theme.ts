@@ -4,6 +4,7 @@ export const CN_THEME = {
   colors: [
     'background',
     'inset',
+    'field',
     'card',
     'popover',
     'surface',
