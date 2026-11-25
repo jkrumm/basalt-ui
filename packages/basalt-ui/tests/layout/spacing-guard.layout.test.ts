@@ -204,6 +204,13 @@ layout('the spacing guard fails what it must', () => {
     )
   })
 
+  test('an always-on scrollbar with nothing to scroll', async () => {
+    const found = await offend(
+      '<div style="width:300px;height:100px;overflow-y:scroll;background:#eee"><div style="height:60px"></div></div>',
+    )
+    expect(lines(found)).toMatch(/stray-bar: .*for 0 px of overflow/)
+  })
+
   test('a reserved gutter with no overflow draws no stray bar', async () => {
     const found = await offend(
       '<div style="width:300px;height:100px;overflow-y:auto;scrollbar-gutter:stable;background:#eee"><div style="height:60px"></div></div>',
