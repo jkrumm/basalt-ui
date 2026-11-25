@@ -440,6 +440,8 @@ export type ChartCardProps = Omit<FrameState, 'phase'> & {
   footer?: FootFacts | undefined
   controls?: ControlsSlot<'widget'> | undefined
   menu?: CardMenu | undefined
+  /** Whether a right click, a long press or Shift+F10 on the card opens its menu at the pointer. Default true; the browser's menu stays with false. */
+  contextMenu?: boolean | undefined
   /**
    * The chart box: `auto` (default) half the card width between 192 and 420 px; `tall` the same
    * with a 288 px floor, for the chart that answers the page and needs its axis at 390; `short`

@@ -45,9 +45,9 @@ describe('allotment', () => {
     expect([...own].toSorted()).toEqual([...registry].toSorted())
   })
 
-  it('reads the fourteen runtime subpaths, 39 primitives and the five primitive peers', () => {
+  it('reads the fourteen runtime subpaths, 40 primitives and the five primitive peers', () => {
     expect(Object.keys(ALLOTMENT.subpaths)).toHaveLength(14)
-    expect(ALLOTMENT.primitives).toHaveLength(39)
+    expect(ALLOTMENT.primitives).toHaveLength(40)
     expect(ALLOTMENT.primitivePeers).toEqual({
       calendar: ['react-day-picker'],
       'date-picker': ['react-day-picker'],

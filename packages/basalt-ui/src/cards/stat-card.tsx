@@ -100,7 +100,7 @@ export function StatCard(props: StatCardProps): ReactElement {
     onClick,
   } = props
   const chartHeight = props.height ?? CHART_HEIGHT
-  const { phase, empty, subtitle, icon, info, controls, menu } = props
+  const { phase, empty, subtitle, icon, info, controls, menu, contextMenu } = props
   const figure = formatValue(value)
   const resolved = resolvePhase({ phase, empty })
   const stale = resolved.tag === 'stale' ? resolved : null
@@ -118,6 +118,7 @@ export function StatCard(props: StatCardProps): ReactElement {
           info={info}
           controls={controls}
           menu={menu}
+          contextMenu={contextMenu}
         />
         <Inset
           className={cn('flex flex-col', bodyHeight(sub !== undefined, chart !== undefined))}

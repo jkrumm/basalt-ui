@@ -104,6 +104,7 @@ export type StatHeadProps = {
   info: string | undefined
   controls: ControlsSlot | undefined
   menu: readonly MenuEntry[] | undefined
+  contextMenu: boolean | undefined
 }
 
 /**
@@ -118,6 +119,7 @@ export function StatHead({
   info,
   controls,
   menu,
+  contextMenu,
 }: StatHeadProps): ReactElement {
   return (
     <div
@@ -150,7 +152,9 @@ export function StatHead({
           {controls.render()}
         </div>
       )}
-      {menu !== undefined && <CardMenu menu={menu} label={`Actions for ${title}`} />}
+      {menu !== undefined && (
+        <CardMenu menu={menu} label={`Actions for ${title}`} contextMenu={contextMenu !== false} />
+      )}
     </div>
   )
 }

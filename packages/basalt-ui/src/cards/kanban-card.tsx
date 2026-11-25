@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
-import type { ComponentType, ReactElement } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { ComponentType, ReactElement, RefObject } from 'react'
 import { cn } from '../core/cn'
+import { useContextTrigger } from '../core/context-trigger'
+import type { ContextPoint } from '../core/context-trigger'
 import { AppLink } from '../core/link'
 import { kanban } from '../core/messages/kanban'
 import { useMessages } from '../core/messages/use-messages'
@@ -45,30 +47,26 @@ const BUTTON =
   'relative inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-chip border-0 bg-secondary p-0 text-muted-foreground no-underline shadow-raised hover:text-foreground focus-ring after:absolute after:inset-0 pointer-coarse:size-11 forced-colors:border forced-colors:border-current'
 
 /**
- * The card's one menu control. A single action is a plain button or link and never loads the
- * popup; several open the lazily loaded menu. The popup loads on the first hover, focus or touch,
- * and a click that beats the chunk only marks the menu open: focus stays on this button, and the
- * popup opens the moment it arrives.
+ * The lazily loaded popup and its open state, shared by the "..." button and a right click. The
+ * popup loads on the first hover, focus, touch or context click, and an open that beats the chunk
+ * only marks the menu open: the popup opens the moment it arrives. `at` is where a pointer or
+ * keyboard context open happened, `null` while the button anchors the popup.
  */
-function CardMenu({
-  title,
-  moves,
-  extras,
-}: {
-  title: string
-  moves: readonly KanbanAction[]
-  extras: readonly KanbanAction[]
-}): ReactElement {
-  const t = useMessages(kanban)
-  const button = useRef<HTMLButtonElement>(null)
+function useCardMenu(enabled: boolean): {
+  Popup: ComponentType<KanbanMenuPopupProps> | null
+  open: boolean
+  at: ContextPoint | null
+  warm: () => void
+  setOpen: (open: boolean) => void
+  toggle: () => void
+  openAt: (at: ContextPoint) => void
+} {
   const requested = useRef(false)
   const [Popup, setPopup] = useState<ComponentType<KanbanMenuPopupProps> | null>(null)
   const [open, setOpen] = useState(false)
-  const all = [...moves, ...extras]
-  const only = all.length === 1 ? all[0] : undefined
-
+  const [at, setAt] = useState<ContextPoint | null>(null)
   const warm = (): void => {
-    if (requested.current || only !== undefined) return
+    if (requested.current || !enabled) return
     requested.current = true
     menuChunk
       .load()
@@ -78,6 +76,50 @@ function CardMenu({
         setOpen(false)
       })
   }
+  return {
+    Popup,
+    open,
+    at,
+    warm,
+    setOpen,
+    toggle: () => {
+      warm()
+      setAt(null)
+      setOpen(!open)
+    },
+    openAt: (point) => {
+      warm()
+      setAt(point)
+      setOpen(true)
+    },
+  }
+}
+
+type CardMenuState = ReturnType<typeof useCardMenu>
+
+/**
+ * The card's one menu control. A single action is a plain button or link and never loads the
+ * popup; several open the lazily loaded menu (`useCardMenu`), which a right click on the card
+ * opens too.
+ */
+function CardMenu({
+  title,
+  moves,
+  extras,
+  button,
+  menu,
+}: {
+  title: string
+  moves: readonly KanbanAction[]
+  extras: readonly KanbanAction[]
+  button: RefObject<HTMLButtonElement | null>
+  menu: CardMenuState
+}): ReactElement {
+  const t = useMessages(kanban)
+  const all = [...moves, ...extras]
+  const only = all.length === 1 ? all[0] : undefined
+  const { warm, toggle } = menu
+  const open = menu.open && menu.at === null
 
   if (only !== undefined) {
     const name = t('kanban.actionFor', only.label, title)
@@ -118,17 +160,11 @@ function CardMenu({
         onPointerEnter={warm}
         onFocus={warm}
         onTouchStart={warm}
-        onClick={() => {
-          warm()
-          setOpen(!open)
-        }}
+        onClick={toggle}
         className={cn(BUTTON, 'z-10')}
       >
         <Glyph kind="dots" />
       </button>
-      {Popup !== null && (
-        <Popup anchor={button} open={open} onOpenChange={setOpen} moves={moves} extras={extras} />
-      )}
     </>
   )
 }
@@ -179,22 +215,44 @@ function Glyph({ kind }: { kind: 'dots' | 'arrow' }): ReactElement {
  * />
  */
 export function KanbanCard<C extends string>(props: KanbanCardProps<C>): ReactElement {
-  const { id, title, href, age, meta, chips, reason, status, menu, move } = props
+  const { id, title, href, age, meta, chips, reason, status, menu, move, contextMenu } = props
   const t = useMessages(kanban)
   const root = useRef<HTMLDivElement>(null)
+  const button = useRef<HTMLButtonElement>(null)
   const isStatic = move === 'static'
   useEffect(() => assertMovable(root.current, isStatic), [isStatic])
 
   const { moves, extras } = kanbanActions(id, move, menu, t)
   const hasMenu = moves.length + extras.length > 0
+  // One action is a plain button with no menu to open; several are the "..." menu a right click opens too.
+  const several = moves.length + extras.length > 1
+  const cardMenu = useCardMenu(several)
+  const trigger = useContextTrigger({
+    onOpen: cardMenu.openAt,
+    disabled: !several || contextMenu === false,
+  })
+  const { at } = cardMenu
+  const pointer = useMemo(
+    () =>
+      at === null
+        ? null
+        : {
+            getBoundingClientRect: () =>
+              DOMRect.fromRect({ x: at.x, y: at.y, width: 0, height: 0 }),
+          },
+    [at],
+  )
+  const Popup = cardMenu.Popup
   const shownChips = (chips ?? []).filter((chip) => chip !== undefined)
   const Reason = reason?.icon
 
   return (
     <div
       ref={root}
+      {...trigger}
       data-slot="kanban-card"
       data-card-id={id}
+      data-popup-open={cardMenu.open && at !== null ? '' : undefined}
       data-dragging={move !== 'static' && move.dragging === true ? '' : undefined}
       className="group/kanban @container h-full min-w-0 data-dragging:opacity-40"
     >
@@ -231,7 +289,13 @@ export function KanbanCard<C extends string>(props: KanbanCardProps<C>): ReactEl
                 )}
                 {hasMenu && (
                   <div className="col-start-1 row-start-1 opacity-0 group-focus-within/kanban:opacity-100 group-hover/kanban:opacity-100 group-has-[[aria-expanded=true]]/kanban:opacity-100 pointer-coarse:opacity-100">
-                    <CardMenu title={title} moves={moves} extras={extras} />
+                    <CardMenu
+                      title={title}
+                      moves={moves}
+                      extras={extras}
+                      button={button}
+                      menu={cardMenu}
+                    />
                   </div>
                 )}
               </div>
@@ -268,6 +332,16 @@ export function KanbanCard<C extends string>(props: KanbanCardProps<C>): ReactEl
           {status !== undefined && <StatusMark status={status} />}
         </div>
       </Card>
+      {Popup !== null && several && (
+        <Popup
+          anchor={pointer ?? button}
+          pointer={pointer !== null}
+          open={cardMenu.open}
+          onOpenChange={cardMenu.setOpen}
+          moves={moves}
+          extras={extras}
+        />
+      )}
     </div>
   )
 }

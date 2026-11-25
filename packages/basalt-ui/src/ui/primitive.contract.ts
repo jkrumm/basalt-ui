@@ -31,6 +31,7 @@ import type { ComponentType, ReactElement, ReactNode } from 'react'
 import { hydrateRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
 import { AutocompleteContent, ComboboxContent } from './combobox'
+import { ContextMenu } from './context-menu'
 import { MenuContent, MenuRadioGroup } from './menu'
 import { ResizablePanelGroup } from './resizable'
 import { SelectContent } from './select'
@@ -170,6 +171,8 @@ export function popupAncestry(
         defaultOpen: open,
         children: createElement('button', null, 'x'),
       }),
+    'context-menu-trigger': (p) => createElement(ContextMenu, null, p.children),
+    'context-menu-content': (p) => createElement(ContextMenu, { defaultOpen: open }, p.children),
     'menu-trigger': menu,
     'menu-content': menu,
     'menu-item': inMenu,
@@ -202,6 +205,7 @@ export const ROOTLESS = new Set([
   'popover',
   'preview-card',
   'menu',
+  'context-menu',
 ])
 
 /**

@@ -351,6 +351,7 @@ export const SHIPPED_PRIMITIVES: ReadonlySet<string> = new Set([
   'card',
   'checkbox',
   'checkbox-matrix',
+  'context-menu',
   'choice-card',
   'collapsible',
   'combobox',

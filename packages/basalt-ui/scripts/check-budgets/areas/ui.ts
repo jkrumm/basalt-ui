@@ -136,9 +136,9 @@ export const rows: readonly RowDef[] = [
     id: 'ui-value-exports',
     order: 350,
     label: 'ui value exports, every src/ui .tsx module (exact; SLOTS is pinned)',
-    // 279 measured. Exact: a new value export is a row here and a consumer named for it; a lower
+    // 283 measured. Exact: a new value export is a row here and a consumer named for it; a lower
     // number ratchets the ceiling down in the same commit.
-    ceiling: 279,
+    ceiling: 283,
     measure: valueExports,
   },
 ]
@@ -314,6 +314,13 @@ export const raises: Raises = {
     },
   ],
   'ui-value-exports': [
+    {
+      from: 279,
+      to: 283,
+      consumer:
+        '`ContextMenu`, `ContextMenuTrigger`, `ContextMenuContent` and `contextMenuParts` from `basalt-ui/ui/context-menu`: the owner\'s 2026-11-25 review asked for a right click on a part to open the same menu as its "..." button (Issue 3295); `DataTable` draws its row menu through it',
+      repo: 'basalt-ui',
+    },
     {
       from: 276,
       to: 279,

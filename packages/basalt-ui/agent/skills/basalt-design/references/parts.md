@@ -145,6 +145,7 @@ Every shipped part, grouped by the question it answers; open `node_modules/basal
 - `basalt-ui/ui/choice-card` (`ChoiceCard`): a choice carries a description, a price or a picture and the options sit side by side
 - `basalt-ui/ui/collapsible` (`Collapsible`): one region hides and shows behind a trigger (advanced options)
 - `basalt-ui/ui/combobox` (`Autocomplete`, `Combobox`): search, async or multi-select, or 50 or more options
+- `basalt-ui/ui/context-menu`: a row, card or item already has a '...' menu and a right click should open the same actions
 - `basalt-ui/ui/control-group` (`ButtonGroup`, `ControlGroup`, `InputAddon`, `InputGroup`): controls that together make one request: a field and the select that scopes it, a search and its submit
 - `basalt-ui/ui/copy-button` (`CopyButton`): a value the user copies elsewhere: an API key, an id, a URL, a command
 - `basalt-ui/ui/date-picker` (`DatePicker`, `DateRangePicker`): the user picks one calendar day (a due date, a birthday, a report day)

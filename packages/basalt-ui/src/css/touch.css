@@ -47,3 +47,10 @@ label,
 [role='option'] {
   touch-action: manipulation;
 }
+/*
+ * A part that opens its menu on a long press (`data-context-trigger`, set by `useContextTrigger`)
+ * keeps iOS from drawing its own link callout over the press.
+ */
+[data-context-trigger] {
+  -webkit-touch-callout: none;
+}

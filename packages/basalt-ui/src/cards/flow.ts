@@ -29,6 +29,8 @@ export type FlowGroup = {
   /** One neutral chip beside the title: a count, a mode. */
   chip?: CardChip | undefined
   menu?: CardMenu | undefined
+  /** Whether a right click, a long press or Shift+F10 on the card opens its menu at the pointer. Default true; the browser's menu stays with false. */
+  contextMenu?: boolean | undefined
   rows: readonly FlowRow[]
 }
 

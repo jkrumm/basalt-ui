@@ -78,6 +78,7 @@ export type HeadProps = {
   info: string | undefined
   controls: ControlsSlot | undefined
   menu: readonly MenuEntry[] | undefined
+  contextMenu: boolean | undefined
 }
 
 /**
@@ -91,6 +92,7 @@ export function Head({
   info,
   controls,
   menu,
+  contextMenu,
 }: HeadProps): ReactElement {
   return (
     <div
@@ -129,7 +131,11 @@ export function Head({
       )}
       {menu !== undefined && title !== undefined && (
         <div data-slot="chart-menu" className="relative z-10 flex shrink-0 items-center">
-          <CardMenu menu={menu} label={`Actions for ${title}`} />
+          <CardMenu
+            menu={menu}
+            label={`Actions for ${title}`}
+            contextMenu={contextMenu !== false}
+          />
         </div>
       )}
     </div>

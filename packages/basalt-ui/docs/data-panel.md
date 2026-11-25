@@ -45,6 +45,7 @@ DataPanel(props: DataPanelProps): ReactElement
   controls?: ControlsSlot<"widget">
   toolbar?: ControlsSlot<"widget">
   menu?: CardMenu
+  contextMenu?: boolean  // Whether a right click, a long press or Shift+F10 on the card opens its menu at the pointer
   legend?: readonly LegendEntry[]
   bodySize: { rows: number; cardHeight?: number | undefined; } | { height: number; }  // Required: the loading card draws its final shape
   body: BoxSlot  // Tables, lists and boards

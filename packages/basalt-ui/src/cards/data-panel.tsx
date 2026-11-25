@@ -279,9 +279,12 @@ export function Legend({ entries }: { entries: readonly LegendEntry[] }): ReactE
  * rendered once, so a bound control is never a CSS twin of itself.
  */
 function PanelHead(
-  props: Pick<DataPanelProps, 'title' | 'subtitle' | 'icon' | 'info' | 'controls' | 'menu'>,
+  props: Pick<
+    DataPanelProps,
+    'title' | 'subtitle' | 'icon' | 'info' | 'controls' | 'menu' | 'contextMenu'
+  >,
 ): ReactElement {
-  const { title, subtitle, icon: Icon, info, controls, menu } = props
+  const { title, subtitle, icon: Icon, info, controls, menu, contextMenu } = props
   const about = useAboutLabel()
   return (
     <div
@@ -316,7 +319,11 @@ function PanelHead(
       )}
       {menu !== undefined && (
         <div data-slot="data-panel-menu" className="flex shrink-0 items-center">
-          <CardMenu menu={menu} label={`Actions for ${title}`} />
+          <CardMenu
+            menu={menu}
+            label={`Actions for ${title}`}
+            contextMenu={contextMenu !== false}
+          />
         </div>
       )}
     </div>

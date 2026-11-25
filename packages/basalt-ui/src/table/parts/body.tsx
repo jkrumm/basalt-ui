@@ -12,6 +12,7 @@ import { table } from '../../core/messages/table'
 import { PhaseBoundary } from '../../core/phase-boundary'
 import type { DetailHost } from '../../core/ports'
 import { Button } from '../../ui/button'
+import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from '../../ui/context-menu'
 import { Menu, MenuContent, MenuItem, MenuTrigger } from '../../ui/menu'
 import { TableBody, TableCell, TableRow } from '../../ui/table'
 import type { DataTableInstance, RowAction } from '../contract'
@@ -51,6 +52,25 @@ export function bodyDensity<T>(model: TableModel<T>): { 'data-density'?: string 
   return model.rowHeight === undefined ? {} : { 'data-density': model.rowHeight }
 }
 
+/** The menu rows of a row's actions: the "..." button and the right-click menu draw the same ones. */
+function actionItems<T>(row: T, actions: readonly RowAction<T>[]): ReactNode {
+  return actions.map((action) => {
+    const Icon = action.icon
+    const loading = action.loading?.(row) === true
+    return (
+      <MenuItem
+        key={action.id}
+        disabled={loading || action.disabled?.(row) === true}
+        aria-busy={loading || undefined}
+        onClick={() => action.onClick(row)}
+      >
+        {action.label}
+        {Icon !== undefined && <Icon aria-hidden="true" size={16} />}
+      </MenuItem>
+    )
+  })
+}
+
 function RowActions<T>({
   row,
   actions,
@@ -85,23 +105,7 @@ function RowActions<T>({
             <circle cx="13" cy="8" r="1.4" />
           </svg>
         </MenuTrigger>
-        <MenuContent align="end">
-          {actions.map((action) => {
-            const Icon = action.icon
-            const loading = action.loading?.(row) === true
-            return (
-              <MenuItem
-                key={action.id}
-                disabled={loading || action.disabled?.(row) === true}
-                aria-busy={loading || undefined}
-                onClick={() => action.onClick(row)}
-              >
-                {action.label}
-                {Icon !== undefined && <Icon aria-hidden="true" size={16} />}
-              </MenuItem>
-            )
-          })}
-        </MenuContent>
+        <MenuContent align="end">{actionItems(row, actions)}</MenuContent>
       </Menu>
     </span>
   )
@@ -262,7 +266,13 @@ export function DataRow<T>({
   const grid = model.look === 'grid'
   const tabbable = !grid && rowProps.tabIndex !== -1
   const lead = model.lead.cols
-  return (
+  const menu = model.rowMenu
+  const hasMenu = menu !== undefined && menu.length > 0
+  // The popup sits in the first cell: a tbody or tr cannot hold the portal's focus guards.
+  const popup = hasMenu ? (
+    <ContextMenuContent>{actionItems(row.original, menu)}</ContextMenuContent>
+  ) : null
+  const line = (
     <TableRow
       role="row"
       data-selected={ticked || active ? '' : undefined}
@@ -311,6 +321,7 @@ export function DataRow<T>({
             numeric={numeric}
             className={spec.wrap ? `${className ?? ''} whitespace-normal` : className}
           >
+            {index === 0 && popup}
             {planned.identity && tree !== undefined ? (
               <div className="flex min-w-0 items-center gap-1">
                 <TreeLead tree={tree} onToggle={() => model.toggleRow(row.id)} />
@@ -335,6 +346,14 @@ export function DataRow<T>({
         )
       })}
     </TableRow>
+  )
+  if (!hasMenu) return line
+  // The row is the trigger: a right click, a long press or Shift+F10 opens the actions the "..."
+  // button lists, from the same data.
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger render={line} />
+    </ContextMenu>
   )
 }
 

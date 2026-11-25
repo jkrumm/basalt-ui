@@ -71,6 +71,7 @@ export const SUBPATH_QUESTIONS: Record<string, string> = {
   'basalt-ui/ui/info-hint': PRIMITIVE,
   'basalt-ui/ui/input': PRIMITIVE,
   'basalt-ui/ui/kbd': PRIMITIVE,
+  'basalt-ui/ui/context-menu': PRIMITIVE,
   'basalt-ui/ui/menu': PRIMITIVE,
   'basalt-ui/ui/meter': PRIMITIVE,
   'basalt-ui/ui/num': PRIMITIVE,

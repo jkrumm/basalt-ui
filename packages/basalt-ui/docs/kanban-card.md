@@ -26,6 +26,7 @@ KanbanCard<C extends string>(props: KanbanCardProps<C>): ReactElement
   reason?: { icon?: IconComponent; text: string; }
   status?: Verdict
   menu?: readonly MenuEntry[]  // Entries after the move rows the card always offers, so one entry is enough
+  contextMenu?: boolean  // Whether a right click, a long press or Shift+F10 on the card opens the card's menu where the pointer is, the same entries as its "..." button; default true
   move: "static" | { column: ColumnRef<C>; index: number; columns: readonly ColumnRef<C>[]; onMove: (m: Move<C>) => void; dragging?: boolean; }  // Required: no card exists without the non-drag path
 ```
 

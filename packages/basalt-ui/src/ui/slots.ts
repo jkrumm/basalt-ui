@@ -26,6 +26,7 @@ export const SLOTS = {
     'autocomplete-content',
     'autocomplete-item',
   ],
+  'context-menu': ['context-menu-trigger', 'context-menu-content'],
   'control-group': ['button-group', 'control-group', 'input-group', 'input-addon'],
   'copy-button': ['copy-button'],
   'date-picker': ['date-picker', 'date-range-picker'],
