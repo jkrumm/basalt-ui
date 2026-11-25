@@ -12,6 +12,7 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { FixtureSpec } from './fixture/spec'
+import { heightSpread, onlyRises, onlySinks, recordFrames } from './sheet-frames'
 import {
   CLOSE_BUDGET_MS,
   DESKTOP_1440,
@@ -104,6 +105,51 @@ const axeViolations = async (page: LayoutPage): Promise<string[]> => {
 }
 
 layout('list overlays on a phone', () => {
+  describe('390 coarse: one motion, one height', () => {
+    const MENU_TRIGGER = '[data-testid="us-menu"] button'
+
+    /** Open and close once with the transition playing; the first open is the one that used to pop in. */
+    async function openClose(
+      trigger: string,
+      ready: string,
+    ): Promise<{
+      opening: Awaited<ReturnType<typeof recordFrames>>
+      closing: Awaited<ReturnType<typeof recordFrames>>
+    }> {
+      const page = await openFixture(EMPTY_SPEC, PHONE, documentPath, 'no-preference', 'coarse')
+      await page.raw.waitForSelector('[data-slot="select-trigger"]')
+      await page.settle()
+      const opening = await recordFrames(page, SHEET, async () => {
+        await page.raw.tap(trigger)
+        await page.raw.waitForSelector(`${SHEET} ${ready}`)
+      })
+      const closing = await recordFrames(page, SHEET, async () => {
+        await page.raw.keyboard.press('Escape')
+      })
+      return { opening, closing }
+    }
+
+    for (const [name, trigger, ready] of [
+      ['a 4-option Select', TRIGGER('us-select'), '[role="option"]'],
+      ['a Menu', MENU_TRIGGER, '[role="menuitem"]'],
+    ] as const) {
+      test(`${name} slides in from the bottom at its content's height and leaves at the same height`, async () => {
+        const { opening, closing } = await openClose(trigger, ready)
+        // It was seen mid-motion: first below its rest, then rising to it with no backtrack.
+        const rest = opening.at(-1)!.top
+        expect(opening[0]!.top).toBeGreaterThan(rest + 20)
+        expect(opening.some((f) => f.starting)).toBe(true)
+        expect(onlyRises(opening)).toBe(true)
+        // One height from the first frame to the last: no second resize after it mounted.
+        expect(heightSpread(opening)).toBeLessThan(0.5)
+        // And on the way out: the list unmounts under it, the sheet keeps its height and sinks.
+        expect(onlySinks(closing)).toBe(true)
+        expect(heightSpread(closing)).toBeLessThan(0.5)
+        expect(closing[0]!.height).toBeCloseTo(opening.at(-1)!.height, 0)
+      })
+    }
+  })
+
   describe('390 coarse: a sheet', () => {
     test('a Select opens as a bottom sheet holding the list', async () => {
       const page = await open(PHONE, 'coarse')
@@ -367,23 +413,38 @@ layout('list overlays on a phone', () => {
       expect(await axeViolations(page)).toEqual([])
     })
 
-    test('a Dock is a sheet that rests at half height', async () => {
+    test('a Dock with a short record opens at its content height, one with a tall record rests at half', async () => {
       const page = await open(PHONE, 'coarse')
       await page.raw.tap('[data-testid="us-dock"] button')
       await page.raw.waitForSelector(SHEET)
       await page.settle()
-      const geo = await page.raw.evaluate(() => {
+      const short = await page.raw.evaluate(() => {
         const r = document.querySelector('[data-slot="sheet-content"]')!.getBoundingClientRect()
         return { top: r.top, bottom: r.bottom, vh: innerHeight }
       })
-      expect(geo.top).toBeGreaterThan(geo.vh * 0.4)
-      expect(geo.top).toBeLessThan(geo.vh * 0.6)
-      // a snapped sheet is 90dvh tall and rests with its top at half, so its foot is past the viewport
-      expect(geo.bottom).toBeGreaterThan(geo.vh)
+      // the content fits the first snap, so it has no snap points: it hugs and its foot is the viewport's
+      expect(short.top).toBeGreaterThan(short.vh * 0.6)
+      expect(short.bottom).toBeCloseTo(short.vh, 0)
       expect(await axeViolations(page)).toEqual([])
       await page.raw.keyboard.press('Escape')
       await page.raw.waitForSelector(SHEET, { state: 'detached' })
       expect(await focusSlot(page)).toBe('Open dock')
+
+      await page.raw.tap('[data-testid="us-dock-tall"] button')
+      await page.raw.waitForSelector(SHEET)
+      await page.settle()
+      const tall = await page.raw.evaluate(() => {
+        const r = document.querySelector('[data-slot="sheet-content"]')!.getBoundingClientRect()
+        return { top: r.top, bottom: r.bottom, vh: innerHeight }
+      })
+      expect(tall.top).toBeGreaterThan(tall.vh * 0.4)
+      expect(tall.top).toBeLessThan(tall.vh * 0.6)
+      // a snapped sheet is 90dvh tall and rests with its top at half, so its foot is past the viewport
+      expect(tall.bottom).toBeGreaterThan(tall.vh)
+      expect(await axeViolations(page)).toEqual([])
+      await page.raw.keyboard.press('Escape')
+      await page.raw.waitForSelector(SHEET, { state: 'detached' })
+      expect(await focusSlot(page)).toBe('Open tall dock')
     })
   })
 

@@ -20,6 +20,7 @@ import type { FixtureSpec } from './fixture/spec'
 import { CLOSE_BUDGET_MS, PHONE, closeLayoutSuite, initLayoutSuite, openFixture } from './harness'
 import type { LayoutPage, Viewport } from './harness'
 import { slot } from './harness/slots'
+import { heightSpread, onlyRises, onlySinks, recordFrames } from './sheet-frames'
 
 acquireShellTarget()
 const ready = await initLayoutSuite()
@@ -131,6 +132,27 @@ for (const viewport of [PHONE, PHONE_430] as const) {
       expect(small(found)).toEqual([])
       expect(found.filter((t) => t.bottom > viewport.height - INSET + 0.5)).toEqual([])
     })
+
+    for (const section of ['Kit', 'Reference'] as const) {
+      test(`opening the ${section} drawer is one motion: the popup never resizes and only rises, and closing only sinks`, async () => {
+        const p = await openFixture(spec('drawer'), viewport, undefined, 'no-preference')
+        await p.waitFor(MORE)
+        const opening = await recordFrames(p, SHEET, async () => {
+          await p.tap(`${BAR} button[aria-label^="${section}"]`)
+          await p.waitFor(LIST)
+        })
+        const rest = opening.at(-1)!.top
+        // It was caught below its rest and rose to it with no backtrack and no second resize.
+        expect(opening[0]!.top).toBeGreaterThan(rest + 20)
+        expect(onlyRises(opening)).toBe(true)
+        expect(heightSpread(opening)).toBeLessThan(0.5)
+        const closing = await recordFrames(p, SHEET, async () => {
+          await p.tap(`${BAR} button[aria-label^="${section}"]`)
+        })
+        expect(onlySinks(closing)).toBe(true)
+        expect(heightSpread(closing)).toBeLessThan(0.5)
+      })
+    }
 
     test("the short snap: the drawer's foot is on the bar, its top in the bottom half, its rows 44 high", async () => {
       const p = await openFixture(spec('drawer'), viewport)
