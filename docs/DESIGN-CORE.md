@@ -111,14 +111,17 @@ Worked rule: a multi-toggle bar chart colours bars `isMulti ? series.x : BASALT.
 
 - **Density is the point.** A terminal, not a marketing page: sections separate by an edge and a
   shared plane, not air. Every inset, gap and radius is a step of the scales below.
-- **Two planes.** The frame (`canvas`) carries the brand zone and the rail. One work surface (`card`)
-  carries the identity row (crumb, page actions, global actions) and the page, with the aside and the
+- **Two planes.** The frame (`canvas`) carries the top row and the rail: the brand zone over the
+  rail and, beside it in the same row, the breadcrumb strip (the crumb trail, the global controls,
+  the global actions and status at its end). One work surface (`card`) under the strip carries the
+  page, its `PageBar` band (tabs, controls, page actions) as its first line, with the aside and the
   dock inside it, clipped to its corners. `AppShell frame="panel"` (the default) insets the surface
-  8 px from the window on its three free sides (none toward the rail), rounds it at `radius-card` and
-  draws its hairline, from the `md` shell tier up; `frame="flush"` and every compact screen draw it
-  edge to edge with one hairline on the rail side. No hairline cuts one colour in two: the rail and
-  the surface differ in plane, and the identity row's rule is the one rule on the surface. Under
-  `chrome="native-overlay"` the header is the window's title bar, a frame row above both.
+  6 px from the window on its end and bottom (its top meets the strip, its start the rail), rounds it
+  at `radius-card` and draws its hairline, from the `md` shell tier up; `frame="flush"` draws it edge
+  to edge with one hairline toward the rail and one under the strip. A phone keeps its own header,
+  the strip in the surface's colour closing on a rule. No hairline cuts one colour in two: the rail
+  and the surface differ in plane. Under `chrome="native-overlay"` the header is the window's title
+  bar, a frame row above both.
   `tokens/gates.ts` holds the planes apart (`plane-step-*`) and the hairline visible on both
   (`hairline-on-card`, `hairline-on-canvas`).
 - **A page is padded or `fill`.** A dashboard, a form and a settings page keep the gutter and sit
@@ -189,7 +192,7 @@ purpose; the old → new table and the `density`/`radius` knobs that restore the
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | Spacing grid  | xs 8, sm 12, md 16, lg 20, xl 24 (`space-scale.ts`); gap between sibling cards 12, 1 inside a joined strip                                  |
 | Card inset    | 12 vertical, 16 horizontal; 12 horizontal in a compact container                                                                            |
-| Page gutter   | 24 expanded, 16 medium, 8 compact                                                                                                           |
+| Page gutter   | 16 expanded, 12 medium, 8 compact, on all four sides                                                                                        |
 | Radius        | card 10, control 6, floating card 11, inset panel = control; tighter than the reference's 12                                                |
 | Row text      | `sm` 13 / 20 line for dense rows (table, nav, list, event, menu); `md` 15 stays prose and form labels; inputs keep 16 under coarse pointers |
 | Meta, caption | `xs` 12 / 16 line; `micro` 11 mono uppercase +0.06em faint; `nano` 10 only inside drawn objects                                             |
