@@ -276,7 +276,8 @@ export function Board<C extends string, T extends { id: string; title: string }>
                   return (
                     <ol
                       className={cn(
-                        'm-0 flex list-none flex-col gap-2.5 overflow-hidden p-0',
+                        // The padding holds the drop line that sits 6 px outside a card; the margin cancels it.
+                        'mx-0 -my-1.5 flex list-none flex-col gap-2.5 overflow-hidden px-0 py-1.5',
                         BODY,
                       )}
                     >
