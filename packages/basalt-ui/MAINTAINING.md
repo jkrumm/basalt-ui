@@ -18,17 +18,17 @@ code. Mechanics live where they can't drift: **API shape → the JSDoc on the ex
 
 Named exports only — **no default exports**. Files `kebab-case`, components `PascalCase`.
 
-| Subpath        | UI?          | Owns                                                                                                                                                                |
-| -------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.`            | ui           | the state seams (`persisted`, `notify`, `externalField`, `useNow`, `createFormat`); `createChannel` is in `./data`                                                  |
-| `./charts`     | **headless** | `CartesianChart` + the `Lines`/`Bars`/`Sparkline`/`Heatmap`/`BandStrip`/`IntervalTrack` kinds, `ChartCard`, `chartCursor` — no token, formatter or engine re-export |
-| `./tokens`     | **headless** | `BASALT`, `alpha`, `BP`/`p`, `buildPaletteCss`, `seriesTokens`, `groupTokens`                                                                                       |
-| `./controls`   | headless     | the control tier: `FilterSet` over `spec(...)`, `ViewTabs`, `ControlView`, `ControlHome`, `filterSlot` and the v3 forms                                             |
-| `./table`      | headless     | `col<Row>()` kind columns, `useDataTable`, `DataTable` and its parts, `tableCodec`                                                                                  |
-| `./content`    | ui           | `Markdown`, `CodeBlock`                                                                                                                                             |
-| `./vite`       | —            | `basalt()` (gates, sources.css, head/PWA)                                                                                                                           |
-| `./styles.css` | —            | `@layer basalt` base styles, the iOS input floor, the font stack — mandatory import                                                                                 |
-| `./configs/*`  | —            | raw toolchain presets (real paths — `extends` needs them)                                                                                                           |
+| Subpath        | UI?          | Owns                                                                                                                                                                                             |
+| -------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `.`            | ui           | the state seams (`persisted`, `notify`, `externalField`, `useNow`, `createFormat`); `createChannel` is in `./data`                                                                               |
+| `./charts`     | **headless** | `CartesianChart` + the `Lines`/`Bars`/`Sparkline`/`Heatmap`/`BandStrip`/`IntervalTrack`/`Waterfall`/`RangeNavigator` kinds, `ChartCard`, `chartCursor` — no token, formatter or engine re-export |
+| `./tokens`     | **headless** | `BASALT`, `alpha`, `BP`/`p`, `buildPaletteCss`, `seriesTokens`, `groupTokens`                                                                                                                    |
+| `./controls`   | headless     | the control tier: `FilterSet` over `spec(...)`, `ViewTabs`, `ControlView`, `ControlHome`, `filterSlot` and the v3 forms                                                                          |
+| `./table`      | headless     | `col<Row>()` kind columns, `useDataTable`, `DataTable` and its parts, `tableCodec`                                                                                                               |
+| `./content`    | ui           | `Markdown`, `CodeBlock`                                                                                                                                                                          |
+| `./vite`       | —            | `basalt()` (gates, sources.css, head/PWA)                                                                                                                                                        |
+| `./styles.css` | —            | `@layer basalt` base styles, the iOS input floor, the font stack — mandatory import                                                                                                              |
+| `./configs/*`  | —            | raw toolchain presets (real paths — `extends` needs them)                                                                                                                                        |
 
 **2.0:** 15 published subpaths (V2-SPEC § 1), plus the v3 subpaths added since; `./forms`, `./commands`, `./agent` and `./state` were deleted in 3.0 with the 2.x runtime (`removed-2x.json` names each export); `./guard`, `./data/virtual`,
 `./llms.txt` and `./package.json` are no longer exports. **C1 (1.29.0):** `./query`, `./connectivity` and bare `./data` were dropped — 26 published subpaths
