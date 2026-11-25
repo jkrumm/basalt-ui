@@ -92,7 +92,9 @@ Every shipped part, grouped by the question it answers; open `node_modules/basal
 - `Heatmap` (`basalt-ui/charts`): two ordered categories cross (weekday by hour, service by day) and the cell value is the answer
 - `IntervalTrack` (`basalt-ui/charts`): spans with a start and an end sit on rows over time: a calendar week by the hour, the steps of a run, outages by day, shifts by person
 - `Lines` (`basalt-ui/charts`): a metric over time or an ordered axis reads as one or more lines
+- `RangeNavigator` (`basalt-ui/charts`): a series spans far more time than one plot can show (years of daily data) and the reader picks the window
 - `Sparkline` (`basalt-ui/charts`): a card, a table row or a strip shows the trend of one metric in a small box
+- `Waterfall` (`basalt-ui/charts`): a total is explained by signed contributions in order: a budget's line items, a quarter's income bridge, a release's size by package
 
 ## Let the reader filter, pick or step through
 
