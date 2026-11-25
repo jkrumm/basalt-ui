@@ -145,6 +145,7 @@ async function scaffold(dir: string): Promise<void> {
   mkdirSync(join(dir, 'src'), { recursive: true })
   copyFileSync(join(PKG, 'src/css/tokens.css'), join(dir, 'src/tokens.css'))
   copyFileSync(join(PKG, 'src/css/touch.css'), join(dir, 'src/touch.css'))
+  copyFileSync(join(PKG, 'src/css/cursor.css'), join(dir, 'src/cursor.css'))
   const sheet = readFileSync(join(PKG, 'src/css/tailwind.css'), 'utf8').replace(
     /^@import '\.\/fonts\.css';\n/m,
     '',
