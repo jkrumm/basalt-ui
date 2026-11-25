@@ -1,14 +1,14 @@
 /* The navigator's preset row: the chart layer's own segmented buttons, since `./charts` reaches no
- * UI framework (scripts/check-budgets, the peer classes). Sized like a small `Segmented`. */
+ * UI framework (scripts/check-budgets, the peer classes). Unframed, so its pressed chip is the one rounded surface
+ * inside the chart's inset. */
 .presets {
   display: inline-flex;
   align-self: flex-start;
   gap: 2px;
   margin: 0;
   min-inline-size: 0;
-  padding: 2px;
-  border: 1px solid var(--basalt-hairline);
-  border-radius: 6px;
+  padding: 0;
+  border: 0;
 }
 
 /* At least the pointer's hit floor (`--basalt-hit`: 24 px fine, 44 px coarse), drawn, not an overlay:
@@ -22,7 +22,7 @@
   min-block-size: var(--basalt-hit, 24px);
   min-inline-size: var(--basalt-hit, 24px);
   padding: 0 8px;
-  border-radius: 4px;
+  border-radius: var(--basalt-radius-chip);
   color: var(--basalt-ink-muted);
   font-size: 12px;
   line-height: 18px;
