@@ -57,7 +57,7 @@ const NOISE = 0.0001
 /** True once no island waits to hydrate and no chart card is still its loading fallback. */
 const HYDRATED = (): boolean =>
   document.querySelectorAll('astro-island[ssr]').length === 0 &&
-  document.querySelectorAll('[data-slot="chart-card"][data-phase="loading"]').length === 0
+  document.querySelectorAll('[data-slot="card"][data-phase="loading"]').length === 0
 
 /** Every route that must hold a layout shift of 0: each guide, the showcase and the four static types. */
 async function shiftRoutes(): Promise<string[]> {
