@@ -1,6 +1,14 @@
 import { Drawer as BaseDrawer } from '@base-ui/react/drawer'
 import { cva } from 'class-variance-authority'
-import { createContext, useContext, useRef, useState, useSyncExternalStore } from 'react'
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import {
   PANEL_BODY,
@@ -12,7 +20,6 @@ import {
   PanelHandle,
   usePanelWidth,
 } from '../core/panel'
-import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { cn } from '../core/cn'
 import { ControlScopeProvider } from '../core/control-scope'
 import { dialogs } from '../core/messages/dialogs'
@@ -20,6 +27,9 @@ import { useMessages } from '../core/messages/use-messages'
 import { persisted } from '../core/persisted'
 import type { ControlHandle } from '../core/ports'
 import { buttonVariants } from './button'
+
+/** A layout effect where there is a layout (the browser), a plain effect on the server: a primitive imports nothing from `common/`, so `eject` can seed it alone. */
+const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
 
 type Placement = 'bottom' | 'right' | 'auto'
 type Swipe = 'down' | 'right'
