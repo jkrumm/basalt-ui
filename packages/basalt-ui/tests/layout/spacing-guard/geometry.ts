@@ -9,7 +9,8 @@
  *   scroll region inside a surface leaves the same distance to the surface's edge on both sides, scrollbar included.
  * - `under-bar`: nothing sits under a visible scrollbar.
  * - `stray-bar`: no scrollbar draws for four pixels of overflow or less (a focus ring, an underline), nor for none
- *   (`overflow: scroll`); the empty track of a `stable` gutter with no overflow is the one exemption.
+ *   (`overflow: scroll`); the empty vertical track of a `stable` gutter with no overflow is the one exemption (the gutter reserves no
+ *   horizontal track).
  * - `row-top`: siblings in a row share their top edge; an icon or a radio (a mark of 24 px or less, no text) is
  *   aligned by its middle to the first line of its text instead.
  * - `gap`: a gap between siblings is on the spacing ladder (an even px up to 16, a multiple of 4 above) and one
@@ -172,7 +173,7 @@ export function geometryFindings({ tolerance }: GeometryOptions): GeometryFindin
         el,
         'draws a ' + b.v + ' px vertical scrollbar for ' + over('v') + ' px of overflow',
       )
-    if (b.h > 0 && over('h') <= 4 && !(stable && over('h') <= 0))
+    if (b.h > 0 && over('h') <= 4)
       report(
         'stray-bar',
         el,
