@@ -95,9 +95,9 @@ American in every identifier, rule id, file name and shipped word. The palette i
 added in a minor and never renamed or removed without a major.
 
 <!-- generated:tokens -->
-291 names in 57 families, each `--basalt-<family>-…` (name count):
+292 names in 58 families, each `--basalt-<family>-…` (name count):
 
-accent 4, area 2, axis 2, bad 3, brand 2, canvas 1, card 1, chart 5, contract 1, crosshair 1, ctl 1, dim 1, divider 1, dot 1, dur 3, ease 3, faint 1, fill 24, font 5, ghost 1, good 4, grid 1, hairline 1, hit 3, hover 1, icon 1, info 1, ink 4, input 1, inset 1, legend 1, line 2, measure 1, muted 1, neutral 1, on 2, prose 1, radius 8, raised 1, rhythm 3, route 1, row 1, scrim 2, scrollbar 2, selected 1, seq 5, shadow 4, space 121, spring 2, stagger 1, status 5, surface 12, text 19, tint 1, tooltip 6, warn 3, weight 3
+accent 4, area 2, axis 2, bad 3, brand 2, canvas 1, card 1, chart 5, contract 1, crosshair 1, ctl 1, dim 1, divider 1, dot 1, dur 3, ease 3, faint 1, field 1, fill 24, font 5, ghost 1, good 4, grid 1, hairline 1, hit 3, hover 1, icon 1, info 1, ink 4, input 1, inset 1, legend 1, line 2, measure 1, muted 1, neutral 1, on 2, prose 1, radius 8, raised 1, rhythm 3, route 1, row 1, scrim 2, scrollbar 2, selected 1, seq 5, shadow 4, space 121, spring 2, stagger 1, status 5, surface 12, text 19, tint 1, tooltip 6, warn 3, weight 3
 <!-- /generated -->
 
 ## 4. Rule ids
