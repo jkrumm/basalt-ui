@@ -120,8 +120,8 @@ export const rows: readonly RowDef[] = [
     // 226200 -> 226500 (Issue 3211): +286 B gz for the phone list row: the plan's answering column and the two meta places the stylesheet reads.
     // 226500 -> 233000 (Issue 3207): 232644 B measured; the table closure carries Select and Menu, which present as a sheet on a phone.
     // 233000 -> 234400 (Issue 3262): 233991 B measured; layout specs an app adds (resolved beside the built-ins, drawn inside the table's frame), the progress kind and a searchable custom column.
-    // 234400 -> 236000 (Issue 3295): 235854 B measured; a right click, a long press and Shift+F10 on a row open its "..." actions (ui/context-menu and the shared trigger).
-    ceiling: 236000,
+    // 234400 -> 236400 (Issue 3295): 236107 B measured; a right click, a long press and Shift+F10 on a row open its "..." actions (ui/context-menu and the shared trigger).
+    ceiling: 236400,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
@@ -130,7 +130,7 @@ export const raises: Raises = {
   'table-own': [
     {
       from: 234400,
-      to: 236000,
+      to: 236400,
       consumer:
         'the owner review of 2026-11-25 (Issue 3295): a right click, a long press and Shift+F10 on a DataTable row open the row actions its "..." button lists, through the new ui/context-menu primitive and the trigger logic it shares with the cards',
       repo: 'basalt-ui',
