@@ -51,33 +51,4 @@ Every other part is one line in `.claude/skills/basalt-v3-playground-design/refe
 
 ## The playground
 
-This app is the repo's own `init --profile app` install and the page set the owner judges v3 by, so
-a page here is a page a consumer could build from the shipped skills. Place a new page by what it is
-for:
-
-| Kind         | Where                                                                                                                                                                                                                       | What holds it                                                                                                                                                                                 |
-| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Tour         | the nav's `tour` section (`src/demo/nav-model.tsx`), the landing `src/routes/index.tsx`, one line per stop in `src/demo/tour.ts`                                                                                            | shipped parts only, no lint waiver, no `c.custom` column; a matrix waiver only for a package defect that owns it; the whole nav stays at 40 entries or fewer (`src/demo/kit-routes.test.tsx`) |
-| Reference    | `src/routes/ref/`, rendered from `packages/basalt-ui/blocks/`                                                                                                                                                               | one archetype each, on the inventory domain                                                                                                                                                   |
-| Kit          | `src/routes/kit/` (one capability per page), `src/routes/recipes/`                                                                                                                                                          | recipe regions under `src/recipes/` compile into the package docs (`packages/basalt-ui/scripts/gen-recipes.ts`); keep a `#region recipe:<name>` when you edit one                             |
-| Auth         | `/sign-in` and `/register` (`src/routes/`, drawn bare by `__root.tsx`), the forms and the demo stub in `src/auth/`                                                                                                          | no nav entry, linked from the landing; the stub accepts `demo` / `demo`; no lint waiver                                                                                                       |
-| Test fixture | `/cards` (print test, matrix smoke), `/settings` (consumers.json), `/peek/$id`, `/scenarios/$name` (`mdx` stays first in `src/scenarios/scenario-info.ts`), `src/routes/cycle/` with `src/cycle/` (the latest cycle builds) | no nav entry; delete one only together with the test or record that names it                                                                                                                  |
-
-A new trial build goes to `apps/expression` (the scenarios) or a new folder under `src/cycle/`; a
-page to copy goes to `ref/` or `kit/` and, if it is the best page of its kind, replaces the tour
-stop. A superseded cycle build is deleted, not kept beside its successor.
-
-Before deleting or renaming a route, look up who names it, since each of these fails on a dangling name:
-
-- matrix waivers: `packages/basalt-ui/tests/quality/matrix/known.ts` and a cycle's own
-  `src/cycle/<name>/known.ts`; in the full run a waiver that matches nothing fails, so it goes with
-  its route;
-- the hover guard's `TRIAL_PAGES` and `REBUILT_PAGES` (`tests/quality/matrix/hover-shift.ts`) and
-  the page-top bands (`tests/layout/page-top.layout.test.ts`), both in `packages/basalt-ui`;
-- a public symbol's named consumer in `packages/basalt-ui/scripts/consumers.json`;
-- the route budgets, `src/budget.test.ts` and `packages/basalt-ui/scripts/check-budgets/areas/playground.ts`,
-  which leave out `routes/{cycle,kit,recipes,ref}`.
-
-Stylesheets and the graph `basalt()` reads come from `packages/basalt-ui/dist`: run `bun run build`
-there before a build or a shot of this app after a package change. `basalt-ui sync` refreshes the
-managed block above and `.basalt/`.
+Before adding, moving or deleting a page, Read `src/AGENTS.md`: where each kind goes, and the names that fail when a route goes.
