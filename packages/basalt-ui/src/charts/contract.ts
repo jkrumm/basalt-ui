@@ -40,6 +40,43 @@ export type SeriesBase<D> = {
   tooltip?: false
   format?: (v: number, d: D) => string
   getMarker?: (d: D) => Marker | null
+  /**
+   * A second reading of the datum, shown muted under this series' tooltip row: a target, a moving
+   * mean, the same day last year. A `null` reading shows nothing at that datum.
+   *
+   * @example
+   * { key: 'weight', …, compare: { label: '7-day mean', y: (d) => d.mean } }
+   */
+  compare?: { label: string; y: (d: D) => number | null }
+  /** A tone and a word for the value at a datum (`on target`, `over budget`), shown in its tooltip row. */
+  status?: (v: number, d: D) => Verdict | undefined
+}
+
+/**
+ * A line colored point by point by a second value of the datum, through the status ramp: the low
+ * end of `domain` in the good tone, the middle in warn, the high end in bad (`ramp: 'bad-good'`
+ * reverses it). The legend draws the ramp with its two ends, the tooltip names the reading, and the
+ * cursor dot takes the point's color. A `null` reading draws the series color there.
+ */
+export type ColorBy<D> = {
+  value: (d: D) => number | null
+  domain: readonly [number, number]
+  /** The reading's name in the legend and the tooltip (`CBBI`). */
+  label: string
+  /** Default `'good-bad'`. */
+  ramp?: 'good-bad' | 'bad-good'
+  format?: (v: number) => string
+}
+
+/**
+ * A dated event on the x axis (a release, a halving, an outage): a dashed rule with its caption at
+ * the top, a dot on the axis line, and a tooltip row while the cursor is on the datum nearest it.
+ */
+export type ChartEvent = {
+  at: number | Date | string
+  label: string
+  /** The tooltip row's value. Default: the event's x, formatted as the axis formats it. */
+  note?: string
 }
 
 export type Y<D> = { y: (d: D) => number | null }
@@ -55,6 +92,9 @@ export type Series<D> = SeriesBase<D> &
         weight?: 'quiet' | 'strong'
         gaps?: 'connect'
         parent?: string
+        colorBy?: ColorBy<D>
+        /** Names the highest and the lowest drawn point of the line on the plot, with their values. */
+        extremes?: boolean
       }
     | {
         mark: 'bar'
@@ -261,7 +301,19 @@ export type YConfig = {
 // minimal; concept elides it
 export type ChartTooltipConfig<D> = {
   formatHeader?: (d: D) => string
-  rows?: (d: D) => readonly { label: string; value: string; color?: SeriesColor }[]
+  rows?: (
+    d: D,
+  ) => readonly { label: string; value: string; color?: SeriesColor; status?: Verdict }[]
+  /**
+   * Every series row reads its change beside its value: since the first value the chart draws
+   * (`'start'`) or since the datum before (`'previous'`), as a signed percent.
+   */
+  change?: 'start' | 'previous'
+  /**
+   * Charts that share a cursor all paint their readout at the shared x, not only the chart under the
+   * pointer. Default `false`.
+   */
+  follow?: boolean
 }
 
 // minimal; concept elides it
@@ -337,6 +389,14 @@ export type CartesianChartBase<D> = {
   data: readonly D[]
   x: XConfig<D>
   y?: YConfig
+  /**
+   * The right axis, which the series with `axis: 'right'` are measured against: its own domain,
+   * format, title and `scale: 'log'` (a price over years beside a 0 to 100 score). The gutter is the
+   * left axis' alone.
+   */
+  y2?: Omit<YConfig, 'gutter'> | undefined
+  /** Dated events on the x axis, see {@link ChartEvent}. */
+  events?: readonly ChartEvent[] | undefined
   series: readonly Series<D>[]
   summary?: string
   table?: boolean

@@ -6,7 +6,9 @@
   "Heatmap",
   "IntervalTrack",
   "Lines",
+  "RangeNavigator",
   "Sparkline",
+  "Waterfall",
   "chartCursor",
   "chartLabels",
   "useChartFocus"

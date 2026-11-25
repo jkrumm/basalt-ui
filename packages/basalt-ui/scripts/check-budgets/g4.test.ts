@@ -17,8 +17,8 @@ const G4_AREA = join(import.meta.dir, 'areas/charts-g4.ts')
 const g4 = (await import('./areas/charts-g4')) as AreaModule
 
 describe('charts-api', () => {
-  test('the frozen set is thirteen names', () => {
-    expect(new Set(ALLOWED).size).toBe(13)
+  test('the frozen set is fifteen names', () => {
+    expect(new Set(ALLOWED).size).toBe(15)
     expect(ALLOWED.filter((name) => LEGACY.includes(name))).toEqual([])
   })
 
