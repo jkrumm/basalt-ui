@@ -11,8 +11,8 @@
  * scaled into it; once hydrated the engine measures the box again. Text is measured from
  * basalt's label widths on both sides ({@link measureChartText}), so the gutters agree.
  */
-import { Chart } from '@tanstack/charts/react'
-import type { ChartProps } from '@tanstack/charts/react'
+import { Chart } from '@tanstack/charts/react/tooltip'
+import type { ChartProps } from '@tanstack/charts/react/tooltip'
 import type { ChartValue } from '@tanstack/charts/types/core'
 import { useEffect, useMemo, useSyncExternalStore } from 'react'
 import type { CSSProperties, ReactElement } from 'react'
@@ -30,6 +30,8 @@ import { boxHeightAt, ChartBox } from './box'
 import type { ChartBoxHeight } from './box'
 import { useServerFrame } from './sizing'
 import { measureChartText } from './text-measure'
+import { isRich } from './core/rich-tooltip'
+import { RichTooltipBody } from './tooltip-body'
 
 export type ChartEngineProps = {
   definition: CartesianDefinition
@@ -126,11 +128,17 @@ export function ChartEngine({
         {...(onFocusDatum && {
           onFocusChange: (point: { datum: unknown } | null) => onFocusDatum(point?.datum ?? null),
         })}
+        {...(isRich(definition) && { renderTooltipBody: richBody })}
         style={coarse ? COARSE_STYLE : HOST_STYLE}
       />
     </ChartBox>
   )
 }
+
+/** A rich definition's tooltip body (`core/rich-tooltip.ts`): its rows with their change, status and reference. */
+const richBody: NonNullable<EngineProps['renderTooltipBody']> = ({ content }) => (
+  <RichTooltipBody content={content} />
+)
 
 /** Scopes the engine's SVG resource ids per chart instance (`useId` output carries colons). */
 export const idPrefixOf = (id: string, prefix = 'chart'): string =>

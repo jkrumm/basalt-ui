@@ -20,6 +20,8 @@ CartesianChart<D>(props: CartesianChartProps<D>): ReactElement
   data: readonly D[]
   x: XConfig<D>
   y?: YConfig
+  y2?: Omit<YConfig, "gutter">  // The right axis, which the series with `axis: 'right'` are measured against: its own domain, format, title and `scale: 'log'` (a price over years beside a 0 to 100 score)
+  events?: readonly ChartEvent[]  // Dated events on the x axis, see {@link ChartEvent}
   series: readonly Series<D>[]
   summary?: string
   table?: boolean
@@ -37,7 +39,7 @@ CartesianChart<D>(props: CartesianChartProps<D>): ReactElement
 
 `Phase`, `QueryStateLike` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike } from 'basalt-ui/cards'`.
 
-`CartesianChartProps`, `ChartFocus`, `ChartRefLine`, `ChartSelection`, `ChartTooltipConfig`, `ChartZone`, `CustomMarks`, `Series`, `XConfig`, `YConfig` import from `basalt-ui/charts`: `import type { CartesianChartProps, ChartFocus, ChartRefLine, ChartSelection, ChartTooltipConfig, ChartZone, CustomMarks, Series, XConfig, YConfig } from 'basalt-ui/charts'`.
+`CartesianChartProps`, `ChartEvent`, `ChartFocus`, `ChartRefLine`, `ChartSelection`, `ChartTooltipConfig`, `ChartZone`, `CustomMarks`, `Series`, `XConfig`, `YConfig` import from `basalt-ui/charts`: `import type { CartesianChartProps, ChartEvent, ChartFocus, ChartRefLine, ChartSelection, ChartTooltipConfig, ChartZone, CustomMarks, Series, XConfig, YConfig } from 'basalt-ui/charts'`.
 
 ## Example
 

@@ -9,6 +9,7 @@ import { headerDay, readoutClock } from '../chart-dates'
 import { dateTickFormat, utcAxisDate } from '../date-tick-format'
 import { crosshair } from '@tanstack/charts/crosshair'
 import { decorative } from '@tanstack/charts/mark/decorative'
+import { dot } from '@tanstack/charts/dot'
 import { rect } from '@tanstack/charts/rect'
 import { text } from '@tanstack/charts/text'
 import { ruleX, ruleY } from '@tanstack/charts/rule'
@@ -32,6 +33,8 @@ import { BASALT } from '../../tokens'
 import type { ContainerClass } from '../../tokens/size-classes'
 import { cursorBinding, followerOptions, followsChart, quietWhileFollowing } from './cursor'
 import { cursorDots } from '../marks'
+import { changeOf, markRich, rampColor, rampShare } from './rich-tooltip'
+import type { RichRow, RowDetail } from './rich-tooltip'
 import { bucketTicks, strideEvery } from './ticks'
 import {
   clampToDomain,
@@ -84,6 +87,7 @@ import {
   ringSwatch,
   withLogX,
   withLogY,
+  withLogY2,
   logYTicks,
   xRefLabelBoxes,
   xRefLabelSpots,
@@ -141,6 +145,7 @@ export type CartesianInput<T, X extends ChartX> = Pick<
   | 'xZones'
   | 'refLines'
   | 'xRefLines'
+  | 'events'
   | 'xTitle'
   | 'xScale'
   | 'cursorGroup'
@@ -191,6 +196,10 @@ export type CartesianInput<T, X extends ChartX> = Pick<
   yInside?: boolean
   /** `auto` names the lines with end labels on the narrow class too: the chart's lines passed `phoneNamesFit`. */
   endLabelsNarrow?: boolean
+  /** Engine controls on the definition (`RangeNavigator`'s brush). */
+  controls?: CartesianDefinition['controls']
+  /** `false`: no y axis, no grid (an overview strip). */
+  yAxis?: false
   /** How the lines are named (`Lines`' `naming`, resolved): with end labels the point scale keeps them a gutter right of the last points. */
   endLabels?: LinesNaming
 }
@@ -1152,6 +1161,7 @@ function resolveAxes<T, X extends ChartX>(
         ),
         format: input.y2?.format ?? ((v) => defaultNumberFormat(v, input.locale)),
         bounded: isBounded(input, input.y2),
+        ...(input.y2?.scale === 'log' && { log: true }),
         ...(flatAxis(input, input.y2, visible.filter(onRight), bounds.right) && { flat: true }),
       }
     : null
@@ -1698,19 +1708,21 @@ function buildScales<T, X extends ChartX>(opts: {
     },
     y: {
       scale: yScaleFor(input.y, left.domain),
-      ...yGuide({
-        cfg: input.y,
-        axis: left,
-        cls,
-        side: 'left',
-        grid: input.y?.grid ?? true,
-        locale: input.locale,
-        edges: edgesOn('left'),
-        // The hover pins the y value only without a right axis (see `crosshairGuide`).
-        readout: right === null,
-        corner,
-        inside: yInsideOf(input, cls, right !== null),
-      }),
+      ...(input.yAxis === false
+        ? { axis: false as const }
+        : yGuide({
+            cfg: input.y,
+            axis: left,
+            cls,
+            side: 'left',
+            grid: input.y?.grid ?? true,
+            locale: input.locale,
+            edges: edgesOn('left'),
+            // The hover pins the y value only without a right axis (see `crosshairGuide`).
+            readout: right === null,
+            corner,
+            inside: yInsideOf(input, cls, right !== null),
+          })),
     },
     ...(right && {
       y2: {
@@ -1984,6 +1996,62 @@ const pointerAnchor = (
 const BAR_TOOLTIP_PLACEMENT = ['right', 'left'] as const
 const DOT_TOOLTIP_PLACEMENT = ['top', 'bottom'] as const
 
+/**
+ * A series row's detail at a datum: its change over the period (`tooltip.change`), its `compare`
+ * reading and its `status`. `undefined` when it has none. The change base is the series' first
+ * finite value in `data` (`'start'`), or its last finite value before the datum (`'previous'`).
+ */
+function rowDetail<T, X extends ChartX>(
+  input: CartesianInput<T, X>,
+  axes: Axes<T>,
+): (s: ChartSeries<T>, v: number, d: T) => RowDetail | undefined {
+  const mode = (input.tooltip || undefined)?.change
+  const index = new Map(input.data.map((d, i) => [d, i]))
+  const starts = new Map<string, number | undefined>()
+  const finiteOf = (s: ChartSeries<T>, d: T | undefined): number | undefined => {
+    const v = d === undefined ? null : s.getValue(d)
+    return v !== null && Number.isFinite(v) ? v : undefined
+  }
+  const baseOf = (s: ChartSeries<T>, d: T): number | undefined => {
+    if (mode === 'start') {
+      if (!starts.has(s.key))
+        starts.set(
+          s.key,
+          finiteOf(
+            s,
+            input.data.find((e) => finiteOf(s, e) !== undefined),
+          ),
+        )
+      return starts.get(s.key)
+    }
+    for (let i = (index.get(d) ?? 0) - 1; i >= 0; i -= 1) {
+      const v = finiteOf(s, input.data[i])
+      if (v !== undefined) return v
+    }
+    return undefined
+  }
+  return (s, v, d) => {
+    const base = mode === undefined ? undefined : baseOf(s, d)
+    const change = base === undefined ? undefined : changeOf(v, base)
+    const compared = s.compare?.getValue(d) ?? null
+    const format = (n: number): string =>
+      s.formatValue
+        ? s.formatValue(n, d)
+        : axes.axisOf(axes.onRight(s) ? 'right' : 'left').format(n)
+    const reference =
+      s.compare === undefined || compared === null || !Number.isFinite(compared)
+        ? undefined
+        : `${s.compare.label} ${format(compared)}`
+    const status = s.status?.(v, d)
+    if (change === undefined && reference === undefined && status === undefined) return undefined
+    return {
+      ...(change !== undefined && { change }),
+      ...(reference !== undefined && { reference }),
+      ...(status !== undefined && { status }),
+    }
+  }
+}
+
 function tooltipSpec<T, X extends ChartX>(opts: {
   input: CartesianInput<T, X>
   axes: Axes<T>
@@ -2002,6 +2070,8 @@ function tooltipSpec<T, X extends ChartX>(opts: {
   const rowSeries = (input.reverseRows ? visible.toReversed() : visible).filter(
     (s) => s.tooltip !== false,
   )
+  const detailOf = rowDetail(input, axes)
+  const events = eventsByDatum(input)
   return {
     use: quietWhileFollowing,
     ...followerOptions(input.tooltip, input.cursorGroup, input.chartId),
@@ -2055,15 +2125,41 @@ function tooltipSpec<T, X extends ChartX>(opts: {
           : axes.axisOf(axes.onRight(s) ? 'right' : 'left').format(v)
         // A lone series whose value already ends in its own name (`27 sessions`) prints the name once.
         const bare = input.series.length === 1 ? unitIsName(s.label, text) : null
-        // A highlighted datum's swatch wears the accent, as its bar does.
-        const swatch = s.highlight?.(d) ? { ...s, color: CV.brand } : s
-        rows.push(seriesRow(swatch, bare ?? text, input.highlighted === s.key))
+        // A highlighted datum's swatch wears the accent, as its bar does; a `colorBy` line's, the point's ramp step.
+        const swatch = s.highlight?.(d)
+          ? { ...s, color: CV.brand }
+          : s.colorBy
+            ? { ...s, color: rampColorAt(s, d) }
+            : s
+        const row: RichRow = seriesRow(swatch, bare ?? text, input.highlighted === s.key)
+        const detail = detailOf(s, v, d)
+        rows.push(detail === undefined ? row : { ...row, detail })
+        const by = s.colorBy
+        const reading = by?.value(d) ?? null
+        if (by !== undefined && reading !== null && Number.isFinite(reading))
+          rows.push({
+            label: by.label,
+            value: (by.format ?? ((n: number) => defaultNumberFormat(n, input.locale)))(reading),
+            color: rampColorAt(s, d),
+          })
       }
       const extra: readonly ChartTooltipRow[] =
         (input.tooltip || undefined)?.rows?.(d, { visible, hidden }) ?? []
+      const marked = (events.get(d) ?? []).map((e): RichRow => ({
+        label: e.label,
+        value: e.note ?? formatX(e.at),
+        color: CV.axis,
+      }))
       return {
         title: tooltipHeader(input, formatX, dayOnly, x, d),
-        rows: [...rows, ...extra.map(engineRow)],
+        rows: [
+          ...rows,
+          ...extra.map((r): RichRow => {
+            const row = engineRow(r)
+            return r.status === undefined ? row : { ...row, detail: { status: r.status } }
+          }),
+          ...marked,
+        ],
       }
     },
   }
@@ -2168,8 +2264,10 @@ export function crosshairGuide<T, X extends ChartX>(opts: {
 export function compileCartesian<T, X extends ChartX>(
   given: CartesianInput<T, X>,
 ): CartesianDefinition {
-  const input = withLogY<T, CartesianInput<T, X>>(
-    withLogX<T, CartesianInput<T, X>>(given, given.band === true),
+  const input = withLogY2<T, CartesianInput<T, X>>(
+    withLogY<T, CartesianInput<T, X>>(
+      withLogX<T, CartesianInput<T, X>>(given, given.band === true),
+    ),
   )
   guardReservedKeys(input.series)
   const visible = visibleSeries(input.series, input.hidden ?? new Set<string>())
@@ -2200,9 +2298,13 @@ export function compileCartesian<T, X extends ChartX>(
   const rows = rowsOf(input, visibleKeys, shared)
   const formatX = (v: ChartValue): string =>
     input.formatX ? input.formatX(v as X) : defaultFormatX(v, input.locale)
-  const gradients = input.series.flatMap((s, i) =>
-    s.area ? [seriesAreaGradient(s, i, input, shared)] : [],
-  )
+  const gradients = [
+    ...input.series.flatMap((s, i) => (s.area ? [seriesAreaGradient(s, i, input, shared)] : [])),
+    ...input.series.flatMap((s, i) => {
+      const ramp = s.colorBy && rampGradient(s, i, input, baseModel)
+      return ramp ? [ramp] : []
+    }),
+  ]
   const dayOnly = dayGranular(model.values)
   const names = (input.refLines ?? []).some((r) => r.label !== undefined && r.label !== '')
   // What an unpinned reference caption avoids: each visible series as (x share, y) points. A bar is
@@ -2432,6 +2534,7 @@ export function compileCartesian<T, X extends ChartX>(
           yDomain: axes.left.domain,
           y2Domain: axes.right?.domain,
           ...(axes.left.log === true && { yLog: true }),
+          ...(axes.right?.log === true && { y2Log: true }),
           ...(gutter > 0 && { endRoom: true }),
           ...(input.endLabelsNarrow === true && { phoneNames: true }),
         },
@@ -2884,6 +2987,7 @@ export function compileCartesian<T, X extends ChartX>(
               : undefined,
             plotHeight: hasXCaption ? captionContext().plotHeight : undefined,
           }),
+          ...eventDots(input, axes),
           ...offScale,
           ...stackCaps,
           ...valueLabels.marks,
@@ -2934,6 +3038,128 @@ export function compileCartesian<T, X extends ChartX>(
       input.tooltip === false
         ? false
         : tooltipSpec({ input, axes: shared, visible, keys, visibleKeys, formatX, dayOnly }),
+    ...(input.controls !== undefined && { controls: input.controls }),
   }
-  return definition
+  return input.tooltip !== false && richTooltip(input) ? markRich(definition) : definition
+}
+
+/** Whether any row of the chart's tooltip carries a change, a reference, a status or an event. */
+function richTooltip<T, X extends ChartX>(input: CartesianInput<T, X>): boolean {
+  return (
+    (input.tooltip || undefined)?.change !== undefined ||
+    (input.events?.length ?? 0) > 0 ||
+    input.series.some(
+      (s) => s.compare !== undefined || s.status !== undefined || s.colorBy !== undefined,
+    )
+  )
+}
+
+/** Gradient resource id for a `colorBy` line's stroke; the host's `idPrefix` scopes it. */
+export const rampGradientId = (index: number): string => `basalt-ramp-${index}`
+
+/**
+ * A `colorBy` line's stroke: a horizontal gradient across the line's own box (the engine's default
+ * `objectBoundingBox` units), one color per drawn point by its reading on the status ramp. The line's
+ * box runs from its first drawn point to its last, so a point's offset is its share of that run on
+ * the x scale (any linear rescale of the axis keeps it). A stop is written only where the ramp
+ * steps, so a long series holds few. `null` for a line with fewer than two drawn points.
+ */
+export function rampGradient<T, X extends ChartX>(
+  s: ChartSeries<T>,
+  index: number,
+  input: Pick<CartesianInput<T, X>, 'data' | 'x'>,
+  model: Pick<XScaleModel<X>, 'fraction'>,
+): ChartGradient | null {
+  const by = s.colorBy
+  if (by === undefined) return null
+  const points = input.data.flatMap((d) => {
+    const v = s.getValue(d)
+    const f = model.fraction(input.x(d))
+    if (v === null || !Number.isFinite(v) || f === null) return []
+    const reading = by.value(d)
+    const color =
+      reading === null || !Number.isFinite(reading)
+        ? s.color
+        : rampColor(rampShare(reading, by.domain), by.ramp)
+    return [{ f, color }]
+  })
+  const first = points[0]
+  const last = points.at(-1)
+  if (first === undefined || last === undefined || last.f === first.f) return null
+  const span = last.f - first.f
+  const stops: { offset: number; color: string }[] = []
+  points.forEach((p, i) => {
+    const prev = points[i - 1]
+    const next = points[i + 1]
+    // A run of one color needs its two ends only: the ramp steps between a run's end and the next start.
+    if (prev?.color === p.color && next?.color === p.color) return
+    stops.push({ offset: (p.f - first.f) / span, color: p.color })
+  })
+  return { id: rampGradientId(index), x1: 0, y1: 0, x2: 1, y2: 0, stops }
+}
+
+/** The color a `colorBy` series takes at a datum: its ramp step, else the series color. */
+export function rampColorAt<T>(s: ChartSeries<T>, d: T): string {
+  const by = s.colorBy
+  const reading = by?.value(d) ?? null
+  if (by === undefined || reading === null || !Number.isFinite(reading)) return s.color
+  return rampColor(rampShare(reading, by.domain), by.ramp)
+}
+
+/** Radius of an event's dot on the x axis line, px. */
+const EVENT_DOT_R = 3.5
+
+/** A dot on the x axis line under each event's rule (the rule and its caption are `xRefLines`). */
+function eventDots<T, X extends ChartX>(input: CartesianInput<T, X>, axes: Axes<T>): ChartMarks {
+  const events = input.events ?? []
+  if (events.length === 0) return []
+  const floor = Math.min(...axes.left.domain)
+  return [
+    decorative(
+      dot(
+        events.map((e) => ({ x: e.at, y: floor })),
+        {
+          id: 'basalt-events',
+          x: (p: { x: X }) => p.x,
+          y: 'y',
+          r: EVENT_DOT_R,
+          fill: CV.axis,
+          stroke: CV.surface,
+          strokeWidth: 1.5,
+        },
+      ),
+    ),
+  ]
+}
+
+const timeOf = (v: ChartX): number | string => (v instanceof Date ? v.getTime() : v)
+
+/**
+ * Each event by the datum nearest its x (a string x: the datum at it): the datum the cursor rests on
+ * when it names the event. An event past the data's ends names none.
+ */
+export function eventsByDatum<T, X extends ChartX>(
+  input: Pick<CartesianInput<T, X>, 'data' | 'x' | 'events'>,
+): Map<T, { label: string; note?: string | undefined; at: X }[]> {
+  const out = new Map<T, { label: string; note?: string | undefined; at: X }[]>()
+  const xs = input.data.map((d) => timeOf(input.x(d)))
+  for (const e of input.events ?? []) {
+    const at = timeOf(e.at)
+    let best = -1
+    if (typeof at === 'string') best = xs.indexOf(at)
+    else {
+      const nums = xs.filter((v): v is number => typeof v === 'number')
+      if (nums.length === 0 || at < Math.min(...nums) || at > Math.max(...nums)) continue
+      let gap = Infinity
+      xs.forEach((v, i) => {
+        if (typeof v !== 'number' || Math.abs(v - at) >= gap) return
+        gap = Math.abs(v - at)
+        best = i
+      })
+    }
+    const d = input.data[best]
+    if (d === undefined) continue
+    out.set(d, [...(out.get(d) ?? []), e])
+  }
+  return out
 }

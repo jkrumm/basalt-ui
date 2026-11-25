@@ -6,6 +6,7 @@ import type { StoredChartSpec } from '@tanstack/charts/types/core'
 import type { BasaltProps } from '../common/props'
 import type { ContainerClass } from '../tokens/size-classes'
 import type { ChartFocus } from './contract'
+import type { Verdict } from '../core/ports'
 import type { CurveName } from './curves'
 import type { RefLabelPosition } from './ref-label'
 
@@ -93,6 +94,35 @@ export type ChartSeries<T> = {
         ring?: boolean | undefined
       } | null)
     | undefined
+  /** A second reading shown muted under the series' tooltip row (`Series.compare`). */
+  compare?: { label: string; getValue: (d: T) => number | null } | undefined
+  /** A tone and a word for the value at a datum, in its tooltip row (`Series.status`). */
+  status?: ((v: number, d: T) => Verdict | undefined) | undefined
+  /** Lines: the stroke colored point by point by a second value (`Series.colorBy`). */
+  colorBy?: ColorRamp<T> | undefined
+  /** Lines: the highest and the lowest drawn point named on the plot. */
+  extremes?: boolean | undefined
+  /** Bars: the bar floats from this value instead of zero (a waterfall step). */
+  base?: ((d: T) => number) | undefined
+  /** Bars: a fill per datum (a waterfall's rise, fall and total), instead of the series color. */
+  fillOf?: ((d: T) => string) | undefined
+}
+
+/** `Series.colorBy` as the compiler reads it. */
+export type ColorRamp<T> = {
+  value: (d: T) => number | null
+  domain: readonly [number, number]
+  label: string
+  ramp: 'good-bad' | 'bad-good'
+  /** Default: the compact number format. */
+  format?: ((v: number) => string) | undefined
+}
+
+/** A dated event on the x axis (`ChartEvent`). */
+export type XEvent<X extends ChartX = ChartX> = {
+  at: X
+  label: string
+  note?: string | undefined
 }
 
 /** One y axis. */
@@ -241,6 +271,8 @@ export type ChartTooltipRow = {
   color?: string | undefined
   /** The swatch shape; `'dashed'` for a reference or dashed series. Default `'solid'`. */
   swatch?: 'solid' | 'dashed' | undefined
+  /** A tone and a word after the value. */
+  status?: Verdict | undefined
 }
 
 export type ChartTooltipConfig<T, X extends ChartX = ChartX> = {
@@ -259,6 +291,8 @@ export type ChartTooltipConfig<T, X extends ChartX = ChartX> = {
   /** Show this chart's tooltip while it FOLLOWS a sibling's cursor. Default `false`: only the chart
    * under the pointer or keyboard focus shows a tooltip and a live region. */
   onFollow?: boolean | undefined
+  /** Each series row reads its change since the first drawn value or the datum before. */
+  change?: 'start' | 'previous' | undefined
 }
 
 export type ChartLegendConfig = {
@@ -343,6 +377,8 @@ export type PlotContext<T, X extends ChartX = ChartX> = {
   y2Domain: readonly [number, number] | undefined
   /** The left y axis is logarithmic: pixel maps run in decades. */
   yLog?: boolean
+  /** The right y axis is logarithmic. */
+  y2Log?: boolean
   /** Internal: the x scale kept a gutter right of the last points for the end labels (`endLabelGutter`), so each sits beside its line's end. */
   endRoom?: boolean
   /** Internal: `auto` names the lines with end labels on the narrow class too ({@link phoneNamesFit}); the legend gives way to them there. */
@@ -387,6 +423,8 @@ export type CartesianChartProps<T, X extends ChartX = ChartX> = BasaltProps & {
   refLines?: readonly RefLine[] | undefined
   /** Vertical reference rules at x values, on a band, numeric or time x. */
   xRefLines?: readonly XRefLine<X>[] | undefined
+  /** Dated events: a dot on the x axis line and a tooltip row (their rules are `xRefLines`). */
+  events?: readonly XEvent<X>[] | undefined
   /** The x axis name with its unit, drawn under the ticks. */
   xTitle?: string | undefined
   /** `'log'` puts a numeric x on decades; a non-positive x is not drawn. Default `'linear'`. */

@@ -14,8 +14,17 @@ const finite = (v: number | null): v is number => v !== null && Number.isFinite(
  * `null` when there is no finite value.
  */
 export function leftExtent<D>(
-  { data, series, layout = 'stacked' }: Pick<SeamProps<D>, 'data' | 'series' | 'layout'>,
+  props: Pick<SeamProps<D>, 'data' | 'series' | 'layout'>,
   /** A log y reads only the values above zero. */
+  positive = false,
+): Extent | null {
+  return sideExtent(props, 'left', positive)
+}
+
+/** {@link leftExtent} for either axis: the right one reads the `axis: 'right'` series alone. */
+export function sideExtent<D>(
+  { data, series, layout = 'stacked' }: Pick<SeamProps<D>, 'data' | 'series' | 'layout'>,
+  side: 'left' | 'right',
   positive = false,
 ): Extent | null {
   let lo = Number.POSITIVE_INFINITY
@@ -27,7 +36,7 @@ export function leftExtent<D>(
   }
   const members: Series<D>[] = []
   for (const s of series) {
-    if (s.failed === true || s.axis === 'right') continue
+    if (s.failed === true || (s.axis === 'right') !== (side === 'right')) continue
     if (s.mark === 'bar' && layout !== 'grouped') {
       members.push(s)
       continue
@@ -82,21 +91,35 @@ export function boundedDomain(
 const usable = (d: Extent, log = false): boolean =>
   d.every(Number.isFinite) && d[0] < d[1] && (!log || d[0] > 0)
 
-const seam: Seam = (spec, props) => {
-  const given = props.y?.domain
+/** The domain the object or function form of one axis' `domain` gives, or `null` to keep the auto one. */
+function sideDomain<D>(props: SeamProps<D>, side: 'left' | 'right'): Extent | null {
+  const cfg = side === 'left' ? props.y : props.y2
+  const given = cfg?.domain
   // A tuple is applied by `toEngineSpec` already; nothing given leaves the engine's auto domain.
-  if (given === undefined || Array.isArray(given)) return spec
+  if (given === undefined || Array.isArray(given)) return null
+  const onSide = props.series.filter((s) => (s.axis === 'right') === (side === 'right'))
   // A bar or an area stands on zero: withLogY draws such a chart linear, so its domain is the linear one.
   const log =
-    props.y?.scale === 'log' &&
-    !props.series.some((s) => s.mark === 'bar' || (s.mark === 'line' && s.area !== undefined))
-  const extent = leftExtent(props, log)
-  if (extent === null) return spec
+    cfg?.scale === 'log' &&
+    !onSide.some((s) => s.mark === 'bar' || (s.mark === 'line' && s.area !== undefined))
+  const extent = sideExtent(props, side, log)
+  if (extent === null) return null
   const domain = typeof given === 'function' ? given(extent) : boundedDomain(extent, given, log)
   // A reversed, flat or non-finite answer falls back to the auto domain rather than drawing nothing.
-  if (usable(domain, log)) return { ...spec, y: { ...spec.y, domain } }
+  if (usable(domain, log)) return domain
   if (log) reportOnce('CartesianChart', LOG_DOMAIN_WARNING)
-  return spec
+  return null
+}
+
+const seam: Seam = (spec, props) => {
+  const left = sideDomain(props, 'left')
+  const right = spec.y2 === undefined ? null : sideDomain(props, 'right')
+  if (left === null && right === null) return spec
+  return {
+    ...spec,
+    ...(left !== null && { y: { ...spec.y, domain: left } }),
+    ...(right !== null && { y2: { ...spec.y2, domain: right } }),
+  }
 }
 
 /**

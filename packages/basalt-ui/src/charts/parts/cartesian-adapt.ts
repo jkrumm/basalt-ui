@@ -5,6 +5,7 @@
  */
 import type {
   CartesianChartProps,
+  ChartEvent,
   ChartRefLine,
   ChartTooltipConfig,
   ChartZone,
@@ -24,10 +25,12 @@ import type {
   ChartTooltipConfig as EngineTooltip,
   PlotContext,
   RefLine,
+  XEvent,
   XRefLine,
   XZoneSpec,
   ZoneSpec,
 } from '../types'
+import { CV } from '../core/theme'
 import { plotScales } from '../seams/plot-scales'
 
 /** The closed stroke scale: `weight` is the only way to thicken or soften a line. */
@@ -57,6 +60,10 @@ export function toEngineSeries<D>(s: Series<D>): ChartSeries<D> {
         return m?.color === undefined ? (m ? {} : null) : { color: m.color }
       },
     }),
+    ...(s.compare !== undefined && {
+      compare: { label: s.compare.label, getValue: s.compare.y },
+    }),
+    ...(s.status !== undefined && { status: s.status }),
   }
   if (s.failed === true) return { ...base, note: s.note ?? 'unavailable' }
   if (s.mark === 'bar')
@@ -75,6 +82,16 @@ export function toEngineSeries<D>(s: Series<D>): ChartSeries<D> {
     ...(s.weight !== undefined && { strokeWidth: WEIGHT_WIDTH[s.weight] }),
     ...(s.gaps === 'connect' && { gaps: 'connect' as const }),
     ...(s.parent !== undefined && { parent: s.parent }),
+    ...(s.extremes === true && { extremes: true }),
+    ...(s.colorBy !== undefined && {
+      colorBy: {
+        value: s.colorBy.value,
+        domain: s.colorBy.domain,
+        label: s.colorBy.label,
+        ramp: s.colorBy.ramp ?? 'good-bad',
+        ...(s.colorBy.format !== undefined && { format: s.colorBy.format }),
+      },
+    }),
   }
 }
 
@@ -135,7 +152,7 @@ export function toEngineXRefLine(r: XAxisRefLine): XRefLine {
 }
 
 export function toEngineTooltip<D>(t: ChartTooltipConfig<D>): EngineTooltip<D> {
-  const { formatHeader, rows } = t
+  const { formatHeader, rows, change, follow } = t
   return {
     ...(formatHeader !== undefined && { formatHeader: (_x: ChartX, d: D) => formatHeader(d) }),
     ...(rows !== undefined && {
@@ -144,10 +161,28 @@ export function toEngineTooltip<D>(t: ChartTooltipConfig<D>): EngineTooltip<D> {
           label: r.label,
           value: r.value,
           ...(r.color !== undefined && { color: cssColor(r.color) }),
+          ...(r.status !== undefined && { status: r.status }),
         })),
     }),
+    ...(change !== undefined && { change }),
+    ...(follow === true && { onFollow: true }),
   }
 }
+
+/** An event as the compiler reads it. */
+export const toEngineEvent = (e: ChartEvent): XEvent => ({
+  at: e.at,
+  label: e.label,
+  ...(e.note !== undefined && { note: e.note }),
+})
+
+/** An event's rule: dashed, in the axis ink, captioned with its label. */
+export const eventRule = (e: ChartEvent): XRefLine => ({
+  x: e.at,
+  color: CV.axis,
+  dashed: true,
+  label: e.label,
+})
 
 /** `phase` and `empty` onto the three "nothing to draw" states the placeholders render. */
 export function toChartState(
@@ -167,7 +202,8 @@ export type EngineSpec<D> = {
   x: (d: D) => ChartX
   series: readonly ChartSeries<D>[]
   y?: Omit<AxisConfig<D>, 'domain'> & { domain?: readonly [number, number] }
-  y2?: Record<string, never>
+  y2?: Omit<AxisConfig<D>, 'domain'> & { domain?: readonly [number, number] }
+  events?: readonly XEvent[]
   xDomain?: readonly [ChartX, ChartX]
   xTitle?: string
   xScale?: 'linear' | 'log'
@@ -202,15 +238,20 @@ export function toEngineSpec<D>(
   props: CartesianChartProps<D>,
   series: readonly Series<D>[] = props.series,
 ): EngineSpec<D> {
-  const { x, y, zones, refLines, cursor, tooltip } = props
+  const { x, y, zones, refLines, cursor, tooltip, events } = props
   const engineY = toEngineY<D>(y)
+  const xRules = [
+    ...(refLines ?? []).filter(isXRefLine).map(toEngineXRefLine),
+    ...(events ?? []).map(eventRule),
+  ]
   return {
     data: props.data,
     x: x.value,
     series: series.map(toEngineSeries),
     ...(engineY !== undefined && { y: engineY }),
-    // A right-axis series needs the chart's second axis; the v3 props have no `y2` to spell it.
-    ...(series.some((s) => s.axis === 'right') && { y2: {} }),
+    // A right-axis series needs the chart's second axis, configured by `y2` or by default.
+    ...(series.some((s) => s.axis === 'right') && { y2: toEngineY<D>(props.y2) ?? {} }),
+    ...(events !== undefined && events.length > 0 && { events: events.map(toEngineEvent) }),
     ...(x.domain !== undefined && { xDomain: asXDomain(x.domain) }),
     ...(x.format !== undefined && { formatX: x.format }),
     ...(x.tickFormat !== undefined && { formatXTick: x.tickFormat }),
@@ -224,9 +265,7 @@ export function toEngineSpec<D>(
     ...(refLines !== undefined && {
       refLines: refLines.flatMap((r) => (isXRefLine(r) ? [] : [toEngineRefLine(r)])),
     }),
-    ...(refLines?.some(isXRefLine) === true && {
-      xRefLines: refLines.filter(isXRefLine).map(toEngineXRefLine),
-    }),
+    ...(xRules.length > 0 && { xRefLines: xRules }),
     ...(cursor !== undefined && { cursorGroup: cursor }),
     ...(tooltip !== undefined && { tooltip: tooltip === false ? false : toEngineTooltip(tooltip) }),
   }
@@ -257,7 +296,7 @@ export function customPlot<D>(
           plotWidth: plot.plotWidth,
           plotHeight: plot.plotHeight,
           yDomain,
-          ...(axis !== 'right' && plot.yLog === true && { yLog: true }),
+          ...((axis === 'right' ? plot.y2Log : plot.yLog) === true && { yLog: true }),
         },
         [0, 1],
       ).y(value)

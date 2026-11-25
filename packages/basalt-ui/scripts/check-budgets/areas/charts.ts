@@ -21,7 +21,7 @@ export const rows: readonly RowDef[] = [
     order: 20,
     label: 'public value symbols, ./charts (export-surface shards)',
     // 2.0 target 48.
-    ceiling: 11, // v3 teardown-views: the rung, five kinds, `ChartCard`, `chartCursor`, `useChartFocus`, `chartLabels`; Issue 2306: `IntervalTrack`
+    ceiling: 13, // v3 teardown-views: the rung, five kinds, `ChartCard`, `chartCursor`, `useChartFocus`, `chartLabels`; Issue 2306: `IntervalTrack`; Issue 3300: `Waterfall`, `RangeNavigator`
     measure: () => readSurface()[CHART_SUBPATH]?.length ?? 0,
   },
   {
@@ -88,13 +88,24 @@ export const rows: readonly RowDef[] = [
     // (expression cycle 19 contract).
     // 140400 -> 140500 (trial 2 kit defects): 140476 B measured, +~80 B gz over master (140242) for the room under the longest negative bar that keeps its value label outside it (compile.ts roomForValues) and height 'fill' on Heatmap.
     // 140500 -> 141300 (Issue 3211): 141258 B measured, +~780 B gz over master (140476) for the phone's one inset: the y tick labels inside the plot, the edge anchor of an x label, `ChartCard bleed`, the end labels of the narrow class and the legend's coarse row gap.
-    ceiling: 141300,
+    // 141300 -> 145300 (Issue 3300): 145217 B measured, +~3.9 KB gz over master (141258) for the rich tooltip (its
+    // body, the change since the start or the day before, the reference reading, the status word, the followed
+    // readout), the line colored by a second value with its gradient and ramp key, the log right axis, the dated
+    // events with their rules, dots and tooltip rows, the named extremes and the floating bar a waterfall stands on.
+    ceiling: 145300,
     measure: () => measureSource(THREE_KIND),
   },
 ]
 
 export const raises: Raises = {
   'chart-symbols': [
+    {
+      from: 11,
+      to: 13,
+      consumer:
+        "`Waterfall` and `RangeNavigator` (Issue 3300, the owner's decision on the Issue): the /charts gallery draws a quarter's income bridge and a 13-year price history whose window the presets and the brush pick",
+      repo: 'basalt-ui',
+    },
     {
       from: 10,
       to: 11,
@@ -111,6 +122,13 @@ export const raises: Raises = {
     },
   ],
   'charts-three-kind': [
+    {
+      from: 141300,
+      to: 145300,
+      consumer:
+        "the owner's note on Issue 3300: the charts read 'very simple and cheap' beside a CBBI chart (a price on a log axis colored by its cycle score, halvings on the time axis, a window over 13 years) and a tooltip that names every series' change, reference and status; the /charts gallery draws each",
+      repo: 'basalt-ui',
+    },
     {
       from: 140500,
       to: 141300,

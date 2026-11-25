@@ -183,6 +183,54 @@ export function withLogY<
 }
 
 /**
+ * {@link withLogY} for the right axis (`y2.scale: 'log'`): a right-axis bar or area refuses it (a dev
+ * build throws, a production build draws the right axis linear), a right-axis value of zero or below
+ * throws in a dev build and is skipped in production, a right-axis rule at one is dropped.
+ */
+export function withLogY2<
+  T,
+  I extends {
+    data: readonly T[]
+    series: readonly {
+      key: string
+      mark?: string | undefined
+      area?: unknown
+      axis?: 'left' | 'right' | undefined
+      getValue: (d: T) => number | null
+    }[]
+    y2?: { scale?: 'linear' | 'log' | undefined } | undefined
+    refLines?: readonly { value: number; axis?: 'left' | 'right' | undefined }[] | undefined
+  },
+>(input: I): I {
+  if (input.y2?.scale !== 'log') return input
+  const dev = process.env.NODE_ENV !== 'production'
+  const right = input.series.filter((s) => s.axis === 'right')
+  const refused = right.find((s) => s.mark === 'bar' || (s.area !== undefined && s.area !== false))
+  if (refused !== undefined) {
+    if (dev) throw new Error(LOG_Y_REFUSED(`the right-axis series "${refused.key}"`))
+    return { ...input, y2: { ...input.y2, scale: 'linear' as const } }
+  }
+  const series = input.series.map((s) => {
+    if (s.axis !== 'right') return s
+    return {
+      ...s,
+      getValue: (d: T): number | null => {
+        const v = s.getValue(d)
+        if (v === null || !Number.isFinite(v) || v > 0) return v
+        if (dev)
+          throw new Error(
+            `[basalt] CartesianChart: series "${s.key}" has the value ${v} on a log y2, which needs values above zero`,
+          )
+        return null
+      },
+    }
+  })
+  if (dev) for (const s of series) if (s.axis === 'right') for (const d of input.data) s.getValue(d)
+  const refLines = input.refLines?.filter((r) => r.axis !== 'right' || !(r.value <= 0))
+  return { ...input, series, ...(refLines !== undefined && { refLines }) }
+}
+
+/**
  * The y ticks of a log axis over `[lo, hi]` (positive): 1, 2 and 5 times a power of ten, the densest of
  * those sets that fits `count`, else the decades thinned to an even stride. A domain too narrow for
  * any of them takes every digit, then the linear ticks.

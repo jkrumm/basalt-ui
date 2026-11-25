@@ -282,7 +282,8 @@ export function barMarks<D>(plot: PlotContext<D, ChartX>, input: BarMarksInput<D
   /** The series color, the brand accent for a highlighted datum. */
   const colorOf = (row: PlotRow<D, ChartX>): string | undefined => {
     const bar = byKey.get(row.series)
-    return bar?.highlight?.(row.datum) ? CV.brand : bar?.color
+    if (bar?.highlight?.(row.datum)) return CV.brand
+    return bar?.fillOf?.(row.datum) ?? bar?.color
   }
   /** The hovered bar: an ink-step bar rises through `focusedPaint`, as the focused one does, so it stands out from the bars that recede. */
   const solid = ({ datum }: { datum: PlotRow<D, ChartX> }): string => {
@@ -307,6 +308,20 @@ export function barMarks<D>(plot: PlotContext<D, ChartX>, input: BarMarksInput<D
     return dimmedPaint(color, strength)
   }
   const order = visibleBars.map((s) => s.key)
+  // A floating bar (a waterfall step) spans its base to its value: no stack, no zero tick.
+  const base = visibleBars.find((s) => s.base !== undefined)?.base
+  if (base !== undefined)
+    return [
+      barY(rows, {
+        id: 'bars',
+        x: rowX,
+        y1: (row: PlotRow<D, ChartX>) => base(row.datum),
+        y2: 'y',
+        z: 'series',
+        fill,
+        states: [{ when: { focus: 'x' }, style: { fill: solid } }],
+      }),
+    ]
   // A stack stops at the plot's edge: a total past a bounded domain would overrun it.
   const drawn =
     layout === 'stacked' ? clampStacks(rows, order, plot.yDomain, plot.plotHeight) : rows
