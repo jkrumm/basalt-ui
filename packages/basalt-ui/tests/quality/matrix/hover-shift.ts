@@ -79,10 +79,20 @@ function readFrame(plot: Element): Frame {
       for (const node of el.childNodes) if (node.nodeType === 3) text += node.textContent ?? ''
     items.push([el.tagName.toLowerCase(), text.trim(), Math.round(box.width * 10) / 10])
   }
+  // A followed readout (`tooltip.follow`) paints a tooltip in every chart on the cursor: the side is
+  // the hovered plot's own, the visible tooltip nearest its box.
+  const plotBox = plot.getBoundingClientRect()
+  const gap = (r: DOMRect): number =>
+    Math.max(plotBox.top - r.bottom, r.top - plotBox.bottom, 0) +
+    Math.max(plotBox.left - r.right, r.left - plotBox.right, 0)
   let side: string | null = null
+  let nearest = Infinity
   for (const tip of document.querySelectorAll<HTMLElement>('.ts-chart-tooltip')) {
     if (tip.hidden || getComputedStyle(tip).display === 'none') continue
-    if (tip.getBoundingClientRect().width === 0) continue
+    const box = tip.getBoundingClientRect()
+    if (box.width === 0) continue
+    if (gap(box) > nearest) continue
+    nearest = gap(box)
     side = tip.dataset['placement'] ?? 'auto'
   }
   return { side, items }
