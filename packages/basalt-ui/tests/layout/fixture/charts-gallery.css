@@ -1,0 +1,7 @@
+/*
+ * The `charts-gallery` fixture's Tailwind v4 entry, compiled with preflight and the font faces like
+ * `charts-click-focus.css`. `charts-gallery.layout.test.ts` compiles it into a temp directory.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@import '../../../src/css/typography.css';
+@source './charts-gallery-fixture.tsx';
