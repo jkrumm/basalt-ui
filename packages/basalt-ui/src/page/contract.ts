@@ -157,8 +157,8 @@ export type PageBarProps<K extends string = string, L extends string = string> =
    */
   records?: PageRecords | undefined
   /**
-   * At most 5, at most one `primary`, none required. In a shell they claim the header's end unless
-   * the band holds a control; then they end the band, the primary last.
+   * At most 5, at most one `primary`, none required. They end the band, the primary last; in a
+   * shell the band is the work surface's first line, under the breadcrumb strip.
    */
   actions?: readonly [PageAction?, PageAction?, PageAction?, PageAction?, PageAction?]
 }
