@@ -43,7 +43,7 @@ tags): the closure `basalt()` computes for a Vite app, so a dialog island brings
 on the next one. `basaltAstro({ sources: false })` injects `basalt-ui/static.css` instead, for a site that
 lists its own sources.
 
-`<BasaltFonts />` emits the faces and preloads the body face only. The faces load the `latin` and
+`<BasaltFonts />` emits the faces and preloads the body and heading faces, both of which draw above the fold on every page (a late swap of either moves the header and the title). The faces load the `latin` and
 `latin-ext` subsets; `basaltAstro({ fonts: { subsets: ['latin', 'cyrillic'] } })` names others, and
 `fonts: false` leaves fonts to the site, which then sets `--basalt-font-sans`, `--basalt-font-head` and
 `--basalt-font-mono`. Your own files are found by Tailwind's automatic source detection.
@@ -132,7 +132,7 @@ object prop: Astro hands that over as an Astro template and the build fails. Lab
      of the same height so nothing shifts.
 3. **One `BasaltProvider` per island**, never around the page: islands run isolated from each other,
    so a context cannot span two. Parts that share state live in one island.
-4. **Fonts** through the Astro Fonts API from the integration; only the body face is preloaded.
+4. **Fonts** through the Astro Fonts API from the integration; the body and heading faces are preloaded, the code face swaps in when used.
 5. **View transitions**: the browser's native cross-document transitions (`@view-transition`) add no
    JavaScript and are the default. `<ClientRouter />` ships a router, turns on prefetch for every
    link and needs scripts re-initialised after each navigation: a cost to choose, not a default.

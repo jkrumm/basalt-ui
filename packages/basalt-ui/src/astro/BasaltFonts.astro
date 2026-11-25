@@ -1,11 +1,12 @@
 ---
 /**
- * basalt's faces for the document head: the body face preloaded, the heading and code faces
- * swapped in when used. Needs `basaltAstro()` from `basalt-ui/astro` with fonts on (the default).
+ * basalt's faces for the document head: the body and heading faces preloaded (both draw above the
+ * fold on every page, and a late swap of either moves the header and the title), the code face swapped
+ * in when used. Needs `basaltAstro()` from `basalt-ui/astro` with fonts on (the default).
  */
 import { Font } from 'astro:assets'
 ---
 
 <Font cssVariable="--basalt-font-sans" preload />
-<Font cssVariable="--basalt-font-head" />
+<Font cssVariable="--basalt-font-head" preload />
 <Font cssVariable="--basalt-font-mono" />

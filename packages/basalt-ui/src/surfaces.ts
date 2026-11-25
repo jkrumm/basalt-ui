@@ -456,7 +456,7 @@ export const SURFACES = {
     kind: 'tooling',
     layer: 'non-js-asset',
     description:
-      "The head component for basalt's faces on Astro: the body face preloaded; needs basaltAstro() from ./astro",
+      "The head component for basalt's faces on Astro: the body and heading faces preloaded; needs basaltAstro() from ./astro",
     forbiddenImports: [],
   },
   './astro/SiteHead.astro': {
