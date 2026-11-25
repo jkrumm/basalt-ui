@@ -9,7 +9,7 @@ import { PanelSteps } from '../page/record-panel'
 import { useSizeClass } from '../page/use-size-class'
 import { registerNav } from '../router/nav/registry'
 import { flattenNavEntries, resolveActive } from '../router/nav/resolve-active'
-import type { AnyNavConfig, DefinedNav } from '../router/nav/types'
+import type { DefinedNav } from '../router/nav/types'
 import { Button } from '../ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet'
 import { FavoritesContext } from '../page/favorites'
@@ -45,17 +45,40 @@ import {
   useRailWidthState,
 } from './parts/grid'
 import type { AsideClaim } from './parts/grid'
+import { buildCrumbs } from './core/crumbs'
+import type { CrumbClaim, CrumbRoute } from './core/crumbs'
+import { Crumbs } from './parts/crumbs'
 import { BrandZone, Header } from './parts/header'
 import { usePhoneNav } from './parts/mobile'
 import { RailMount, TabBarMount } from './parts/mounts'
 import { usePrintScheme } from './parts/print'
 
-/** The label of the nav section holding the item, or `undefined` for a pinned item or none. */
-function sectionLabelOf(nav: AnyNavConfig, id: string | undefined): string | undefined {
-  if (id === undefined) return undefined
-  return nav.sections.find((section) =>
-    flattenNavEntries({ ...nav, sections: [section], pinned: [] }).some((e) => e.item.id === id),
-  )?.label
+/** The page's breadcrumb claim (a `PageCrumb` element) as data: its `title` and `parent`. */
+function readCrumbClaim(node: ReactNode | undefined): CrumbClaim | undefined {
+  if (node === undefined || node === null || typeof node !== 'object' || !('props' in node)) {
+    return undefined
+  }
+  const props = node.props as { title?: unknown; parent?: CrumbClaim['parent'] }
+  if (typeof props.title !== 'string') return undefined
+  return { title: props.title, parent: props.parent }
+}
+
+/** One string per matched route that names itself (`staticData.title`), so the selection is stable. */
+const ROUTE_SEP = '\u0000'
+const MATCH_SEP = '\u0001'
+
+function parseRoutes(key: string): CrumbRoute[] {
+  if (key === '') return []
+  return key.split(MATCH_SEP).map((pair) => {
+    const [pathname = '', title = ''] = pair.split(ROUTE_SEP)
+    return { pathname, title }
+  })
+}
+
+function titleOf(staticData: unknown): string | undefined {
+  if (typeof staticData !== 'object' || staticData === null) return undefined
+  const title = (staticData as { title?: unknown }).title
+  return typeof title === 'string' ? title : undefined
 }
 
 const NO_BLOCKS: NonNullable<AppShellProps['blocks']> = []
@@ -91,26 +114,29 @@ function AsideSheet({ claim }: { claim: AsideClaim }): ReactElement {
 
 /**
  * The application frame: a header, a rail, the one scrollport, an aside region and, on a phone, a
- * tab bar, all projections of one `nav` declaration. Two planes: the frame carries the brand zone
- * and the rail, one work surface carries the identity row (the crumb and the actions) and the page,
- * with the aside and the dock inside it. `frame="panel"` (the default) insets and rounds that
- * surface from `md` up; `frame="flush"` meets the window's edges, as every phone does. It owns the markup (a CSS grid in
+ * tab bar, all projections of one `nav` declaration. Two planes: the frame carries the top row (the
+ * brand zone over the rail, the breadcrumb strip beside it with the global controls and the global
+ * actions at its end) and the rail; one work surface under the strip carries the page, its `PageBar`
+ * band as its first line, with the aside and the dock inside it. `frame="panel"` (the default)
+ * insets and rounds that surface from `md` up; `frame="flush"` meets the window's edges, as every phone does. It owns the markup (a CSS grid in
  * `@layer basalt`), so there is nothing to override and nothing to fight. The crumb trail is the nav
- * section, then the page's `PageBar` `parent`, then its `title`; a selection such as
+ * section, the active item's nav ancestors, every path prefix a nav item or a matched route's
+ * `staticData.title` names, the page's `PageBar` `parent`, then its `title` (`core/crumbs.ts`);
+ * every ancestor is a link, joined by `/`. A selection such as
  * `/services?service=checkout` is `Fleet / Services / checkout` from
  * `<PageBar title={service.name} parent={{ label: 'Services', href: navTarget({ to: '/services', ...services.field.service.link('') }) }} />`.
  * The parent is a link through the provider's `link`, a path string or a `NavTarget` alike, so a
  * click keeps the document; the `NavTarget` form shown clears the selection and keeps the params the
- * page's store `retain`s (`services` is that store). A phone drops the nav section and keeps the
- * page's parent and title, so the way up stays one tap away. The parent is the way up, never the
+ * page's store `retain`s (`services` is that store). A phone keeps the nearest ancestor and the
+ * title, so the way up stays one tap away. The parent is the way up, never the
  * current page: it carries no `aria-current`, and a click hands focus to main. A page with no bar
  * shows its nav label, and a path no route matches shows `Not found`, in the crumb and in the document title.
  *
  * The document never scrolls: `Main` is the scrollport and the `<main>` landmark. The shell also
  * renders what a repeated block needs and a consumer cannot be trusted to remember: a skip link, a
  * polite announcer that says the new page's title after a pathname change, `document.title` as
- * `page · brand`, and the print rules. A `Page` inside claims the breadcrumb, the header actions,
- * the aside and the title through the shell; `Page` itself renders the one `h1`.
+ * `page · brand`, and the print rules. A `Page` inside claims the breadcrumb, the aside and
+ * the title through the shell; `Page` itself renders the one `h1`.
  *
  * While a navigation waits past the router's `defaultPendingMs`, main is `aria-busy` and draws a
  * hairline bar; the rail, the crumb and the title keep naming the page on screen until the next
@@ -163,6 +189,17 @@ export function AppShell<N extends DefinedNav>({
   const missing = useRouterState({
     select: (s) => s.matches.some((m) => m.status === 'notFound' || m._notFound === true),
   })
+  // The route tree's ancestors that name themselves: every match below the root, as one string.
+  const routeKey = useRouterState({
+    select: (s) =>
+      s.matches
+        .slice(1)
+        .flatMap((m) => {
+          const title = titleOf(m.staticData)
+          return title === undefined ? [] : [`${m.pathname}${ROUTE_SEP}${title}`]
+        })
+        .join(MATCH_SEP),
+  })
   const pending = useNavigationPending(router.options.defaultPendingMs ?? 1000)
   const runtime = useMemo(
     () =>
@@ -184,14 +221,11 @@ export function AppShell<N extends DefinedNav>({
   const [dockWidth, setDockWidth] = useState(DOCK_WIDTH)
   const attachRoot = useChromeRoot(shellHost.attachRoot, chrome)
   const breadcrumb = useClaim(shellHost.regions.breadcrumb)
-  const actions = useClaim(shellHost.regions.actions)
   const titleClaim = useClaim(shellHost.regions.title)
   const asideNode = useClaim(shellHost.regions.aside)
 
-  const activeLabel = useMemo(
-    () => flattenNavEntries(nav).find((e) => e.item.id === active.activeId)?.item.label,
-    [nav, active.activeId],
-  )
+  const entries = useMemo(() => flattenNavEntries(nav), [nav])
+  const activeLabel = entries.find((e) => e.item.id === active.activeId)?.item.label
   // A path no route matched (or a loader's `notFound()`) renders no page, so no page names it: it
   // is "Not found", not the nearest nav item.
   const fallbackLabel = missing ? SHELL_TEXT.notFound : activeLabel
@@ -234,23 +268,16 @@ export function AppShell<N extends DefinedNav>({
   usePrintScheme()
 
   const titlebar = chrome === 'native-overlay'
-  const section = missing ? undefined : sectionLabelOf(nav, active.activeId)
-  const leaf: ReactNode =
-    breadcrumb ??
-    (fallbackLabel === undefined ? null : (
-      <span data-slot="page-breadcrumb-leaf">{fallbackLabel}</span>
-    ))
-  // Section, then the page's own trail (its `parent`, then its title). The section is the one
-  // ancestor a phone drops (the rail is a tab away there); the page's parent stays, the way up.
-  const trail: ReactNode =
-    section === undefined || sizeClass === 'compact' ? (
-      leaf
-    ) : (
-      <>
-        <span data-slot="page-breadcrumb-parent">{section}</span>
-        {leaf}
-      </>
-    )
+  const crumbs = buildCrumbs({
+    entries,
+    activeId: active.activeId,
+    pathname,
+    routes: parseRoutes(routeKey),
+    claim: readCrumbClaim(breadcrumb),
+    fallbackLabel,
+    compact: sizeClass === 'compact',
+    missing,
+  })
 
   const phoneProps = {
     runtime,
@@ -269,9 +296,8 @@ export function AppShell<N extends DefinedNav>({
   const header = (
     <Header
       brand={brand}
-      breadcrumb={trail}
+      breadcrumb={<Crumbs trail={crumbs} />}
       globalControls={globalControls}
-      actions={actions}
       globalActions={globalActions}
       asideTrigger={aside}
       sizeClass={sizeClass}
@@ -300,7 +326,8 @@ export function AppShell<N extends DefinedNav>({
                 >
                   <SkipLink />
                   <RouteAnnouncer message={announcement} />
-                  {titlebar ? header : <BrandZone brand={brand} workspace={workspace} />}
+                  {!titlebar && <BrandZone brand={brand} workspace={workspace} />}
+                  {header}
                   <RailMount
                     runtime={runtime}
                     brand={brand}
@@ -312,7 +339,6 @@ export function AppShell<N extends DefinedNav>({
                     workspace={workspace}
                   />
                   <ShellSurface titlebar={titlebar}>
-                    {!titlebar && header}
                     <ShellMain pending={pending}>{children}</ShellMain>
                     <AsideRegion claim={regionClaim} model={model} regionRef={setOverlaySlot} />
                     <DockRegion model={dockModel} regionRef={setDockSlot} />

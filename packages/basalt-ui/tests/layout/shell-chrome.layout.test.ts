@@ -244,7 +244,6 @@ describeShell(
     'shell-header-row',
     'shell-lead',
     'shell-main',
-    'shell-page-bar-host',
     'shell-rail',
     'shell-rail-dot',
     'shell-rail-footer',
@@ -281,10 +280,12 @@ describeShell(
 
         const row = await p.box('header row', S('shell-header-row'))
         const lead = await p.box('crumb side', S('shell-lead'))
-        const pageBar = await p.box('page actions', S('shell-page-bar-host'))
         const globals = await p.box('globals', S('shell-trail'))
+        // v3 hosts no page action in the header: a page's actions end its band, under the strip.
+        const hosted = (await p.count(S('shell-page-bar-host'))) > 0
+        const pageBar = hosted ? [await p.box('page actions', S('shell-page-bar-host'))] : []
 
-        for (const slot of [lead, pageBar, globals]) {
+        for (const slot of [lead, ...pageBar, globals]) {
           expectFullyInside(
             slot,
             row,
@@ -295,7 +296,7 @@ describeShell(
         }
 
         const bounds = rightOfLead(row, lead)
-        for (const box of await p.boxes(`${S('shell-page-bar-host')} > *`)) {
+        for (const box of hosted ? await p.boxes(`${S('shell-page-bar-host')} > *`) : []) {
           expectFullyInside(
             { name: 'row-1 content', box },
             bounds,
@@ -340,11 +341,11 @@ describeShell(
         if (lead.box.width >= floor - 0.5) return
 
         const row = await p.box('header row', S('shell-header-row'))
-        const pageBar = await p.box('page actions', S('shell-page-bar-host'))
+        const trail = await p.box('globals', S('shell-trail'))
         throw new Error(
           '\nLAYOUT INVARIANT VIOLATED — the breadcrumb absorbed the whole row again\n\n' +
             `  crumb side  w=${lead.box.width.toFixed(1)} (floor ${floor.toFixed(1)})\n` +
-            `  page actions w=${pageBar.box.width.toFixed(1)}\n` +
+            `  global actions w=${trail.box.width.toFixed(1)}\n` +
             `  header row   w=${row.box.width.toFixed(1)}\n` +
             `  viewport ${viewport.width}x${viewport.height} (${viewport.name})\n\n` +
             '  expected: the row folds (`planBarFold`: icons, then More)' +
@@ -889,11 +890,15 @@ describeShell(
           const main = await p.box('main', S('shell-main'))
           const row = await p.box('header row', S('shell-header-row'))
 
-          // The header is the surface's first row; the rail starts under the brand zone, which is as
-          // tall as the header plus the panel's inset; the band and the aside start under the header.
+          // The header is the frame's top row beside the brand zone; the rail starts under the brand
+          // zone, the band and the aside start under the header.
           const tops = [
             ['header height', header.box.height, expected],
-            ['navbar top', navbar.box.top, expected + SHELL_GEOMETRY.panelInset],
+            [
+              'navbar top',
+              navbar.box.top,
+              V2_ONLY ? expected + SHELL_GEOMETRY.panelInset : expected,
+            ],
             ['page-bar band top', band.box.top, header.box.bottom],
             ['aside top', aside.box.top, header.box.bottom],
           ] as const

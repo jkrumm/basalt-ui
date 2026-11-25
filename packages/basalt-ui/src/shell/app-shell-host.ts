@@ -22,6 +22,7 @@ export const BAR_HEIGHT_VAR = '--page-bar-h'
 export const BAND_ATTR = 'data-page-band'
 
 export type ShellRegions = {
+  /** The port's `actions` region: held for its type, drawn nowhere (a page's actions are its band's). */
   readonly actions: ClaimStore<ReactNode>
   readonly breadcrumb: ClaimStore<ReactNode>
   readonly aside: ClaimStore<ReactNode>

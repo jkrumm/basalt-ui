@@ -81,7 +81,8 @@ export const rows: readonly RowDef[] = [
     // 185000 -> 182700 (Issue 3246): 182572 B measured; the section bar with its short drawer is the default and its tray variant is gone, so the raises of Issue 3205 ratchet back to what remains.
     // 182700 -> 185300 (Issue 3207): 184958 B measured; the palette and the shell pickers present as a sheet on a phone.
     // 185300 -> 187200 (Issue 3262): 186793 B measured; the palette's record sources (search, recents, actions) and the record step commands.
-    ceiling: 187200,
+    // 187200 -> 188000 (Issue 3292): 187737 B measured; the breadcrumb trail builder and its strip renderer.
+    ceiling: 188000,
     measure: () => measureSource(reExportAll({ shell: 'shell/index' })),
   },
   {
@@ -123,6 +124,13 @@ export const raises: Raises = {
     },
   ],
   'shell-subpath': [
+    {
+      from: 187200,
+      to: 188000,
+      consumer:
+        "the owner's shell frame review (2026-11-25, Issue 3292): the breadcrumb strip on the frame's top row shows every ancestor of a nested route, from the nav and the route tree, each a link joined by the separator",
+      repo: 'basalt-ui',
+    },
     {
       from: 185300,
       to: 187200,

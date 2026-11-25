@@ -35,7 +35,6 @@ export const shellChromeScenario: Scenario = {
     'shell-rail-toggle',
     'shell-brand-zone',
     'shell-header-row',
-    'shell-page-bar-host',
     'shell-kebab',
     'shell-center',
   ],

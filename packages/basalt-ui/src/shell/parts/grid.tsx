@@ -1,15 +1,16 @@
 /**
  * The frame: two planes, owned here and nowhere else (concept section 1, decision 1). The frame
- * (`canvas`) holds the brand zone and the rail; the work surface (`card`) holds the identity row, main,
- * the aside and the dock, and clips them to its corners:
+ * (`canvas`) holds the top row (the brand zone over the rail, the header strip beside it) and the rail;
+ * the work surface (`card`) holds main, the aside and the dock, and clips them to its corners:
  *
- *     brand   surface            surface:  header  header  header
- *     rail    surface                      main    aside   dock
+ *     brand   header            surface:  main  aside  dock
+ *     rail    surface
  *     footer  footer
  *
- * Under `chrome="native-overlay"` the header is the window's title bar and stays on the frame, a full
- * row above the rail and the surface. `frame="panel"` insets the surface from `md` up (`--shell-inset`,
- * none on the rail side), rounds it and draws its hairline; `flush` and every compact screen draw it
+ * The brand zone and the header are cells of one grid row, so they share its height and baseline at
+ * every width. Under `chrome="native-overlay"` the header is the window's title bar, a full row above
+ * the rail and the surface. `frame="panel"` insets the surface from `md` up (`--shell-inset`, on its
+ * end and bottom: the rail side meets the rail and the top meets the strip), rounds it and draws its hairline; `flush` and every compact screen draw it
  * edge to edge with one hairline on the rail side. The prop is the app's default: `data-frame` on
  * `<html>` (the reader's choice, `setAppearance`) wins, in CSS, so server HTML paints it before hydration.
  *
@@ -18,7 +19,7 @@
  * and read by the parts and by a page:
  *
  * - `--shell-header-h`: one height at every width (48), shorter on a landscape phone.
- * - `--shell-inset`: the surface's margin from the window on its three free sides; 8 for a panel from
+ * - `--shell-inset`: the surface's margin from the window on its end and bottom; 6 for a panel from
  *   `md` up, else 0.
  * - `--shell-rail-w`: 0 compact, 64 medium, 240 expanded; `data-rail` overrides it once the user
  *   toggled the rail (`auto` is the CSS default, so server HTML is right for anyone who never did).
@@ -26,8 +27,8 @@
  * - `--shell-dock-w`: 0 while no `Dock` docks beside main (an overlaid one reserves nothing). It
  *   eases from 0 to the dock's width and back, and only while it changes: the rail and the aside
  *   keep their instant reflow.
- * - `--shell-gutter`: the page's inline inset, 8, 16, 24 by size class; `Main` hands it to `Page` as
- *   `--page-gutter`.
+ * - `--shell-gutter`: the page's inset on all four sides, 8, 12, 16 by size class; `Main` hands it
+ *   to `Page` as `--page-gutter`, and the header strip starts its breadcrumb on it.
  *
  * Size classes are the Tailwind `md` (840) and `xl` (1200) breakpoints, which are the chrome axis
  * of `SIZE_CLASSES`. Rail and tab bar both render on the server and CSS picks one (decision 7).
@@ -296,14 +297,17 @@ export function ShellGrid({
         // The device's safe areas (`viewport-fit=cover`): the frame pads top, left and right. The bottom is the
         // tab bar's on a phone and the root's from `md`, plus what the keyboard covers (`useKeyboardInset`).
         'pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pb-[calc(var(--shell-safe-b)+var(--basalt-keyboard-inset,0px))] pl-[env(safe-area-inset-left)] [--shell-safe-b:0px] md:[--shell-safe-b:env(safe-area-inset-bottom)]',
+        // One top row at every width: the brand zone over the rail and the header strip beside it (a
+        // title bar spans both). Compact has no rail column, so the strip is the whole row there.
         titlebar
-          ? '[grid-template-areas:"header_header"_"rail_surface"_"footer_footer"] [--shell-top-h:var(--shell-header-h)]'
-          : '[grid-template-areas:"brand_surface"_"rail_surface"_"footer_footer"] [--shell-top-h:0px] md:[--shell-top-h:calc(var(--shell-header-h)_+_var(--shell-inset))]',
+          ? '[grid-template-areas:"header_header"_"rail_surface"_"footer_footer"]'
+          : '[grid-template-areas:"brand_header"_"rail_surface"_"footer_footer"]',
+        '[--shell-top-h:var(--shell-header-h)]',
         '[--shell-header-h:--spacing(12)] [--shell-rail-open-w:--spacing(60)] [--shell-rail-w:0px] [--shell-gutter:--spacing(2)] [--shell-inset:0px]',
         // The frame: `data-frame` on <html> (`setAppearance`, the boot script) wins over the prop on this root.
-        '[:root:not([data-frame])_&[data-frame=panel]]:md:[--shell-inset:--spacing(2)] [:root[data-frame=panel]_&]:md:[--shell-inset:--spacing(2)]',
-        'md:[--shell-rail-w:--spacing(16)] md:[--shell-gutter:--spacing(4)]',
-        'xl:[--shell-rail-w:var(--shell-rail-open-w)] xl:[--shell-gutter:--spacing(6)]',
+        '[:root:not([data-frame])_&[data-frame=panel]]:md:[--shell-inset:--spacing(1.5)] [:root[data-frame=panel]_&]:md:[--shell-inset:--spacing(1.5)]',
+        'md:[--shell-rail-w:--spacing(16)] md:[--shell-gutter:--spacing(3)]',
+        'xl:[--shell-rail-w:var(--shell-rail-open-w)] xl:[--shell-gutter:--spacing(4)]',
         'data-[rail=expanded]:md:[--shell-rail-w:var(--shell-rail-open-w)] data-[rail=collapsed]:md:[--shell-rail-w:--spacing(16)] data-[rail=collapsed]:xl:[--shell-rail-w:--spacing(16)]',
         '[@media(max-height:30rem)_and_(orientation:landscape)]:max-md:[--shell-header-h:clamp(2.25rem,9dvh,3rem)]',
         'data-[compact-header=hidden]:max-md:[--shell-header-h:0px]',
@@ -325,15 +329,15 @@ export function ShellGrid({
 }
 
 /**
- * The work surface: one plane in the card color holding the identity row, main, the aside and the
- * dock, a grid of its own. As a rounded panel it clips, so an aside or a dock panel ends at its corners. Its columns
+ * The work surface: one plane in the card color holding main, the aside and the dock, a grid of its
+ * own, under the header strip. As a rounded panel it clips, so an aside or a dock panel ends at its corners. Its columns
  * ease while a dock opens or closes (`data-dock-shift` on the root).
  */
 export function ShellSurface({
   titlebar,
   children,
 }: {
-  /** The header sits on the frame above, so the surface has no header row. */
+  /** The header is the window's title bar (`native-overlay`), so a flush surface draws its top edge under it on every screen. */
   titlebar: boolean
   children: ReactNode
 }): ReactElement {
@@ -344,19 +348,19 @@ export function ShellSurface({
       className={cn(
         'relative grid min-h-0 min-w-0 bg-card [grid-area:surface]',
         'grid-cols-[minmax(0,1fr)_var(--shell-aside-w)_var(--shell-dock-w)]',
-        titlebar
-          ? 'grid-rows-[minmax(0,1fr)] [grid-template-areas:"main_aside_dock"]'
-          : 'grid-rows-[var(--shell-header-h)_minmax(0,1fr)] [grid-template-areas:"header_header_header"_"main_aside_dock"]',
+        'grid-rows-[minmax(0,1fr)] [grid-template-areas:"main_aside_dock"]',
         'motion-safe:group-data-dock-shift/shell:transition-[grid-template-columns] motion-safe:group-data-dock-shift/shell:duration-slow motion-safe:group-data-dock-shift/shell:ease-standard',
-        // Panel: inset on the three free sides, rounded, one hairline drawn as an outset ring in the
-        // inset, so the edge costs the rows inside no pixel. Flush: one hairline on the rail side,
-        // where the frame's color meets the surface's.
-        'border-border ring-border md:mt-(--shell-inset) md:me-(--shell-inset) md:mb-(--shell-inset)',
+        // Panel: inset on its end and bottom, rounded, one hairline drawn as an outset ring in the
+        // inset, so the edge costs the rows inside no pixel. Flush: one hairline on the rail side and
+        // one under the strip, where the frame's color meets the surface's.
+        'border-border ring-border md:me-(--shell-inset) md:mb-(--shell-inset)',
         // Only a rounded panel clips: its corners cut what runs to them (a fill table, an aside, a dock).
         '[:root:not([data-frame])_[data-frame=panel]_&]:md:overflow-clip [:root:not([data-frame])_[data-frame=panel]_&]:md:rounded-card [:root:not([data-frame])_[data-frame=panel]_&]:md:ring-1',
         '[:root[data-frame=panel]_&]:md:overflow-clip [:root[data-frame=panel]_&]:md:rounded-card [:root[data-frame=panel]_&]:md:ring-1',
         '[:root:not([data-frame])_[data-frame=flush]_&]:md:border-s [:root[data-frame=flush]_&]:md:border-s',
-        // A title bar above: a flush surface draws its top edge under it.
+        '[:root:not([data-frame])_[data-frame=flush]_&]:md:border-t [:root[data-frame=flush]_&]:md:border-t',
+        // A title bar above: the surface draws its top edge under it on a phone too (the web phone
+        // header draws its own rule).
         titlebar &&
           'max-md:border-t [:root:not([data-frame])_[data-frame=flush]_&]:border-t [:root[data-frame=flush]_&]:border-t',
         PRINT_SURFACE,

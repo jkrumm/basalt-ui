@@ -1,8 +1,8 @@
 /**
  * Shell cycle 1's visual fixes, measured in a real browser on the v3 fixture
  * (`fixture/v3/scenarios/shell-chrome-mount.tsx`):
- * - at 390 a page with a long title and two actions leaves the title unclipped, because only the
- *   primary action stays in the header and the other folds into the one overflow menu;
+ * - at 390 a page with a long title and two actions leaves the title unclipped: the actions end the
+ *   band under the header, where only the primary stays and the other folds into the one overflow menu;
  * - at 1800 the first content row starts one page gutter under the chrome's last rule, the band's
  *   when the page has one and the header's when it has none (owner review 1: the page top).
  *
@@ -23,9 +23,7 @@ const ready = await initLayoutSuite()
 afterAll(closeLayoutSuite)
 
 const runnable =
-  ready &&
-  LAYOUT_TARGET === 'v3' &&
-  ['shell-header-row', 'shell-page-bar-host'].every((s) => providedSlots().has(s))
+  ready && LAYOUT_TARGET === 'v3' && ['shell-header-row'].every((s) => providedSlots().has(s))
 const layout = runnable ? describe : describe.skip
 
 const DESKTOP_1800: Viewport = { name: 'wide desktop', width: 1800, height: 1200 }

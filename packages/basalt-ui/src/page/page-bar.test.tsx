@@ -735,11 +735,12 @@ describe('PageBar in a shell (PageHost)', () => {
     expect(screen.getByRole('button', { name: 'Range' })).toBeDefined()
   })
 
-  test('with no control in the band the actions claim the header end, the identity row', () => {
+  test('with no control in the band the actions still end the band, the first line of the panel', () => {
     const shell = fakeHost()
     inShell(shell.host, <PageBar title="Runs" actions={[action('new')]} />)
-    expect(shell.of('actions')).toHaveLength(1)
-    expect(band()).toBeNull()
+    expect(shell.of('actions')).toHaveLength(0)
+    expect(band()?.querySelector('[data-action-id="new"]')).not.toBeNull()
+    expect(band()?.hasAttribute('data-sticky')).toBe(true)
   })
 
   test('every claim is released on unmount', () => {

@@ -5,9 +5,9 @@
  * kebab read.
  *
  * `priority` 1 never yields, 2 yields below 860 px of header content width, 3 below 1040. The
- * header content width is the identity row's own width minus its 12 px inline padding: the row is
- * the work surface's first row, so it is the window less the rail and the panel's inset, and a
- * collapsed rail gives the row room. The numbers are spike S6's 1100 and 1280 of window less the
+ * header content width is the header row's own width minus its 12 px inline padding: the row is
+ * the frame's top row beside the brand zone, so it is the window less the rail, and a collapsed
+ * rail gives the row room. The numbers are spike S6's 1100 and 1280 of window less the
  * expanded rail's 240, so the room each tier was measured with is the room it still gets. Under
  * `native-overlay` the header is the window's title bar and its row holds the brand zone too, so
  * there each threshold is 240 px more of row (`HEADER_TITLEBAR_BRAND_PX`), the spike's own numbers. A yielded item is listed in the ONE kebab, in
