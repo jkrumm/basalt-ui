@@ -61,10 +61,10 @@ Columns: `No directive` is the static HTML: `clean`, `differs` from the client:o
 | interval-track | IntervalTrack | differs | client:visible | 190.5 kB | 119.3 kB | 37.8 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 119.3 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-dark). |
 | sparkline | Sparkline | clean | client:visible | 89.6 kB | 18.4 kB | 37.8 kB | Static picture first, the island adds behaviour: the keyboard and pointer readout of a labelled sparkline. client:visible, up to 18.4 kB further (client:idle above the fold). |
 | band-strip | BandStrip | differs | client:visible | 184.8 kB | 113.6 kB | 37.8 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 113.6 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-light). |
-| data-table | DataTable | clean | client:visible | 338.6 kB | 267.4 kB | 35.8 kB | Static picture first, the island adds behaviour: sorting, paging and selection. client:visible, up to 267.4 kB further (client:idle above the fold). |
+| data-table | DataTable | clean | client:visible | 339.8 kB | 268.6 kB | 35.8 kB | Static picture first, the island adds behaviour: sorting, paging and selection. client:visible, up to 268.6 kB further (client:idle above the fold). |
 | static-table | Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableCaption | clean | no directive | 84.7 kB | 13.5 kB | 35.8 kB | The static HTML is the whole part, 0 bytes of JavaScript: a static table; the picture is the whole part. |
 | table-toolbar | TableToolbar, BulkBar, TablePager | clean | client:visible | 293.9 kB | 222.6 kB | 35.8 kB | Static picture first, the island adds behaviour: search, filters, sorting, paging and bulk selection need JS. client:visible, up to 222.6 kB further (client:idle above the fold). |
-| data-table-body | DataTableBody | clean | client:visible | 327.9 kB | 256.7 kB | 35.8 kB | Static picture first, the island adds behaviour: sorting, selection and row activation need JS over the body. client:visible, up to 256.7 kB further (client:idle above the fold). |
+| data-table-body | DataTableBody | clean | client:visible | 329.8 kB | 258.6 kB | 35.8 kB | Static picture first, the island adds behaviour: sorting, selection and row activation need JS over the body. client:visible, up to 258.6 kB further (client:idle above the fold). |
 | markdown | Markdown | clean | client:visible | 215.4 kB | 144.2 kB | 35.8 kB | Static picture first, the island adds behaviour: the code is colored in the static HTML; mermaid fences need JS. client:visible, up to 144.2 kB further (client:idle above the fold). |
 | code-block | CodeBlock | clean | client:visible | 171.6 kB | 100.3 kB | 35.8 kB | Static picture first, the island adds behaviour: the code is colored in the static HTML; the copy button needs JS. client:visible, up to 100.3 kB further (client:idle above the fold). |
 | article-layout | ArticleLayout, Prose | clean | client:visible | 137.2 kB | 65.9 kB | 36.3 kB | Static picture first, the island adds behaviour: the scroll-spy TOC and reading progress need JS. client:visible, up to 65.9 kB further (client:idle above the fold). |
@@ -121,9 +121,9 @@ Every part of a family on one page, each its own island, in one mode: the JavaSc
 | ui | 27 | 0 | 133.1 kB | 251.0 kB | 251.0 kB | 251.0 kB |
 | cards | 9 | 0 | 130.4 kB | 142.7 kB | 142.6 kB | 142.6 kB |
 | charts | 8 | 0 | 207.9 kB | 225.7 kB | 225.7 kB | 225.7 kB |
-| table | 4 | 0 | 338.9 kB | 352.6 kB | 352.5 kB | 352.5 kB |
+| table | 4 | 0 | 340.1 kB | 352.6 kB | 352.5 kB | 352.5 kB |
 | content | 9 | 0 | 274.7 kB | 281.4 kB | 281.3 kB | 281.3 kB |
-| page | 19 | 0 | 205.0 kB | 293.9 kB | 293.9 kB | 381.6 kB |
+| page | 19 | 0 | 205.0 kB | 295.1 kB | 295.0 kB | 383.5 kB |
 | forms | 18 | 0 | 187.3 kB | 253.4 kB | 253.3 kB | 253.3 kB |
 
 ## Charts: is the static picture correct?
@@ -187,10 +187,10 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 - interval-track: the mobile overlays (Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom sheet on a phone; the presenter hooks ship in every overlay island, and the Dock carries the sheet frame
 - sparkline: the mobile overlays (Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom sheet on a phone; the presenter hooks ship in every overlay island, and the Dock carries the sheet frame
 - band-strip: the mobile overlays (Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom sheet on a phone; the presenter hooks ship in every overlay island, and the Dock carries the sheet frame
-- data-table: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
+- data-table: The table's detail host opens a record drawer and Sheet fits its content before paint (Issue 3297), on top of master's context-menu growth
 - static-table: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
 - table-toolbar: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
-- data-table-body: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
+- data-table-body: The table's detail host opens a record drawer and Sheet fits its content before paint (Issue 3297), on top of master's context-menu growth
 - markdown: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
 - code-block: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
 - article-layout: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
@@ -237,9 +237,9 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 - family ui: the mobile overlays (Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom sheet on a phone; the sheet is one lazy chunk and the presenter hooks ship in every ui island
 - family cards: phase.ts gains the settled-empty rule (settledEmpty, resolveFrame) every frame page imports; a few bytes on the form, cards and page families
 - family charts: right click, long press and Shift+F10 open a row or card menu (Issue 3295): the shared context trigger joins the card menu and the table closure
-- family table: mobile foundation (Issue 3206): the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points, and the touch sheet and coarse control height grow the shared CSS
+- family table: The table's detail host opens a record drawer and Sheet fits its content before paint (Issue 3297), on top of master's context-menu growth
 - family content: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
-- family page: right click, long press and Shift+F10 open a row or card menu (Issue 3295): the shared context trigger joins the card menu and the table closure
+- family page: The table's detail host opens a record drawer and Sheet fits its content before paint (Issue 3297), on top of master's context-menu growth
 - family forms: the mobile overlays (Issue 3207): Select, Menu, Combobox, Popover, DatePicker, the palette and the Dock present as a bottom sheet on a phone; the sheet is one lazy chunk and the presenter hooks ship in every ui island
 
 ## Findings
