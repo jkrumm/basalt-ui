@@ -1,7 +1,7 @@
 ---
 import { SiteArticle, SiteCallout } from 'basalt-ui/static'
 import Layout from '../layouts/Layout.astro'
-import { DeploysChart } from '../islands/DeploysChart'
+import { DeploysChart, DeploysChartFallback } from '../islands/DeploysChart'
 import { LABELS } from '../lib/site'
 
 const toc = [
@@ -13,7 +13,7 @@ const toc = [
 <Layout title="Charts | Basalt UI" description="A basalt chart on a static page: one island, rendered on the client because a chart measures its box.">
   <SiteArticle title="Charts" description="The one island on this site. Every other part on it is static HTML." toc={toc} tocLabel={LABELS.toc}>
     <DeploysChart client:only="react">
-      <div slot="fallback" class="h-[25rem] rounded-card bg-card"></div>
+      <DeploysChartFallback slot="fallback" />
     </DeploysChart>
     <h2 id="an-island">A chart is an island</h2>
     <p>

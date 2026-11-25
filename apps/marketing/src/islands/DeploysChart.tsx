@@ -18,6 +18,18 @@ const token = (n: number): { light: string; dark: string } => ({
   dark: `var(--basalt-chart-${n})`,
 });
 
+/** What the island waits behind: the same card loading, as tall as the ready one at any width. */
+export function DeploysChartFallback(): ReactElement {
+  return (
+    <ChartCard
+      title="Deploys per week"
+      figure={{ value: null, period: "week of 22 Sep" }}
+      height="tall"
+      phase="loading"
+    />
+  );
+}
+
 /** The one island on basalt-ui.com: a chart measures its box, so it renders on the client only. */
 export function DeploysChart(): ReactElement {
   const last = DATA.at(-1);
