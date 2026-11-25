@@ -54,6 +54,11 @@ const TALL = 6000
  */
 const NOISE = 0.0001
 
+/** True once no island waits to hydrate and no chart card is still its loading fallback. */
+const HYDRATED = (): boolean =>
+  document.querySelectorAll('astro-island[ssr]').length === 0 &&
+  document.querySelectorAll('[data-slot="chart-card"][data-phase="loading"]').length === 0
+
 /** Every route that must hold a layout shift of 0: each guide, the showcase and the four static types. */
 async function shiftRoutes(): Promise<string[]> {
   const guides = (await readdir(join(DIST, 'guides'))).map((name) => `/guides/${name}/`)
@@ -150,8 +155,13 @@ async function measureShifts(browser: Browser, base: string): Promise<Shift[]> {
           )
           ;(window as unknown as { __from: number }).__from = performance.now()
         })
-        // Every island has hydrated and every chart has measured its box once the page is quiet.
-        await page.waitForTimeout(HOLD_MS + 1500)
+        // The gate reads 0 only once every island has arrived: a held island that is still on its way proves nothing.
+        const arrived = await page
+          .waitForFunction(HYDRATED, undefined, { timeout: 60_000 })
+          .then(() => true)
+          .catch(() => false)
+        if (!arrived) fail(where, 'an island did not hydrate, so its shift was not measured')
+        await page.waitForTimeout(1000)
         const measured = await page.evaluate(() => (window as unknown as { __cls: number }).__cls)
         const value = measured < NOISE ? 0 : measured
         cls[`${width} ${scheme}`] = value
