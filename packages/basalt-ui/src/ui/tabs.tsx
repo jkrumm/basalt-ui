@@ -9,7 +9,7 @@ import type { Tone } from '../core/ports'
 /**
  * The `Tabs` cva table: the trigger height every part reads. `md` follows the density control
  * height (`--basalt-ctl-h`); `sm` is a fixed 24 px row for tabs inside a card header. A coarse pointer
- * lifts both to the 44 px floor, so a trigger stays a touch target.
+ * adds a 44 px `::after` hit area around each trigger; the drawn height stays the density's.
  *
  * @example
  * tabsVariants({ size: 'sm' }) // class string for a non-`Tabs` element

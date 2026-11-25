@@ -41,7 +41,7 @@ const EDGE_START = 'rounded-l-[calc(var(--radius-ctrl)-1px)]'
 const EDGE_END = 'rounded-r-[calc(var(--radius-ctrl)-1px)]'
 
 // The row's height includes its 1 px borders, so the stretched input would be 2 px short of it (22 px
-// at `sm`, under the 24 px target floor; 42 px under a coarse pointer); the negative margin lets it
+// at `sm`, under the 24 px target floor); the negative margin lets it
 // span border to border, as the combobox input does.
 const entryVariants = cva(
   '-my-px min-w-0 flex-1 scroll-my-1.5 bg-transparent text-center tabular-nums outline-none placeholder:text-faint',
