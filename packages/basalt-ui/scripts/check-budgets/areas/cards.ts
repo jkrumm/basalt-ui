@@ -16,13 +16,21 @@ export const rows: readonly RowDef[] = [
     // 14100 -> 14150 (Issue 2696): 14117 B measured, +~17 B gz for `chartHeight`, the chart box's own height.
     // 14150 -> 14200 (Issue 2716): 14157 B measured, +~40 B gz for the delta pill that draws no arrow for an unsigned value.
     // 14200 -> 14250 (Issue 3088): 14202 B measured, +~2 B gz for the default error line that says a cause.
-    ceiling: 14250,
+    // 14250 -> 15600 (Issue 3295): ~15520 B measured, +~1270 B gz for the shared context-menu trigger (right click, long press, Shift+F10) the card menu now binds.
+    ceiling: 15600,
     measure: () => measureSource(reExportNamed('cards/stat-card', ['StatCard'])),
   },
 ]
 
 export const raises: Raises = {
   'cards-stat-card': [
+    {
+      from: 14250,
+      to: 15600,
+      consumer:
+        'the owner review of 2026-11-25 (Issue 3295): a right click, a long press and Shift+F10 on a StatCard, DataPanel or ChartCard open the menu its "..." button opens, through the trigger logic the card menu shares with ui/context-menu',
+      repo: 'basalt-ui',
+    },
     {
       from: 14200,
       to: 14250,

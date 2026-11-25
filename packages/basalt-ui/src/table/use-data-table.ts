@@ -27,6 +27,7 @@ import type {
   DataTableInstance,
   KindColumn,
   PageFilter,
+  RowAction,
   RowHeight,
   TableDisplay,
   TableEscape,
@@ -164,6 +165,8 @@ export type TableModel<T> = {
   pager: 'pages' | 'more' | 'none'
   /** How the table draws its rules; `grid` keeps every column and scrolls sideways. */
   look: 'reading' | 'grid'
+  /** The actions of the row menu, also opened by a right click, a long press and Shift+F10; `undefined` without an actions column or with `contextMenu: false`. */
+  rowMenu: readonly RowAction<T>[] | undefined
   /** Whether the headers draw their column icons (`headerIcons`: on in the grid look, off in the reading look). */
   headerIcons: boolean
   /** What a narrow table becomes (default `cards`, `scroll` for a grid) and the width it does so below. */
@@ -974,6 +977,10 @@ export function useDataTable<
     count: server ? countOf(mode) : matching,
     pager,
     look,
+    rowMenu:
+      options.contextMenu === false
+        ? undefined
+        : specs.find((spec) => spec.kind === 'actions')?.actions,
     headerIcons: options.headerIcons ?? look === 'grid',
     phone,
     cardsBelow: options.cardsBelow ?? 'regular',

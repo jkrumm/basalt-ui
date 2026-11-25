@@ -64,6 +64,8 @@ export type StatCardProps = CardTarget &
     footer?: FootFacts | undefined
     controls?: ControlsSlot<'widget'> | undefined
     menu?: CardMenu | undefined
+    /** Whether a right click, a long press or Shift+F10 on the card opens its menu at the pointer. Default true; the browser's menu stays with false. */
+    contextMenu?: boolean | undefined
   }
 
 export type StatRow = {
@@ -104,6 +106,8 @@ export type DataPanelProps = FrameHead &
     controls?: ControlsSlot<'widget'>
     toolbar?: ControlsSlot<'widget'>
     menu?: CardMenu
+    /** Whether a right click, a long press or Shift+F10 on the card opens its menu at the pointer. Default true; the browser's menu stays with false. */
+    contextMenu?: boolean
     legend?: readonly LegendEntry[]
     /**
      * Required: the loading card draws its final shape. `cardHeight` is the px of one phone card of the `rows` body
@@ -135,6 +139,13 @@ export type KanbanCardProps<C extends string> = {
   status?: Verdict
   /** Entries after the move rows the card always offers, so one entry is enough. */
   menu?: readonly MenuEntry[]
+  /**
+   * Whether a right click, a long press or Shift+F10 on the card opens the card's menu where the
+   * pointer is, the same entries as its "..." button. Shift+right click keeps the browser's menu.
+   *
+   * @default true
+   */
+  contextMenu?: boolean
   /** Required: no card exists without the non-drag path. `'static'` is a read-only board. */
   move:
     | 'static'

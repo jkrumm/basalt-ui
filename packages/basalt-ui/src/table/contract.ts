@@ -475,6 +475,14 @@ export type UseDataTable<
    */
   rowHeight?: RowHeight
   /**
+   * Whether a right click, a long press or Shift+F10 on a row opens the row's actions (the entries of
+   * its `c.actions` column) where the pointer is, as its "..." button does. Shift+right click and a
+   * click inside a field keep the browser's menu. Without an actions column there is nothing to open.
+   *
+   * @default true
+   */
+  contextMenu?: boolean
+  /**
    * A row-number column after the tick: the row's place in the request (it runs on across groups and
    * pages). In the grid look it stays pinned with the tick and the identity column; a card hides it.
    */

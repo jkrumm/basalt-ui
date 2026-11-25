@@ -307,7 +307,17 @@ function withPeriodHold(
  * />
  */
 export function ChartCard(props: ChartCardProps): ReactElement {
-  const { figure, legend, footer, controls, menu, height = 'auto', panes, bleed = false } = props
+  const {
+    figure,
+    legend,
+    footer,
+    controls,
+    menu,
+    contextMenu,
+    height = 'auto',
+    panes,
+    bleed = false,
+  } = props
   const chart =
     panes === undefined
       ? props.chart
@@ -360,6 +370,7 @@ export function ChartCard(props: ChartCardProps): ReactElement {
               info={props.info}
               controls={controls}
               menu={menu}
+              contextMenu={contextMenu}
             />
             <div
               data-slot="inset"

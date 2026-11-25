@@ -93,10 +93,10 @@
       --row-tint: var(--basalt-hover);
     }
   }
-  [data-slot='table-row'][data-focused] > [data-slot='table-cell'] {
+  [data-slot='table-row']:is([data-focused], [data-popup-open]) > [data-slot='table-cell'] {
     --row-tint: var(--basalt-hover);
   }
-  [data-slot='table-row'][data-focused] {
+  [data-slot='table-row']:is([data-focused], [data-popup-open]) {
     background-color: var(--basalt-hover);
   }
   [data-slot='table-row'][data-selected] > [data-slot='table-cell'] {

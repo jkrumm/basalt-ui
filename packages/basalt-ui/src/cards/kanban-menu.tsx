@@ -10,8 +10,10 @@ import { Menu, MenuContent, MenuItem, MenuSeparator } from '../ui/menu'
 import type { KanbanAction } from './kanban-actions'
 
 export type KanbanMenuPopupProps = {
-  /** The card's own menu button: the popup's anchor, and where focus returns on close. */
-  anchor: RefObject<HTMLButtonElement | null>
+  /** The card's own menu button, or the point of a right click: the popup's anchor. */
+  anchor: RefObject<HTMLButtonElement | null> | { getBoundingClientRect: () => DOMRect }
+  /** The popup opened at a point, not from the button: it grows from the point and focus is not returned to the button. */
+  pointer: boolean
   open: boolean
   onOpenChange: (open: boolean) => void
   moves: readonly KanbanAction[]
@@ -43,6 +45,7 @@ const rowOf = (action: KanbanAction, close: () => void): ReactElement =>
 
 export function KanbanMenuPopup({
   anchor,
+  pointer,
   open,
   onOpenChange,
   moves,
@@ -51,7 +54,11 @@ export function KanbanMenuPopup({
   const close = (): void => onOpenChange(false)
   return (
     <Menu open={open} onOpenChange={onOpenChange}>
-      <MenuContent anchor={anchor} align="end" finalFocus={anchor}>
+      <MenuContent
+        anchor={anchor}
+        align={pointer ? 'start' : 'end'}
+        {...(!pointer && { finalFocus: anchor as RefObject<HTMLButtonElement | null> })}
+      >
         {moves.map((a) => rowOf(a, close))}
         {moves.length > 0 && extras.length > 0 && <MenuSeparator />}
         {extras.map((a) => rowOf(a, close))}

@@ -41,6 +41,7 @@ StatCard(props: StatCardProps): ReactElement
   footer?: FootFacts
   controls?: ControlsSlot<"widget">
   menu?: CardMenu
+  contextMenu?: boolean  // Whether a right click, a long press or Shift+F10 on the card opens its menu at the pointer
 ```
 
 `CardMenu`, `Delta`, `Empty`, `FootFacts`, `Phase`, `QueryStateLike`, `StatCardProps`, `Verdict` import from `basalt-ui/cards`: `import type { CardMenu, Delta, Empty, FootFacts, Phase, QueryStateLike, StatCardProps, Verdict } from 'basalt-ui/cards'`.

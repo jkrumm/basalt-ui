@@ -240,7 +240,11 @@ function GroupView({
           )}
         </button>
         {group.menu !== undefined && (
-          <CardMenu menu={group.menu} label={t('flow.groupMenu', group.title)} />
+          <CardMenu
+            menu={group.menu}
+            label={t('flow.groupMenu', group.title)}
+            contextMenu={group.contextMenu !== false}
+          />
         )}
       </div>
       <div
