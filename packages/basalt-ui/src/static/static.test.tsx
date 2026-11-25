@@ -588,3 +588,22 @@ describe('SiteComparison: a mark announces its word', () => {
     expect(host.querySelectorAll('tbody th[scope=row]').length).toBe(1)
   })
 })
+
+describe('SiteComparison: the scrolling table is a named, focusable region', () => {
+  test('a phone-width table scrolls sideways, so the keyboard reaches it', () => {
+    const host = document.createElement('div')
+    host.innerHTML = markup(
+      <SiteComparison
+        caption="Profiles compared"
+        rowHeader="r"
+        yesLabel="Y"
+        noLabel="N"
+        columns={[{ key: 'a', label: 'A' }]}
+        rows={[{ label: 'row', values: { a: true } }]}
+      />,
+    )
+    const region = host.querySelector('section[aria-label="Profiles compared"]')
+    expect(region).not.toBeNull()
+    expect(region?.getAttribute('tabindex')).toBe('0')
+  })
+})
