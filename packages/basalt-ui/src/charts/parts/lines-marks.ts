@@ -113,6 +113,8 @@ const EXTREME_DX = 8
 const EXTREME_DY = 4
 /** A caption right of a point past this share of the plot would run off it: it goes left. */
 const EXTREME_FLIP = 0.72
+/** Within this many px of the plot's top or bottom a caption moves inside by as much. */
+const EXTREME_EDGE = 10
 
 /**
  * The highest and the lowest drawn point of a line inside the x domain, each with a ringed dot and a
@@ -138,6 +140,20 @@ export function extremeMarks<D>(plot: PlotContext<D, ChartX>, s: ChartSeries<D>)
     const v = s.getValue(r.datum) ?? (r.y as number)
     return s.formatValue ? s.formatValue(v, r.datum) : defaultNumberFormat(v)
   }
+  // Where a point sits down the plot, 0 at the top: a caption level with a point at an edge would cross
+  // the axis or leave the plot, so it moves inside, under a top point and over a bottom one.
+  const right = s.axis === 'right' && plot.y2Domain !== undefined
+  const [lo, hi] = right ? (plot.y2Domain as readonly [number, number]) : plot.yDomain
+  const warp = (v: number): number =>
+    (right ? plot.y2Log : plot.yLog) === true ? Math.log10(Math.max(v, Number.MIN_VALUE)) : v
+  const depthPx = (v: number): number =>
+    warp(hi) === warp(lo) ? 0 : ((warp(hi) - warp(v)) / (warp(hi) - warp(lo))) * plot.plotHeight
+  const dyAt = (v: number): number => {
+    const depth = depthPx(v)
+    if (depth < EXTREME_EDGE) return EXTREME_DY + EXTREME_EDGE
+    if (plot.plotHeight - depth < EXTREME_EDGE) return EXTREME_DY - EXTREME_EDGE
+    return EXTREME_DY
+  }
   const caption = (r: PlotRow<D, ChartX>, word: string, id: string) => {
     const flip = (plot.xFraction(r.x) ?? 0) > EXTREME_FLIP
     return decorative(
@@ -150,7 +166,7 @@ export function extremeMarks<D>(plot: PlotContext<D, ChartX>, s: ChartSeries<D>)
         fontSize: BASALT.text.micro,
         anchor: flip ? 'end' : 'start',
         dx: flip ? -EXTREME_DX : EXTREME_DX,
-        dy: EXTREME_DY,
+        dy: dyAt(r.y as number),
         ...(yScale !== undefined && { yScale }),
       }),
     )
