@@ -141,7 +141,7 @@ Tint is 16% dark, 12% light. The solver gains card, inset and own tint as test s
 
 - **Spacing unit fixed**, because a scaled unit gives fractional px at every non-zero level, collapses to three notches under `round()`, and traps `:root` scope (gap-token 1, tie-break digest row 9).
 - **Per-subtree density works** (F, S0: html `normal` 32, nested `comfortable` 40), since `h-ctl` reads the var at the element. 3.0 uses it nowhere: per-table density has no consumer (data-table E4) and a control home picks a `size`. The mechanism stays for later, additive. - **Moved:** control and row height. **Never moved:** gaps, type, tiles, icons, hairlines. Density never comes from the viewport (M3, ext-dense). - `min-h-row` is a floor, so a two-line row (20 + 16 + 8 padding = 44) needs no separate notch. That lands on ext-visual's 44 and x-ref's 45.5, and resolves digest row 9's number conflict except the one-line 36, which becomes 32.
-- Control tiers are not a system: `size="sm"` is fixed `h-6` (24, the WCAG 2.5.8 floor) for card-header menus and row actions; `CtlSlot` and `data-basalt-tier` do not return. Coarse pointer: `--basalt-ctl-h` is 44 at every density (`tokens.css`), so an `h-ctl` control carries no patch of its own; an `sm` field (Input, Select, Combobox, DatePicker) takes `pointer-coarse:h-ctl`, a field having no overlay, and an `sm` Button stays 24 under the `::after` overlay (`hit` utility) for icon-only targets in dense rows (d14); the input text floor is `css/touch.css`, 16 px on a coarse pointer only; `--basalt-row-h` and `--basalt-hit` carry coarse values in `tokens.css` (44, today's 2.x floor), asserted in the layout suite. `comfortable` stays 48.
+- Control tiers are not a system: `size="sm"` is fixed `h-6` (24, the WCAG 2.5.8 floor) for card-header menus and row actions; `CtlSlot` and `data-basalt-tier` do not return. Coarse pointer (revised 2026-11-25, Issue 3298): the coarse sheet raises `--basalt-hit` to 44 and nothing else. A control keeps the density's `--basalt-ctl-h` and an input its text size, so a phone is never larger than a desktop; touch reach is an invisible 44 px `::after` hit area (`hit` utility, or the part's own overlay), and a text field, which cannot own an overlay, is its own target at the density height. The iOS focus zoom is stopped in the head, not by a 16 px floor: `themeScript()` adds `maximum-scale=1` to the viewport meta on iOS and iPadOS only, where pinch zoom survives; Android keeps pinch zoom (`css/touch.css` carries `touch-action` alone).
 - Ladder: integer multipliers plus `.5` below 4; weatherorb's 24 odd-px sites migrate once (gap-token 4). Radii: card 14, inset 10, ctrl 8, chip 5; `rounded-full` only for dots, count chips and bar tracks. Flush insets are not concentric, so the nested-radius law applies only inside a control: `Segmented` track 8, indicator 5, keeping the >=3 px step (2.x D17, not ext-visual's "minus 2"). 2.x's `radius` knob is dropped (DPO 5). Ring: ink 9% dark, 12% light, inset box-shadow, never a border for depth.
 
 ### 3.7 Type and numerals
@@ -150,7 +150,7 @@ Tint is 16% dark, 12% light. The solver gains card, inset and own tint as test s
 | --------- | ----------------------- | --------------------------------------------------------------------------------------------- |
 | `display` | 30/1                    | Hero figure, 600, -0.02em, proportional lining                                                |
 | `lg`      | 18/24                   | Rare                                                                                          |
-| `base`    | 16/24                   | iOS floor, coarse forms                                                                       |
+| `base`    | 16/24                   | Article body and the sheet's lg rows                                                          |
 | `md`      | 15/20                   | Card and section title (600), body                                                            |
 | `sm`      | 13/20                   | Rows, sublabels, controls. Stock `text-sm` is now 13, ending console's 14 x84 vs 13 x27 split |
 | `xs`      | 12/16                   | Axis, meta, badge                                                                             |
@@ -282,11 +282,6 @@ export default {
   --basalt-row-h: 3rem;
 }
 @media (pointer: coarse) {
-  :root,
-  [data-density='dense'],
-  [data-density='normal'] {
-    --basalt-row-h: 2.75rem;
-  }
   :root {
     --basalt-hit: 2.75rem;
   }
@@ -330,7 +325,7 @@ Lines 8,198 to ~1,900 (J), tests 5,965 to ~1,800, with theme-resolution tests re
 | Faint opaque for axis (d6); divider an ink alpha, not a hex (d7); One seam, ring or edge per surface (d8)                                          | `axis` = `ink-faint`; `hairline`; `Card` carries no `border`                               | PAIRS, polarity across presets; `check-tokens` scan of `src/ui`                    |
 | Raised shadow asymmetric; "do NOT tidy" (d9); `:root[attr]` specificity (d10)                                                                      | Pair carried verbatim, S2 retests light; Tenant 0-3-0 beats default 0-2-0 (F, gap-token 8) | Value snapshot, reason comment kept; Emit test                                     |
 | Unlayered CSS kills layers (d12)                                                                                                                   | Layer statement first; basalt rules in `@layer basalt`, base                               | `check-dist`: no unlayered rule                                                    |
-| iOS floor, `!important` (d13); `pointer: coarse`, not `any-pointer`; `::after` (d14)                                                               | Coarse only; `pointer-coarse:` means primary (F)                                           | Built-CSS test + Chrome coarse 16; Layout hit test 44/24                           |
+| No input floor (d13, revised); iOS zoom stop in the head; `pointer: coarse`, not `any-pointer`; `::after` (d14)                                    | Coarse only; `pointer-coarse:` means primary (F)                                           | Built-CSS test + Chrome coarse = fine size; Layout hit test 44/24                  |
 | Ladder 1.06-1.17; Head Digits, stretch, ligatures, numerals; autofill (d17-d20)                                                                    | Table test; `fonts.css`; autofill uses `--basalt-surface`                                  | Unit, computed style, layout                                                       |
 | Focus ring is ink, not fill (d21)                                                                                                                  | Solid `brand`, never `ring-ring/50` (gap-a11y)                                             | Axe + computed                                                                     |
 | Literal `NODE_ENV`; resolves with no React or Tailwind; unknown var silent; stable header (d25, d26, d28, d30); Foreground is a paired token (d33) | `tokens` fixture; `check-tokens` scans `.tsx` too; `PAIRS` table                           | Shared test, pack-test, fixture, emit snapshot; Both schemes, every `*-foreground` |
