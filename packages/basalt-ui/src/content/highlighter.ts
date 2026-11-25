@@ -2,7 +2,7 @@
  * shiki singleton — OPTIONAL PEER, lazy dynamic-import, mirrors the streaming-markdown.tsx
  * optional-peer pattern (dynamic import + `.catch` degrade, no unhandled rejection, no crash).
  *
- * Dual TextMate themes (`github-light`/`github-dark`) baked into the output as `--shiki-*` CSS
+ * Dual TextMate themes (`github-light-high-contrast`/`github-dark`: the light one clears 4.5:1 on the off-white inset) baked into the output as `--shiki-*` CSS
  * vars via `defaultColor: false` (docs/CONTENT-SPEC.md decision 3) — a scheme flip is then
  * pure CSS with zero re-highlighting. The `createJavaScriptRegexEngine({ forgiving: true })` engine
  * never throws on partial/streamed code (vs the default Oniguruma/wasm engine).
@@ -13,7 +13,7 @@
  */
 import type { HighlighterCore, LanguageInput } from 'shiki'
 
-const THEME_LIGHT = 'github-light-default'
+const THEME_LIGHT = 'github-light-high-contrast'
 const THEME_DARK = 'github-dark'
 
 /**
@@ -96,7 +96,10 @@ async function loadHighlighter(): Promise<HighlighterCore | null> {
     import('shiki/engine/javascript'),
   ])
   return createHighlighterCore({
-    themes: [import('@shikijs/themes/github-light-default'), import('@shikijs/themes/github-dark')],
+    themes: [
+      import('@shikijs/themes/github-light-high-contrast'),
+      import('@shikijs/themes/github-dark'),
+    ],
     langs: [],
     engine: createJavaScriptRegexEngine({ forgiving: true }),
   })

@@ -21,8 +21,8 @@ test('a partial prefix highlighted first does not change the final highlight', a
   await highlight('const x: n', 'ts')
   const final = await highlight(CODE, 'ts')
   expect(final).toBe(await highlight(CODE, 'ts'))
-  // `:` and `=` are keyword-colored in github-light-default, not the variable blue
-  expect(final).toMatch(/--shiki-light:#CF222E;--shiki-dark:#F97583">:</)
+  // `:` and `=` are keyword-colored in github-light-high-contrast, not the variable blue
+  expect(final).toMatch(/--shiki-light:#A0111F;--shiki-dark:#F97583">:</)
 })
 
 /** A highlighter module of its own with the cache API; "cobol" has no grammar, so each entry settles as plain once the highlighter has loaded. */
