@@ -23,7 +23,7 @@ export type BasaltShikiConfig = {
  * export default defineConfig({ markdown: { shikiConfig: basaltShiki } })
  */
 export const basaltShiki: BasaltShikiConfig = {
-  themes: { light: 'github-light', dark: 'github-dark' },
+  themes: { light: 'github-light-high-contrast', dark: 'github-dark' },
   defaultColor: false,
   wrap: false,
 }
