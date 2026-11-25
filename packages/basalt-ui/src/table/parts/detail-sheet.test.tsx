@@ -96,6 +96,21 @@ describe('detail', () => {
   })
 })
 
+describe('detailPresent without a shell', () => {
+  test('drawer is a sheet that leaves the page live: no scrim, nothing inert', async () => {
+    render(
+      <Subject
+        options={{ detailPresent: 'drawer', detail: (r: Row) => <p>Box of {r.name}</p> } as never}
+      />,
+    )
+    fireEvent.click(row(0))
+    await settled()
+    expect(sheet()?.textContent).toContain('Box of Alpha')
+    expect(document.querySelector('.bg-scrim')).toBeNull()
+    expect(document.querySelector('[inert]')).toBeNull()
+  })
+})
+
 describe('onRowActivate and the Details door', () => {
   test('the tap navigates; the door opens the derived sheet and does not activate', async () => {
     const onRowActivate = mock((_row: Row) => undefined)
@@ -164,6 +179,43 @@ describe('under a shell', () => {
     expect(document.querySelector('[inert]')).toBeNull()
     expect(screen.getByRole('button', { name: 'Open as' })).toBeTruthy()
     region.remove()
+  })
+
+  test('detailPresent: drawer opens the record as a drawer on the surface until the reader picks another', async () => {
+    wide()
+    const surface = document.createElement('div')
+    surface.dataset['slot'] = 'shell-surface'
+    const region = document.createElement('div')
+    surface.append(region)
+    document.body.append(surface)
+    const { host } = fakeHost()
+    render(
+      <PageHostContext value={host}>
+        <ShellOverlayContext value={region}>
+          <Subject
+            options={
+              {
+                id: 'drawer-test',
+                detailPresent: 'drawer',
+                detail: (r: Row) => <p>Box of {r.name}</p>,
+              } as never
+            }
+          />
+        </ShellOverlayContext>
+      </PageHostContext>,
+    )
+    fireEvent.click(row(0))
+    await settled()
+    expect(peek()?.dataset['present']).toBe('drawer')
+    expect(surface.contains(peek())).toBe(true)
+    expect(peek()?.textContent).toContain('Box of Alpha')
+    // the page's own rows stay: a second row swaps the record in the same drawer
+    fireEvent.click(row(1))
+    await settled()
+    expect(document.querySelectorAll('[data-slot="peek"]').length).toBe(1)
+    expect(peek()?.textContent).toContain('Box of Beta')
+    presentationStore('drawer-test').reset()
+    surface.remove()
   })
 
   test("previous and next step through the table's rows in place and stop at the ends", async () => {

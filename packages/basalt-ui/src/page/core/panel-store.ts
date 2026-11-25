@@ -6,10 +6,10 @@
 import { persisted } from '../../core/persisted'
 import type { Persisted, PersistedSchema } from '../../core/persisted'
 
-/** How a record opens: a side panel, a floating window or the whole main area. */
-export type Presentation = 'peek' | 'window' | 'page'
+/** How a record opens: a side panel, a floating window, the whole main area or a short drawer at its foot. */
+export type Presentation = 'peek' | 'window' | 'page' | 'drawer'
 
-export const PRESENTATIONS: readonly Presentation[] = ['peek', 'window', 'page']
+export const PRESENTATIONS: readonly Presentation[] = ['peek', 'window', 'page', 'drawer']
 
 /** A window's size in px. */
 export type WindowSize = { w: number; h: number }
@@ -50,6 +50,11 @@ export function presentationStore(kind: string, initial?: Presentation): Persist
     initial: initial ?? 'peek',
     schema: schema(isPresentation),
   })
+}
+
+/** The height a record kind's drawer was dragged to, in px; `null` is its default, a third of the main area. */
+export function drawerStore(kind: string): Persisted<number | null> {
+  return persisted(`panel:${kind}:drawer`, { version: 1, initial: null, schema: schema(isWidth) })
 }
 
 /** A record kind's window size; `null` until the reader resizes it. */

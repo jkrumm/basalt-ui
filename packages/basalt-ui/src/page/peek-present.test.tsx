@@ -11,7 +11,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
 import { useState } from 'react'
 import type { ReactElement } from 'react'
 import type { RecordSequence } from '../core/ports'
-import { presentationStore, windowStore } from './core/panel-store'
+import { drawerStore, presentationStore, windowStore } from './core/panel-store'
 import type { Presentation } from './core/panel-store'
 import { PageHostContext, ShellOverlayContext } from './page'
 import { fakeHost } from './page.test-support'
@@ -136,7 +136,40 @@ describe('Peek presentations', () => {
     expect(el?.style.gridColumn).toBe('main-start / aside-end')
   })
 
-  for (const present of ['peek', 'window', 'page'] as Presentation[]) {
+  test('the menu offers a drawer: placed on the foot of main, remembered, named by its handle', async () => {
+    const { surface, region } = shell()
+    const { unmount } = render(<Shelled region={region} onClose={() => {}} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Open as' }))
+    fireEvent.click(await screen.findByRole('menuitemradio', { name: 'Drawer' }))
+    const el = peek()
+    expect(el?.dataset['present']).toBe('drawer')
+    expect(el?.parentElement).toBe(surface)
+    expect(el?.style.gridColumn).toBe('main-start / main-end')
+    expect(el?.style.gridRow).toBe('main')
+    expect(el?.style.getPropertyValue('--peek-drawer-h')).toBe('calc(100dvh / 3)')
+    expect(
+      screen.getByRole('separator', { name: 'Resize drawer' }).getAttribute('aria-orientation'),
+    ).toBe('horizontal')
+    expect(presentationStore('issue').get()).toBe('drawer')
+    unmount()
+    // closing gives the room back
+    expect(surface.style.getPropertyValue('--shell-drawer-h')).toBe('')
+  })
+
+  test('a drawer is as tall as its handle was dragged to, and Enter puts it back', () => {
+    presentationStore('issue').set('drawer')
+    const { region } = shell()
+    render(<Shelled region={region} onClose={() => {}} />)
+    const handle = screen.getByRole('separator', { name: 'Resize drawer' })
+    fireEvent.keyDown(handle, { key: 'ArrowUp' })
+    // happy-dom has no layout: the drawer measures 0 px, so one step up is floored at the minimum
+    expect(peek()?.style.getPropertyValue('--peek-drawer-h')).toBe('160px')
+    fireEvent.keyDown(handle, { key: 'Enter' })
+    expect(peek()?.style.getPropertyValue('--peek-drawer-h')).toBe('calc(100dvh / 3)')
+    drawerStore('issue').reset()
+  })
+
+  for (const present of ['peek', 'window', 'page', 'drawer'] as Presentation[]) {
     test(`as ${present}, Escape closes it and focus goes back to the opener`, () => {
       presentationStore('issue').set(present)
       const row = opener()
@@ -298,7 +331,19 @@ describe('Peek on a phone', () => {
       expect(sheet?.dataset['present']).toBe('sheet')
       expect(sheet?.className).toContain('rounded-t-card')
       expect(peek()).toBeNull()
-      expect(screen.queryByRole('button', { name: 'Open as' })).toBeNull()
+      // the sheet's menu offers the sheet and the drawer only
+      expect(screen.getByRole('button', { name: 'Open as' })).toBeTruthy()
     })
   }
+
+  test('a kind opened as a drawer is a sheet with no scrim, the page behind live', () => {
+    wide = false
+    presentationStore('issue').set('drawer')
+    const { region } = shell()
+    render(<Shelled region={region} onClose={() => {}} />)
+    const sheet = document.querySelector('[data-slot="sheet-content"]') as HTMLElement | null
+    expect(sheet?.dataset['present']).toBe('drawer')
+    expect(document.querySelector('.bg-scrim')).toBeNull()
+    expect(document.querySelector('[inert]')).toBeNull()
+  })
 })

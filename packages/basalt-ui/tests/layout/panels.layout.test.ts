@@ -220,6 +220,86 @@ layout('a record presentation leaves the page usable at 1800', () => {
   })
 })
 
+layout('drawer: a short panel at the foot of main at 1800', () => {
+  const HANDLE = `${PEEK}[data-present="drawer"] [data-slot="peek-handle"]`
+
+  test('rests at a third of the viewport on main, the rows above stay usable and scroll clear of it', async () => {
+    const page = await openFixture(specOf({ peek: true, present: 'drawer' }), WIDE)
+    const box = (await page.box('drawer', `${PEEK}[data-present="drawer"]`)).box
+    const main = (await page.box('main', MAIN)).box
+    expect(Math.abs(box.height - WIDE.height / 3)).toBeLessThanOrEqual(2)
+    expect(Math.abs(box.bottom - main.bottom)).toBeLessThanOrEqual(TOLERANCE)
+    expect(Math.abs(box.left - main.left)).toBeLessThanOrEqual(TOLERANCE)
+    expect(Math.abs(box.right - main.right)).toBeLessThanOrEqual(TOLERANCE)
+    // the page above it is live: no scrim, nothing inert, a point over the drawer's top edge hits main
+    expect(await probe(page, { x: box.left + 200, y: box.top - 20 })).toEqual({
+      inMain: true,
+      inert: false,
+      scrim: false,
+    })
+    // and main's scrollport is padded by the drawer's height, so the last row scrolls above it
+    const padding = await page.raw.evaluate(
+      (sel) => Number.parseFloat(getComputedStyle(document.querySelector(sel)!).paddingBottom),
+      MAIN,
+    )
+    expect(Math.abs(padding - box.height)).toBeLessThanOrEqual(1)
+  })
+
+  test('its top edge drags up to the whole of main; ArrowDown shrinks it, Enter puts it back', async () => {
+    const page = await openFixture(specOf({ peek: true, present: 'drawer' }), WIDE)
+    await page.raw.waitForSelector(HANDLE)
+    const rest = (await page.box('drawer', `${PEEK}[data-present="drawer"]`)).box
+    const main = (await page.box('main', MAIN)).box
+    const handle = (await page.box('handle', HANDLE)).box
+    const x = handle.left + handle.width / 2
+    const y = handle.top + handle.height / 2
+    await page.raw.mouse.move(x, y)
+    await page.raw.mouse.down()
+    await page.raw.mouse.move(x, y - 150, { steps: 6 })
+    await page.raw.mouse.up()
+    const grown = (await page.box('drawer', `${PEEK}[data-present="drawer"]`)).box
+    expect(Math.abs(grown.height - (rest.height + 150))).toBeLessThanOrEqual(2)
+    await page.raw.mouse.move(x, y - 150)
+    await page.raw.mouse.down()
+    await page.raw.mouse.move(x, main.top - 200, { steps: 6 })
+    await page.raw.mouse.up()
+    const full = (await page.box('drawer', `${PEEK}[data-present="drawer"]`)).box
+    expect(Math.abs(full.height - main.height)).toBeLessThanOrEqual(2)
+    expect(Math.abs(full.top - main.top)).toBeLessThanOrEqual(2)
+    await page.raw.focus(HANDLE)
+    await page.raw.keyboard.press('ArrowDown')
+    const less = (await page.box('drawer', `${PEEK}[data-present="drawer"]`)).box
+    expect(Math.abs(less.height - (full.height - 16))).toBeLessThanOrEqual(1)
+    await page.raw.keyboard.press('Enter')
+    await page.raw.waitForFunction(
+      ({ sel, want }) =>
+        Math.abs(
+          (document.querySelector(sel) as HTMLElement).getBoundingClientRect().height - want,
+        ) <= 2,
+      { sel: `${PEEK}[data-present="drawer"]`, want: rest.height },
+    )
+  })
+})
+
+layout('drawer at 390: a bottom sheet without the scrim, at a third of the screen', () => {
+  test('the page behind stays live and a record taller than a third rests at a third', async () => {
+    const page = await openFixture(specOf({ peek: true, present: 'drawer' }), PHONE)
+    await page.raw.waitForSelector(`${SHEET}[data-present="drawer"]`)
+    await page.settle()
+    const sheet = (await page.box('sheet', SHEET)).box
+    // 90dvh tall, resting with its top at two thirds of the screen: a third is showing
+    expect(Math.abs(sheet.top - PHONE.height * (2 / 3))).toBeLessThanOrEqual(2)
+    expect(await page.count('.bg-scrim')).toBe(0)
+    expect(await page.raw.evaluate(() => document.querySelector('[inert]') !== null)).toBe(false)
+    // a tap above the drawer lands on the page, not on a backdrop
+    expect(
+      await page.raw.evaluate(
+        () => document.elementFromPoint(100, 100)?.closest('[data-slot="sheet-content"]') === null,
+      ),
+    ).toBe(true)
+  })
+})
+
 layout('every presentation is a bottom sheet at 390', () => {
   for (const present of ['peek', 'window', 'page'] as const) {
     test(`${present}`, async () => {

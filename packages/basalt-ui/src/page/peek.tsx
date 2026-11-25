@@ -1,4 +1,4 @@
-import { useContext, useRef, useState } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
 import type { CSSProperties, KeyboardEvent, PointerEvent, ReactElement, ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { PANEL_MAX, PanelHandle, usePanelWidth } from '../core/panel'
@@ -19,7 +19,7 @@ import {
   MenuTrigger,
 } from '../ui/menu'
 import { Sheet, SheetContent } from '../ui/sheet'
-import { PRESENTATIONS, presentationStore, widthStore } from './core/panel-store'
+import { PRESENTATIONS, drawerStore, presentationStore, widthStore } from './core/panel-store'
 import type { Presentation } from './core/panel-store'
 import type { FavoriteInput } from './contract'
 import { PageHostContext, ShellOverlayContext } from './page'
@@ -42,6 +42,11 @@ import { useSizeClass } from './use-size-class'
 /** The narrowest a peek goes: wide enough for a record's header and a line of body. */
 export const PEEK_MIN = 384
 
+/** The shortest a drawer goes: its header and a row of body. */
+const DRAWER_MIN = 160
+/** A drawer rests at a third of the viewport until the reader drags it. */
+const DRAWER_REST = 'calc(100dvh / 3)'
+
 export type PeekProps = {
   /** The accessible name and the visible heading: what is shown (`Issue 12`). Required. */
   title: string
@@ -58,9 +63,10 @@ export type PeekProps = {
   kind?: string
   /**
    * How a kind opens until the reader picks another in `Open as`: a form that is written in one go
-   * (a mail composer) opens as a `window`. Default `peek`. The first `Peek` of a kind sets it.
+   * (a mail composer) opens as a `window`, a record read beside a table as a `drawer`. Default
+   * `peek`. The first `Peek` of a kind sets it.
    */
-  defaultPresent?: 'peek' | 'window' | 'page'
+  defaultPresent?: 'peek' | 'window' | 'page' | 'drawer'
   /** The record's own page. Draws an `Open full page` link in the header; a plain click leaves the peek. */
   fullPage?: string | NavTarget
   /** Draws a star in the header that adds the record to the shell rail's Favorites; nothing outside an `AppShell` or on a phone, where the rail is not drawn. */
@@ -103,18 +109,25 @@ function peekWidth(shelled: boolean, chosen: number | null): string {
 
 function PresentMenu({
   value,
+  options = PRESENTATIONS,
+  sheet = false,
   onChange,
   onMinimise,
 }: {
   value: Presentation
+  /** The presentations on offer: a phone has a sheet and a drawer. */
+  options?: readonly Presentation[]
+  /** Names `peek` a sheet, which is what it is on a phone. */
+  sheet?: boolean
   onChange: (next: Presentation) => void
   onMinimise?: (() => void) | undefined
 }): ReactElement {
   const t = useMessages(page)
   const label: Record<Presentation, string> = {
-    peek: t('page.presentPeek'),
+    peek: sheet ? t('page.presentSheet') : t('page.presentPeek'),
     window: t('page.presentWindow'),
     page: t('page.presentPage'),
+    drawer: t('page.presentDrawer'),
   }
   return (
     <Menu>
@@ -146,7 +159,7 @@ function PresentMenu({
               if (PRESENTATIONS.includes(next as Presentation)) onChange(next as Presentation)
             }}
           >
-            {PRESENTATIONS.map((p) => (
+            {options.map((p) => (
               <MenuRadioItem key={p} value={p} data-present={p}>
                 {label[p]}
               </MenuRadioItem>
@@ -173,15 +186,18 @@ function PresentMenu({
  * when it opens and back to the opener when it closes; Escape inside it closes it (in a field the
  * first Escape only leaves the field).
  *
- * Under an `AppShell` it opens in one of three presentations, which the reader switches from the
+ * Under an `AppShell` it opens in one of four presentations, which the reader switches from the
  * header's `Open as` menu and the device remembers per `kind`: `peek`, a side panel at the end
  * edge between the header and the footer that does not scroll with the page, resized by a handle on
  * its start edge (pointer, or ArrowLeft and ArrowRight on the focused handle; Home and End for the
  * narrowest and the widest, Enter or a double click to reset), the width remembered per kind;
  * `window`, a floating window above every shell panel, dragged by its header and resized from its
- * edges and corners, which minimises to a chip in the corner; and `page`, which covers main and
- * the aside. Without a shell it is a block in flow. On a phone every presentation is a bottom
- * `Sheet` with the scrim.
+ * edges and corners, which minimises to a chip in the corner; `page`, which covers main and
+ * the aside; and `drawer`, a short panel at the foot of main, a third of it tall, whose top edge drags
+ * (or ArrowUp and ArrowDown on the focused handle) up to the whole of main, the rows above stay live and
+ * scroll clear of it. Without a shell it is a block in flow. On a phone it is a bottom `Sheet`: the
+ * scrim and one rest at its content's height, or, as a `drawer`, no scrim, a first rest at a third of
+ * the screen and a drag to full for a record taller than that.
  *
  * The header is the one panel anatomy `Dock`, `PageAside` and a right `Sheet` share: `icon` or
  * `avatar`, `tag` and `title`, previous and next from `records`, the record's typed `actions`,
@@ -214,10 +230,16 @@ export function Peek(props: PeekProps): ReactElement | null {
   return <PeekPanel {...props} shelled={host !== null} />
 }
 
-/** The phone's presentation: a bottom sheet with the scrim; closing it is the peek's close. */
+/**
+ * The phone's presentation: a bottom sheet, closing it is the peek's close. A kind the reader opens
+ * as a `drawer` is a drawer instead: no scrim, the page behind stays live, it rests at a third of the
+ * screen when its record is taller than that and drags to full.
+ */
 function PeekSheet({
   title,
   tag,
+  kind = 'record',
+  defaultPresent = 'peek',
   fullPage,
   records,
   actions,
@@ -225,10 +247,13 @@ function PeekSheet({
   onClose,
   children,
 }: PeekProps): ReactElement {
+  const [stored, setPresent] = presentationStore(kind, defaultPresent).use()
+  const drawer = stored === 'drawer'
   return (
     <Sheet
       open
       placement="bottom"
+      {...(drawer && { modeless: true, snapPoints: ['third', 'full'] as const })}
       onOpenChange={(open) => {
         if (!open) onClose()
       }}
@@ -237,20 +262,58 @@ function PeekSheet({
         title={title}
         tag={tag}
         footer={footer}
-        data-present="sheet"
+        data-present={drawer ? 'drawer' : 'sheet'}
         actions={
-          records === undefined && fullPage === undefined && actions === undefined ? undefined : (
-            <>
-              {records !== undefined && <PanelSteps records={records} />}
-              {actions !== undefined && <PanelActionBar actions={actions} />}
-              {fullPage !== undefined && <FullPageLink href={fullPage} />}
-            </>
-          )
+          <>
+            {records !== undefined && <PanelSteps records={records} />}
+            {actions !== undefined && <PanelActionBar actions={actions} />}
+            {fullPage !== undefined && <FullPageLink href={fullPage} />}
+            <PresentMenu
+              sheet
+              options={['peek', 'drawer']}
+              value={drawer ? 'drawer' : 'peek'}
+              onChange={setPresent}
+            />
+          </>
         }
       >
         {children}
       </SheetContent>
     </Sheet>
+  )
+}
+
+/**
+ * Keeps the foot of main clear of a drawer lying over it: the drawer's height as `--shell-drawer-h` on
+ * the surface, which `ShellMain` pads its scrollport by, so the last row scrolls above the drawer.
+ */
+function DrawerReserve({
+  surface,
+  panel,
+}: {
+  surface: HTMLElement
+  panel: { current: HTMLElement | null }
+}): null {
+  useEffect(() => {
+    const el = panel.current
+    if (el === null) return undefined
+    const write = (): void => surface.style.setProperty('--shell-drawer-h', `${el.offsetHeight}px`)
+    write()
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(write)
+    observer?.observe(el)
+    return () => {
+      observer?.disconnect()
+      surface.style.removeProperty('--shell-drawer-h')
+    }
+  }, [surface, panel])
+  return null
+}
+
+/** The room a drawer may grow into: the whole of main, what the shell calls the work area. */
+function drawerRoom(surface: HTMLElement): number {
+  return (
+    surface.querySelector<HTMLElement>('[data-slot="shell-main"]')?.clientHeight ??
+    window.innerHeight
   )
 }
 
@@ -274,6 +337,7 @@ function PeekPanel({
   shelled,
 }: PeekProps & { shelled: boolean }): ReactElement | null {
   const labels = usePanelLabels()
+  const t = useMessages(page)
   const slot = useContext(ShellOverlayContext)
   const node = useRef<HTMLElement | null>(null)
   const [stored, setPresent] = presentationStore(kind, defaultPresent).use()
@@ -287,12 +351,18 @@ function PeekPanel({
     saved: defaultWidth,
     onWidthChange,
   })
+  // The drawer's height is the same kind of value as a width: dragged, then remembered per kind.
+  const height = usePanelWidth({
+    store: drawerStore(kind),
+    name: `peek-drawer:${kind}`,
+    min: DRAWER_MIN,
+  })
   // Under a shell the panel waits for the region to mount: a frame later than the first commit.
   const ready = !shelled || slot !== null
   const surface = slot?.closest<HTMLElement>('[data-slot="shell-surface"]') ?? null
   const present: Presentation = !shelled
     ? 'peek'
-    : stored === 'page' && surface === null
+    : (stored === 'page' || stored === 'drawer') && surface === null
       ? 'peek'
       : stored
   const shown = present === 'window' && minimised ? 'chip' : present
@@ -386,6 +456,47 @@ function PeekPanel({
           'transition-opacity duration-slow ease-standard starting:opacity-0 motion-reduce:transition-none',
         )}
       >
+        {header()}
+        {body}
+      </dialog>,
+      surface,
+    )
+  }
+
+  if (present === 'drawer' && surface !== null) {
+    const drawerStyle: CSSProperties & { '--peek-drawer-h': string } = {
+      // The surface is a grid: an absolute child placed on its main track sits on the foot of it.
+      gridColumn: 'main-start / main-end',
+      gridRow: 'main',
+      '--peek-drawer-h': height.width !== null ? `${height.width}px` : DRAWER_REST,
+    }
+    return createPortal(
+      // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Escape and the step keys bubble from the controls inside; the panel itself takes no input
+      <dialog
+        ref={attach}
+        open
+        aria-label={title}
+        tabIndex={-1}
+        data-slot="peek"
+        data-present="drawer"
+        onKeyDown={keys}
+        style={drawerStyle}
+        className={cn(
+          'absolute inset-x-0 bottom-0 z-30 m-0 flex h-(--peek-drawer-h) max-h-full w-auto max-w-none min-w-0 flex-col border-0 border-t border-border bg-popover p-0 text-popover-foreground shadow-overlay outline-none',
+          'transition-[translate,opacity] duration-slow ease-standard starting:translate-y-8 starting:opacity-0 motion-reduce:transition-none',
+        )}
+      >
+        <PanelHandle
+          edge="top"
+          panel={node}
+          min={DRAWER_MIN}
+          slot="peek-handle"
+          label={t('page.resizeDrawer')}
+          limit={() => drawerRoom(surface)}
+          onResize={height.resize}
+          onCommit={height.commit}
+        />
+        <DrawerReserve surface={surface} panel={node} />
         {header()}
         {body}
       </dialog>,

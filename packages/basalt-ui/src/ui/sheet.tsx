@@ -214,6 +214,12 @@ const serverWide = (): boolean => false
  * calls its `clear()`, as `PageAside`'s `state` does. A string-bound sheet opens by writing the
  * field (a `SheetTrigger` cannot name a record), a boolean-bound one also by its trigger. Works with no provider.
  *
+ * A bottom sheet opens in one motion from the edge, at its content's height, and leaves at the same
+ * height: nothing resizes after it is on screen. `snapPoints` (`third`, `half`, `full`) apply only to
+ * content taller than the first point; shorter content has no drag stops. `modeless` makes it a
+ * drawer over a live page: no scrim, nothing inert, a record's short drawer under a table
+ * (`snapPoints={['third', 'full']}`).
+ *
  * @useWhen a record is edited or inspected beside the page and the page behind stays in view (modal decision: `Dialog`)
  * @neverWhen the question is a yes or no (use `Dialog`, or `AlertDialog` for a destructive confirm)
  *
@@ -279,7 +285,7 @@ function PlainSheet({
   const swipe: Swipe = resolved === 'right' ? 'right' : 'down'
   const wanted = resolved !== 'right' && snapPoints !== undefined && snapPoints.length > 0
   const shown = useOpensFromClosed(open)
-  const [fit, report] = useState<Fit>('unknown')
+  const [fit, setFit] = useState<Fit>('unknown')
   // Snap points come only with content taller than the first one: content that fits opens at its own height.
   const snapped = wanted && fit === 'taller'
   const frame: SheetFrame = {
@@ -287,7 +293,7 @@ function PlainSheet({
     snapped,
     first: wanted ? SNAP_FRACTION[snapPoints[0]!] : null,
     modeless,
-    report,
+    report: setFit,
   }
   return (
     <FrameContext value={frame}>
