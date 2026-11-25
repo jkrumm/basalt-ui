@@ -165,6 +165,10 @@ jobs:
       - name: Build the marketing site
         run: bun --filter marketing build
 
+      # Every Starlight and Expressive Code color variable in the built docs CSS resolves to a --basalt-* token.
+      - name: Docs palette
+        run: bun apps/marketing/scripts/docs-palette.ts
+
       # The site profile's own proof: sync places the sibling install's gitignored root copies and must
       # leave every committed file in apps/marketing as it is (a stale preset fails here), then doctor passes.
       - name: basalt-ui doctor on apps/marketing
