@@ -105,7 +105,7 @@ export const S = shellSelector
 
 /**
  * The frame numbers that differ between the two targets (px). Everything else the shell suite pins
- * (row pitch, section seams, footer air, gutters 8/16/24) is the same number on both, read from
+ * (row pitch, section seams, footer air, gutters 8/12/16) is the same number on both, read from
  * `SPACE`/`SPACE_STEP` by the test itself.
  *
  * - 2.x: header 44, navbar 256 / rail 48, brand inset 20 (`rowInsetX` twice).

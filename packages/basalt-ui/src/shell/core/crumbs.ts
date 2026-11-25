@@ -97,7 +97,10 @@ export function buildCrumbs(input: CrumbInput): CrumbTrail {
       continue
     }
     const route = input.routes.find((r) => normalize(r.pathname) === prefix)
-    if (route !== undefined) push({ kind: 'href', label: route.title, href: prefix })
+    // The prefix is decoded for comparison; the link encodes each segment again, so a `?` or `#` in
+    // one stays part of the path.
+    const href = `/${path.slice(0, depth).map(encodeURIComponent).join('/')}`
+    if (route !== undefined) push({ kind: 'href', label: route.title, href })
   }
 
   const parent = input.claim?.parent
