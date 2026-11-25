@@ -438,14 +438,16 @@ function renderDoc(
     formatExportDoc({ name: pascal(m.name), subpath, peers, slots: m.parts, jsdoc: m.jsdoc })
       .markdown,
   )
+  // The primary export's summary is the module intro the head already prints.
+  const summaryOf = (c: Component): string =>
+    c.summary === '' || c.summary === m.jsdoc?.summary ? '' : `${c.summary}\n\n`
   const props =
     components.length === 0
       ? []
       : [
           `\n## Props\n`,
           ...components.map(
-            (c) =>
-              `\n### ${code(c.name)}\n\n${c.summary === '' ? '' : `${c.summary}\n\n`}\`\`\`ts\n${c.signature}\n\`\`\`\n`,
+            (c) => `\n### ${code(c.name)}\n\n${summaryOf(c)}\`\`\`ts\n${c.signature}\n\`\`\`\n`,
           ),
         ]
   const tables = m.tables.map((t) => {

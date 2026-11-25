@@ -20,13 +20,6 @@ shifting (percent sizes are rendered as `flex-grow` ratios).
 
 ### `ResizablePanelGroup`
 
-Panels side by side (`orientation="horizontal"`, the default) or stacked (`"vertical"`) with a
-draggable, keyboard-reachable divider between each pair, on `react-resizable-panels`. It fills its
-parent (100% wide and high), so give the parent a height. Sizes are percentages of the group; a
-bare number is px and a `"20rem"` string is its unit. Nothing is persisted: the app passes
-`defaultLayout` and saves in `onLayoutChanged`, which is also what keeps a server render from
-shifting (percent sizes are rendered as `flex-grow` ratios).
-
 ```ts
 ResizablePanelGroup(props: ResizablePanelGroupProps): ReactElement
   className?: string  // Layout only (`h-96`, `border`)

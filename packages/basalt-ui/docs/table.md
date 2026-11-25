@@ -17,10 +17,6 @@ head sticks inside that container (or to the page when there is none).
 
 ### `Table`
 
-A plain, static table: hairline rows, a sticky head and a row height from `size`. It renders the
-native `<table>` and works with no provider; wrap it in a scroll container to scroll it, and the
-head sticks inside that container (or to the page when there is none).
-
 ```ts
 Table({ size, look, className, ...props }: TableProps): ReactElement
   className?: string  // Layout only (`w-1/3`, `text-right`, `whitespace-nowrap`)

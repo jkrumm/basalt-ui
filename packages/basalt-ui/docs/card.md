@@ -16,9 +16,6 @@ through `render`.
 
 ### `Card`
 
-The base card: a surface with a radius and a ring. Works with no provider; polymorphism only
-through `render`.
-
 ```ts
 Card({ flush, className, render, ref, ...props }: CardProps): ReactElement
   flush?: boolean | null

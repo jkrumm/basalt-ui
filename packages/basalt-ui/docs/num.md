@@ -17,10 +17,6 @@ as a verdict.
 
 ### `Num`
 
-A figure in the page locale (`useFormat`) with tabular numerals. A value that is absent or not
-finite prints a muted dash, never `NaN`, and keeps `tone` off so a missing figure never reads
-as a verdict.
-
 ```ts
 Num({ value, format, tone, className, ...props }: NumProps): ReactElement
   tone?: "neutral" | "accent" | "good" | "warn" | "bad" | "info" | null

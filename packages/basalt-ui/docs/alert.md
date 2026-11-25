@@ -17,10 +17,6 @@ The role follows the tone and cannot be passed.
 
 ### `Alert`
 
-An inline message about the page's state. `bad` and `warn` carry `role="alert"` and are announced
-at once; `good`, `info`, `accent` and `neutral` carry `role="status"` and are announced politely.
-The role follows the tone and cannot be passed.
-
 ```ts
 Alert({ tone, title, className, children, ...props }: AlertProps): ReactElement
   tone?: "neutral" | "accent" | "good" | "warn" | "bad" | "info" | null

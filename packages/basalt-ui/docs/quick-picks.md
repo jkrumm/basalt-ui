@@ -18,11 +18,6 @@ move through the pills. Compose it above or beside the field it feeds, in one `F
 
 ### `QuickPicks`
 
-A row of shortcut pills that write one value into the field they sit with (Today, Tomorrow, In 3
-days into a date input). It holds no value of its own: it shows a pill picked while the field
-equals that pill's `value`, so typing a different value clears the pick. One tab stop, arrow keys
-move through the pills. Compose it above or beside the field it feeds, in one `Field`.
-
 ```ts
 QuickPicks({ options, value, onValueChange, disabled, className, ...names }: QuickPicksProps): ReactElement
   options: readonly QuickPick[]

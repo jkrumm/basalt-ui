@@ -27,8 +27,6 @@ ToastViewport({ className, ...props }: ToastViewportProps): ReactElement
 
 ### `Toast`
 
-One toast: the surface with its `tone` dot. Pass the queue's toast object as `toast`.
-
 ```ts
 Toast({ tone, className, ...props }: ToastProps): ReactElement
   className?: string  // Layout only (`mt-2`)

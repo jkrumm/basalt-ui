@@ -16,9 +16,6 @@ search, async, multi or 50+ options, `Combobox`; free text with suggestions, `Au
 
 ### `Combobox`
 
-A searchable select on Base UI. Which job, which part: fewer than 10 known values, `Select`;
-search, async, multi or 50+ options, `Combobox`; free text with suggestions, `Autocomplete`.
-
 ```ts
 Combobox<Value = string, Multiple extends boolean | undefined = false>(props: ComboboxProps<Value, Multiple>): ReactElement
   // either children or options + aria-label

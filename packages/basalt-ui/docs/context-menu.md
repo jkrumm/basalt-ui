@@ -19,12 +19,6 @@ popup mounts on the first open, so a closed one costs a state hook and a few han
 
 ### `ContextMenu`
 
-The same list of actions as a part's "..." button, opened where the pointer is. Right click,
-a long press on touch, and Shift+F10 or the context-menu key on the focused part open it; a
-modifier right click (Shift) and a right click inside a text field keep the browser's menu.
-While it is open the trigger carries `data-popup-open`, which a part styles as selected. The
-popup mounts on the first open, so a closed one costs a state hook and a few handlers.
-
 ```ts
 ContextMenu({ children, defaultOpen, disabled, onOpenChange, }: ContextMenuProps): ReactElement
   children?: ReactNode

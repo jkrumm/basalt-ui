@@ -17,10 +17,6 @@ assistive tech by `name`; pass `aria-hidden` when the name is printed beside it.
 
 ### `Avatar`
 
-A face for a person or an object: an image over a fallback of initials or an icon, tinted from the
-name. The box is fixed, so a late or failed image changes nothing around it. It is named for
-assistive tech by `name`; pass `aria-hidden` when the name is printed beside it.
-
 ```ts
 Avatar({ name, src, icon: Icon, size, shape, className, ...props }: AvatarProps): ReactElement
   size?: "xs" | "sm" | "md" | "lg" | null

@@ -17,10 +17,6 @@ with no provider.
 
 ### `Toolbar`
 
-A row of controls with roving focus: Tab enters the row once, the arrow keys move between its
-controls (a button, a `Segmented`, a `Select` trigger through `ToolbarButton render`). Works
-with no provider.
-
 ```ts
 Toolbar({ className, ...props }: ToolbarProps): ReactElement
   // either aria-label or aria-labelledby

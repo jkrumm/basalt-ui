@@ -20,13 +20,6 @@ cell in reading order and the arrow keys move cell by cell; Space toggles. `rowT
 
 ### `CheckboxMatrix`
 
-A matrix of checkboxes on the table primitive: one row per subject, one column per grant, each
-cell a real checkbox named by its row and column heading. The corner, column and row headings
-carry `scope`, so a screen reader reads "Billing, Admin, checkbox, checked". Tab visits every
-cell in reading order and the arrow keys move cell by cell; Space toggles. `rowToggles` and
-`columnToggles` add tri-state "all" boxes that skip disabled and locked cells. Controlled with
-`value` and `onValueChange`, or uncontrolled with `defaultValue`.
-
 ```ts
 CheckboxMatrix({ rows, columns, value, defaultValue, onValueChange, cellState, rowToggles, columnToggles, rowsLabel, name, disabled, "aria-invalid": invalid, "aria-label": ariaLabel, "aria-labelledby": ariaLabelledBy, "aria-describedby": ariaDescribedBy, onBlur, className, }: CheckboxMatrixProps): ReactElement
   rows: readonly MatrixRow[]

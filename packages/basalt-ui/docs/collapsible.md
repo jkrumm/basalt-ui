@@ -16,9 +16,6 @@ no provider. For a list of sections that belong together use `Accordion`.
 
 ### `Collapsible`
 
-One show and hide region on Base UI, controlled with `open` or left to `defaultOpen`. Works with
-no provider. For a list of sections that belong together use `Accordion`.
-
 ```ts
 Collapsible({ className, ...props }: CollapsibleProps): ReactElement
   className?: string  // Layout only (`w-full`, `mt-2`)

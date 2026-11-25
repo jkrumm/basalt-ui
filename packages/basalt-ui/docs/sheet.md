@@ -21,14 +21,6 @@ field (a `SheetTrigger` cannot name a record), a boolean-bound one also by its t
 
 ### `Sheet`
 
-A panel beside the page on Base UI Drawer: edit a record without leaving it. `placement="auto"`
-moves it with the width: one media query read picks the edge and the swipe-to-dismiss axis, and
-it reads as narrow on the server and during hydration, so server and client markup never differ.
-Open state stays with the caller or the trigger, or binds to a handle: `state` is a boolean field
-(open while true) or a string field (open while non-empty, the record a URL names), and closing
-calls its `clear()`, as `PageAside`'s `state` does. A string-bound sheet opens by writing the
-field (a `SheetTrigger` cannot name a record), a boolean-bound one also by its trigger. Works with no provider.
-
 ```ts
 Sheet(props: SheetProps): ReactElement
   // either state or neither

@@ -21,14 +21,6 @@ the `VirtualLike` port of `src/core/ports.ts`.
 
 ### `VirtualList`
 
-A windowed list on `@tanstack/react-virtual` (the one primitive that needs the peer). Only the
-rows near the viewport are in the DOM, each keyed by `getItemKey` so a prepend keeps its row and
-its focus; `keepIndex` holds one row mounted wherever the scroll is. The space of the rows left
-out is a spacer, a `div` or (with `spacer="tr"`) a table row, so the rows stay real siblings.
-`children` is called once per rendered row with `[item]`. The first window is drawn for
-`initialHeight` before the scroller is measured, so server HTML holds rows. Works with no provider; assignable to
-the `VirtualLike` port of `src/core/ports.ts`.
-
 ```ts
 VirtualList({ className, count, estimateSize, getItemKey, keepIndex, revealIndex, overscan, initialHeight, spacer, columns, head, tableProps, bodyProps, children, ...props }: VirtualListProps): ReactElement
   className?: string  // Layout and the bound that makes it scroll (`max-h-96`, `flex-1`)

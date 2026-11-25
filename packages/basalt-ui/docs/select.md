@@ -17,10 +17,6 @@ row-level or an OS picker on phones, `NativeSelect`; search, async, multi or 50+
 
 ### `Select`
 
-A single-choice select on Base UI. Which job, which part: fewer than 10 known values, `Select`;
-row-level or an OS picker on phones, `NativeSelect`; search, async, multi or 50+ options,
-`Combobox`; free text with suggestions, `Autocomplete`.
-
 ```ts
 Select<Value = string>(props: SelectProps<Value>): ReactElement
   // either aria-label + options, aria-labelledby + options or children

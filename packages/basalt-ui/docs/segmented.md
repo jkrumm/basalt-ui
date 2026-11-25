@@ -18,11 +18,6 @@ shows the selection with no script. Works with no provider.
 
 ### `Segmented`
 
-A row of options on Base UI's toggle group. Single select (the default) keeps exactly one option
-on and draws it raised; the arrow keys move the selection through the options in DOM order.
-`multiple` lets several be on. The raised face is CSS on the pressed option, so a server render
-shows the selection with no script. Works with no provider.
-
 ```ts
 Segmented(props: SegmentedProps): ReactElement
   // either options, options + multiple, children or children + multiple

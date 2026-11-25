@@ -17,10 +17,6 @@ no indicator script, so it is safe on a static page.
 
 ### `Tabs`
 
-Tabs on Base UI: roving focus (ArrowLeft and ArrowRight in DOM order, Home and End), Enter or
-Space activates, and the panel is linked by `aria-controls`. Works with no provider and renders
-no indicator script, so it is safe on a static page.
-
 ```ts
 Tabs({ size, variant, className, ...props }: TabsProps): ReactElement
   size?: "sm" | "md" | null

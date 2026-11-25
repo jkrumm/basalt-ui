@@ -17,10 +17,6 @@ header names the page once.
 
 ### `EntityTitle`
 
-An entity's identity on one row: a face, a title, a subtitle and trailing tags. The title
-truncates; the face and the tags do not. A `level` makes the title a heading, so a record
-header names the page once.
-
 ```ts
 EntityTitle({ title, subtitle, avatar, tags, level, href, size, className, ...props }: EntityTitleProps): ReactElement
   size?: "sm" | "md" | "lg" | null

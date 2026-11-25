@@ -19,12 +19,6 @@ of the whole code. Works with no provider and joins a Base UI `Field` when wrapp
 
 ### `OneTimeCode`
 
-A verification code in one box per character, on Base UI's OTP field. The first box carries
-`autocomplete="one-time-code"`, so the platform suggestion (an SMS code, a password manager)
-fills every box at once; a pasted code does the same; the digit keypad opens on touch. Typing
-moves on, Backspace moves back, the arrows move between boxes. `aria-invalid` is the error state
-of the whole code. Works with no provider and joins a Base UI `Field` when wrapped in one.
-
 ```ts
 OneTimeCode({ length, onValueChange, onComplete, "aria-invalid": invalid, "aria-label": ariaLabel, "aria-labelledby": ariaLabelledBy, "aria-describedby": ariaDescribedBy, onBlur, className, ...props }: OneTimeCodeProps): ReactElement
   length?: number  // The number of boxes
