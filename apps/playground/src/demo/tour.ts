@@ -34,8 +34,8 @@ export const TOUR: Readonly<Record<string, TourStop>> = {
     parts: 'useAppForm, FormSection, Stepper, WizardDialog',
   },
   dashboard: {
-    line: 'A dashboard on one range, with a widget that overrides it.',
-    parts: 'StatGroup, StatCard, ChartCard, BarList, EventList',
+    line: 'Bitcoin on a log axis colored by the CBBI, its metrics and cycles on one hover.',
+    parts: 'CartesianChart, RangeNavigator, ChartCard, DataTable focusItems, useChartFocus',
   },
   charts: {
     line: 'A price cycle on a log axis with a window, two charts on one readout, a waterfall, a heat grid.',

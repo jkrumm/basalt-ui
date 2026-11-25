@@ -106,7 +106,7 @@ export const NAV = defineNav({
           label: 'Dashboard',
           icon: Dashboard,
           mobile: 'tab',
-          link: linkOptions({ to: '/overview' }),
+          link: linkOptions({ to: '/kit/dashboard' }),
         },
         {
           id: 'charts',

@@ -83,7 +83,7 @@ describe('the nav', () => {
       '/ref/suppliers/$id',
       '/ref/settings',
       '/kit/forms/whole',
-      '/overview',
+      '/kit/dashboard',
       '/charts',
       '/kit/content',
       '/kit/states',
