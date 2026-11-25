@@ -229,7 +229,8 @@
 /* Asides are the site callout: a tinted block with a hairline ring, not a bar down one side. */
 .starlight-aside {
   padding: 0.625rem 0.875rem;
-  border: 1px solid color-mix(in srgb, var(--sl-color-asides-border) 28%, transparent);
+  border: 1px solid
+    color-mix(in srgb, var(--sl-color-asides-border, var(--basalt-hairline)) 28%, transparent);
   border-inline-start-width: 1px;
   border-radius: var(--basalt-radius-inset);
   font-size: var(--basalt-text-sm);
