@@ -1,0 +1,128 @@
+---
+// How much of a page needs no script: every part below carries the mode it ships in. Static parts are
+// HTML and CSS; enhanced ones work as HTML and gain behavior in an island; an island needs its script.
+import Chart from 'basalt-ui/astro/mdx/Chart.astro'
+import DataTable from 'basalt-ui/astro/mdx/DataTable.astro'
+import {
+  SiteBento,
+  SiteCallout,
+  SiteComparison,
+  SiteDataTable,
+  SiteFeature,
+  SiteTab,
+  SiteTabs,
+} from 'basalt-ui/static'
+import { CacheMeter, ModeTag, ServiceBars, StatCards } from '../components/Showcase'
+import type { Mode } from '../components/Showcase'
+import { COLUMNS, MODES, RECENT, SERIES, WEEKS } from '../data/showcase'
+import Layout from '../layouts/Layout.astro'
+
+const last = WEEKS.at(-1)
+const parts: { id: string; mode: Mode; title: string; text: string }[] = [
+  { id: 'cards', mode: 'static', title: 'Stat cards', text: 'Figures with a sparkline, delta and footer, drawn to HTML at build time.' },
+  { id: 'server-chart', mode: 'enhanced', title: 'A chart drawn on the server', text: 'The card and its picture are in the HTML; hydration in view adds the readout and the legend toggles.' },
+  { id: 'island-chart', mode: 'island', title: 'A chart that measures its box', text: 'Rendered in the browser behind the same card loading, so the page below never moves.' },
+  { id: 'tables', mode: 'static', title: 'Tables', text: 'A static table, and the same rows sortable once the island hydrates.' },
+  { id: 'tabs', mode: 'static', title: 'Tabs', text: 'Platform markup; the head script that every page carries switches the panels.' },
+]
+---
+
+<Layout title="Showcase | Basalt site pages" description="Static, enhanced and island parts of basalt-ui on one Astro page, each marked with what it ships.">
+  <div class="mx-auto flex max-w-5xl flex-col gap-12 px-4 py-12">
+    <header class="flex flex-col gap-3">
+      <h1 class="font-head text-display font-semibold">Showcase</h1>
+      <p class="max-w-2xl text-muted-foreground">
+        One page, every kind of part. Each section is marked <ModeTag mode="static" />, <ModeTag mode="enhanced" /> or <ModeTag mode="island" />, so you can see how much needs no script at all.
+      </p>
+    </header>
+
+    <section class="flex flex-col gap-4" aria-labelledby="cards">
+      <h2 id="cards" class="flex items-center gap-3 font-head text-xl font-semibold">{parts[0]?.title} <ModeTag mode="static" /></h2>
+      <p class="text-muted-foreground">{parts[0]?.text}</p>
+      <StatCards />
+    </section>
+
+    <section class="flex flex-col gap-4" aria-labelledby="charts">
+      <h2 id="charts" class="font-head text-xl font-semibold">Charts</h2>
+      <p class="text-muted-foreground">A chart measures its box, so it is never plain static: either the card is drawn on the server and hydrates in view, or it renders in the browser behind the same card, loading.</p>
+      <div class="@container">
+        <div class="grid grid-cols-1 gap-6 @wide:grid-cols-2">
+          <div class="flex flex-col gap-2">
+            <div class="flex items-center gap-2 text-sm font-medium">{parts[1]?.title} <ModeTag mode="enhanced" /></div>
+            <Chart
+              load="visible"
+              kind="bars"
+              title="Deploys per week"
+              figure={String(last?.deploys)}
+              period="week of 22 Sep"
+              x="week"
+              series={SERIES.slice(0, 1)}
+              data={WEEKS}
+            />
+          </div>
+          <div class="flex flex-col gap-2">
+            <div class="flex items-center gap-2 text-sm font-medium">{parts[2]?.title} <ModeTag mode="island" /></div>
+            <Chart
+              title="Deploys and rollbacks"
+              figure={String(last?.deploys)}
+              period="week of 22 Sep"
+              x="week"
+              series={SERIES}
+              data={WEEKS}
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="flex flex-col gap-4" aria-labelledby="tables">
+      <h2 id="tables" class="font-head text-xl font-semibold">Tables</h2>
+      <p class="text-muted-foreground">{parts[3]?.text}</p>
+      <div class="@container">
+        <div class="grid grid-cols-1 gap-6 @wide:grid-cols-2">
+          <div class="flex flex-col gap-2">
+            <div class="flex items-center gap-2 text-sm font-medium">Static table <ModeTag mode="static" /></div>
+            <SiteDataTable label="Deploys per week" columns={COLUMNS} rows={RECENT} />
+          </div>
+          <div class="flex flex-col gap-2">
+            <div class="flex items-center gap-2 text-sm font-medium">Sortable table <ModeTag mode="enhanced" /></div>
+            <DataTable interactive label="Deploys per week, sortable" columns={COLUMNS} rows={RECENT} />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="flex flex-col gap-4" aria-labelledby="tabs">
+      <h2 id="tabs" class="flex items-center gap-3 font-head text-xl font-semibold">{parts[4]?.title} <ModeTag mode="static" /></h2>
+      <p class="text-muted-foreground">{parts[4]?.text}</p>
+      <SiteTabs label="Install with" tabs={['bun', 'npm', 'pnpm']}>
+        <SiteTab label="bun"><code>bun add basalt-ui</code></SiteTab>
+        <SiteTab label="npm"><code>npm install basalt-ui</code></SiteTab>
+        <SiteTab label="pnpm"><code>pnpm add basalt-ui</code></SiteTab>
+      </SiteTabs>
+    </section>
+
+    <SiteBento title="A bento of parts" description="Every tile holds the real part, and every one of them is static.">
+      <SiteFeature title="Ranked bars" description="A share of the total on each row." span="wide">
+        <ServiceBars />
+      </SiteFeature>
+      <SiteFeature title="A meter" description="A native element with its zones.">
+        <CacheMeter />
+      </SiteFeature>
+      <SiteFeature title="A note" description="Tone and title as props.">
+        <SiteCallout tone="info" title="No script">This tile, and each one beside it, is HTML and CSS.</SiteCallout>
+      </SiteFeature>
+    </SiteBento>
+
+    <SiteComparison
+      title={MODES.title}
+      description={MODES.description}
+      caption={MODES.caption}
+      rowHeader={MODES.rowHeader}
+      columns={MODES.columns}
+      rows={MODES.rows}
+      yesLabel="Yes"
+      noLabel="No"
+    />
+  </div>
+</Layout>

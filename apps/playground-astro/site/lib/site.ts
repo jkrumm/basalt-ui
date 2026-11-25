@@ -5,6 +5,7 @@ export function navFor(path: string): SiteLink[] {
   const here = path.replace(/\/$/, '')
   return [
     { href: '/guides/setup/', label: 'Guides' },
+    { href: '/showcase/', label: 'Showcase' },
     { href: '/posts/', label: 'Posts' },
     { href: '/changelog/', label: 'Changelog' },
   ].map((link) => ({ ...link, current: here.startsWith(link.href.replace(/\/$/, '')) }))
@@ -15,6 +16,7 @@ export const FOOTER: readonly SiteLinkGroup[] = [
     title: 'Pages',
     links: [
       { href: '/guides/setup/', label: 'Guides' },
+      { href: '/showcase/', label: 'Showcase' },
       { href: '/posts/', label: 'Posts' },
       { href: '/changelog/', label: 'Changelog' },
     ],

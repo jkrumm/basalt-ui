@@ -2,6 +2,8 @@
 // The guide recipe: one collection, one route. A guide is one MDX file with a title, a description, a
 // date and an order; the sidebar, the table of contents, the reading time and the pager come from the collection.
 import { getCollection, render } from 'astro:content'
+import Chart from 'basalt-ui/astro/mdx/Chart.astro'
+import DataTable from 'basalt-ui/astro/mdx/DataTable.astro'
 import { SiteArticle, SiteNav, SitePager, siteMdxComponents } from 'basalt-ui/static'
 import Layout from '../../layouts/Layout.astro'
 import { LABELS, day, readingMinutes } from '../../lib/site'
@@ -17,7 +19,11 @@ export async function getStaticPaths() {
 const { entry, guides, prev, next } = Astro.props
 const { Content, headings } = await render(entry)
 const link = (g: (typeof guides)[number]) => ({ href: `/guides/${g.id}/`, label: g.data.title })
-const components = siteMdxComponents({ copyLabel: LABELS.copy, copiedLabel: LABELS.copied })
+const components = {
+  ...siteMdxComponents({ copyLabel: LABELS.copy, copiedLabel: LABELS.copied }),
+  Chart,
+  DataTable,
+}
 const toc = headings.map((h) => ({ id: h.slug, label: h.text, level: h.depth }))
 const sidebar = [
   { title: LABELS.guides, links: guides.map((g) => ({ ...link(g), current: g.id === entry.id })) },
