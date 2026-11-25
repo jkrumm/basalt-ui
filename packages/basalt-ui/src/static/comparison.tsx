@@ -101,7 +101,12 @@ export function SiteComparison({
       <div className={cn(BLOCK_FRAME, 'flex flex-col gap-8 py-12 @[64rem]:py-16')}>
         <BlockHead title={title} description={description} />
         <div className="flex min-w-0 flex-col gap-3">
-          <div className="relative min-w-0 overflow-x-auto rounded-card border border-border bg-card">
+          <section
+            aria-label={caption}
+            // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a scrolling region must be keyboard reachable (axe scrollable-region-focusable)
+            tabIndex={0}
+            className="focus-ring relative min-w-0 overflow-x-auto rounded-card border border-border bg-card"
+          >
             <table className="w-full border-collapse text-sm">
               <caption className="sr-only">{caption}</caption>
               <thead>
@@ -154,7 +159,7 @@ export function SiteComparison({
                 ))}
               </tbody>
             </table>
-          </div>
+          </section>
           {footnote !== undefined && <p className="text-xs text-muted-foreground">{footnote}</p>}
         </div>
       </div>
