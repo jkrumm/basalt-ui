@@ -379,6 +379,8 @@ export type PlotContext<T, X extends ChartX = ChartX> = {
   yLog?: boolean
   /** The right y axis is logarithmic. */
   y2Log?: boolean
+  /** Internal: the page locale, for a mark that formats a number the way the tooltip does. */
+  locale?: string
   /** Internal: the x scale kept a gutter right of the last points for the end labels (`endLabelGutter`), so each sits beside its line's end. */
   endRoom?: boolean
   /** Internal: `auto` names the lines with end labels on the narrow class too ({@link phoneNamesFit}); the legend gives way to them there. */

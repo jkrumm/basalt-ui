@@ -2550,6 +2550,7 @@ export function compileCartesian<T, X extends ChartX>(
           y2Domain: axes.right?.domain,
           ...(axes.left.log === true && { yLog: true }),
           ...(axes.right?.log === true && { y2Log: true }),
+          ...(input.locale !== undefined && { locale: input.locale }),
           ...(gutter > 0 && { endRoom: true }),
           ...(input.endLabelsNarrow === true && { phoneNames: true }),
         },

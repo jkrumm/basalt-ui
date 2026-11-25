@@ -11,6 +11,7 @@ import { text } from '@tanstack/charts/text'
 import { decorative } from '@tanstack/charts/mark/decorative'
 import type { ReactElement } from 'react'
 import type { CartesianChartBase, ChartName, YConfig } from '../contract'
+import { useProviderContext } from '../../core/provider'
 import { BASALT } from '../../tokens'
 import { CV } from '../core/theme'
 import { defaultNumberFormat } from '../core/compile'
@@ -124,7 +125,8 @@ const LABEL_DY = -6
  * />
  */
 export function Waterfall<D>(props: WaterfallProps<D>): ReactElement {
-  const format = props.format ?? ((v: number) => defaultNumberFormat(v))
+  const { locale } = useProviderContext()
+  const format = props.format ?? ((v: number) => defaultNumberFormat(v, locale))
   const steps = waterfallSteps(props)
   const good = props.polarity === 'up-bad' ? CV.bad : CV.good
   const bad = props.polarity === 'up-bad' ? CV.good : CV.bad
