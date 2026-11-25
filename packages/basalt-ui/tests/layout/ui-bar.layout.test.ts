@@ -89,6 +89,10 @@ async function open(
   await page.raw.waitForSelector('[data-testid="ui-vl"] [data-row]')
   if (scheme === 'dark') {
     await page.raw.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'))
+    // A field fades between schemes (`transition-colors`); axe reads the live colors, so let it land.
+    await page.raw.evaluate(() =>
+      Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))),
+    )
   }
   await page.settle()
   return page
