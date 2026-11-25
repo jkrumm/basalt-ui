@@ -29,7 +29,7 @@ export type ShellFrameSpec = FixtureSpec & {
     /** Mounts an open `Peek` beside the page (a long body, so its own scroll shows); closing it sets `data-peek-closed` on the document. */
     peek?: boolean
     /** The presentation the peek's kind starts in, as the device would remember it (default `peek`). */
-    present?: 'peek' | 'window' | 'page'
+    present?: 'peek' | 'window' | 'page' | 'drawer'
     /** Mounts an open `Sheet` (`placement="auto"`: the right edge from 840 px). */
     sheet?:
       | boolean

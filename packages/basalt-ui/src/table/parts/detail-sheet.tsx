@@ -3,9 +3,9 @@
  * that shows the entry a row activation hands it. A caller's own `DetailHost` wins, then the
  * enclosing `Page`'s (its `PageAside`, no wiring); without either, the body of the table brings
  * its own, so a row tap always lands somewhere and a column a tier hides is reachable. Under an
- * `AppShell` it is a `Peek` (non-modal, presented as a side panel, a window or the page, with
- * previous and next through the table's rows, remembered per table); on a phone and without a shell
- * it is a sheet.
+ * `AppShell` it is a `Peek` (non-modal, presented as a side panel, a window, the page or a short
+ * drawer, with previous and next through the table's rows, remembered per table; `detailPresent`
+ * picks the first); on a phone and without a shell it is a sheet, a short drawer for `detailPresent: 'drawer'`.
  */
 import { useContext, useEffect, useRef, useState } from 'react'
 import type { ReactElement } from 'react'
@@ -85,6 +85,7 @@ export function useDetailHost<T>(
     ) : (
       <Peek
         kind={model.id}
+        {...(model.detailPresent !== undefined && { defaultPresent: model.detailPresent })}
         title={entry.title}
         {...(records !== undefined && { records })}
         onClose={close}
@@ -93,10 +94,16 @@ export function useDetailHost<T>(
       </Peek>
     )
   }
+  const drawer = model.detailPresent === 'drawer'
   return (
     <Sheet
       key={generation}
       open={entry !== null}
+      {...(drawer && {
+        placement: 'bottom',
+        modeless: true,
+        snapPoints: ['third', 'full'] as const,
+      })}
       onOpenChange={(open) => !open && close()}
       onOpenChangeComplete={(open) => {
         painted.current = open

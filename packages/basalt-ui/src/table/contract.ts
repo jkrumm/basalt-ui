@@ -363,6 +363,15 @@ type DetailDoor<T> = {
    * names the table and the id.
    */
   detailById?: (id: string, box: Box) => ReactNode
+  /**
+   * How the record opens until the reader picks another from the panel's `Open as` menu, as
+   * `Peek`'s `defaultPresent`: `peek` is the side panel, `window` a floating window, `page` the main
+   * area, `drawer` a short panel at the foot of the main area, a third of it tall, that drags up to
+   * the whole area while the rows above stay live. Without a shell, or on a phone, `drawer` is a
+   * bottom sheet that rests at a third of the screen and drags to full; the other values are the sheet.
+   * Default `peek`.
+   */
+  detailPresent?: 'peek' | 'window' | 'page' | 'drawer'
   onRowActivate?: never
   activeRowId?: never
 }
@@ -542,5 +551,6 @@ export type UseDataTable<
       detailTitleById?: never
       detailState?: never
       detailById?: never
+      detailPresent?: never
     }
 )

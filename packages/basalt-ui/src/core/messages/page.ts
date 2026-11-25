@@ -35,6 +35,9 @@ export type PageMessages = Record<
   | 'page.presentPeek'
   | 'page.presentWindow'
   | 'page.presentPage'
+  | 'page.presentDrawer'
+  | 'page.presentSheet'
+  | 'page.resizeDrawer'
   | 'page.minimise'
   | 'page.restore'
   | 'page.propertyEmpty'
@@ -73,6 +76,9 @@ export const page = {
   'page.presentPeek': 'Side panel',
   'page.presentWindow': 'Window',
   'page.presentPage': 'Full page',
+  'page.presentDrawer': 'Drawer',
+  'page.presentSheet': 'Sheet',
+  'page.resizeDrawer': 'Resize drawer',
   'page.minimise': 'Minimise',
   'page.restore': 'Restore',
   'page.favorite': 'Add to favorites',

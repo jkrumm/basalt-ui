@@ -7,7 +7,6 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent, PointerEvent, ReactElement, RefObject } from 'react'
-import { cn } from './cn'
 
 /**
  * The header row: under a shell with a page bar band the band's height (`--page-bar-h`, unset while
@@ -45,20 +44,22 @@ const STEP_BIG = 64
 /** The room a panel leaves when its `max-width` does not compute to px (a percentage). */
 const ROOM = 48
 
-/** The handle's box and hairline; `EDGE_CLASS` puts it on the panel's start or end edge. */
+/** The handle's box and hairline; `EDGE_CLASS` puts it on the panel's start or end edge, `TOP_CLASS` on a drawer's top. */
 const HANDLE_CLASS =
   'absolute inset-y-0 z-10 w-2 cursor-col-resize touch-none select-none focus-ring focus-visible:-outline-offset-2 after:absolute after:inset-y-0 after:w-px after:bg-transparent after:transition-colors hover:after:bg-border data-dragging:after:w-0.5 data-dragging:after:bg-brand motion-reduce:after:transition-none'
 
 const EDGE_CLASS = {
-  start: 'start-0 after:start-0',
+  start: `${HANDLE_CLASS} start-0 after:start-0`,
   // Centred on the column's hairline, so the list's own scrollbar stays clear of the hit area.
-  end: '-end-1 after:start-1',
+  end: `${HANDLE_CLASS} -end-1 after:start-1`,
+  // A drawer's top edge: the same hairline turned a quarter, on a bar 8px tall that rows are never under.
+  top: 'absolute inset-x-0 top-0 z-10 h-2 cursor-row-resize touch-none select-none focus-ring focus-visible:-outline-offset-2 after:absolute after:inset-x-0 after:top-0 after:h-px after:bg-transparent after:transition-colors hover:after:bg-border data-dragging:after:h-0.5 data-dragging:after:bg-brand motion-reduce:after:transition-none',
 } as const
 
 export type PanelHandleProps = {
   /** The panel it resizes; its width is read from the box and its widest from the `max-width` it computes to. */
   panel: RefObject<HTMLElement | null>
-  /** The narrowest the panel goes, in px. */
+  /** The narrowest the panel goes, in px (the shortest, for a `top` edge). */
   min: number
   /** The panel's width in px when the pointer or a key changes it, `null` once it is back at the default. */
   onResize: (px: number | null) => void
@@ -67,13 +68,19 @@ export type PanelHandleProps = {
   label: string
   /** The handle's `data-slot`, where a panel already published one (`peek-handle`); every handle carries `data-panel="handle"`. */
   slot?: string | undefined
-  /** The edge the handle sits on: `start` for a side panel (the default), `end` for a column that widens toward its end. */
-  edge?: 'start' | 'end' | undefined
+  /** The edge the handle sits on: `start` for a side panel (the default), `end` for a column that widens toward its end, `top` for a bottom drawer that grows upward and moves its height. */
+  edge?: 'start' | 'end' | 'top' | undefined
+  /** The tallest a `top` drawer goes, in px, read at the moment it is asked: the room above its foot. */
+  limit?: (() => number) | undefined
 }
 
 type Bounds = { now: number; max: number }
 
-function readBounds(panel: HTMLElement, min: number): Bounds {
+function readBounds(panel: HTMLElement, min: number, limit?: () => number): Bounds {
+  if (limit !== undefined) {
+    const height = panel.getBoundingClientRect().height
+    return { now: height, max: Math.max(limit(), min) }
+  }
   const now = panel.getBoundingClientRect().width
   const raw = getComputedStyle(panel).maxWidth
   const max = raw.endsWith('px') ? parseFloat(raw) : window.innerWidth - ROOM
@@ -97,7 +104,15 @@ export function PanelHandle({
   label,
   slot,
   edge = 'start',
+  limit,
 }: PanelHandleProps): ReactElement {
+  const top = edge === 'top'
+  // The latest `limit`, so an inline one does not restart the observer below on every render.
+  const room = useRef(limit)
+  useEffect(() => {
+    room.current = limit
+  })
+  const read = (el: HTMLElement): Bounds => readBounds(el, min, top ? room.current : undefined)
   const [bounds, setBounds] = useState<Bounds | null>(null)
   const drag = useRef<{ x: number; start: number; max: number; last: number } | null>(null)
   const [dragging, setDragging] = useState(false)
@@ -107,13 +122,13 @@ export function PanelHandle({
   useEffect(() => {
     const el = panel.current
     if (el === null) return undefined
-    const measure = (): void => setBounds(readBounds(el, min))
+    const measure = (): void => setBounds(readBounds(el, min, top ? room.current : undefined))
     measure()
     if (typeof ResizeObserver === 'undefined') return undefined
     const observer = new ResizeObserver(measure)
     observer.observe(el)
     return () => observer.disconnect()
-  }, [panel, min])
+  }, [panel, min, top])
 
   const clamp = (px: number, max: number): number => Math.min(Math.max(px, min), max)
   const apply = (px: number, max: number): number => {
@@ -130,15 +145,16 @@ export function PanelHandle({
   const onPointerDown = (e: PointerEvent<HTMLDivElement>): void => {
     const el = panel.current
     if (e.button !== 0 || el === null) return
-    const now = readBounds(el, min)
-    drag.current = { x: e.clientX, start: now.now, max: now.max, last: now.now }
+    const now = read(el)
+    drag.current = { x: top ? e.clientY : e.clientX, start: now.now, max: now.max, last: now.now }
     e.currentTarget.setPointerCapture(e.pointerId)
     setDragging(true)
   }
   const onPointerMove = (e: PointerEvent<HTMLDivElement>): void => {
     const d = drag.current
     if (d === null) return
-    const outward = edge === 'start' ? d.x - e.clientX : e.clientX - d.x
+    const at = top ? e.clientY : e.clientX
+    const outward = edge === 'end' ? at - d.x : d.x - at
     d.last = apply(d.start + outward, d.max)
   }
   const endDrag = (e: PointerEvent<HTMLDivElement>): void => {
@@ -156,10 +172,10 @@ export function PanelHandle({
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>): void => {
     const el = panel.current
     if (el === null) return
-    const now = readBounds(el, min)
+    const now = read(el)
     const step = e.shiftKey ? STEP_BIG : STEP
-    const widen = edge === 'start' ? 'ArrowLeft' : 'ArrowRight'
-    const narrow = edge === 'start' ? 'ArrowRight' : 'ArrowLeft'
+    const widen = top ? 'ArrowUp' : edge === 'start' ? 'ArrowLeft' : 'ArrowRight'
+    const narrow = top ? 'ArrowDown' : edge === 'start' ? 'ArrowRight' : 'ArrowLeft'
     let next: number
     if (e.key === widen) next = now.now + step
     else if (e.key === narrow) next = now.now - step
@@ -178,7 +194,7 @@ export function PanelHandle({
     <div
       // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- a focusable window splitter, which `hr` is not (ARIA APG)
       role="separator"
-      aria-orientation="vertical"
+      aria-orientation={top ? 'horizontal' : 'vertical'}
       aria-label={label}
       aria-valuemin={min}
       aria-valuemax={bounds === null ? undefined : Math.round(bounds.max)}
@@ -195,7 +211,7 @@ export function PanelHandle({
       onDoubleClick={reset}
       // The hairline shows on hover and while dragging, keyboard focus draws the shared ring inside the 8px
       // hit area, so a panel that clips its overflow keeps it whole.
-      className={cn(HANDLE_CLASS, EDGE_CLASS[edge])}
+      className={EDGE_CLASS[edge]}
     />
   )
 }

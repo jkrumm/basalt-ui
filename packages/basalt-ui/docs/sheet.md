@@ -34,6 +34,7 @@ Sheet(props: SheetProps): ReactElement
   // either state or neither
   placement?: Placement  // The edge it opens from
   snapPoints?: readonly SheetSnap[]  // Where a bottom sheet rests besides its content height, smallest first: `['half', 'full']` opens at half the viewport and drags to 90 %; a drag down from the lowest point dismisses
+  modeless?: boolean  // A drawer over a page that stays live: no scrim, nothing inert, a tap on the page behind passes through, and only Escape or the close button dismisses it
   state?: SheetState  // Open while the handle is `true` (boolean) or non-empty (string); closing calls `clear()`
   open?: never
   defaultOpen?: never

@@ -190,6 +190,8 @@ export type TableModel<T> = {
    * replaces the one the entry was shown in, so the entry is hidden there and shown again here.
    */
   setHost(host: DetailHost | undefined, kind: string): void
+  /** How a record opens until the reader picks another (`detailPresent`). */
+  detailPresent: 'peek' | 'window' | 'page' | 'drawer' | undefined
   /** Opens the sheet derived from the row's columns (the `table-expand` door). */
   openDetails(id: string): void
   /**
@@ -869,6 +871,7 @@ export function useDataTable<
     id: options.id,
     rowIds: rowOrder,
     label: options.label,
+    detailPresent: options.detailPresent,
     specs: arranged.specs,
     plan: arranged.plan,
     movable: arranged.movable,
