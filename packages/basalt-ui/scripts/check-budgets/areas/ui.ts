@@ -52,7 +52,7 @@ const PER_PRIMITIVE: Readonly<Record<string, number>> = {
   card: 10100, // 10004 B
   checkbox: 15500, // 15025 B, with the card and tile variants and `ChoiceCard`
   collapsible: 13000, // 11967 B
-  combobox: 96700, // 96700 B with the record drawer and the one-motion sheet (Issue 3297); 58535 B; 68024 B with the list engine (Issue 3102); 95909 B with the sheet chunk (Issue 3207)
+  combobox: 96900, // 96900 B with the record drawer and the one-motion sheet (Issue 3297); 58535 B; 68024 B with the list engine (Issue 3102); 95909 B with the sheet chunk (Issue 3207)
   'control-group': 6000, // 5672 B
   'copy-button': 12000, // 10982 B, the message catalog for its name
   'date-picker': 98100, // 98100 B with the record drawer and the one-motion sheet (Issue 3297); 69556 B; 97325 B with the sheet chunk (Issue 3207)
@@ -60,12 +60,12 @@ const PER_PRIMITIVE: Readonly<Record<string, number>> = {
   field: 15000, // 13972 B
   input: 10000, // 9326 B
   kbd: 5500, // 5000 B
-  menu: 88200, // 88200 B with the record drawer and the one-motion sheet (Issue 3297); 59304 B; 87416 B with the sheet chunk (Issue 3207)
+  menu: 88400, // 88400 B with the record drawer and the one-motion sheet (Issue 3297); 59304 B; 87416 B with the sheet chunk (Issue 3207)
   meter: 10500, // 9767 B
   num: 7000, // 6236 B
   'number-field': 18000, // 16912 B
   'password-input': 14000, // 12984 B, the message catalog for the reveal button's name
-  popover: 72800, // 72800 B with the record drawer and the one-motion sheet (Issue 3297); 44567 B; 72062 B with the sheet chunk (Issue 3207)
+  popover: 73000, // 73000 B with the record drawer and the one-motion sheet (Issue 3297); 44567 B; 72062 B with the sheet chunk (Issue 3207)
   progress: 10500, // 9676 B
   'radio-group': 18500, // 17153 B
   resizable: 23500, // 22370 B, react-resizable-panels bundled
@@ -123,8 +123,8 @@ export const rows: readonly RowDef[] = [
     // 158800 -> 167300 (Issue 3102): 166769 B measured; Select and Combobox share the list engine, its option row and its state rows.
     // 167300 -> 170500 (Issue 3206): 170340 B measured; the Sheet carries Base UI's VirtualKeyboardProvider, a grabber and snap points.
     // 170500 -> 176800 (Issue 3207): 176353 B measured; the list overlays present as a sheet on a phone, the sheet a lazy chunk this row counts.
-    // 176800 -> 177100 (Issue 3297): 177010 B measured; the sheet's fit before paint, its modeless drawer and the drawer snap.
-    ceiling: 177100,
+    // 176800 -> 177300 (Issue 3297): 177122 B measured; the sheet's fit before paint, its modeless drawer and the drawer snap.
+    ceiling: 177300,
     measure: () => measureSource(page([...TEN, ...REST_OF_25])),
   },
   ...Object.entries(PER_PRIMITIVE).map(([name, ceiling], i): RowDef => ({
@@ -149,7 +149,7 @@ export const raises: Raises = {
   'ui-prim-popover': [
     {
       from: 72500,
-      to: 72800,
+      to: 73000,
       consumer:
         'the record drawer and the one-motion sheet (owner direction 2026-11-25, Issue 3297): a sheet fits its content before paint and keeps its height on the way out, a modeless drawer with a third snap, and the Peek drawer presentation for the table detail host',
       repo: 'basalt-ui',
@@ -165,7 +165,7 @@ export const raises: Raises = {
   'ui-prim-menu': [
     {
       from: 87900,
-      to: 88200,
+      to: 88400,
       consumer:
         'the record drawer and the one-motion sheet (owner direction 2026-11-25, Issue 3297): a sheet fits its content before paint and keeps its height on the way out, a modeless drawer with a third snap, and the Peek drawer presentation for the table detail host',
       repo: 'basalt-ui',
@@ -236,7 +236,7 @@ export const raises: Raises = {
   'ui-prim-combobox': [
     {
       from: 96300,
-      to: 96700,
+      to: 96900,
       consumer:
         'the record drawer and the one-motion sheet (owner direction 2026-11-25, Issue 3297): a sheet fits its content before paint and keeps its height on the way out, a modeless drawer with a third snap, and the Peek drawer presentation for the table detail host',
       repo: 'basalt-ui',
@@ -282,7 +282,7 @@ export const raises: Raises = {
   'ui-page-25': [
     {
       from: 176800,
-      to: 177100,
+      to: 177300,
       consumer:
         'the record drawer and the one-motion sheet (owner direction 2026-11-25, Issue 3297): a sheet fits its content before paint and keeps its height on the way out, a modeless drawer with a third snap, and the Peek drawer presentation for the table detail host',
       repo: 'basalt-ui',
