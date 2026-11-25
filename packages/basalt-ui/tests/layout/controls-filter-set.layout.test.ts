@@ -413,8 +413,11 @@ layout('FilterSet', () => {
             // An input inside a number field or a chips box is judged by the box that takes the tap;
             // a small button by its `::after` hit area.
             const box =
-              el.closest<HTMLElement>('[data-slot="number-field"], [data-slot="combobox-chips"]') ??
-              el
+              (el instanceof HTMLInputElement
+                ? el.closest<HTMLElement>(
+                    '[data-slot="number-field"], [data-slot="combobox-chips"]',
+                  )
+                : null) ?? el
             const after = getComputedStyle(box, '::after')
             const ah = parseFloat(after.height)
             const h = Math.max(
@@ -422,7 +425,9 @@ layout('FilterSet', () => {
               Number.isNaN(ah) || after.content === 'none' ? 0 : ah,
             )
             checked++
-            if (h + 0.5 < 44)
+            // A text field has no `::after`: its own box, at the density's height, is its target (24 px at least).
+            const need = el instanceof HTMLInputElement ? 24 : 44
+            if (h + 0.5 < need)
               short.push(`${el.getAttribute('aria-label') ?? el.textContent} ${h.toFixed(0)}`)
           }
           return { short, checked }
