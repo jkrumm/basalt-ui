@@ -44,6 +44,7 @@ export default defineConfig({
       // Starlight's theme variables read basalt's tokens; one scheme store for docs and site.
       customCss: ["basalt-ui/starlight.css"],
       expressiveCode: {
+        // Syntax colors come from this pair; the frame, surface and markers come from starlight.css.
         themes: ["github-dark", "github-light"],
         // basalt's scheme: data-theme for an explicit choice, the system scheme when it is absent.
         useStarlightDarkModeSwitch: false,
