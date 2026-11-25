@@ -1,0 +1,52 @@
+---
+title: Islands in a guide
+description: A chart and a sortable table in a guide, each behind a card that holds its place.
+date: 2026-11-25
+order: 3
+---
+
+A guide stays static until a part needs the browser. Two tags carry the parts that do, and each reserves the height it will have.
+
+## A chart
+
+A chart measures the box it draws in, so the `Chart` tag renders it in the browser. Until it arrives the page shows the same card loading, which is as tall as the finished one at any width.
+
+<Chart
+  title="Deploys per week"
+  figure="34"
+  period="week of 22 Sep"
+  x="week"
+  series={[
+    { key: 'deploys', label: 'Deploys' },
+    { key: 'rollbacks', label: 'Rollbacks', color: 3 },
+  ]}
+  data={[
+    { week: '2026-07-06', deploys: 14, rollbacks: 2 },
+    { week: '2026-07-13', deploys: 18, rollbacks: 1 },
+    { week: '2026-07-20', deploys: 17, rollbacks: 3 },
+    { week: '2026-07-27', deploys: 22, rollbacks: 1 },
+    { week: '2026-08-03', deploys: 19, rollbacks: 2 },
+    { week: '2026-08-10', deploys: 25, rollbacks: 1 },
+  ]}
+/>
+
+## A sortable table
+
+<DataTable
+  interactive
+  label="Deploys per week"
+  columns={[
+    { key: 'week', label: 'Week', kind: 'date' },
+    { key: 'deploys', label: 'Deploys', kind: 'number' },
+    { key: 'rollbacks', label: 'Rollbacks', kind: 'number' },
+  ]}
+  rows={[
+    { week: '2026-07-06', deploys: 14, rollbacks: 2 },
+    { week: '2026-07-13', deploys: 18, rollbacks: 1 },
+    { week: '2026-07-20', deploys: 17, rollbacks: 3 },
+  ]}
+/>
+
+## The rule
+
+Hydrate below the fold with `client:visible`; the page is HTML first either way, and the matrix measures that no island moves it.
