@@ -122,6 +122,7 @@ export const ALLOTMENT: Allotment = {
     'popover',
     'tooltip',
     'menu',
+    'context-menu',
     'toast',
     'tabs',
     'accordion',
