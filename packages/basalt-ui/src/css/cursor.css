@@ -59,9 +59,14 @@
   [role='checkbox'],
   [role='radio'],
   [role='switch'],
-  [data-activatable],
-  label
-):is(:disabled, [aria-disabled='true'], [data-disabled], :has(:disabled, [data-disabled])) {
+  [data-activatable]
+):is(:disabled, [aria-disabled='true'], [data-disabled]) {
+  cursor: not-allowed;
+}
+
+/* A label of a disabled control is as dead as the control. Only a label looks into its children: a row or
+   card that holds one disabled button still opens on click. */
+label:has(:disabled, [data-disabled]) {
   cursor: not-allowed;
 }
 

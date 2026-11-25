@@ -105,6 +105,11 @@ layout('the cursor law', () => {
     expect(await cursorOf(page, '[data-testid="button-disabled"] button')).toBe('not-allowed')
   })
 
+  test('a clickable row that holds a disabled button keeps its pointer', async () => {
+    const page = await open()
+    expect(await cursorOf(page, '[data-testid="row-with-disabled"]')).toBe('pointer')
+  })
+
   test('a draggable board item and a sortable handle show the grab hand', async () => {
     const page = await open()
     expect(await cursorOf(page, '[data-testid="board"] [data-slot="board-item"]')).toBe('grab')
