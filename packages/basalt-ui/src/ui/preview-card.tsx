@@ -3,6 +3,7 @@ import { createContext, useContext, useState } from 'react'
 import type { PointerEvent, ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
 import { ControlScopeProvider } from '../core/control-scope'
+import { POPUP_POSITIONER, POPUP_POSITIONER_CLASS } from '../core/popup-position'
 import { popoverContentVariants } from './popover'
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
@@ -159,8 +160,9 @@ export function PreviewCardContent({
           {...(side !== undefined && { side })}
           {...(align !== undefined && { align })}
           {...(alignOffset !== undefined && { alignOffset })}
+          {...POPUP_POSITIONER}
           sideOffset={sideOffset}
-          className="z-50 outline-none"
+          className={POPUP_POSITIONER_CLASS}
         >
           <BasePreviewCard.Popup
             {...props}

@@ -15,6 +15,7 @@ import {
   useSheetPresent,
 } from './overlay-presenter'
 import type { OverlayPresent } from './overlay-presenter'
+import { POPUP_POSITIONER, POPUP_POSITIONER_CLASS } from '../core/popup-position'
 
 /**
  * The `PopoverContent` cva table: a floating panel on the popup surface, 288 px wide unless a width
@@ -25,7 +26,7 @@ import type { OverlayPresent } from './overlay-presenter'
  * popoverContentVariants() // class string for a hand-built popup
  */
 export const popoverContentVariants = cva(
-  'max-h-(--available-height) w-72 max-w-(--available-width) origin-(--transform-origin) overflow-y-auto rounded-ctrl border border-border bg-popover p-3 text-sm shadow-overlay outline-none transition-[opacity,scale] duration-fast ease-enter data-ending-style:ease-exit data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0 motion-reduce:transition-none',
+  'max-h-(--available-height) w-72 max-w-(--available-width) origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-ctrl border border-border bg-popover p-3 text-sm shadow-overlay outline-none transition-[opacity,scale] duration-fast ease-enter data-ending-style:ease-exit data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0 motion-reduce:transition-none',
 )
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
@@ -189,8 +190,9 @@ export function PopoverContent({
           {...(side !== undefined && { side })}
           {...(align !== undefined && { align })}
           {...(alignOffset !== undefined && { alignOffset })}
+          {...POPUP_POSITIONER}
           sideOffset={sideOffset}
-          className="z-50 outline-none"
+          className={POPUP_POSITIONER_CLASS}
         >
           <BasePopover.Popup
             {...props}

@@ -14,6 +14,7 @@ import {
   useOverlayRoot,
 } from './overlay-presenter'
 import type { OverlayPresent } from './overlay-presenter'
+import { POPUP_POSITIONER, POPUP_POSITIONER_CLASS } from '../core/popup-position'
 
 /**
  * The `MenuContent` cva table: the popup of a list of actions, at least 10 rem wide and never taller
@@ -24,7 +25,7 @@ import type { OverlayPresent } from './overlay-presenter'
  * menuContentVariants() // class string for a hand-built popup
  */
 export const menuContentVariants = cva(
-  'max-h-(--available-height) min-w-40 origin-(--transform-origin) overflow-y-auto rounded-ctrl border border-border bg-popover p-1 text-sm shadow-overlay outline-none transition-[opacity,scale] duration-fast ease-enter data-ending-style:ease-exit data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0 motion-reduce:transition-none',
+  'max-h-(--available-height) max-w-(--available-width) min-w-40 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-ctrl border border-border bg-popover p-1 text-sm shadow-overlay outline-none transition-[opacity,scale] duration-fast ease-enter data-ending-style:ease-exit data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0 motion-reduce:transition-none',
 )
 
 /**
@@ -234,8 +235,9 @@ export function MenuContent({
           {...(side !== undefined && { side })}
           {...(align !== undefined && { align })}
           {...(alignOffset !== undefined && { alignOffset })}
+          {...POPUP_POSITIONER}
           sideOffset={sideOffset}
-          className="z-50 outline-none"
+          className={POPUP_POSITIONER_CLASS}
         >
           <BaseMenu.Popup
             {...props}
@@ -388,9 +390,10 @@ export function MenuSub({
         ) : (
           <BaseMenu.Portal>
             <BaseMenu.Positioner
+              {...POPUP_POSITIONER}
               {...(sideOffset !== undefined && { sideOffset })}
               alignOffset={alignOffset}
-              className="z-50 outline-none"
+              className={POPUP_POSITIONER_CLASS}
             >
               <BaseMenu.Popup data-slot="menu-content" className={menuContentVariants()}>
                 {children}

@@ -7,6 +7,7 @@ import { Combobox as BaseCombobox } from '@base-ui/react/combobox'
 import { createContext, useCallback, useContext } from 'react'
 import type { ReactElement, ReactNode, Ref } from 'react'
 import { ControlScopeProvider } from '../control-scope'
+import { POPUP_POSITIONER, POPUP_POSITIONER_CLASS } from '../popup-position'
 import { select } from '../messages/select'
 import { useMessages } from '../messages/use-messages'
 
@@ -65,8 +66,9 @@ export function PopupFrame({
     <ControlScopeProvider value={null}>
       <Base.Portal {...(container !== undefined && { container })}>
         <Base.Positioner
+          {...POPUP_POSITIONER}
           sideOffset={4}
-          className="z-50 outline-none"
+          className={POPUP_POSITIONER_CLASS}
           ref={dismiss}
           {...(anchor !== undefined && { anchor: anchor as never })}
         >

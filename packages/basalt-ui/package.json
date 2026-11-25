@@ -177,6 +177,11 @@
       "import": "./dist/core/phase-boundary.js",
       "default": "./dist/core/phase-boundary.js"
     },
+    "./core/popup-position": {
+      "types": "./dist/core/popup-position.d.ts",
+      "import": "./dist/core/popup-position.js",
+      "default": "./dist/core/popup-position.js"
+    },
     "./core/ports": {
       "types": "./dist/core/ports.d.ts",
       "import": "./dist/core/ports.js",

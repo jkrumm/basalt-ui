@@ -15,6 +15,7 @@ import type { ListVirtual } from '../core/list/engine'
 import type { ListItems, ListOption, ListSource } from '../core/list/options'
 import { defaultRank } from '../core/list/rank'
 import type { RankFn } from '../core/list/rank'
+import { POPUP_POSITIONER, POPUP_POSITIONER_CLASS } from '../core/popup-position'
 import { ListSheet } from './list-sheet'
 import {
   OverlayProvider,
@@ -74,7 +75,7 @@ export const selectTriggerVariants = cva(
  * selectContentVariants()
  */
 export const selectContentVariants = cva(
-  'max-h-(--available-height) min-w-(--anchor-width) overflow-y-auto rounded-ctrl border border-border bg-popover p-1 shadow-overlay outline-none',
+  'max-h-(--available-height) max-w-(--available-width) min-w-(--anchor-width) overflow-x-hidden overflow-y-auto rounded-ctrl border border-border bg-popover p-1 shadow-overlay outline-none',
 )
 
 /**
@@ -519,7 +520,11 @@ function SearchableSelect({
         ) : (
           <ControlScopeProvider value={null}>
             <BaseCombobox.Portal>
-              <BaseCombobox.Positioner sideOffset={4} className="z-50 outline-none">
+              <BaseCombobox.Positioner
+                {...POPUP_POSITIONER}
+                sideOffset={4}
+                className={POPUP_POSITIONER_CLASS}
+              >
                 <BaseCombobox.Popup
                   data-slot="select-content"
                   className={cn(
@@ -627,7 +632,11 @@ export function SelectContent({
   return (
     <ControlScopeProvider value={null}>
       <BaseSelect.Portal {...(container !== undefined && { container })}>
-        <BaseSelect.Positioner sideOffset={4} className="z-50 outline-none">
+        <BaseSelect.Positioner
+          {...POPUP_POSITIONER}
+          sideOffset={4}
+          className={POPUP_POSITIONER_CLASS}
+        >
           <BaseSelect.Popup
             {...props}
             data-slot="select-content"

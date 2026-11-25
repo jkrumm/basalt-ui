@@ -142,7 +142,8 @@ function Row({
  * The reader's appearance in one part: theme, accent color, density and layout, each applied to
  * `<html>` the moment it is picked and kept across reloads (`setScheme`, `setAppearance`), with a
  * reset that returns every row to the app's default. Theme, density and layout are choice tiles,
- * the accent a swatch row. It keys on its container, so it fits a settings row and a popover alike.
+ * the accent a swatch row. It keys on its container, so it fits a settings row and a popover alike:
+ * 18 rem wide where its parent sizes to its content (a menu submenu), never wider than its parent.
  *
  * @useWhen a settings page or a header popover lets the reader pick theme, accent, density or layout
  * @neverWhen the app offers only light and dark (a three-way switch is enough), or on a content site (`ThemeSwitch`)
@@ -256,7 +257,7 @@ export function AppearanceSwitcher({
   return (
     <div
       data-slot="appearance-switcher"
-      className={cn('@container flex min-w-0 flex-col gap-5', className)}
+      className={cn('@container flex w-72 min-w-0 max-w-full flex-col gap-5', className)}
     >
       {rows.map(row)}
       <div>
