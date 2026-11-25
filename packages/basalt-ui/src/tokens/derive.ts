@@ -336,7 +336,7 @@ export function mixHex(a: string, b: string, t: number): string {
 export type InkKey = 'ink' | 'ink2' | 'muted' | 'faint'
 
 const INK_TONE: Record<Side, Record<InkKey, number>> = {
-  // light `faint` is tone 43.5 so tertiary text clears WCAG AA (4.5:1) on every text surface
+  // light `faint` is tone 43 so tertiary text clears WCAG AA (4.5:1) on every text surface
   // (bg / panel / subtle / field); 44.5 fell to 4.48:1 on the 92.5 page.
   light: { ink: 15.16, ink2: 27.09, muted: 34.88, faint: 43 },
   dark: { ink: 90.94, ink2: 88.12, muted: 84.91, faint: 68.5 },

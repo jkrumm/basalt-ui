@@ -464,7 +464,7 @@ function SearchableSelect({
           })}
       data-slot="select-search"
       placeholder={t('select.search')}
-      className="mb-1 h-ctl w-full shrink-0 rounded-chip border border-input bg-background px-2 text-sm text-foreground focus-ring placeholder:text-faint"
+      className="mb-1 h-ctl w-full shrink-0 rounded-chip border border-input bg-field px-2 text-sm text-foreground focus-ring placeholder:text-faint"
     />
   )
   const rows = (
