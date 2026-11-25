@@ -38,8 +38,8 @@ export const TOUR: Readonly<Record<string, TourStop>> = {
     parts: 'StatGroup, StatCard, ChartCard, BarList, EventList',
   },
   charts: {
-    line: 'Lines with a mean and gaps, a second axis, one x domain, faded bars, a lone point.',
-    parts: 'CartesianChart, ChartCard',
+    line: 'A price cycle on a log axis with a window, two charts on one readout, a waterfall, a heat grid.',
+    parts: 'CartesianChart, RangeNavigator, Waterfall, Heatmap, ChartCard',
   },
   content: {
     line: 'An authored MDX article with an on-this-page rail and links to the next stop.',
