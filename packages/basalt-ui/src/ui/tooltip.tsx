@@ -13,7 +13,7 @@ import { POPUP_POSITIONER, POPUP_POSITIONER_CLASS } from '../core/popup-position
  * tooltipVariants() // class string for a hand-built popup
  */
 export const tooltipVariants = cva(
-  'pointer-events-none max-w-[min(20rem,var(--available-width))] origin-(--transform-origin) rounded-chip border border-border bg-popover px-2 py-1 text-xs shadow-overlay transition-[opacity,scale] duration-fast ease-enter data-ending-style:ease-exit data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0 data-instant:transition-none motion-reduce:transition-none',
+  'pointer-events-none max-w-[min(20rem,var(--available-width))] origin-(--transform-origin) rounded-chip break-words border border-border bg-popover px-2 py-1 text-xs shadow-overlay transition-[opacity,scale] duration-fast ease-enter data-ending-style:ease-exit data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0 data-instant:transition-none motion-reduce:transition-none',
 )
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
