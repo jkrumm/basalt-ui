@@ -18,11 +18,6 @@ word. Works on plain http too.
 
 ### `CopyButton`
 
-A button that copies `value` to the clipboard and says so: the glyph turns to a check and the
-name (the word too, with `showLabel`) to "Copied" until the pointer or focus leaves. Ghost and
-icon-only by default, so it fits an `Input` `end` slot or a code line; `showLabel` adds the
-word. Works on plain http too.
-
 ```ts
 CopyButton({ value, label, showLabel, onCopied, variant, size, className, onPointerLeave, onBlur, ...props }: CopyButtonProps): ReactElement
   size?: "sm" | "md" | null

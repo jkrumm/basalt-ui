@@ -18,11 +18,6 @@ with no provider.
 
 ### `Menu`
 
-A list of actions on Base UI: Enter, Space or a click opens it, arrows and typeahead move,
-Enter or a click runs an item, Escape closes it and gives focus back, and it is always portalled
-above the page. Open state stays with the caller (`open`/`onOpenChange`) or the trigger. Works
-with no provider.
-
 ```ts
 Menu({ present, open, defaultOpen, onOpenChange, ...props }: MenuProps): ReactElement
   present?: OverlayPresent  // How the list opens: `auto` is an action sheet from the bottom on a phone (compact width, coarse pointer) and the anchored popup elsewhere; `popup` and `sheet` force one

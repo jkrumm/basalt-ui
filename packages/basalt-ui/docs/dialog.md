@@ -17,10 +17,6 @@ trigger. Works with no provider.
 
 ### `Dialog`
 
-A modal dialog on Base UI: focus is trapped, Escape and the corner close dismiss it, and it is
-always portalled above the page. Open state stays with the caller (`open`/`onOpenChange`) or the
-trigger. Works with no provider.
-
 ```ts
 Dialog(props: DialogProps): ReactElement
 ```

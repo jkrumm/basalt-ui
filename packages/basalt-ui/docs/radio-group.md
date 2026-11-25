@@ -18,11 +18,6 @@ provider and joins a Base UI `Field` when wrapped in one. Name each radio with a
 
 ### `RadioGroup`
 
-A group of radios on Base UI: one selected value, arrow keys move it in DOM order. Works with no
-provider and joins a Base UI `Field` when wrapped in one. Name each radio with a wrapping
-`<label>`, or give `options` and each row is labelled and described for you. `variant="card"` or
-`"tile"` draws the options as selectable cards with a trailing value and a preview.
-
 ```ts
 RadioGroup<Value = string>({ className, variant, options, children, ...props }: RadioGroupProps<Value>): ReactElement
   className?: string  // Layout only (`w-full`, `max-w-sm`, `mt-2`)

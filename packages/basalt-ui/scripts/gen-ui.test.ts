@@ -154,6 +154,15 @@ describe('the real tree', () => {
     }
   })
 
+  test('no doc repeats its module intro under a component heading', () => {
+    for (const [doc, text] of generate(REAL_ROOTS)) {
+      if (!doc.startsWith('docs/')) continue
+      const intro = /\n# \w+\n\n([\s\S]*?)\n\n## /.exec(text)?.[1]
+      if (intro === undefined) continue
+      expect({ doc, count: text.split(intro).length - 1 }).toEqual({ doc, count: 1 })
+    }
+  })
+
   test("a doc prints each component's props beside the variants", () => {
     const files = generate(REAL_ROOTS)
     expect(files.get('docs/button.md')).toMatch(/### `Button`[\s\S]*\n {2}loading\?: boolean/)

@@ -15,8 +15,6 @@ A tinted word chip for a state: `Draft`, `Overdue`.
 
 ### `Lozenge`
 
-A tinted word chip for a state: `Draft`, `Overdue`.
-
 ```ts
 Lozenge({ tone, className, ...props }: LozengeProps): ReactElement
   className?: string  // Layout only (`ml-auto`, `absolute -top-1 -right-1`)

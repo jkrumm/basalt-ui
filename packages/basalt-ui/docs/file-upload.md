@@ -22,15 +22,6 @@ hidden input is not role `textbox` or a visible control: find the zone by role `
 
 ### `FileUpload`
 
-A file picker with a drop zone on Base UI's `Input` (the hidden `<input type="file">`, so it joins a
-Base UI `Field`: the label, `name` and `disabled` reach the input). The zone is one button: Enter or
-Space, or a click, opens the picker; dropping files on it adds them. Files are checked against
-`accept`, `maxSize` and `maxFiles`: accepted ones go to `onValueChange`, refused ones to `onReject`
-and, as a sentence naming the file and the limit, to a live region under the zone. Single mode
-replaces the file and keeps a smaller "Replace file" zone; `multiple` appends and drops duplicates
-(same name, size and modified time). Chosen files list below with a remove button each. The
-hidden input is not role `textbox` or a visible control: find the zone by role `button`.
-
 ```ts
 FileUpload({ value, defaultValue, onValueChange, accept, multiple, maxSize, maxFiles, onReject, disabled, hint, "aria-label": ariaLabel, "aria-labelledby": ariaLabelledby, "aria-describedby": ariaDescribedby, "aria-invalid": ariaInvalid, name, className, }: FileUploadProps): ReactElement
   value?: readonly File[]  // The chosen files, to control the part

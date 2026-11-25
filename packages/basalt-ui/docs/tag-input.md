@@ -19,12 +19,6 @@ as an invalid chip and the entry `aria-invalid`. The entry is a Base UI input, s
 
 ### `TagInput`
 
-Free values as removable chips inside one field. Enter, a typed separator or leaving the field
-turns the typed text into a tag; Backspace on an empty entry removes the last tag; a pasted list
-splits on the separators and line breaks. Duplicates are ignored. `validate` marks a failing tag
-as an invalid chip and the entry `aria-invalid`. The entry is a Base UI input, so a wrapping
-`Field` or `FormField` names and describes it. Controlled with `value` or uncontrolled.
-
 ```ts
 TagInput({ value, defaultValue, onValueChange, validate, separators, max, placeholder, name, disabled, readOnly, "aria-invalid": invalidProp, "aria-label": ariaLabel, "aria-labelledby": ariaLabelledBy, "aria-describedby": ariaDescribedBy, autoComplete, inputMode, onBlur, className, }: TagInputProps): ReactElement
   value?: readonly string[]

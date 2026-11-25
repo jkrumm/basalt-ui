@@ -15,8 +15,6 @@ A button on Base UI. Works with no provider; polymorphism only through `render`.
 
 ### `Button`
 
-A button on Base UI. Works with no provider; polymorphism only through `render`.
-
 ```ts
 Button({ variant, size, shape, loading, disabled, focusableWhenDisabled, className, children, ...props }: ButtonProps): ReactElement
   // either aria-label + shape or neither

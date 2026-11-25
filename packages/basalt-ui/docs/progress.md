@@ -17,10 +17,6 @@ indeterminate. The percentage read out to assistive tech is formatted in the pag
 
 ### `Progress`
 
-A bar for work that has a measure. `value` runs from `min` (0) to `max` (100); `null` is
-indeterminate. The percentage read out to assistive tech is formatted in the page locale
-(`useFormat`), so it matches the digits elsewhere on the page.
-
 ```ts
 Progress({ tone, className, value, min, max, ...props }: ProgressProps): ReactElement
   // either aria-label or aria-labelledby

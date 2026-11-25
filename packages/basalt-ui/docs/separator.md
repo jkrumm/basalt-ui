@@ -15,8 +15,6 @@ A hairline between groups, on Base UI so it carries `role="separator"` and its o
 
 ### `Separator`
 
-A hairline between groups, on Base UI so it carries `role="separator"` and its orientation.
-
 ```ts
 Separator({ orientation, className, ...props }: SeparatorProps): ReactElement
   orientation?: "horizontal" | "vertical" | null

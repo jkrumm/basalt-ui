@@ -18,11 +18,6 @@ use it directly when a card needs its own children.
 
 ### `ChoiceCard`
 
-A selectable card: a title, a line of text, an optional trailing value and an optional preview
-slot around one `Radio` or `Checkbox`. The whole card is the `<label>`, so a click anywhere selects.
-`RadioGroup` and `CheckboxGroup` draw `options` with it when their `variant` is `card` or `tile`;
-use it directly when a card needs its own children.
-
 ```ts
 ChoiceCard({ control, label, description, trailing, preview, className, }: ChoiceCardProps): ReactElement
   control: ReactElement<unknown, string | React.JSXElementConstructor<any>>  // The `Radio` or `Checkbox` the card selects with

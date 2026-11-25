@@ -16,9 +16,6 @@ A stack of disclosure sections on Base UI: one trigger per item, one item open a
 
 ### `Accordion`
 
-A stack of disclosure sections on Base UI: one trigger per item, one item open at a time unless
-`multiple` is set. Works with no provider.
-
 ```ts
 Accordion<Value = unknown>({ className, ...props }: AccordionProps<Value>): ReactElement
   className?: string  // Layout only (`w-full`, `max-w-md`, `mt-4`)

@@ -18,11 +18,6 @@ up to three dots and says busy in its name, so a color never carries the meaning
 
 ### `Calendar`
 
-A month of days, inline: no field and no popup. Use it for a mini month beside a schedule or a
-page's own day picker. Arrow keys move by day and week, Page Up and Down by month, Shift with Page
-by year, Home and End to the week's ends, and a click or Enter picks a day. A day in `marks` gets
-up to three dots and says busy in its name, so a color never carries the meaning alone.
-
 ```ts
 Calendar(props: CalendarProps): ReactElement
   // either aria-label, aria-labelledby, mode + aria-label or mode + aria-labelledby

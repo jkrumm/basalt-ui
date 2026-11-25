@@ -17,10 +17,6 @@ no provider and joins a Base UI `Field` when wrapped in one.
 
 ### `NumberField`
 
-A number input on Base UI with decrement and increment buttons; arrow keys step it, Shift steps
-by `largeStep`. The text is formatted and parsed in `locale` (`1.234,5` in `de-DE`). Works with
-no provider and joins a Base UI `Field` when wrapped in one.
-
 ```ts
 NumberField({ size, locale, className, "aria-label": ariaLabel, "aria-labelledby": ariaLabelledBy, "aria-describedby": ariaDescribedBy, placeholder, ...props }: NumberFieldProps): ReactElement
   format?: Intl.NumberFormatOptions  // Options to format the input value

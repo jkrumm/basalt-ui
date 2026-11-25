@@ -15,8 +15,6 @@ One key of a shortcut. Put a combination in one `Kbd` per key.
 
 ### `Kbd`
 
-One key of a shortcut. Put a combination in one `Kbd` per key.
-
 ```ts
 Kbd({ children, className, ...props }: KbdProps): ReactElement
   className?: string  // Layout only (`ml-auto`)

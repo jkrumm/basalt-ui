@@ -16,9 +16,6 @@ A text input on Base UI. Works with no provider and joins a Base UI `Field` when
 
 ### `Input`
 
-A text input on Base UI. Works with no provider and joins a Base UI `Field` when wrapped in one.
-`start` and `end` put an icon or a unit inside the field; without them the DOM is the bare input.
-
 ```ts
 Input({ size, className, start: Start, end, ...props }: InputProps): ReactElement
   size?: "sm" | "md" | null

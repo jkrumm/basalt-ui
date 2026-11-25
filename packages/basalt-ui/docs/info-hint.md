@@ -18,11 +18,6 @@ use the `InfoHint` that `defineGlossary` returns: its text is never retyped.
 
 ### `InfoHint`
 
-A small info glyph beside a word or number, with its definition in a popover: it opens on hover
-after 150 ms, on Enter or Space when focused and on a press (touch), and closes on Escape, an
-outside press or blur. The glyph is named `What <label> means`. For a word a glossary defines,
-use the `InfoHint` that `defineGlossary` returns: its text is never retyped.
-
 ```ts
 InfoHint({ label, children, className }: InfoHintProps): ReactElement
   className?: string  // Layout only (`-my-0.5`)

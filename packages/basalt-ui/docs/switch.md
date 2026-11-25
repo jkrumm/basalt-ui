@@ -16,9 +16,6 @@ when wrapped in one. Name it with a wrapping `<label>` or `aria-label`.
 
 ### `Switch`
 
-An on/off switch on Base UI; Space toggles it. Works with no provider and joins a Base UI `Field`
-when wrapped in one. Name it with a wrapping `<label>` or `aria-label`.
-
 ```ts
 Switch({ className, ...props }: SwitchProps): ReactElement
   className?: string  // Layout only (`mt-1`, `shrink-0`)

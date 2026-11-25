@@ -18,11 +18,6 @@ region with `aria-busy` and a status, not each box.
 
 ### `Skeleton`
 
-A placeholder for one line of loading content. Match the content's text style on the skeleton or
-its parent (`text-sm`, `text-lg`) and its height equals the content's; set the width with
-`className`. Stack several for a paragraph. It is hidden from assistive tech: name the loading
-region with `aria-busy` and a status, not each box.
-
 ```ts
 Skeleton({ className, ...props }: SkeletonProps): ReactElement
   className?: string  // Layout only (`w-32`, `w-2/3`)

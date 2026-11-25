@@ -16,9 +16,6 @@ provider; a Base UI control inside it picks up the label, description and error 
 
 ### `Field`
 
-A labelled control with an optional description and an error, on Base UI's `Field`. Works with no
-provider; a Base UI control inside it picks up the label, description and error on its own.
-
 ```ts
 Field({ label, description, error, invalid, className, children, ...props }: FieldProps): ReactElement
   className?: string  // Layout only (`w-full`, `max-w-sm`, `mt-2`)

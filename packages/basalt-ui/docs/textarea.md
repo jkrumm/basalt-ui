@@ -17,10 +17,6 @@ stays the fixed `rows` box. Works with no provider and joins a Base UI `Field` w
 
 ### `Textarea`
 
-A multi-line text field on Base UI's `Input`, rendered as a `<textarea>`. It grows with its
-content from `rows` lines (default 3) to 10, then scrolls; where `field-sizing` is unsupported it
-stays the fixed `rows` box. Works with no provider and joins a Base UI `Field` when wrapped in one.
-
 ```ts
 Textarea({ size, className, rows, style, onFocus, ...props }: TextareaProps): ReactElement
   value?: string

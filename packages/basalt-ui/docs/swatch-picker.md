@@ -19,12 +19,6 @@ UI `Field` when wrapped in one.
 
 ### `SwatchPicker`
 
-A small set of named color tokens as swatches, picked by a ring and a check. The value is the
-token's name (`brand`, `chart-3`), never a color value, so a picked color follows the theme in
-both schemes. `display="menu"` folds the grid into a popover behind a trigger that shows the
-picked color, for a field with little room. Arrow keys move through the swatches; it joins a Base
-UI `Field` when wrapped in one.
-
 ```ts
 SwatchPicker({ options, value, onValueChange, display, name, disabled, required, "aria-invalid": invalid, "aria-label": ariaLabel, "aria-labelledby": ariaLabelledBy, "aria-describedby": ariaDescribedBy, onBlur, className, }: SwatchPickerProps): ReactElement
   options: readonly SwatchOption[]

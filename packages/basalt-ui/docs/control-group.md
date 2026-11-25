@@ -35,10 +35,6 @@ ButtonGroup({ size, variant, orientation, fill, className, children, ...props }:
 
 ### `ControlGroup`
 
-Several different controls on one line as one unit, 2 px apart: a select, an input and a button.
-The group sets `size` for every child (and `variant` for its buttons); a child that passes its own
-keeps it. Inside the group a field sizes to its content, and with `fill` every child grows.
-
 ```ts
 ControlGroup({ size, variant, orientation, fill, className, children, ...props }: ControlGroupProps): ReactElement
   aria-label?: string

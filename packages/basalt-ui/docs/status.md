@@ -16,9 +16,6 @@ out; the word is the state. A word wider than its box ends in an ellipsis.
 
 ### `Status`
 
-A dot and a word for a verdict: `Healthy`, `Degraded`. The dot is a pseudo-element and not read
-out; the word is the state. A word wider than its box ends in an ellipsis.
-
 ```ts
 Status({ tone, className, children, ...props }: StatusProps): ReactElement
   className?: string  // Layout only (`ml-auto`, `shrink-0`)

@@ -18,11 +18,6 @@ for a write that is expensive. Arrow keys step by `step`, Shift or Page keys by 
 
 ### `Slider`
 
-A slider on Base UI with one thumb (`value` is a number) or two (`value` is `[low, high]`). The
-value read out to assistive tech is formatted in the page locale (`useFormat`): `1,5` in `de-DE`.
-`onValueChange` fires on every step while dragging, `onValueCommitted` once on release; use it
-for a write that is expensive. Arrow keys step by `step`, Shift or Page keys by `largeStep`.
-
 ```ts
 Slider<Value extends SliderValue = number>({ className, format: formatOptions, thumbLabels, showValue, "aria-label": ariaLabel, "aria-labelledby": ariaLabelledBy, ...props }: SliderProps<Value>): ReactElement
   className?: string  // Layout only (`max-w-xs`, `mt-2`)

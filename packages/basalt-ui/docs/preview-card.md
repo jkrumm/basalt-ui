@@ -17,10 +17,6 @@ outside press close it. It is always portalled above the page and works with no 
 
 ### `PreviewCard`
 
-A rich card on a link, on Base UI: the card opens beside the link on mouse hover and on keyboard
-focus, and on a first touch tap (the second tap follows the link); Escape, leaving, blur and an
-outside press close it. It is always portalled above the page and works with no provider.
-
 ```ts
 PreviewCard({ open: openProp, defaultOpen, onOpenChange, children, }: PreviewCardProps): ReactElement
   open?: boolean  // Controlled open state; pair it with `onOpenChange`

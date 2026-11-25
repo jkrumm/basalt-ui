@@ -20,13 +20,6 @@ through the app's `Format`. Arrow keys move by day, Page Up and Down by month, E
 
 ### `DatePicker`
 
-Pick one day in a popover calendar. `value` and `onValueChange` are `YYYY-MM-DD` strings (the
-`CalendarDate` type), never a `Date`: nothing in the string carries a zone, so the day you store
-is the day every reader sees, in Los Angeles and in Tokyo alike. The trigger prints it in UTC
-through the app's `Format`. Arrow keys move by day, Page Up and Down by month, Escape closes.
-`DateRangePicker` takes the same strings for a from and to day and reports a range only when both ends exist.
-`react-day-picker` is an optional peer of this module alone; nothing in a barrel imports it.
-
 ```ts
 DatePicker({ value, defaultValue, onValueChange, onBlur, placeholder, size, className, id, disabled, present, open, defaultOpen, onOpenChange, ...name }: DatePickerProps): ReactElement
   // either aria-label or aria-labelledby

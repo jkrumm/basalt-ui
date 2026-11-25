@@ -31,10 +31,6 @@ CheckboxGroup({ className, variant, options, children, ...props }: CheckboxGroup
 
 ### `Checkbox`
 
-One checkbox, alone or inside a `CheckboxGroup`. Space toggles it; `indeterminate` shows a dash.
-Its root is a `<span role="checkbox">`, so find it by role `checkbox`, never `button`. The check is
-drawn by the part; children are not accepted.
-
 ```ts
 Checkbox({ className, ...props }: CheckboxProps): ReactElement
   className?: string  // Layout only (`w-full`, `max-w-sm`, `mt-2`)
