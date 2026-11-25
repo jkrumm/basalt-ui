@@ -82,7 +82,7 @@ Columns: `No directive` is the static HTML: `clean`, `differs` from the client:o
 | page-aside | PageAside | clean | client:visible | 186.5 kB | 115.3 kB | 36.3 kB | Static picture first, the island adds behaviour: the docked panel is the picture; its open, close and sheet states need JS. client:visible, up to 115.3 kB further (client:idle above the fold). |
 | split-page | SplitPage | fails | none works | 179.0 kB | 107.9 kB | 36.3 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
 | dock | Dock | clean | client:visible | 186.1 kB | 114.9 kB | 36.3 kB | Static picture first, the island adds behaviour: the open record panel is the picture; close and focus hand-off need JS. client:visible, up to 114.9 kB further (client:idle above the fold). |
-| peek | Peek | clean | client:visible | 188.1 kB | 116.9 kB | 36.3 kB | Static picture first, the island adds behaviour: the open panel is the picture; Escape, close and the width drag need JS. client:visible, up to 116.9 kB further (client:idle above the fold). |
+| peek | Peek | clean | client:visible | 189.5 kB | 118.3 kB | 36.3 kB | Static picture first, the island adds behaviour: the open panel is the picture; Escape, close and the width drag need JS. client:visible, up to 118.3 kB further (client:idle above the fold). |
 | query-state | QueryState | clean | no directive | 89.9 kB | 18.7 kB | 36.3 kB | The static HTML is the whole part, 0 bytes of JavaScript: the ready branch is drawn at rest; loading and error arms are not shown. |
 | refresh-button | RefreshButton | differs | client:visible | 87.1 kB | 15.9 kB | 36.3 kB | Static picture first, the island adds behaviour: the press runs the refresh and needs JS; the age text is absent until hydration. client:visible, up to 15.9 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 1440-dark). |
 | connection-indicator | ConnectionIndicator | fails | none works | 136.2 kB | 65.1 kB | 36.3 kB | fails on the server (No QueryClient set, use QueryClientProvider to set one) and in the browser (No QueryClient set, use QueryClientProvider to set one) |
@@ -205,7 +205,7 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 - page-aside: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
 - split-page: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
 - dock: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
-- peek: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
+- peek: Peek gains the drawer presentation, a bottom panel with a height handle and the shell room it reserves (Issue 3297)
 - query-state: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
 - refresh-button: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
 - connection-indicator: the prose sheet's scheme-keyed Shiki rules (site page types) add 29 B of gzip CSS to every page
