@@ -39,8 +39,8 @@ export const rows: readonly RowDef[] = [
     // 132000 -> 137000 (Issue 3106): 136381 B measured; the favorite star, its context and default store, and the star on the page bar and the panel header.
     // 137000 -> 140500 (Issue 3206): 140222 B measured; the Sheet behind Peek and the aside carries Base UI's VirtualKeyboardProvider, a grabber and snap points.
     // 140500 -> 147300 (Issue 3207): 146833 B measured; the Dock and the pickers in the barrel present as a sheet on a phone.
-    // 147300 -> 148300 (Issue 3297): 148272 B measured; Peek's drawer presentation, the drawer height store and the sheet's fit before paint.
-    ceiling: 148300,
+    // 147300 -> 148400 (Issue 3297): 148307 B measured; Peek's drawer presentation, the drawer height store and the sheet's fit before paint.
+    ceiling: 148400,
     measure: () => measureSource(reExportAll({ page: 'page/index' })),
   },
 ]
@@ -49,7 +49,7 @@ export const raises: Raises = {
   'page-subpath': [
     {
       from: 147300,
-      to: 148300,
+      to: 148400,
       consumer:
         'the record drawer and the one-motion sheet (owner direction 2026-11-25, Issue 3297): a sheet fits its content before paint and keeps its height on the way out, a modeless drawer with a third snap, and the Peek drawer presentation for the table detail host',
       repo: 'basalt-ui',
