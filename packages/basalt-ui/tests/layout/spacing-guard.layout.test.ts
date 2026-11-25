@@ -195,6 +195,22 @@ layout('the spacing guard fails what it must', () => {
     expect(found.map((f) => f.kind)).toContain('under-bar')
   })
 
+  test('a scrollbar for two pixels of overflow', async () => {
+    const found = await offend(
+      '<div style="width:300px;height:100px;overflow-y:auto;background:#eee"><div style="height:102px"></div></div>',
+    )
+    expect(lines(found)).toMatch(
+      /stray-bar: .*draws a 11 px vertical scrollbar for 2 px of overflow/,
+    )
+  })
+
+  test('a reserved gutter with no overflow draws no stray bar', async () => {
+    const found = await offend(
+      '<div style="width:300px;height:100px;overflow-y:auto;scrollbar-gutter:stable;background:#eee"><div style="height:60px"></div></div>',
+    )
+    expect(found.map((f) => f.kind)).not.toContain('stray-bar')
+  })
+
   test('siblings in a row that start apart', async () => {
     const found = await offend(
       '<div style="display:flex;align-items:flex-start;gap:8px"><div style="height:40px;width:100px;background:#ccc"></div><div style="height:40px;width:100px;margin-top:4px;background:#ccc"></div></div>',

@@ -157,21 +157,20 @@ export function geometryFindings({ tolerance }: GeometryOptions): GeometryFindin
     }
   }
 
-  // stray-bar: a bar that draws for a few pixels of overflow nobody meant to scroll (a ring, an underline)
+  // stray-bar: a bar that draws for a few pixels of overflow nobody meant to scroll (a `stable` gutter's
+  // empty track is no bar: it needs overflow) (a ring, an underline)
   for (const el of all as HTMLElement[]) {
     if (!shown(el)) continue
     const b = bars(el)
-    // A `stable` gutter draws its empty track by design.
-    if (getComputedStyle(el).scrollbarGutter.includes('stable')) continue
     const over = (axis: 'v' | 'h'): number =>
       axis === 'v' ? el.scrollHeight - el.clientHeight : el.scrollWidth - el.clientWidth
-    if (b.v > 0 && over('v') <= 4)
+    if (b.v > 0 && over('v') > 0 && over('v') <= 4)
       report(
         'stray-bar',
         el,
         'draws a ' + b.v + ' px vertical scrollbar for ' + over('v') + ' px of overflow',
       )
-    if (b.h > 0 && over('h') <= 4)
+    if (b.h > 0 && over('h') > 0 && over('h') <= 4)
       report(
         'stray-bar',
         el,
