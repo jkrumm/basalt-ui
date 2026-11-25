@@ -301,7 +301,7 @@ layout('list overlays on a phone', () => {
         return { searchTop: s.top, optionTop: o.top }
       })
       expect(top.searchTop).toBeLessThan(top.optionTop)
-      // the sheet's search row stays a 44 px target; its text is the desktop size (iOS's focus zoom is stopped in the head)
+      // the sheet's search field is the desktop size and the density's height (iOS's focus zoom is stopped in the head)
       const field = await page.raw.evaluate(() => {
         const el = document.querySelector<HTMLElement>('[data-slot="select-search"]')!
         return {
@@ -310,7 +310,7 @@ layout('list overlays on a phone', () => {
         }
       })
       expect(field.font).toBeLessThan(16)
-      expect(field.height).toBeGreaterThanOrEqual(44)
+      expect(field.height).toBeLessThan(40)
       await page.raw.fill('[data-slot="select-search"]', 'Option 12')
       await page.settle()
       expect(await count(page, `${SHEET} [role="option"]`)).toBe(1)
