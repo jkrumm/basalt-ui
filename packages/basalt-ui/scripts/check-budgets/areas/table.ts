@@ -121,13 +121,21 @@ export const rows: readonly RowDef[] = [
     // 226500 -> 233000 (Issue 3207): 232644 B measured; the table closure carries Select and Menu, which present as a sheet on a phone.
     // 233000 -> 234400 (Issue 3262): 233991 B measured; layout specs an app adds (resolved beside the built-ins, drawn inside the table's frame), the progress kind and a searchable custom column.
     // 234400 -> 236400 (Issue 3295): 236107 B measured; a right click, a long press and Shift+F10 on a row open its "..." actions (ui/context-menu and the shared trigger).
-    ceiling: 236400,
+    // 236400 -> 237700 (Issue 3297): 237368 B measured; the detail host opens a record drawer (a modeless snapped sheet, or Peek's drawer) and the sheet's fit before paint.
+    ceiling: 237700,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
 
 export const raises: Raises = {
   'table-own': [
+    {
+      from: 236400,
+      to: 237700,
+      consumer:
+        'the record drawer and the one-motion sheet (owner direction 2026-11-25, Issue 3297): a sheet fits its content before paint and keeps its height on the way out, a modeless drawer with a third snap, and the Peek drawer presentation for the table detail host',
+      repo: 'basalt-ui',
+    },
     {
       from: 234400,
       to: 236400,
