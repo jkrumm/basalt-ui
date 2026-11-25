@@ -289,6 +289,12 @@ starlight({
 })
 ```
 
+The sheet maps every `--sl-color-*` variable, Starlight's type scale, shadows and badges, and Expressive Code's
+frame, surface and text-marker variables (`--ec-*`) to `--basalt-*` tokens, so a code block is `CodeBlock`'s: the inset
+surface, a hairline ring, no shadow and no window dots. Only the syntax colors stay with the code theme; the GitHub pair in
+the snippet is what `CodeBlock` highlights with. The sidebar, the table of contents, asides and the pager take the
+app's type and density, and the current page is a selected row, never a brand fill.
+
 The `ThemeProvider` override drops the `data-theme` Starlight renders on the server and runs
 `themeScript()`; the `ThemeSelect` override renders `ThemeSwitch` with Starlight's own translated labels.
 

@@ -1,7 +1,9 @@
-/* basalt-ui/starlight.css: Starlight's theme variables read from basalt's tokens. List it in
+/* basalt-ui/starlight.css: Starlight's theme variables, chrome and code frames read from basalt's tokens. List it in
    Starlight's `customCss` after the site's own sheet. Every value is a token, so one rule serves
    both schemes: the tokens switch on `data-theme` and on the system scheme. Unlayered on purpose:
-   Starlight's own defaults sit in cascade layers, and an unlayered rule outranks them. */
+   Starlight's and Expressive Code's own defaults sit in cascade layers, and an unlayered rule outranks them.
+   The one color left to the code theme is the syntax token: Expressive Code writes each token's color
+   inline from the Shiki theme; `github-light` and `github-dark` are the GitHub pair `CodeBlock` highlights with. */
 :root,
 :root[data-theme='light'],
 :root[data-theme='dark'],
@@ -48,13 +50,277 @@
   --sl-color-hairline: var(--basalt-hairline);
   --sl-color-hairline-shade: var(--basalt-hairline);
   --sl-color-backdrop-overlay: var(--basalt-scrim);
+  --sl-color-banner-text: var(--basalt-ink);
+
+  /* A badge is a tint with ink on it; Starlight's default is white text on a saturated fill. */
+  --sl-badge-default-text: var(--basalt-ink);
+  --sl-badge-note-text: var(--basalt-ink);
+  --sl-badge-danger-text: var(--basalt-ink);
+  --sl-badge-success-text: var(--basalt-ink);
+  --sl-badge-caution-text: var(--basalt-ink);
+  --sl-badge-tip-text: var(--basalt-ink);
+  --sl-badge-default-bg: var(--sl-color-accent-low);
+  --sl-badge-note-bg: var(--sl-color-blue-low);
+  --sl-badge-danger-bg: var(--sl-color-red-low);
+  --sl-badge-success-bg: var(--sl-color-green-low);
+  --sl-badge-caution-bg: var(--sl-color-orange-low);
+  --sl-badge-tip-bg: var(--sl-color-purple-low);
+
+  /* Starlight's stacked black shadows become basalt's. */
+  --sl-shadow-sm: var(--basalt-shadow-raised);
+  --sl-shadow-md: var(--basalt-shadow-overlay);
+  --sl-shadow-lg: var(--basalt-shadow-overlay);
 
   --sl-font: var(--basalt-font-sans);
   --sl-font-mono: var(--basalt-font-mono);
+
+  /* The type scale is the app's: 15 px body, 13 px chrome and code, a 30 px page title. */
+  --sl-text-2xs: var(--basalt-text-micro);
+  --sl-text-xs: var(--basalt-text-xs);
+  --sl-text-sm: var(--basalt-text-sm);
+  --sl-text-base: var(--basalt-text-md);
+  --sl-text-lg: var(--basalt-text-lg);
+  --sl-text-body: var(--basalt-text-md);
+  --sl-text-body-sm: var(--basalt-text-sm);
+  --sl-text-code: var(--basalt-text-sm);
+  --sl-text-code-sm: var(--basalt-text-xs);
+  --sl-text-h1: 1.875rem;
+  --sl-text-h2: 1.375rem;
+  --sl-text-h3: var(--basalt-text-lg);
+  --sl-text-h4: var(--basalt-text-md);
+  --sl-text-h5: var(--basalt-text-sm);
+  --sl-line-height: 1.65;
+  --sl-line-height-headings: 1.25;
+
+  --sl-nav-height: 3rem;
+  --sl-sidebar-pad-x: 0.75rem;
+  --sl-sidebar-item-padding-inline: 0.5rem;
+  --sl-content-gap-y: 0.75rem;
+}
+
+/* The sidebar's width is 0 below Starlight's breakpoint, where the menu is a drawer. */
+@media (min-width: 50em) {
+  :root {
+    --sl-sidebar-width: 15rem;
+  }
+}
+
+/* Code: Expressive Code's frame, surface and markers on basalt's. The block is the app's CodeBlock:
+   the inset surface, a hairline ring, the inset radius, no shadow, no window dots. */
+.expressive-code {
+  --ec-brdRad: var(--basalt-radius-inset);
+  --ec-brdCol: var(--basalt-hairline);
+  --ec-codeBg: var(--basalt-inset);
+  --ec-codeFg: var(--basalt-ink);
+  --ec-codeSelBg: var(--basalt-selected);
+  --ec-codeFontSize: var(--basalt-text-sm);
+  --ec-codeLineHt: 1.6;
+  --ec-codePadBlk: 0.75rem;
+  --ec-codePadInl: 1rem;
+  --ec-gtrFg: var(--basalt-ink-faint);
+  --ec-gtrBrdCol: var(--basalt-hairline);
+  --ec-gtrHlFg: var(--basalt-ink-muted);
+  --ec-uiFontSize: var(--basalt-text-xs);
+  --ec-uiFontFml: var(--basalt-font-sans);
+  --ec-uiSelBg: var(--basalt-selected);
+  --ec-uiSelFg: var(--basalt-ink);
+  --ec-focusBrd: var(--basalt-brand);
+  --ec-sbThumbCol: color-mix(in srgb, var(--basalt-ink) 25%, transparent);
+  /* The app's scrollbar thumb mix (styles.css), written out: the static sheets do not declare its token. */
+  --ec-sbThumbHoverCol: color-mix(in srgb, var(--basalt-ink) 40%, transparent);
+
+  --ec-tm-lineMarkerLabelCol: var(--basalt-ink);
+  --ec-tm-markBg: var(--basalt-selected);
+  --ec-tm-markBrdCol: var(--basalt-ink-faint);
+  --ec-tm-insBg: color-mix(in srgb, var(--basalt-good) var(--basalt-tint-pct), transparent);
+  --ec-tm-insBrdCol: var(--basalt-good);
+  --ec-tm-insDiffIndCol: var(--basalt-good);
+  --ec-tm-delBg: color-mix(in srgb, var(--basalt-bad) var(--basalt-tint-pct), transparent);
+  --ec-tm-delBrdCol: var(--basalt-bad);
+  --ec-tm-delDiffIndCol: var(--basalt-bad);
+
+  --ec-frm-shdCol: transparent;
+  --ec-frm-frameBoxShdCssVal: none;
+  --ec-frm-edBg: var(--basalt-inset);
+  --ec-frm-edActTabBg: var(--basalt-inset);
+  --ec-frm-edActTabFg: var(--basalt-ink);
+  --ec-frm-edActTabBrdCol: transparent;
+  --ec-frm-edActTabIndTopCol: transparent;
+  --ec-frm-edActTabIndBtmCol: transparent;
+  --ec-frm-edTabBarBg: var(--basalt-card);
+  --ec-frm-edTabBarBrdCol: var(--basalt-hairline);
+  --ec-frm-edTabBarBrdBtmCol: var(--basalt-hairline);
+  --ec-frm-trmTtbFg: var(--basalt-ink-muted);
+  --ec-frm-trmTtbDotsFg: var(--basalt-ink-muted);
+  --ec-frm-trmTtbBg: var(--basalt-card);
+  --ec-frm-trmTtbBrdBtmCol: var(--basalt-hairline);
+  --ec-frm-trmBg: var(--basalt-inset);
+  --ec-frm-inlBtnFg: var(--basalt-ink-muted);
+  --ec-frm-inlBtnBg: var(--basalt-ink);
+  --ec-frm-inlBtnBrd: var(--basalt-ink);
+  --ec-frm-tooltipSuccessBg: var(--basalt-good);
+  --ec-frm-tooltipSuccessFg: var(--basalt-on-brand);
+}
+
+/* A title is a quiet caption row: the file name in mono, no window chrome. A shell block with no title is the block alone. */
+.expressive-code .frame.is-terminal:not(.has-title) .header,
+.expressive-code .frame.is-terminal .header::before {
+  display: none;
+}
+.expressive-code .frame .header .title,
+.expressive-code .frame.is-terminal .header {
+  font-family: var(--basalt-font-mono);
+  font-size: var(--basalt-text-xs);
+  font-weight: var(--basalt-weight-body);
+  letter-spacing: 0;
+}
+.expressive-code .frame.is-terminal .header {
+  justify-content: flex-start;
+  padding-inline: var(--ec-codePadInl);
+}
+.expressive-code pre,
+.expressive-code .frame {
+  box-shadow: none;
 }
 
 /* Headings take basalt's heading face, as they do in the site parts. */
 :is(.sl-markdown-content :is(h1, h2, h3, h4, h5), h1#_top) {
   font-family: var(--basalt-font-head);
   font-stretch: var(--basalt-font-head-stretch);
+  font-weight: var(--basalt-weight-strong);
+}
+:is(.sl-markdown-content :is(h2, h3, h4, h5)) {
+  letter-spacing: -0.01em;
+}
+
+/* One title band: Starlight pads the title panel like a page section; here it is the page's first line. */
+.content-panel {
+  padding-block: 1.25rem;
+}
+.content-panel:first-child {
+  padding-block-end: 0.75rem;
+}
+
+/* Inline code is the prose chip; the tight scale keeps its line box. */
+.sl-markdown-content :not(pre) > code:not(.not-content *) {
+  padding: 0.125em 0.375em;
+  font-size: 0.875em;
+  border-radius: var(--basalt-radius-chip);
+  background-color: var(--basalt-card);
+  box-shadow: inset 0 0 0 1px var(--basalt-hairline);
+}
+
+/* Tables read like the prose table: small, hairline rows, a muted head. */
+.sl-markdown-content table:not(.not-content *) {
+  font-size: var(--basalt-text-sm);
+}
+.sl-markdown-content :is(th, td):not(.not-content *) {
+  padding: 0.5em 0.75em;
+  border-block-end: 1px solid var(--basalt-hairline);
+}
+.sl-markdown-content th:not(.not-content *) {
+  color: var(--basalt-ink-muted);
+  background-color: var(--basalt-card);
+  font-weight: var(--basalt-weight-strong);
+}
+
+/* Asides are the site callout: a tinted block with a hairline ring, not a bar down one side. */
+.starlight-aside {
+  padding: 0.625rem 0.875rem;
+  border: 1px solid color-mix(in srgb, var(--sl-color-asides-border) 28%, transparent);
+  border-inline-start-width: 1px;
+  border-radius: var(--basalt-radius-inset);
+  font-size: var(--basalt-text-sm);
+}
+.starlight-aside__title {
+  font-size: var(--basalt-text-sm);
+  font-weight: var(--basalt-weight-medium);
+}
+.starlight-aside__icon {
+  font-size: 1.125em;
+}
+.starlight-aside__title + .starlight-aside__content {
+  margin-top: 0.25rem;
+}
+
+/* The site title is ink, like the app's wordmark; brand blue marks links only. */
+.site-title {
+  font-family: var(--basalt-font-head);
+  font-stretch: var(--basalt-font-head-stretch);
+  font-size: var(--basalt-text-lg);
+  font-weight: var(--basalt-weight-strong);
+  color: var(--basalt-ink);
+}
+
+/* Sidebar: SiteNav's rhythm. A small mono group label, 13 px links, the current page a selected row. */
+.sidebar-content {
+  gap: 0.5rem;
+}
+.sidebar-content .top-level > li + li {
+  margin-top: 0.25rem;
+}
+.sidebar-content summary .large,
+.sidebar-content .large {
+  font-family: var(--basalt-font-mono);
+  font-size: var(--basalt-text-micro);
+  font-weight: var(--basalt-weight-body);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--basalt-ink-faint);
+}
+.sidebar-content summary {
+  padding-block: 0.375rem;
+}
+.sidebar-content a {
+  padding-block: 0.25rem;
+  border-radius: var(--basalt-radius-ctrl);
+  font-size: var(--basalt-text-sm);
+  line-height: 1.4;
+  color: var(--basalt-ink-muted);
+}
+.sidebar-content a:hover {
+  background-color: var(--basalt-hover);
+  color: var(--basalt-ink);
+}
+.sidebar-content a[aria-current='page'] {
+  background-color: var(--basalt-selected);
+  color: var(--basalt-ink);
+  font-weight: var(--basalt-weight-medium);
+}
+
+/* On this page: small muted rows; the section in view takes ink, not brand blue. */
+starlight-toc h2 {
+  font-family: var(--basalt-font-mono);
+  font-size: var(--basalt-text-micro);
+  font-weight: var(--basalt-weight-body);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--basalt-ink-faint);
+}
+starlight-toc a {
+  font-size: var(--basalt-text-sm);
+  line-height: 1.4;
+  color: var(--basalt-ink-muted);
+}
+starlight-toc a:hover,
+starlight-toc a[aria-current='true'] {
+  color: var(--basalt-ink);
+}
+starlight-toc a[aria-current='true'] {
+  font-weight: var(--basalt-weight-medium);
+}
+
+/* Previous and next: hairline cards without the lifted shadow. */
+.pagination-links a {
+  padding: 0.625rem 0.875rem;
+  border-color: var(--basalt-hairline);
+  border-radius: var(--basalt-radius-inset);
+  box-shadow: none;
+}
+.pagination-links a:hover {
+  background-color: var(--basalt-hover);
+}
+.pagination-links .link-title {
+  font-size: var(--basalt-text-md);
+  font-weight: var(--basalt-weight-medium);
 }
