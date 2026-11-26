@@ -55,7 +55,7 @@ describe('every v3 role is its 2.x counterpart', () => {
     expect(floor2(console)).toBe(1.06)
     expect(shell).toBeGreaterThanOrEqual(console)
     // The inset stays a distinct step inside the shell.
-    expect(floor2(contrastRatio(v3.inset.light, v3.card.light))).toBe(1.05)
+    expect(floor2(contrastRatio(v3.inset.light, v3.card.light))).toBe(1.06)
   })
 
   test('the brand fill and its label are the 2.x accent fill and on-accent', () => {
@@ -118,17 +118,17 @@ describe('text contrast is at least the 2.x pair and never under 4.5:1', () => {
   // Measured on the default config, floored to two decimals: [canvas, card, inset].
   const MEASURED: Record<Side, Record<string, readonly number[]>> = {
     light: {
-      ink: [13.15, 13.99, 13.27],
-      'ink-muted': [6.78, 7.22, 6.85],
-      brand: [4.59, 4.88, 4.63],
-      good: [5.32, 5.66, 5.37],
-      'good-tint': [4.54, 4.8, 4.58],
-      warn: [5.34, 5.68, 5.39],
-      'warn-tint': [4.54, 4.81, 4.58],
-      bad: [5.42, 5.77, 5.47],
-      'bad-tint': [4.54, 4.81, 4.59],
-      info: [5.66, 6.02, 5.71],
-      'info-tint': [4.8, 5.08, 4.83],
+      ink: [13.15, 13.99, 13.15],
+      'ink-muted': [6.78, 7.22, 6.78],
+      brand: [4.59, 4.88, 4.59],
+      good: [5.32, 5.66, 5.32],
+      'good-tint': [4.54, 4.8, 4.54],
+      warn: [5.34, 5.68, 5.34],
+      'warn-tint': [4.54, 4.81, 4.54],
+      bad: [5.42, 5.77, 5.42],
+      'bad-tint': [4.54, 4.81, 4.54],
+      info: [5.66, 6.02, 5.66],
+      'info-tint': [4.8, 5.08, 4.8],
     },
     dark: {
       ink: [11.85, 10.17, 11.85],

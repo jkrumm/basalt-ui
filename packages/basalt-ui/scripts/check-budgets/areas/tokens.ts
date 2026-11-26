@@ -112,8 +112,8 @@ export const rows: readonly RowDef[] = [
     // 1892 with `--basalt-scrim-wash` in both schemes (1801 B, Issue 2940).
     // 1902 with the control height on a coarse pointer at every density (1811 B, Issue 3206).
     // 1863 without it: a coarse pointer raises the hit floor only (1774 B, Issue 3298).
-    // 1895 with `--basalt-field` in both schemes (1804 B, Issue 3296).
-    ceiling: 1895,
+    // 1892 with `--basalt-field` in both schemes (1801 B, Issue 3296).
+    ceiling: 1892,
     measure: () => gzipFileBytes(join(CSS_DIR, 'tokens.css')),
   },
   {
@@ -195,7 +195,7 @@ export const raises: Raises = {
   'tokens-css-gzip': [
     {
       from: 1863,
-      to: 1895,
+      to: 1892,
       consumer:
         'the owner review of 2026-11-25 (Issue 3296): `--basalt-field` is the fill of a form field in both schemes, so a field is never darker than its card in dark and the white inset leaves the light surfaces',
       repo: 'basalt-ui',
