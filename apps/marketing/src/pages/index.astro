@@ -1,5 +1,6 @@
 ---
 import { Code } from 'astro:components'
+import { bundledThemes } from 'shiki'
 import {
   SiteBento,
   SiteCallout,
@@ -16,7 +17,9 @@ import Layout from '../layouts/Layout.astro'
 import { BENTO, BLOCKS_SNIPPET, CALL_TO_ACTION, COMPARISON, HERO, QUESTIONS } from '../lib/landing'
 import { LABELS } from '../lib/site'
 
-const themes = { light: 'github-light-high-contrast', dark: 'github-dark' } as const
+// Astro 7's Code takes only the themes it bundles by name; the high-contrast light one clears 4.5:1 on the inset.
+const lightTheme = (await bundledThemes['github-light-high-contrast']()).default
+const themes = { light: lightTheme, dark: 'github-dark' } as const
 ---
 
 <Layout>
