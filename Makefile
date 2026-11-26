@@ -214,7 +214,8 @@ quality-matrix: browser-shell ## Quality matrix in a real browser: make quality-
 # A route that already passed at the same content (scripts/green-cache.ts: the files its render reaches, the matrix's own code and
 # the manifests, unchanged) is not run again; a pass is recorded only when the step exits 0. The whole-matrix targets never read it.
 # A route that failed runs alone first on the next run (scripts/failed-first.ts), the others after it: a fix is proven in a few
-# cells before the rest of the routes' cells run, and one that is not whole fails there.
+# cells before the rest of the routes' cells run, and one that is not whole fails there (in a slot the run stops at that first
+# failure, as the single run does with --bail; without `factory` the rest runs too and every failure is reported).
 quality-matrix-fast: ## Quality matrix: only the routes the branch's changes reach, the smoke set for a shared change, whole for a harness change (BASE=<ref>, default origin/master)
 	@sel="$$(bun scripts/matrix-select.ts --base $(or $(BASE),origin/master))" || exit $$?; \
 	case "$$sel" in \
@@ -224,10 +225,12 @@ quality-matrix-fast: ## Quality matrix: only the routes the branch's changes rea
 			if [ -z "$$todo" ]; then exit 0; fi; \
 			first="$$(bun scripts/failed-first.ts first quality-matrix "$$todo")"; \
 			rest="$$(bun scripts/failed-first.ts rest quality-matrix "$$todo")"; \
+			rc=0; \
 			for part in "$$first" "$$rest"; do \
 				if [ -z "$$part" ]; then continue; fi; \
-				bun scripts/failed-first.ts run quality-matrix route -- $(MAKE) --no-print-directory quality-matrix BASALT_MATRIX_ROUTES="$$part" || exit $$?; \
+				bun scripts/failed-first.ts run quality-matrix route -- $(MAKE) --no-print-directory quality-matrix BASALT_MATRIX_ROUTES="$$part" || { rc=$$?; $(if $(bail),break,:); }; \
 			done; \
+			if [ "$$rc" -ne 0 ]; then exit $$rc; fi; \
 			bun scripts/green-cache.ts record quality "$$todo";; \
 		*) $(MAKE) --no-print-directory quality-matrix;; \
 	esac
