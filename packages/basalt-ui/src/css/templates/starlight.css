@@ -3,7 +3,7 @@
    both schemes: the tokens switch on `data-theme` and on the system scheme. Unlayered on purpose:
    Starlight's and Expressive Code's own defaults sit in cascade layers, and an unlayered rule outranks them.
    The one color left to the code theme is the syntax token: Expressive Code writes each token's color
-   inline from the Shiki theme; `github-light` and `github-dark` are the GitHub pair `CodeBlock` highlights with. */
+   inline from the Shiki theme; `github-light-high-contrast` and `github-dark` are the GitHub pair `CodeBlock` highlights with. */
 :root,
 :root[data-theme='light'],
 :root[data-theme='dark'],
