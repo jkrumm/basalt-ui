@@ -139,7 +139,7 @@ function buildPairs(): PairRow[] {
 
   // Card vs inset step in OKLCH L: the surface law reads against the parent (3.3). Dark holds .03;
   // light holds .014, because the light shell is the 2.x panel, raised off the canvas like the
-  // console card (Issue 863), and the white inset sits that close to it.
+  // console card (Issue 863), and the inset sits at the page tone, that close to it.
   for (const [scheme, min] of [
     ['dark', 0.03],
     ['light', 0.014],
