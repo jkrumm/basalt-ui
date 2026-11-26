@@ -4,10 +4,10 @@
 :root[data-theme='light'] {
   color-scheme: light;
   --basalt-canvas: #efeff3;
-  --basalt-inset: #f0f0f4;
-  --basalt-field: #ffffff;
+  --basalt-inset: #efeff3;
+  --basalt-field: #fcfcff;
   --basalt-card: #f6f6fa;
-  --basalt-raised: #fafafe;
+  --basalt-raised: #f8f8fc;
   --basalt-hover: color-mix(in srgb, var(--basalt-ink) 5%, transparent);
   --basalt-selected: color-mix(in srgb, var(--basalt-ink) 7.5%, transparent);
   --basalt-scrim: color-mix(in srgb, var(--basalt-ink) 45%, transparent);
