@@ -46,7 +46,10 @@ from a lead session, scope it to the files you touched (`bun test <path>`) and l
 `node_modules/.cache/unit-test-failed.json`; the next run puts the processes holding them first (`scripts/unit-order.ts`), so a
 fix is proven in one process before the rest runs, and a green run deletes the file. The layout, layout-fast and
 quality-matrix steps pass `--bail` when `factory` is installed (the Makefile's `bail`), so they end at the first failing
-test. A failed run therefore shows the first failure, not all of them: fix it and run again. CI runs its own steps, never
+test. A failed run therefore shows the first failure, not all of them: fix it and run again. `layout-fast` and
+`quality-matrix-fast` also remember what failed (`scripts/failed-first.ts`, `node_modules/.cache/failed-<step>.json`): the
+next run puts the failed test files first, or runs the failed routes alone before the rest, so a fix that is not whole fails
+in seconds instead of at the late test that took minutes to reach; a green run forgets. CI runs its own steps, never
 passes `--bail` and reports every failure. A passing run runs the same files either way.
 
 The step may run off the mini (`project.yaml` `steps.unit`): the factory's step host builds `tools/step-image/Dockerfile`
