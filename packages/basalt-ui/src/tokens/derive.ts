@@ -287,19 +287,19 @@ export type RowSurfaceKey = 'rowHover' | 'rowSelected'
 
 const SURFACE_TONE: Record<Side, Record<Exclude<SurfaceKey, RowSurfaceKey>, number>> = {
   // Light steps off white into the zinc ramp (the +2 baseline lands the page at tone 94.5, the card
-  // 97, the inset well 95, the raised surface 98.5): no surface is #ffffff, so a card reads off the
-  // page by lightness alone. The page cannot go darker: below tone ~94.4 the light chart marks lose
-  // the 3:1 floor on it and `chart-4` / `chart-5` fall under the 8.0 CVD gate. The v3 `field` role
-  // (FIELD_TONE_V3) is the one white fill left.
-  // Candidate B, one edit away (wells at the page tone, raised 97.8, no white field): field: 92.5,
-  // elevated: 95.8, panelHover: 95.8, and FIELD_TONE_V3.light = 97.5.
+  // 97, the raised surface 97.8, and the inset well at the page tone): no light surface is #ffffff,
+  // so a card reads off the page by lightness alone. The page cannot go darker: below tone ~94.4 the
+  // light chart marks lose the 3:1 floor on it and `chart-4` / `chart-5` fall under the 8.0 CVD gate.
+  // The form field has its own role (FIELD_TONE_V3), off-white too (owner pick B, Issue 3296).
+  // Candidate A, one edit away (well 95, raised 98.5, a white field): field: 93, elevated: 96.5,
+  // panelHover: 96.5, and FIELD_TONE_V3.light = 100.
   light: {
     bg: 92.5,
     panel: 95,
-    panelHover: 96.5,
-    elevated: 96.5,
+    panelHover: 95.8,
+    elevated: 95.8,
     subtle: 93.5,
-    field: 93,
+    field: 92.5,
     border: 86.5,
     hairline: 90,
   },
@@ -569,11 +569,11 @@ export const VIBRANCY_RANGE_V3 = { min: -4, max: 5 } as const
 
 /**
  * The fill of a form field, effective tone (v3 has no level knob). Dark sits two tones above the
- * card (20.69) so a field is never darker than the card it is on; light is the one white fill: a
- * small well on a tinted card is the affordance, and no large surface is white. The hue and chroma
- * are the neutral family's, like every surface.
+ * card (20.69) so a field is never darker than the card it is on; light is the lightest surface, tone
+ * 99 (not #ffffff): 2 tones over the card and 4.5 over the page, so a field reads against both. The
+ * hue and chroma are the neutral family's, like every surface.
  */
-const FIELD_TONE_V3: Record<Side, number> = { light: 100, dark: 22.7 }
+const FIELD_TONE_V3: Record<Side, number> = { light: 99, dark: 22.7 }
 
 /** The v3 color roles the table lists with a `{ light, dark }` pair. */
 export const COLOR_NAMES_V3 = [

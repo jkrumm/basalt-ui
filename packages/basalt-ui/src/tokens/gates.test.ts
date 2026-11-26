@@ -68,7 +68,7 @@ describe('PAIRS', () => {
     expect(step('dark')).toBeGreaterThan(0.03)
     expect(step('light')).toBeGreaterThanOrEqual(0.014)
     expect(step('dark')).toBeCloseTo(0.044, 3)
-    expect(step('light')).toBeCloseTo(0.018, 3)
+    expect(step('light')).toBeCloseTo(0.021, 3)
   })
 
   test('the card step gate holds .03 in dark and .014 in light', () => {
