@@ -569,7 +569,7 @@ export const VIBRANCY_RANGE_V3 = { min: -4, max: 5 } as const
 
 /**
  * The fill of a form field, effective tone (v3 has no level knob). Dark sits two tones above the
- * card (20.7) so a field is never darker than the card it is on; light is the one white fill: a
+ * card (20.69) so a field is never darker than the card it is on; light is the one white fill: a
  * small well on a tinted card is the affordance, and no large surface is white. The hue and chroma
  * are the neutral family's, like every surface.
  */
