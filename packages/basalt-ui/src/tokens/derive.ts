@@ -544,8 +544,8 @@ type SurfaceStop2x = Exclude<SurfaceKey, RowSurfaceKey>
 
 /**
  * Which 2.x surface stop each v3 surface is, per scheme. Canvas is the 2.x page, so the shell and a
- * v3 page share one ground; inset is the 2.x field (white in light, recessed in dark: the reading
- * surface); raised is the 2.x elevated control surface. The card shell is the 2.x panel in light,
+ * v3 page share one ground; inset is the 2.x field (at the page tone in light, recessed in dark: the
+ * reading surface); raised is the 2.x elevated control surface. The card shell is the 2.x panel in light,
  * the surface the factory console raises its cards on (1.07:1 on the canvas; the subtle band sat
  * 1.02:1 on it, so a light card read as the page), and the 2.x subtle band in dark (DPO 5c).
  */
