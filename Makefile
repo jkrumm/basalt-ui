@@ -153,12 +153,15 @@ layout: browser-shell ## Run the layout regression suite (real CSS geometry, hea
 	@$(call slot,layout) sh -c 'bun run test:layout $(bail) && bun run test:layout:harness $(bail)'
 
 # The layout files the branch's changes reach (scripts/layout-select.ts prints them and why, on stderr), plus the
-# harness self-test when any of them runs. No layout input changed: no slot is taken, nothing runs.
+# harness self-test when any of them runs. No layout input changed: no slot is taken, nothing runs. A run that failed
+# leaves the files of its failed tests behind (scripts/failed-first.ts, node_modules/.cache), and the next run starts
+# with them: a fix is proven in seconds, and one that is not whole fails there, not at the end of the minutes it took to reach.
 LAYOUT_BUN = bun --config=./packages/basalt-ui/tests/layout/bunfig.toml test --timeout 60000 $(bail)
 layout-fast: browser-shell ## Run only the layout files the branch's changes reach (BASE=<ref>, default origin/master)
 	@files="$$(bun scripts/layout-select.ts --base $(or $(BASE),origin/master))" || exit $$?; \
 	if [ -z "$$files" ]; then exit 0; fi; \
-	$(call slot,layout-fast) sh -c '$(LAYOUT_BUN) '"$$(echo $$files)"' && bun run test:layout:harness $(bail)'
+	files="$$(bun scripts/failed-first.ts order layout-fast $$files)"; \
+	$(call slot,layout-fast) bun scripts/failed-first.ts run layout-fast file -- sh -c '$(LAYOUT_BUN) '"$$(echo $$files)"' && bun run test:layout:harness $(bail)'
 
 # The unit tests the branch's changes reach (scripts/unit-select.ts): bun's module graph through `bun test --changed`
 # plus the always-on set of tests that read files. CI and `make check` run the whole suite. Its slot is `unit-fast`, not
@@ -210,6 +213,8 @@ quality-matrix: browser-shell ## Quality matrix in a real browser: make quality-
 # own harness, or no merge base, runs it whole; no page reached, nothing. `make quality-matrix` and `make check` run it whole.
 # A route that already passed at the same content (scripts/green-cache.ts: the files its render reaches, the matrix's own code and
 # the manifests, unchanged) is not run again; a pass is recorded only when the step exits 0. The whole-matrix targets never read it.
+# A route that failed runs alone first on the next run (scripts/failed-first.ts), the others after it: a fix is proven in a few
+# cells before the rest of the routes' cells run, and one that is not whole fails there.
 quality-matrix-fast: ## Quality matrix: only the routes the branch's changes reach, the smoke set for a shared change, whole for a harness change (BASE=<ref>, default origin/master)
 	@sel="$$(bun scripts/matrix-select.ts --base $(or $(BASE),origin/master))" || exit $$?; \
 	case "$$sel" in \
@@ -217,7 +222,12 @@ quality-matrix-fast: ## Quality matrix: only the routes the branch's changes rea
 		routes\ *) pages="$${sel#routes }"; \
 			todo="$$(bun scripts/green-cache.ts plan quality "$$pages")" || todo="$$pages"; \
 			if [ -z "$$todo" ]; then exit 0; fi; \
-			$(MAKE) --no-print-directory quality-matrix BASALT_MATRIX_ROUTES="$$todo" || exit $$?; \
+			first="$$(bun scripts/failed-first.ts first quality-matrix "$$todo")"; \
+			rest="$$(bun scripts/failed-first.ts rest quality-matrix "$$todo")"; \
+			for part in "$$first" "$$rest"; do \
+				if [ -z "$$part" ]; then continue; fi; \
+				bun scripts/failed-first.ts run quality-matrix route -- $(MAKE) --no-print-directory quality-matrix BASALT_MATRIX_ROUTES="$$part" || exit $$?; \
+			done; \
 			bun scripts/green-cache.ts record quality "$$todo";; \
 		*) $(MAKE) --no-print-directory quality-matrix;; \
 	esac
